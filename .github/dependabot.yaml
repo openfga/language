@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/pkg/go"
+    schedule:
+      interval: "weekly"
+    groups:
+     dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+     dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+     dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/pkg/js"
+    schedule:
+      interval: "weekly"
+    groups:
+     dependencies:
+        patterns:
+          - "*"
+

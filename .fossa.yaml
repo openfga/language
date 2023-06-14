@@ -1,0 +1,14 @@
+version: 3
+
+server: https://app.fossa.com
+
+project:
+  id: github.com/openfga/language
+  name: github.com/openfga/language
+  link: openfga.dev
+  url: github.com/openfga/language
+
+paths:
+  exclude:
+    - ./NOTICE
+    - ./NOTICE.txt

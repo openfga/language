@@ -1,0 +1,1 @@
+package openfga_language

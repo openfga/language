@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {
+      "type": "report",
+      "relations": {
+        "approver": {
+          "tupleToUserset": {
+            "tupleset": {
+              "object": "",
+              "relation": "submitter"
+            },
+            "computedUserset": {
+              "object": "",
+              "relation": "can_manage"
+            }
+          }
+        },
+        "submitter": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "approver": {
+            "directly_related_user_types": []
+          },
+          "submitter": {
+            "directly_related_user_types": [
+              {
+                "type": "employee"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "employee",
+      "relations": {
+        "can_manage": {
+          "union": {
+            "child": [
+              {
+                "computedUserset": {
+                  "object": "",
+                  "relation": "manager"
+                }
+              },
+              {
+                "tupleToUserset": {
+                  "tupleset": {
+                    "object": "",
+                    "relation": "manager"
+                  },
+                  "computedUserset": {
+                    "object": "",
+                    "relation": "can_manage"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "manager": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "can_manage": {
+            "directly_related_user_types": []
+          },
+          "manager": {
+            "directly_related_user_types": [
+              {
+                "type": "employee"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

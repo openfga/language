@@ -16,15 +16,18 @@ jobs:
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       with:
         fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
     - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
       with:
-        go-version-file: './go.mod'
-        cache-dependency-path: './go.sum'
+        go-version-file: './src/go/go.mod'
+        cache-dependency-path: './src/go/go.sum'
         check-latest: true
+
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@5f1fec7010f6ae3b84ea4f7b2129beb8639b564f # v3.5.0
-      with:
-        version: latest
+      run: make lint-go
 
   audit:
     runs-on: ubuntu-latest
@@ -32,14 +35,18 @@ jobs:
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       with:
         fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
     - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
       with:
-        go-version-file: './go.mod'
-        cache-dependency-path: './go.sum'
+        go-version-file: './src/go/go.mod'
+        cache-dependency-path: './src/go/go.sum'
         check-latest: true
 
     - name: Run govulncheck
-      run: make audit
+      run: make audit-go
 
   test:
     runs-on: ubuntu-latest
@@ -48,14 +55,20 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
     - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
       with:
-        go-version-file: './go.mod'
-        cache-dependency-path: './go.sum'
+        go-version-file: './src/go/go.mod'
+        cache-dependency-path: './src/go/go.sum'
         check-latest: true
 
     - name: Build
-      run: make build
+      run: make test-go
+
+    - name: Build
+      run: make build-go
 
   release:
     runs-on: ubuntu-latest
@@ -80,21 +93,21 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version-file: './go.mod'
-          cache-dependency-path: './go.sum'
+          go-version-file: './src/go/go.mod'
+          cache-dependency-path: './src/go/go.sum'
           check-latest: true
 
       - name: Login to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9 # v3.0.5
-      - uses: anchore/sbom-action/download-syft@422cb34a0f8b599678c41b21163ea6088edb2624 # v0.14.1
+      - uses: anchore/sbom-action/download-syft@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4.2.0
+        uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7 # v4.3.0
         with:
           distribution: goreleaser
           version: latest
@@ -103,7 +116,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
 
       - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@579f64ca0abced29dbbc44ab4c6a0b9e33ab3588 # v3.4.1
+        uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864 # v3.4.2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

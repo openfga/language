@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {
+      "type": "user",
+      "relations": {},
+      "metadata": null
+    },
+    {
+      "type": "plan",
+      "relations": {
+        "subscriber": {
+          "this": {}
+        },
+        "subscriber_member": {
+          "tupleToUserset": {
+            "tupleset": {
+              "object": "",
+              "relation": "subscriber"
+            },
+            "computedUserset": {
+              "object": "",
+              "relation": "member"
+            }
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "subscriber": {
+            "directly_related_user_types": [
+              {
+                "type": "organization"
+              }
+            ]
+          },
+          "subscriber_member": {
+            "directly_related_user_types": []
+          }
+        }
+      }
+    },
+    {
+      "type": "organization",
+      "relations": {
+        "member": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "member": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "feature",
+      "relations": {
+        "associated_plan": {
+          "this": {}
+        },
+        "can_access": {
+          "tupleToUserset": {
+            "tupleset": {
+              "object": "",
+              "relation": "associated_plan"
+            },
+            "computedUserset": {
+              "object": "",
+              "relation": "subscriber_member"
+            }
+          }
+        }
+      },
+      "metadata": {
+        "relations": {
+          "associated_plan": {
+            "directly_related_user_types": [
+              {
+                "type": "plan"
+              }
+            ]
+          },
+          "can_access": {
+            "directly_related_user_types": []
+          }
+        }
+      }
+    }
+  ]
+}

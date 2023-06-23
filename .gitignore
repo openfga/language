@@ -4,7 +4,9 @@
 *.dll
 *.so
 *.dylib
-fga
+
+# Binary
+src/go/openfga-parser
 
 # Test binary, built with `go test -c`
 *.test

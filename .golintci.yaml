@@ -1,0 +1,48 @@
+run:
+  timeout: 3m
+  modules-download-mode: readonly
+
+linters:
+  enable-all: true
+  disable:
+    - dupl #temporary
+    - exhaustruct
+    - gochecknoinits
+    - forbidigo
+    - gochecknoglobals
+    - goimports
+    # deprecated
+    - exhaustivestruct
+    - interfacer
+    - maligned
+    - scopelint
+    - structcheck
+    - varcheck
+    - deadcode
+    - ifshort
+    - golint
+    - nosnakecase
+linters-settings:
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/openfga/cli
+          - go.buf.build/openfga/go/openfga/api
+          - google.golang.org/protobuf/encoding/protojson
+      test:
+        files:
+          - "$test"
+        allow:
+          - $gostd
+          - github.com/stretchr
+
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: snake

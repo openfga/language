@@ -1,0 +1,51 @@
+name: Build and Test (Go)
+
+on:
+  workflow_dispatch:
+  merge_group:
+    paths:
+      - 'pkg/go/**'
+  pull_request:
+    paths:
+      - 'pkg/go/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1 # v2.9.1
+
+    - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+      with:
+        go-version-file: './pkg/go/go.mod'
+        cache-dependency-path: './pkg/go/go.sum'
+        check-latest: true
+
+    - name: Build
+      run: make all-tests-go
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test]
+    permissions:
+      contents: write
+      packages: write # publish a new github release
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          fetch-depth: 0
+
+      - uses: Roang-zero1/github-create-release-action@5cf058ddffa6fa04e5cda07c98570c757dc4a0e1
+        with:
+          version_regex: ^v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

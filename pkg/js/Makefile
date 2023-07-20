@@ -21,11 +21,11 @@ test: init-deps
 lint: init-deps
 	npm run lint
 
-audit:
+audit: init-deps
 	npm audit
 
 format: init-deps
 	npm run format:fix
 
 all-tests: audit lint test
-	npx madge --circular . --extensions ts,js
+	npx madge --circular --exclude '^dist|^gen' . --extensions ts,js

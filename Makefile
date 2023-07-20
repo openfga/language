@@ -2,6 +2,20 @@ DOCKER_BINARY=docker
 ANTLR_DOCKER_IMAGE=docker.io/openfga_utils/antlr
 ANTLR_CMD=${DOCKER_BINARY} run -t --rm -v ${PWD}:/app ${ANTLR_DOCKER_IMAGE}
 
+#### Global #####
+
+.PHONY: all
+all: build
+
+.PHONY: build
+build: build-go build-js
+
+.PHONY: test
+test: test-go test-js
+
+.PHONY: lint
+lint: lint-go lint-js
+
 #### Go #####
 
 .PHONY: antlr-gen-go
@@ -39,6 +53,44 @@ format-go: antlr-gen-go
 .PHONY: all-tests-go
 all-tests-go: antlr-gen-go
 	$(MAKE) -C pkg/go all-tests
+
+#### TypeScript #####
+
+.PHONY: antlr-gen-js
+antlr-gen-js: build-antlr-container
+	${ANTLR_CMD} -Dlanguage=TypeScript -o pkg/js/gen /app/OpenFGA.g4
+
+.PHONY: build-js
+build-js: antlr-gen-js
+	$(MAKE) -C pkg/js build
+
+.PHONY: run-js
+run-js: antlr-gen-js
+	$(MAKE) -C pkg/js run
+
+.PHONY: clean-js
+clean-js:
+	$(MAKE) -C pkg/js clean
+
+.PHONY: test-js
+test-js: antlr-gen-js
+	$(MAKE) -C pkg/js test
+
+.PHONY: lint-js
+lint-js: antlr-gen-js
+	$(MAKE) -C pkg/js lint
+
+.PHONY: audit-js
+audit-js: antlr-gen-js
+	$(MAKE) -C pkg/js audit
+
+.PHONY: format-js
+format-js: antlr-gen-js
+	$(MAKE) -C pkg/js format
+
+.PHONY: all-tests-js
+all-tests-js: antlr-gen-js
+	$(MAKE) -C pkg/js all-tests
 
 #### Util ####
 

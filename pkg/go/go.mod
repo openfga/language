@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.4
 	go.buf.build/openfga/go/openfga/api v1.2.58
 	google.golang.org/protobuf v1.31.0
 )

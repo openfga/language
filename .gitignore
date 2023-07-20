@@ -24,4 +24,3 @@ go.work
 node_modules/
 
 # Generated code
-gen/

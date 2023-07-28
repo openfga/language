@@ -4,6 +4,7 @@ package parser // OpenFGA
 
 import "github.com/antlr4-go/antlr/v4"
 
+
 // OpenFGAListener is a complete listener for a parse tree produced by OpenFGAParser.
 type OpenFGAListener interface {
 	antlr.ParseTreeListener
@@ -82,6 +83,12 @@ type OpenFGAListener interface {
 
 	// EnterRelationDefTypeRestrictionUserset is called when entering the relationDefTypeRestrictionUserset production.
 	EnterRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
+
+	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
+	EnterRelationDefGrouping(c *RelationDefGroupingContext)
+
+	// EnterRelationDefGroup is called when entering the relationDefGroup production.
+	EnterRelationDefGroup(c *RelationDefGroupContext)
 
 	// EnterRewriteComputedusersetName is called when entering the rewriteComputedusersetName production.
 	EnterRewriteComputedusersetName(c *RewriteComputedusersetNameContext)
@@ -190,6 +197,12 @@ type OpenFGAListener interface {
 
 	// ExitRelationDefTypeRestrictionUserset is called when exiting the relationDefTypeRestrictionUserset production.
 	ExitRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
+
+	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
+	ExitRelationDefGrouping(c *RelationDefGroupingContext)
+
+	// ExitRelationDefGroup is called when exiting the relationDefGroup production.
+	ExitRelationDefGroup(c *RelationDefGroupContext)
 
 	// ExitRewriteComputedusersetName is called when exiting the rewriteComputedusersetName production.
 	ExitRewriteComputedusersetName(c *RewriteComputedusersetNameContext)

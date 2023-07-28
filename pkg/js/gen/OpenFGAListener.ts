@@ -28,6 +28,8 @@ import { RelationDefTypeRestrictionTypeContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionRelationContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionWildcardContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionUsersetContext } from "./OpenFGAParser";
+import { RelationDefGroupingContext } from "./OpenFGAParser";
+import { RelationDefGroupContext } from "./OpenFGAParser";
 import { RewriteComputedusersetNameContext } from "./OpenFGAParser";
 import { RewriteTuplesetComputedusersetNameContext } from "./OpenFGAParser";
 import { RewriteTuplesetNameContext } from "./OpenFGAParser";
@@ -296,6 +298,26 @@ export default class OpenFGAListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRelationDefTypeRestrictionUserset?: (ctx: RelationDefTypeRestrictionUsersetContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationDefGrouping`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationDefGrouping`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationDefGroup`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationDefGroup?: (ctx: RelationDefGroupContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationDefGroup`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationDefGroup?: (ctx: RelationDefGroupContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.rewriteComputedusersetName`.
 	 * @param ctx the parse tree

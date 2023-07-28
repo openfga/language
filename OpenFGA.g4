@@ -4,10 +4,10 @@ main: modelHeader typeDefs newline?;
 
 indentation: '  ' | '	';
 
-modelHeader: (multiLineComment newline)? 'model' (newline+ multiLineComment)? newline indentation 'schema' spacing schemaVersion;
+modelHeader: (multiLineComment newline)? 'model' spacing? (newline+ multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
 typeDefs: typeDef*;
-typeDef:  (newline multiLineComment)? newline+ 'type' spacing typeName (newline indentation 'relations' relationDeclaration+)?;
-relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef;
+typeDef:  (newline multiLineComment)? newline+ 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
+relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef spacing?;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
 

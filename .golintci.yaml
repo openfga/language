@@ -32,7 +32,7 @@ linters-settings:
         allow:
           - $gostd
           - github.com/openfga/cli
-          - go.buf.build/openfga/go/openfga/api
+          - buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1
           - google.golang.org/protobuf/encoding/protojson
       test:
         files:

@@ -4,9 +4,9 @@ import (
 	"log"
 	"testing"
 
+	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
 	language "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
-	pb "go.buf.build/openfga/go/openfga/api/openfga/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

@@ -156,7 +156,8 @@ func parseType(typeDefinition *pb.TypeDefinition) string {
 	return parsedTypeString
 }
 
-func TransformJSONToDSL(model *pb.AuthorizationModel) string {
+// TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL
+func TransformJSONProtoToDSL(model *pb.AuthorizationModel) string {
 	schemaVersion := model.SchemaVersion
 
 	typeDefinitions := []string{}
@@ -177,7 +178,8 @@ func TransformJSONToDSL(model *pb.AuthorizationModel) string {
 %v`, schemaVersion, typeDefsString)
 }
 
-func TransformJSONStringToJSON(modelString string) (*pb.AuthorizationModel, error) {
+// LoadJSONStringToProto - Converts models authored in OpenFGA JSON syntax to the protobuf representation
+func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
 	model := &pb.AuthorizationModel{}
 	unmarshaller := protojson.UnmarshalOptions{
 		AllowPartial:   false,
@@ -191,13 +193,14 @@ func TransformJSONStringToJSON(modelString string) (*pb.AuthorizationModel, erro
 	return model, nil
 }
 
+// TransformJSONStringToDSL - Converts models authored in OpenFGA JSON syntax to the DSL syntax
 func TransformJSONStringToDSL(modelString string) (*string, error) {
-	model, err := TransformJSONStringToJSON(modelString)
+	model, err := LoadJSONStringToProto(modelString)
 	if err != nil {
 		return nil, err
 	}
 
-	dsl := TransformJSONToDSL(model)
+	dsl := TransformJSONProtoToDSL(model)
 
 	return &dsl, nil
 }

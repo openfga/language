@@ -11,7 +11,7 @@ import (
 )
 
 func TestDSLToJSONTransformer(t *testing.T) {
-	testCases, err := LoadTransformerTestCases()
+	testCases, err := LoadValidTransformerTestCases()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -22,7 +22,9 @@ func TestDSLToJSONTransformer(t *testing.T) {
 				t.Skip()
 			}
 
-			model := language.TransformDslToJSON(testCase.DSL)
+			model, err := language.TransformDslToJSON(testCase.DSL)
+
+			require.NoError(t, err)
 
 			bytes, err := protojson.Marshal(model)
 			require.NoError(t, err)
@@ -35,6 +37,23 @@ func TestDSLToJSONTransformer(t *testing.T) {
 			require.NoError(t, err)
 
 			require.JSONEq(t, string(jsonBytes), string(bytes))
+		})
+	}
+
+	testCases2, err := LoadInvalidDslSyntaxTestCases()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, testCase := range testCases2 {
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, err := language.TransformDslToJSON(testCase.DSL)
+
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.EqualErrorf(t, err, testCase.ErrorMessage, "")
+			}
 		})
 	}
 }

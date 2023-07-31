@@ -1,34 +1,31 @@
 package transformer_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 )
 
-type TestCases struct {
-	Cases []TestCase
-}
-
-type TestCase struct {
+type ValidTestCase struct {
 	Name string
 	DSL  string
 	JSON string
 	Skip bool
 }
 
-func LoadTransformerTestCases() ([]TestCase, error) {
+func LoadValidTransformerTestCases() ([]ValidTestCase, error) {
 	testDataPath := filepath.Join("../../../tests", "data", "transformer")
 	entries, err := os.ReadDir(testDataPath)
 	if err != nil {
 		return nil, err
 	}
 
-	testCases := []TestCase{}
+	testCases := []ValidTestCase{}
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
-		testCase := TestCase{Name: e.Name()}
+		testCase := ValidTestCase{Name: e.Name()}
 
 		skipFile, _ := os.ReadFile(filepath.Join(testDataPath, testCase.Name, "test.skip"))
 		if skipFile != nil {
@@ -50,4 +47,23 @@ func LoadTransformerTestCases() ([]TestCase, error) {
 	}
 
 	return testCases, nil
+}
+
+type InvalidDslSyntaxTestCase struct {
+	Name         string `json:"name"`
+	DSL          string `json:"dsl"`
+	Valid        bool   `json:"valid"`
+	ErrorMessage string `json:"error_message"`
+}
+
+func LoadInvalidDslSyntaxTestCases() ([]InvalidDslSyntaxTestCase, error) {
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "dsl-syntax-validation.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	testCases := []InvalidDslSyntaxTestCase{}
+	err = json.Unmarshal(data, &testCases)
+
+	return testCases, err
 }

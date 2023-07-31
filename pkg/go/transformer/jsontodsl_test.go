@@ -9,7 +9,7 @@ import (
 )
 
 func TestJSONToDSLTransformer(t *testing.T) {
-	testCases, err := LoadTransformerTestCases()
+	testCases, err := LoadValidTransformerTestCases()
 	if err != nil {
 		log.Fatal(err)
 	}

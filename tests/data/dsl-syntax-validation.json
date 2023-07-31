@@ -1,0 +1,49 @@
+[
+  {
+    "name": "invalid-syntax-1",
+    "dsl": "type user\n",
+    "valid": false,
+    "error_message": "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', ' '}\n\t* syntax error at line=1, column=5: missing '#' at 'user'\n\t* syntax error at line=2, column=0: mismatched input '<EOF>' expecting 'model'\n\n"
+  },
+  {
+    "name": "invalid-syntax-2",
+    "dsl": "model\ntype user\n",
+    "valid": false,
+    "error_message": "1 error occurred:\n\t* syntax error at line=2, column=0: no viable alternative at input '\\ntype'\n\n"
+  },
+  {
+    "name": "invalid-syntax-4",
+    "dsl": "model\n\tschema 1.1\ntype user\ntype folder\n\tdefine viewer: [user]\n",
+    "valid": false,
+    "error_message": "1 error occurred:\n\t* syntax error at line=5, column=1: mismatched input 'define' expecting 'relations'\n\n"
+  },
+  {
+    "name": "invalid-syntax-5",
+    "dsl": "model\n\tschema 11\n",
+    "valid": false,
+    "error_message": "1 error occurred:\n\t* syntax error at line=2, column=8: mismatched input '11' expecting '1.1'\n\n"
+  },
+  {
+    "name": "invalid-syntax-6",
+    "dsl": "model\n\tschema1.1\n",
+    "valid": false,
+    "error_message": "2 errors occurred:\n\t* syntax error at line=2, column=8: token recognition error at: '.'\n\t* syntax error at line=2, column=1: mismatched input 'schema1' expecting 'schema'\n\n"
+  },
+  {
+    "name": "invalid-syntax-7",
+    "dsl": "model\n\tschema a.b\n",
+    "valid": false,
+    "error_message": "2 errors occurred:\n\t* syntax error at line=2, column=9: token recognition error at: '.'\n\t* syntax error at line=2, column=8: mismatched input 'a' expecting '1.1'\n\n"
+  },
+  {
+    "name": "valid-syntax-1",
+    "dsl": "model\n\tschema 1.1\n",
+    "valid": true
+  },
+  {
+    "name": "valid-syntax-2",
+    "dsl": "# ID: 123\nmodel\n\tschema 1.1\n",
+    "valid": true
+  }
+]
+

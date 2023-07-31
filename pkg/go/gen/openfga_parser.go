@@ -5,7 +5,7 @@ package parser // OpenFGA
 import (
 	"fmt"
 	"strconv"
-  	"sync"
+	"sync"
 
 	"github.com/antlr4-go/antlr/v4"
 )
@@ -15,186 +15,185 @@ var _ = fmt.Printf
 var _ = strconv.Itoa
 var _ = sync.Once{}
 
-
 type OpenFGAParser struct {
 	*antlr.BaseParser
 }
 
 var OpenFGAParserStaticData struct {
-  once                   sync.Once
-  serializedATN          []int32
-  LiteralNames           []string
-  SymbolicNames          []string
-  RuleNames              []string
-  PredictionContextCache *antlr.PredictionContextCache
-  atn                    *antlr.ATN
-  decisionToDFA          []*antlr.DFA
+	once                   sync.Once
+	serializedATN          []int32
+	LiteralNames           []string
+	SymbolicNames          []string
+	RuleNames              []string
+	PredictionContextCache *antlr.PredictionContextCache
+	atn                    *antlr.ATN
+	decisionToDFA          []*antlr.DFA
 }
 
 func openfgaParserInit() {
-  staticData := &OpenFGAParserStaticData
-  staticData.LiteralNames = []string{
-    "", "'  '", "'\\u0009'", "'model'", "'schema'", "'type'", "'relations'", 
-    "'define'", "':'", "'['", "','", "']'", "'and'", "'or'", "'but not'", 
-    "'from'", "':*'", "'#'", "'\\r'", "'\\n'", "' '", "'1.1'",
-  }
-  staticData.SymbolicNames = []string{
-    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", 
-    "", "", "", "", "", "ALPHA_NUMERIC",
-  }
-  staticData.RuleNames = []string{
-    "main", "indentation", "modelHeader", "typeDefs", "typeDef", "relationDeclaration", 
-    "relationDef", "relationDefPartials", "relationDefPartialAllOr", "relationDefPartialAllAnd", 
-    "relationDefPartialAllButNot", "relationDefDirectAssignment", "relationDefRewrite", 
-    "relationDefRelationOnSameObject", "relationDefRelationOnRelatedObject", 
-    "relationDefOperator", "relationDefOperatorAnd", "relationDefOperatorOr", 
-    "relationDefOperatorButNot", "relationDefKeywordFrom", "relationDefTypeRestriction", 
-    "relationDefTypeRestrictionType", "relationDefTypeRestrictionRelation", 
-    "relationDefTypeRestrictionWildcard", "relationDefTypeRestrictionUserset", 
-    "relationDefGrouping", "rewriteComputedusersetName", "rewriteTuplesetComputedusersetName", 
-    "rewriteTuplesetName", "relationName", "typeName", "comment", "multiLineComment", 
-    "spacing", "newline", "schemaVersion", "name",
-  }
-  staticData.PredictionContextCache = antlr.NewPredictionContextCache()
-  staticData.serializedATN = []int32{
-	4, 1, 22, 305, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 
-	4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 
-	10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15, 
-	2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2, 
-	21, 7, 21, 2, 22, 7, 22, 2, 23, 7, 23, 2, 24, 7, 24, 2, 25, 7, 25, 2, 26, 
-	7, 26, 2, 27, 7, 27, 2, 28, 7, 28, 2, 29, 7, 29, 2, 30, 7, 30, 2, 31, 7, 
-	31, 2, 32, 7, 32, 2, 33, 7, 33, 2, 34, 7, 34, 2, 35, 7, 35, 2, 36, 7, 36, 
-	1, 0, 1, 0, 1, 0, 3, 0, 78, 8, 0, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 3, 2, 85, 
-	8, 2, 1, 2, 1, 2, 3, 2, 89, 8, 2, 1, 2, 1, 2, 1, 2, 3, 2, 94, 8, 2, 1, 
-	2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 102, 8, 2, 1, 3, 5, 3, 105, 8, 3, 
-	10, 3, 12, 3, 108, 9, 3, 1, 4, 1, 4, 1, 4, 3, 4, 113, 8, 4, 1, 4, 1, 4, 
-	1, 4, 1, 4, 1, 4, 3, 4, 120, 8, 4, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 126, 8, 
-	4, 1, 4, 4, 4, 129, 8, 4, 11, 4, 12, 4, 130, 3, 4, 133, 8, 4, 1, 5, 1, 
-	5, 1, 5, 3, 5, 138, 8, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 3, 
-	5, 147, 8, 5, 1, 5, 1, 5, 3, 5, 151, 8, 5, 1, 5, 1, 5, 3, 5, 155, 8, 5, 
-	1, 6, 1, 6, 3, 6, 159, 8, 6, 1, 6, 3, 6, 162, 8, 6, 1, 7, 1, 7, 1, 7, 3, 
-	7, 167, 8, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 4, 8, 174, 8, 8, 11, 8, 12, 
-	8, 175, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 4, 9, 183, 8, 9, 11, 9, 12, 9, 184, 
-	1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 4, 10, 192, 8, 10, 11, 10, 12, 10, 193, 
-	1, 11, 1, 11, 1, 11, 3, 11, 199, 8, 11, 1, 11, 1, 11, 3, 11, 203, 8, 11, 
-	1, 11, 5, 11, 206, 8, 11, 10, 11, 12, 11, 209, 9, 11, 1, 11, 3, 11, 212, 
-	8, 11, 1, 11, 1, 11, 1, 12, 1, 12, 3, 12, 218, 8, 12, 1, 13, 1, 13, 1, 
-	14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 15, 1, 15, 1, 15, 3, 15, 231, 
-	8, 15, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 19, 1, 19, 1, 20, 1, 
-	20, 1, 20, 3, 20, 244, 8, 20, 1, 21, 1, 21, 1, 22, 1, 22, 1, 23, 1, 23, 
-	1, 23, 1, 24, 1, 24, 1, 24, 1, 24, 1, 25, 1, 25, 1, 26, 1, 26, 1, 27, 1, 
-	27, 1, 28, 1, 28, 1, 29, 1, 29, 1, 30, 1, 30, 1, 31, 3, 31, 270, 8, 31, 
-	1, 31, 1, 31, 5, 31, 274, 8, 31, 10, 31, 12, 31, 277, 9, 31, 1, 32, 1, 
-	32, 1, 32, 1, 32, 5, 32, 283, 8, 32, 10, 32, 12, 32, 286, 9, 32, 1, 33, 
-	4, 33, 289, 8, 33, 11, 33, 12, 33, 290, 1, 34, 4, 34, 294, 8, 34, 11, 34, 
-	12, 34, 295, 1, 35, 1, 35, 1, 36, 4, 36, 301, 8, 36, 11, 36, 12, 36, 302, 
-	1, 36, 0, 0, 37, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 
-	30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 
-	66, 68, 70, 72, 0, 2, 1, 0, 1, 2, 1, 0, 18, 19, 304, 0, 74, 1, 0, 0, 0, 
-	2, 79, 1, 0, 0, 0, 4, 84, 1, 0, 0, 0, 6, 106, 1, 0, 0, 0, 8, 112, 1, 0, 
-	0, 0, 10, 137, 1, 0, 0, 0, 12, 158, 1, 0, 0, 0, 14, 166, 1, 0, 0, 0, 16, 
-	173, 1, 0, 0, 0, 18, 182, 1, 0, 0, 0, 20, 191, 1, 0, 0, 0, 22, 195, 1, 
-	0, 0, 0, 24, 217, 1, 0, 0, 0, 26, 219, 1, 0, 0, 0, 28, 221, 1, 0, 0, 0, 
-	30, 230, 1, 0, 0, 0, 32, 232, 1, 0, 0, 0, 34, 234, 1, 0, 0, 0, 36, 236, 
-	1, 0, 0, 0, 38, 238, 1, 0, 0, 0, 40, 243, 1, 0, 0, 0, 42, 245, 1, 0, 0, 
-	0, 44, 247, 1, 0, 0, 0, 46, 249, 1, 0, 0, 0, 48, 252, 1, 0, 0, 0, 50, 256, 
-	1, 0, 0, 0, 52, 258, 1, 0, 0, 0, 54, 260, 1, 0, 0, 0, 56, 262, 1, 0, 0, 
-	0, 58, 264, 1, 0, 0, 0, 60, 266, 1, 0, 0, 0, 62, 269, 1, 0, 0, 0, 64, 278, 
-	1, 0, 0, 0, 66, 288, 1, 0, 0, 0, 68, 293, 1, 0, 0, 0, 70, 297, 1, 0, 0, 
-	0, 72, 300, 1, 0, 0, 0, 74, 75, 3, 4, 2, 0, 75, 77, 3, 6, 3, 0, 76, 78, 
-	3, 68, 34, 0, 77, 76, 1, 0, 0, 0, 77, 78, 1, 0, 0, 0, 78, 1, 1, 0, 0, 0, 
-	79, 80, 7, 0, 0, 0, 80, 3, 1, 0, 0, 0, 81, 82, 3, 64, 32, 0, 82, 83, 3, 
-	68, 34, 0, 83, 85, 1, 0, 0, 0, 84, 81, 1, 0, 0, 0, 84, 85, 1, 0, 0, 0, 
-	85, 86, 1, 0, 0, 0, 86, 88, 5, 3, 0, 0, 87, 89, 3, 66, 33, 0, 88, 87, 1, 
-	0, 0, 0, 88, 89, 1, 0, 0, 0, 89, 93, 1, 0, 0, 0, 90, 91, 3, 68, 34, 0, 
-	91, 92, 3, 64, 32, 0, 92, 94, 1, 0, 0, 0, 93, 90, 1, 0, 0, 0, 93, 94, 1, 
-	0, 0, 0, 94, 95, 1, 0, 0, 0, 95, 96, 3, 68, 34, 0, 96, 97, 3, 2, 1, 0, 
-	97, 98, 5, 4, 0, 0, 98, 99, 3, 66, 33, 0, 99, 101, 3, 70, 35, 0, 100, 102, 
-	3, 66, 33, 0, 101, 100, 1, 0, 0, 0, 101, 102, 1, 0, 0, 0, 102, 5, 1, 0, 
-	0, 0, 103, 105, 3, 8, 4, 0, 104, 103, 1, 0, 0, 0, 105, 108, 1, 0, 0, 0, 
-	106, 104, 1, 0, 0, 0, 106, 107, 1, 0, 0, 0, 107, 7, 1, 0, 0, 0, 108, 106, 
-	1, 0, 0, 0, 109, 110, 3, 68, 34, 0, 110, 111, 3, 64, 32, 0, 111, 113, 1, 
-	0, 0, 0, 112, 109, 1, 0, 0, 0, 112, 113, 1, 0, 0, 0, 113, 114, 1, 0, 0, 
-	0, 114, 115, 3, 68, 34, 0, 115, 116, 5, 5, 0, 0, 116, 117, 3, 66, 33, 0, 
-	117, 119, 3, 60, 30, 0, 118, 120, 3, 66, 33, 0, 119, 118, 1, 0, 0, 0, 119, 
-	120, 1, 0, 0, 0, 120, 132, 1, 0, 0, 0, 121, 122, 3, 68, 34, 0, 122, 123, 
-	3, 2, 1, 0, 123, 125, 5, 6, 0, 0, 124, 126, 3, 66, 33, 0, 125, 124, 1, 
-	0, 0, 0, 125, 126, 1, 0, 0, 0, 126, 128, 1, 0, 0, 0, 127, 129, 3, 10, 5, 
-	0, 128, 127, 1, 0, 0, 0, 129, 130, 1, 0, 0, 0, 130, 128, 1, 0, 0, 0, 130, 
-	131, 1, 0, 0, 0, 131, 133, 1, 0, 0, 0, 132, 121, 1, 0, 0, 0, 132, 133, 
-	1, 0, 0, 0, 133, 9, 1, 0, 0, 0, 134, 135, 3, 68, 34, 0, 135, 136, 3, 64, 
-	32, 0, 136, 138, 1, 0, 0, 0, 137, 134, 1, 0, 0, 0, 137, 138, 1, 0, 0, 0, 
-	138, 139, 1, 0, 0, 0, 139, 140, 3, 68, 34, 0, 140, 141, 3, 2, 1, 0, 141, 
-	142, 3, 2, 1, 0, 142, 143, 5, 7, 0, 0, 143, 144, 3, 66, 33, 0, 144, 146, 
-	3, 58, 29, 0, 145, 147, 3, 66, 33, 0, 146, 145, 1, 0, 0, 0, 146, 147, 1, 
-	0, 0, 0, 147, 148, 1, 0, 0, 0, 148, 150, 5, 8, 0, 0, 149, 151, 3, 66, 33, 
-	0, 150, 149, 1, 0, 0, 0, 150, 151, 1, 0, 0, 0, 151, 152, 1, 0, 0, 0, 152, 
-	154, 3, 12, 6, 0, 153, 155, 3, 66, 33, 0, 154, 153, 1, 0, 0, 0, 154, 155, 
-	1, 0, 0, 0, 155, 11, 1, 0, 0, 0, 156, 159, 3, 22, 11, 0, 157, 159, 3, 50, 
-	25, 0, 158, 156, 1, 0, 0, 0, 158, 157, 1, 0, 0, 0, 159, 161, 1, 0, 0, 0, 
-	160, 162, 3, 14, 7, 0, 161, 160, 1, 0, 0, 0, 161, 162, 1, 0, 0, 0, 162, 
-	13, 1, 0, 0, 0, 163, 167, 3, 16, 8, 0, 164, 167, 3, 18, 9, 0, 165, 167, 
-	3, 20, 10, 0, 166, 163, 1, 0, 0, 0, 166, 164, 1, 0, 0, 0, 166, 165, 1, 
-	0, 0, 0, 167, 15, 1, 0, 0, 0, 168, 169, 3, 66, 33, 0, 169, 170, 3, 34, 
-	17, 0, 170, 171, 3, 66, 33, 0, 171, 172, 3, 50, 25, 0, 172, 174, 1, 0, 
-	0, 0, 173, 168, 1, 0, 0, 0, 174, 175, 1, 0, 0, 0, 175, 173, 1, 0, 0, 0, 
-	175, 176, 1, 0, 0, 0, 176, 17, 1, 0, 0, 0, 177, 178, 3, 66, 33, 0, 178, 
-	179, 3, 32, 16, 0, 179, 180, 3, 66, 33, 0, 180, 181, 3, 50, 25, 0, 181, 
-	183, 1, 0, 0, 0, 182, 177, 1, 0, 0, 0, 183, 184, 1, 0, 0, 0, 184, 182, 
-	1, 0, 0, 0, 184, 185, 1, 0, 0, 0, 185, 19, 1, 0, 0, 0, 186, 187, 3, 66, 
-	33, 0, 187, 188, 3, 36, 18, 0, 188, 189, 3, 66, 33, 0, 189, 190, 3, 50, 
-	25, 0, 190, 192, 1, 0, 0, 0, 191, 186, 1, 0, 0, 0, 192, 193, 1, 0, 0, 0, 
-	193, 191, 1, 0, 0, 0, 193, 194, 1, 0, 0, 0, 194, 21, 1, 0, 0, 0, 195, 196, 
-	5, 9, 0, 0, 196, 198, 3, 40, 20, 0, 197, 199, 3, 66, 33, 0, 198, 197, 1, 
-	0, 0, 0, 198, 199, 1, 0, 0, 0, 199, 207, 1, 0, 0, 0, 200, 202, 5, 10, 0, 
-	0, 201, 203, 3, 66, 33, 0, 202, 201, 1, 0, 0, 0, 202, 203, 1, 0, 0, 0, 
-	203, 204, 1, 0, 0, 0, 204, 206, 3, 40, 20, 0, 205, 200, 1, 0, 0, 0, 206, 
-	209, 1, 0, 0, 0, 207, 205, 1, 0, 0, 0, 207, 208, 1, 0, 0, 0, 208, 211, 
-	1, 0, 0, 0, 209, 207, 1, 0, 0, 0, 210, 212, 3, 66, 33, 0, 211, 210, 1, 
-	0, 0, 0, 211, 212, 1, 0, 0, 0, 212, 213, 1, 0, 0, 0, 213, 214, 5, 11, 0, 
-	0, 214, 23, 1, 0, 0, 0, 215, 218, 3, 26, 13, 0, 216, 218, 3, 28, 14, 0, 
-	217, 215, 1, 0, 0, 0, 217, 216, 1, 0, 0, 0, 218, 25, 1, 0, 0, 0, 219, 220, 
-	3, 52, 26, 0, 220, 27, 1, 0, 0, 0, 221, 222, 3, 54, 27, 0, 222, 223, 3, 
-	66, 33, 0, 223, 224, 3, 38, 19, 0, 224, 225, 3, 66, 33, 0, 225, 226, 3, 
-	56, 28, 0, 226, 29, 1, 0, 0, 0, 227, 231, 3, 34, 17, 0, 228, 231, 3, 32, 
-	16, 0, 229, 231, 3, 36, 18, 0, 230, 227, 1, 0, 0, 0, 230, 228, 1, 0, 0, 
-	0, 230, 229, 1, 0, 0, 0, 231, 31, 1, 0, 0, 0, 232, 233, 5, 12, 0, 0, 233, 
-	33, 1, 0, 0, 0, 234, 235, 5, 13, 0, 0, 235, 35, 1, 0, 0, 0, 236, 237, 5, 
-	14, 0, 0, 237, 37, 1, 0, 0, 0, 238, 239, 5, 15, 0, 0, 239, 39, 1, 0, 0, 
-	0, 240, 244, 3, 42, 21, 0, 241, 244, 3, 46, 23, 0, 242, 244, 3, 48, 24, 
-	0, 243, 240, 1, 0, 0, 0, 243, 241, 1, 0, 0, 0, 243, 242, 1, 0, 0, 0, 244, 
-	41, 1, 0, 0, 0, 245, 246, 3, 72, 36, 0, 246, 43, 1, 0, 0, 0, 247, 248, 
-	3, 72, 36, 0, 248, 45, 1, 0, 0, 0, 249, 250, 3, 42, 21, 0, 250, 251, 5, 
-	16, 0, 0, 251, 47, 1, 0, 0, 0, 252, 253, 3, 42, 21, 0, 253, 254, 5, 17, 
-	0, 0, 254, 255, 3, 44, 22, 0, 255, 49, 1, 0, 0, 0, 256, 257, 3, 24, 12, 
-	0, 257, 51, 1, 0, 0, 0, 258, 259, 3, 72, 36, 0, 259, 53, 1, 0, 0, 0, 260, 
-	261, 3, 72, 36, 0, 261, 55, 1, 0, 0, 0, 262, 263, 3, 72, 36, 0, 263, 57, 
-	1, 0, 0, 0, 264, 265, 3, 72, 36, 0, 265, 59, 1, 0, 0, 0, 266, 267, 3, 72, 
-	36, 0, 267, 61, 1, 0, 0, 0, 268, 270, 3, 66, 33, 0, 269, 268, 1, 0, 0, 
-	0, 269, 270, 1, 0, 0, 0, 270, 271, 1, 0, 0, 0, 271, 275, 5, 17, 0, 0, 272, 
-	274, 8, 1, 0, 0, 273, 272, 1, 0, 0, 0, 274, 277, 1, 0, 0, 0, 275, 273, 
-	1, 0, 0, 0, 275, 276, 1, 0, 0, 0, 276, 63, 1, 0, 0, 0, 277, 275, 1, 0, 
-	0, 0, 278, 284, 3, 62, 31, 0, 279, 280, 3, 68, 34, 0, 280, 281, 3, 62, 
-	31, 0, 281, 283, 1, 0, 0, 0, 282, 279, 1, 0, 0, 0, 283, 286, 1, 0, 0, 0, 
-	284, 282, 1, 0, 0, 0, 284, 285, 1, 0, 0, 0, 285, 65, 1, 0, 0, 0, 286, 284, 
-	1, 0, 0, 0, 287, 289, 5, 20, 0, 0, 288, 287, 1, 0, 0, 0, 289, 290, 1, 0, 
-	0, 0, 290, 288, 1, 0, 0, 0, 290, 291, 1, 0, 0, 0, 291, 67, 1, 0, 0, 0, 
-	292, 294, 7, 1, 0, 0, 293, 292, 1, 0, 0, 0, 294, 295, 1, 0, 0, 0, 295, 
-	293, 1, 0, 0, 0, 295, 296, 1, 0, 0, 0, 296, 69, 1, 0, 0, 0, 297, 298, 5, 
-	21, 0, 0, 298, 71, 1, 0, 0, 0, 299, 301, 5, 22, 0, 0, 300, 299, 1, 0, 0, 
-	0, 301, 302, 1, 0, 0, 0, 302, 300, 1, 0, 0, 0, 302, 303, 1, 0, 0, 0, 303, 
-	73, 1, 0, 0, 0, 34, 77, 84, 88, 93, 101, 106, 112, 119, 125, 130, 132, 
-	137, 146, 150, 154, 158, 161, 166, 175, 184, 193, 198, 202, 207, 211, 217, 
-	230, 243, 269, 275, 284, 290, 295, 302,
-}
-  deserializer := antlr.NewATNDeserializer(nil)
-  staticData.atn = deserializer.Deserialize(staticData.serializedATN)
-  atn := staticData.atn
-  staticData.decisionToDFA = make([]*antlr.DFA, len(atn.DecisionToState))
-  decisionToDFA := staticData.decisionToDFA
-  for index, state := range atn.DecisionToState {
-    decisionToDFA[index] = antlr.NewDFA(state, index)
-  }
+	staticData := &OpenFGAParserStaticData
+	staticData.LiteralNames = []string{
+		"", "'  '", "'\\u0009'", "'model'", "'schema'", "'type'", "'relations'",
+		"'define'", "':'", "'['", "','", "']'", "'and'", "'or'", "'but not'",
+		"'from'", "':*'", "'#'", "'\\r'", "'\\n'", "' '", "'1.1'",
+	}
+	staticData.SymbolicNames = []string{
+		"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+		"", "", "", "", "", "ALPHA_NUMERIC",
+	}
+	staticData.RuleNames = []string{
+		"main", "indentation", "modelHeader", "typeDefs", "typeDef", "relationDeclaration",
+		"relationDef", "relationDefPartials", "relationDefPartialAllOr", "relationDefPartialAllAnd",
+		"relationDefPartialAllButNot", "relationDefDirectAssignment", "relationDefRewrite",
+		"relationDefRelationOnSameObject", "relationDefRelationOnRelatedObject",
+		"relationDefOperator", "relationDefOperatorAnd", "relationDefOperatorOr",
+		"relationDefOperatorButNot", "relationDefKeywordFrom", "relationDefTypeRestriction",
+		"relationDefTypeRestrictionType", "relationDefTypeRestrictionRelation",
+		"relationDefTypeRestrictionWildcard", "relationDefTypeRestrictionUserset",
+		"relationDefGrouping", "rewriteComputedusersetName", "rewriteTuplesetComputedusersetName",
+		"rewriteTuplesetName", "relationName", "typeName", "comment", "multiLineComment",
+		"spacing", "newline", "schemaVersion", "name",
+	}
+	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
+	staticData.serializedATN = []int32{
+		4, 1, 22, 305, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7,
+		10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15,
+		2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2,
+		21, 7, 21, 2, 22, 7, 22, 2, 23, 7, 23, 2, 24, 7, 24, 2, 25, 7, 25, 2, 26,
+		7, 26, 2, 27, 7, 27, 2, 28, 7, 28, 2, 29, 7, 29, 2, 30, 7, 30, 2, 31, 7,
+		31, 2, 32, 7, 32, 2, 33, 7, 33, 2, 34, 7, 34, 2, 35, 7, 35, 2, 36, 7, 36,
+		1, 0, 1, 0, 1, 0, 3, 0, 78, 8, 0, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 3, 2, 85,
+		8, 2, 1, 2, 1, 2, 3, 2, 89, 8, 2, 1, 2, 1, 2, 1, 2, 3, 2, 94, 8, 2, 1,
+		2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 102, 8, 2, 1, 3, 5, 3, 105, 8, 3,
+		10, 3, 12, 3, 108, 9, 3, 1, 4, 1, 4, 1, 4, 3, 4, 113, 8, 4, 1, 4, 1, 4,
+		1, 4, 1, 4, 1, 4, 3, 4, 120, 8, 4, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 126, 8,
+		4, 1, 4, 4, 4, 129, 8, 4, 11, 4, 12, 4, 130, 3, 4, 133, 8, 4, 1, 5, 1,
+		5, 1, 5, 3, 5, 138, 8, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 3,
+		5, 147, 8, 5, 1, 5, 1, 5, 3, 5, 151, 8, 5, 1, 5, 1, 5, 3, 5, 155, 8, 5,
+		1, 6, 1, 6, 3, 6, 159, 8, 6, 1, 6, 3, 6, 162, 8, 6, 1, 7, 1, 7, 1, 7, 3,
+		7, 167, 8, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 4, 8, 174, 8, 8, 11, 8, 12,
+		8, 175, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 4, 9, 183, 8, 9, 11, 9, 12, 9, 184,
+		1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 4, 10, 192, 8, 10, 11, 10, 12, 10, 193,
+		1, 11, 1, 11, 1, 11, 3, 11, 199, 8, 11, 1, 11, 1, 11, 3, 11, 203, 8, 11,
+		1, 11, 5, 11, 206, 8, 11, 10, 11, 12, 11, 209, 9, 11, 1, 11, 3, 11, 212,
+		8, 11, 1, 11, 1, 11, 1, 12, 1, 12, 3, 12, 218, 8, 12, 1, 13, 1, 13, 1,
+		14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 15, 1, 15, 1, 15, 3, 15, 231,
+		8, 15, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 19, 1, 19, 1, 20, 1,
+		20, 1, 20, 3, 20, 244, 8, 20, 1, 21, 1, 21, 1, 22, 1, 22, 1, 23, 1, 23,
+		1, 23, 1, 24, 1, 24, 1, 24, 1, 24, 1, 25, 1, 25, 1, 26, 1, 26, 1, 27, 1,
+		27, 1, 28, 1, 28, 1, 29, 1, 29, 1, 30, 1, 30, 1, 31, 3, 31, 270, 8, 31,
+		1, 31, 1, 31, 5, 31, 274, 8, 31, 10, 31, 12, 31, 277, 9, 31, 1, 32, 1,
+		32, 1, 32, 1, 32, 5, 32, 283, 8, 32, 10, 32, 12, 32, 286, 9, 32, 1, 33,
+		4, 33, 289, 8, 33, 11, 33, 12, 33, 290, 1, 34, 4, 34, 294, 8, 34, 11, 34,
+		12, 34, 295, 1, 35, 1, 35, 1, 36, 4, 36, 301, 8, 36, 11, 36, 12, 36, 302,
+		1, 36, 0, 0, 37, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28,
+		30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64,
+		66, 68, 70, 72, 0, 2, 1, 0, 1, 2, 1, 0, 18, 19, 304, 0, 74, 1, 0, 0, 0,
+		2, 79, 1, 0, 0, 0, 4, 84, 1, 0, 0, 0, 6, 106, 1, 0, 0, 0, 8, 112, 1, 0,
+		0, 0, 10, 137, 1, 0, 0, 0, 12, 158, 1, 0, 0, 0, 14, 166, 1, 0, 0, 0, 16,
+		173, 1, 0, 0, 0, 18, 182, 1, 0, 0, 0, 20, 191, 1, 0, 0, 0, 22, 195, 1,
+		0, 0, 0, 24, 217, 1, 0, 0, 0, 26, 219, 1, 0, 0, 0, 28, 221, 1, 0, 0, 0,
+		30, 230, 1, 0, 0, 0, 32, 232, 1, 0, 0, 0, 34, 234, 1, 0, 0, 0, 36, 236,
+		1, 0, 0, 0, 38, 238, 1, 0, 0, 0, 40, 243, 1, 0, 0, 0, 42, 245, 1, 0, 0,
+		0, 44, 247, 1, 0, 0, 0, 46, 249, 1, 0, 0, 0, 48, 252, 1, 0, 0, 0, 50, 256,
+		1, 0, 0, 0, 52, 258, 1, 0, 0, 0, 54, 260, 1, 0, 0, 0, 56, 262, 1, 0, 0,
+		0, 58, 264, 1, 0, 0, 0, 60, 266, 1, 0, 0, 0, 62, 269, 1, 0, 0, 0, 64, 278,
+		1, 0, 0, 0, 66, 288, 1, 0, 0, 0, 68, 293, 1, 0, 0, 0, 70, 297, 1, 0, 0,
+		0, 72, 300, 1, 0, 0, 0, 74, 75, 3, 4, 2, 0, 75, 77, 3, 6, 3, 0, 76, 78,
+		3, 68, 34, 0, 77, 76, 1, 0, 0, 0, 77, 78, 1, 0, 0, 0, 78, 1, 1, 0, 0, 0,
+		79, 80, 7, 0, 0, 0, 80, 3, 1, 0, 0, 0, 81, 82, 3, 64, 32, 0, 82, 83, 3,
+		68, 34, 0, 83, 85, 1, 0, 0, 0, 84, 81, 1, 0, 0, 0, 84, 85, 1, 0, 0, 0,
+		85, 86, 1, 0, 0, 0, 86, 88, 5, 3, 0, 0, 87, 89, 3, 66, 33, 0, 88, 87, 1,
+		0, 0, 0, 88, 89, 1, 0, 0, 0, 89, 93, 1, 0, 0, 0, 90, 91, 3, 68, 34, 0,
+		91, 92, 3, 64, 32, 0, 92, 94, 1, 0, 0, 0, 93, 90, 1, 0, 0, 0, 93, 94, 1,
+		0, 0, 0, 94, 95, 1, 0, 0, 0, 95, 96, 3, 68, 34, 0, 96, 97, 3, 2, 1, 0,
+		97, 98, 5, 4, 0, 0, 98, 99, 3, 66, 33, 0, 99, 101, 3, 70, 35, 0, 100, 102,
+		3, 66, 33, 0, 101, 100, 1, 0, 0, 0, 101, 102, 1, 0, 0, 0, 102, 5, 1, 0,
+		0, 0, 103, 105, 3, 8, 4, 0, 104, 103, 1, 0, 0, 0, 105, 108, 1, 0, 0, 0,
+		106, 104, 1, 0, 0, 0, 106, 107, 1, 0, 0, 0, 107, 7, 1, 0, 0, 0, 108, 106,
+		1, 0, 0, 0, 109, 110, 3, 68, 34, 0, 110, 111, 3, 64, 32, 0, 111, 113, 1,
+		0, 0, 0, 112, 109, 1, 0, 0, 0, 112, 113, 1, 0, 0, 0, 113, 114, 1, 0, 0,
+		0, 114, 115, 3, 68, 34, 0, 115, 116, 5, 5, 0, 0, 116, 117, 3, 66, 33, 0,
+		117, 119, 3, 60, 30, 0, 118, 120, 3, 66, 33, 0, 119, 118, 1, 0, 0, 0, 119,
+		120, 1, 0, 0, 0, 120, 132, 1, 0, 0, 0, 121, 122, 3, 68, 34, 0, 122, 123,
+		3, 2, 1, 0, 123, 125, 5, 6, 0, 0, 124, 126, 3, 66, 33, 0, 125, 124, 1,
+		0, 0, 0, 125, 126, 1, 0, 0, 0, 126, 128, 1, 0, 0, 0, 127, 129, 3, 10, 5,
+		0, 128, 127, 1, 0, 0, 0, 129, 130, 1, 0, 0, 0, 130, 128, 1, 0, 0, 0, 130,
+		131, 1, 0, 0, 0, 131, 133, 1, 0, 0, 0, 132, 121, 1, 0, 0, 0, 132, 133,
+		1, 0, 0, 0, 133, 9, 1, 0, 0, 0, 134, 135, 3, 68, 34, 0, 135, 136, 3, 64,
+		32, 0, 136, 138, 1, 0, 0, 0, 137, 134, 1, 0, 0, 0, 137, 138, 1, 0, 0, 0,
+		138, 139, 1, 0, 0, 0, 139, 140, 3, 68, 34, 0, 140, 141, 3, 2, 1, 0, 141,
+		142, 3, 2, 1, 0, 142, 143, 5, 7, 0, 0, 143, 144, 3, 66, 33, 0, 144, 146,
+		3, 58, 29, 0, 145, 147, 3, 66, 33, 0, 146, 145, 1, 0, 0, 0, 146, 147, 1,
+		0, 0, 0, 147, 148, 1, 0, 0, 0, 148, 150, 5, 8, 0, 0, 149, 151, 3, 66, 33,
+		0, 150, 149, 1, 0, 0, 0, 150, 151, 1, 0, 0, 0, 151, 152, 1, 0, 0, 0, 152,
+		154, 3, 12, 6, 0, 153, 155, 3, 66, 33, 0, 154, 153, 1, 0, 0, 0, 154, 155,
+		1, 0, 0, 0, 155, 11, 1, 0, 0, 0, 156, 159, 3, 22, 11, 0, 157, 159, 3, 50,
+		25, 0, 158, 156, 1, 0, 0, 0, 158, 157, 1, 0, 0, 0, 159, 161, 1, 0, 0, 0,
+		160, 162, 3, 14, 7, 0, 161, 160, 1, 0, 0, 0, 161, 162, 1, 0, 0, 0, 162,
+		13, 1, 0, 0, 0, 163, 167, 3, 16, 8, 0, 164, 167, 3, 18, 9, 0, 165, 167,
+		3, 20, 10, 0, 166, 163, 1, 0, 0, 0, 166, 164, 1, 0, 0, 0, 166, 165, 1,
+		0, 0, 0, 167, 15, 1, 0, 0, 0, 168, 169, 3, 66, 33, 0, 169, 170, 3, 34,
+		17, 0, 170, 171, 3, 66, 33, 0, 171, 172, 3, 50, 25, 0, 172, 174, 1, 0,
+		0, 0, 173, 168, 1, 0, 0, 0, 174, 175, 1, 0, 0, 0, 175, 173, 1, 0, 0, 0,
+		175, 176, 1, 0, 0, 0, 176, 17, 1, 0, 0, 0, 177, 178, 3, 66, 33, 0, 178,
+		179, 3, 32, 16, 0, 179, 180, 3, 66, 33, 0, 180, 181, 3, 50, 25, 0, 181,
+		183, 1, 0, 0, 0, 182, 177, 1, 0, 0, 0, 183, 184, 1, 0, 0, 0, 184, 182,
+		1, 0, 0, 0, 184, 185, 1, 0, 0, 0, 185, 19, 1, 0, 0, 0, 186, 187, 3, 66,
+		33, 0, 187, 188, 3, 36, 18, 0, 188, 189, 3, 66, 33, 0, 189, 190, 3, 50,
+		25, 0, 190, 192, 1, 0, 0, 0, 191, 186, 1, 0, 0, 0, 192, 193, 1, 0, 0, 0,
+		193, 191, 1, 0, 0, 0, 193, 194, 1, 0, 0, 0, 194, 21, 1, 0, 0, 0, 195, 196,
+		5, 9, 0, 0, 196, 198, 3, 40, 20, 0, 197, 199, 3, 66, 33, 0, 198, 197, 1,
+		0, 0, 0, 198, 199, 1, 0, 0, 0, 199, 207, 1, 0, 0, 0, 200, 202, 5, 10, 0,
+		0, 201, 203, 3, 66, 33, 0, 202, 201, 1, 0, 0, 0, 202, 203, 1, 0, 0, 0,
+		203, 204, 1, 0, 0, 0, 204, 206, 3, 40, 20, 0, 205, 200, 1, 0, 0, 0, 206,
+		209, 1, 0, 0, 0, 207, 205, 1, 0, 0, 0, 207, 208, 1, 0, 0, 0, 208, 211,
+		1, 0, 0, 0, 209, 207, 1, 0, 0, 0, 210, 212, 3, 66, 33, 0, 211, 210, 1,
+		0, 0, 0, 211, 212, 1, 0, 0, 0, 212, 213, 1, 0, 0, 0, 213, 214, 5, 11, 0,
+		0, 214, 23, 1, 0, 0, 0, 215, 218, 3, 26, 13, 0, 216, 218, 3, 28, 14, 0,
+		217, 215, 1, 0, 0, 0, 217, 216, 1, 0, 0, 0, 218, 25, 1, 0, 0, 0, 219, 220,
+		3, 52, 26, 0, 220, 27, 1, 0, 0, 0, 221, 222, 3, 54, 27, 0, 222, 223, 3,
+		66, 33, 0, 223, 224, 3, 38, 19, 0, 224, 225, 3, 66, 33, 0, 225, 226, 3,
+		56, 28, 0, 226, 29, 1, 0, 0, 0, 227, 231, 3, 34, 17, 0, 228, 231, 3, 32,
+		16, 0, 229, 231, 3, 36, 18, 0, 230, 227, 1, 0, 0, 0, 230, 228, 1, 0, 0,
+		0, 230, 229, 1, 0, 0, 0, 231, 31, 1, 0, 0, 0, 232, 233, 5, 12, 0, 0, 233,
+		33, 1, 0, 0, 0, 234, 235, 5, 13, 0, 0, 235, 35, 1, 0, 0, 0, 236, 237, 5,
+		14, 0, 0, 237, 37, 1, 0, 0, 0, 238, 239, 5, 15, 0, 0, 239, 39, 1, 0, 0,
+		0, 240, 244, 3, 42, 21, 0, 241, 244, 3, 46, 23, 0, 242, 244, 3, 48, 24,
+		0, 243, 240, 1, 0, 0, 0, 243, 241, 1, 0, 0, 0, 243, 242, 1, 0, 0, 0, 244,
+		41, 1, 0, 0, 0, 245, 246, 3, 72, 36, 0, 246, 43, 1, 0, 0, 0, 247, 248,
+		3, 72, 36, 0, 248, 45, 1, 0, 0, 0, 249, 250, 3, 42, 21, 0, 250, 251, 5,
+		16, 0, 0, 251, 47, 1, 0, 0, 0, 252, 253, 3, 42, 21, 0, 253, 254, 5, 17,
+		0, 0, 254, 255, 3, 44, 22, 0, 255, 49, 1, 0, 0, 0, 256, 257, 3, 24, 12,
+		0, 257, 51, 1, 0, 0, 0, 258, 259, 3, 72, 36, 0, 259, 53, 1, 0, 0, 0, 260,
+		261, 3, 72, 36, 0, 261, 55, 1, 0, 0, 0, 262, 263, 3, 72, 36, 0, 263, 57,
+		1, 0, 0, 0, 264, 265, 3, 72, 36, 0, 265, 59, 1, 0, 0, 0, 266, 267, 3, 72,
+		36, 0, 267, 61, 1, 0, 0, 0, 268, 270, 3, 66, 33, 0, 269, 268, 1, 0, 0,
+		0, 269, 270, 1, 0, 0, 0, 270, 271, 1, 0, 0, 0, 271, 275, 5, 17, 0, 0, 272,
+		274, 8, 1, 0, 0, 273, 272, 1, 0, 0, 0, 274, 277, 1, 0, 0, 0, 275, 273,
+		1, 0, 0, 0, 275, 276, 1, 0, 0, 0, 276, 63, 1, 0, 0, 0, 277, 275, 1, 0,
+		0, 0, 278, 284, 3, 62, 31, 0, 279, 280, 3, 68, 34, 0, 280, 281, 3, 62,
+		31, 0, 281, 283, 1, 0, 0, 0, 282, 279, 1, 0, 0, 0, 283, 286, 1, 0, 0, 0,
+		284, 282, 1, 0, 0, 0, 284, 285, 1, 0, 0, 0, 285, 65, 1, 0, 0, 0, 286, 284,
+		1, 0, 0, 0, 287, 289, 5, 20, 0, 0, 288, 287, 1, 0, 0, 0, 289, 290, 1, 0,
+		0, 0, 290, 288, 1, 0, 0, 0, 290, 291, 1, 0, 0, 0, 291, 67, 1, 0, 0, 0,
+		292, 294, 7, 1, 0, 0, 293, 292, 1, 0, 0, 0, 294, 295, 1, 0, 0, 0, 295,
+		293, 1, 0, 0, 0, 295, 296, 1, 0, 0, 0, 296, 69, 1, 0, 0, 0, 297, 298, 5,
+		21, 0, 0, 298, 71, 1, 0, 0, 0, 299, 301, 5, 22, 0, 0, 300, 299, 1, 0, 0,
+		0, 301, 302, 1, 0, 0, 0, 302, 300, 1, 0, 0, 0, 302, 303, 1, 0, 0, 0, 303,
+		73, 1, 0, 0, 0, 34, 77, 84, 88, 93, 101, 106, 112, 119, 125, 130, 132,
+		137, 146, 150, 154, 158, 161, 166, 175, 184, 193, 198, 202, 207, 211, 217,
+		230, 243, 269, 275, 284, 290, 295, 302,
+	}
+	deserializer := antlr.NewATNDeserializer(nil)
+	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
+	atn := staticData.atn
+	staticData.decisionToDFA = make([]*antlr.DFA, len(atn.DecisionToState))
+	decisionToDFA := staticData.decisionToDFA
+	for index, state := range atn.DecisionToState {
+		decisionToDFA[index] = antlr.NewDFA(state, index)
+	}
 }
 
 // OpenFGAParserInit initializes any static state used to implement OpenFGAParser. By default the
@@ -202,8 +201,8 @@ func openfgaParserInit() {
 // NewOpenFGAParser(). You can call this function if you wish to initialize the static state ahead
 // of time.
 func OpenFGAParserInit() {
-  staticData := &OpenFGAParserStaticData
-  staticData.once.Do(openfgaParserInit)
+	staticData := &OpenFGAParserStaticData
+	staticData.once.Do(openfgaParserInit)
 }
 
 // NewOpenFGAParser produces a new parser instance for the optional input antlr.TokenStream.
@@ -211,7 +210,7 @@ func NewOpenFGAParser(input antlr.TokenStream) *OpenFGAParser {
 	OpenFGAParserInit()
 	this := new(OpenFGAParser)
 	this.BaseParser = antlr.NewBaseParser(input)
-  staticData := &OpenFGAParserStaticData
+	staticData := &OpenFGAParserStaticData
 	this.Interpreter = antlr.NewParserATNSimulator(this, staticData.atn, staticData.decisionToDFA, staticData.PredictionContextCache)
 	this.RuleNames = staticData.RuleNames
 	this.LiteralNames = staticData.LiteralNames
@@ -221,73 +220,72 @@ func NewOpenFGAParser(input antlr.TokenStream) *OpenFGAParser {
 	return this
 }
 
-
 // OpenFGAParser tokens.
 const (
-	OpenFGAParserEOF = antlr.TokenEOF
-	OpenFGAParserT__0 = 1
-	OpenFGAParserT__1 = 2
-	OpenFGAParserT__2 = 3
-	OpenFGAParserT__3 = 4
-	OpenFGAParserT__4 = 5
-	OpenFGAParserT__5 = 6
-	OpenFGAParserT__6 = 7
-	OpenFGAParserT__7 = 8
-	OpenFGAParserT__8 = 9
-	OpenFGAParserT__9 = 10
-	OpenFGAParserT__10 = 11
-	OpenFGAParserT__11 = 12
-	OpenFGAParserT__12 = 13
-	OpenFGAParserT__13 = 14
-	OpenFGAParserT__14 = 15
-	OpenFGAParserT__15 = 16
-	OpenFGAParserT__16 = 17
-	OpenFGAParserT__17 = 18
-	OpenFGAParserT__18 = 19
-	OpenFGAParserT__19 = 20
-	OpenFGAParserT__20 = 21
+	OpenFGAParserEOF           = antlr.TokenEOF
+	OpenFGAParserT__0          = 1
+	OpenFGAParserT__1          = 2
+	OpenFGAParserT__2          = 3
+	OpenFGAParserT__3          = 4
+	OpenFGAParserT__4          = 5
+	OpenFGAParserT__5          = 6
+	OpenFGAParserT__6          = 7
+	OpenFGAParserT__7          = 8
+	OpenFGAParserT__8          = 9
+	OpenFGAParserT__9          = 10
+	OpenFGAParserT__10         = 11
+	OpenFGAParserT__11         = 12
+	OpenFGAParserT__12         = 13
+	OpenFGAParserT__13         = 14
+	OpenFGAParserT__14         = 15
+	OpenFGAParserT__15         = 16
+	OpenFGAParserT__16         = 17
+	OpenFGAParserT__17         = 18
+	OpenFGAParserT__18         = 19
+	OpenFGAParserT__19         = 20
+	OpenFGAParserT__20         = 21
 	OpenFGAParserALPHA_NUMERIC = 22
 )
 
 // OpenFGAParser rules.
 const (
-	OpenFGAParserRULE_main = 0
-	OpenFGAParserRULE_indentation = 1
-	OpenFGAParserRULE_modelHeader = 2
-	OpenFGAParserRULE_typeDefs = 3
-	OpenFGAParserRULE_typeDef = 4
-	OpenFGAParserRULE_relationDeclaration = 5
-	OpenFGAParserRULE_relationDef = 6
-	OpenFGAParserRULE_relationDefPartials = 7
-	OpenFGAParserRULE_relationDefPartialAllOr = 8
-	OpenFGAParserRULE_relationDefPartialAllAnd = 9
-	OpenFGAParserRULE_relationDefPartialAllButNot = 10
-	OpenFGAParserRULE_relationDefDirectAssignment = 11
-	OpenFGAParserRULE_relationDefRewrite = 12
-	OpenFGAParserRULE_relationDefRelationOnSameObject = 13
+	OpenFGAParserRULE_main                               = 0
+	OpenFGAParserRULE_indentation                        = 1
+	OpenFGAParserRULE_modelHeader                        = 2
+	OpenFGAParserRULE_typeDefs                           = 3
+	OpenFGAParserRULE_typeDef                            = 4
+	OpenFGAParserRULE_relationDeclaration                = 5
+	OpenFGAParserRULE_relationDef                        = 6
+	OpenFGAParserRULE_relationDefPartials                = 7
+	OpenFGAParserRULE_relationDefPartialAllOr            = 8
+	OpenFGAParserRULE_relationDefPartialAllAnd           = 9
+	OpenFGAParserRULE_relationDefPartialAllButNot        = 10
+	OpenFGAParserRULE_relationDefDirectAssignment        = 11
+	OpenFGAParserRULE_relationDefRewrite                 = 12
+	OpenFGAParserRULE_relationDefRelationOnSameObject    = 13
 	OpenFGAParserRULE_relationDefRelationOnRelatedObject = 14
-	OpenFGAParserRULE_relationDefOperator = 15
-	OpenFGAParserRULE_relationDefOperatorAnd = 16
-	OpenFGAParserRULE_relationDefOperatorOr = 17
-	OpenFGAParserRULE_relationDefOperatorButNot = 18
-	OpenFGAParserRULE_relationDefKeywordFrom = 19
-	OpenFGAParserRULE_relationDefTypeRestriction = 20
-	OpenFGAParserRULE_relationDefTypeRestrictionType = 21
+	OpenFGAParserRULE_relationDefOperator                = 15
+	OpenFGAParserRULE_relationDefOperatorAnd             = 16
+	OpenFGAParserRULE_relationDefOperatorOr              = 17
+	OpenFGAParserRULE_relationDefOperatorButNot          = 18
+	OpenFGAParserRULE_relationDefKeywordFrom             = 19
+	OpenFGAParserRULE_relationDefTypeRestriction         = 20
+	OpenFGAParserRULE_relationDefTypeRestrictionType     = 21
 	OpenFGAParserRULE_relationDefTypeRestrictionRelation = 22
 	OpenFGAParserRULE_relationDefTypeRestrictionWildcard = 23
-	OpenFGAParserRULE_relationDefTypeRestrictionUserset = 24
-	OpenFGAParserRULE_relationDefGrouping = 25
-	OpenFGAParserRULE_rewriteComputedusersetName = 26
+	OpenFGAParserRULE_relationDefTypeRestrictionUserset  = 24
+	OpenFGAParserRULE_relationDefGrouping                = 25
+	OpenFGAParserRULE_rewriteComputedusersetName         = 26
 	OpenFGAParserRULE_rewriteTuplesetComputedusersetName = 27
-	OpenFGAParserRULE_rewriteTuplesetName = 28
-	OpenFGAParserRULE_relationName = 29
-	OpenFGAParserRULE_typeName = 30
-	OpenFGAParserRULE_comment = 31
-	OpenFGAParserRULE_multiLineComment = 32
-	OpenFGAParserRULE_spacing = 33
-	OpenFGAParserRULE_newline = 34
-	OpenFGAParserRULE_schemaVersion = 35
-	OpenFGAParserRULE_name = 36
+	OpenFGAParserRULE_rewriteTuplesetName                = 28
+	OpenFGAParserRULE_relationName                       = 29
+	OpenFGAParserRULE_typeName                           = 30
+	OpenFGAParserRULE_comment                            = 31
+	OpenFGAParserRULE_multiLineComment                   = 32
+	OpenFGAParserRULE_spacing                            = 33
+	OpenFGAParserRULE_newline                            = 34
+	OpenFGAParserRULE_schemaVersion                      = 35
+	OpenFGAParserRULE_name                               = 36
 )
 
 // IMainContext is an interface to support dynamic dispatch.
@@ -318,7 +316,7 @@ func NewEmptyMainContext() *MainContext {
 	return p
 }
 
-func InitEmptyMainContext(p *MainContext)  {
+func InitEmptyMainContext(p *MainContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_main
 }
@@ -339,10 +337,10 @@ func NewMainContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokin
 func (s *MainContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *MainContext) ModelHeader() IModelHeaderContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IModelHeaderContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -355,10 +353,10 @@ func (s *MainContext) ModelHeader() IModelHeaderContext {
 }
 
 func (s *MainContext) TypeDefs() ITypeDefsContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ITypeDefsContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -371,10 +369,10 @@ func (s *MainContext) TypeDefs() ITypeDefsContext {
 }
 
 func (s *MainContext) Newline() INewlineContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INewlineContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -394,7 +392,6 @@ func (s *MainContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) s
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *MainContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterMain(s)
@@ -406,9 +403,6 @@ func (s *MainContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitMain(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Main() (localctx IMainContext) {
 	localctx = NewMainContext(p, p.GetParserRuleContext(), p.GetState())
@@ -431,7 +425,6 @@ func (p *OpenFGAParser) Main() (localctx IMainContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18 {
 		{
 			p.SetState(76)
@@ -439,8 +432,6 @@ func (p *OpenFGAParser) Main() (localctx IMainContext) {
 		}
 
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -454,7 +445,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IIndentationContext is an interface to support dynamic dispatch.
 type IIndentationContext interface {
@@ -478,7 +468,7 @@ func NewEmptyIndentationContext() *IndentationContext {
 	return p
 }
 
-func InitEmptyIndentationContext(p *IndentationContext)  {
+func InitEmptyIndentationContext(p *IndentationContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_indentation
 }
@@ -505,7 +495,6 @@ func (s *IndentationContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *IndentationContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterIndentation(s)
@@ -517,9 +506,6 @@ func (s *IndentationContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitIndentation(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Indentation() (localctx IIndentationContext) {
 	localctx = NewIndentationContext(p, p.GetParserRuleContext(), p.GetState())
@@ -539,8 +525,6 @@ func (p *OpenFGAParser) Indentation() (localctx IIndentationContext) {
 		}
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -553,7 +537,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IModelHeaderContext is an interface to support dynamic dispatch.
 type IModelHeaderContext interface {
@@ -588,7 +571,7 @@ func NewEmptyModelHeaderContext() *ModelHeaderContext {
 	return p
 }
 
-func InitEmptyModelHeaderContext(p *ModelHeaderContext)  {
+func InitEmptyModelHeaderContext(p *ModelHeaderContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_modelHeader
 }
@@ -630,12 +613,12 @@ func (s *ModelHeaderContext) AllNewline() []INewlineContext {
 }
 
 func (s *ModelHeaderContext) Newline(i int) INewlineContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INewlineContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -650,10 +633,10 @@ func (s *ModelHeaderContext) Newline(i int) INewlineContext {
 }
 
 func (s *ModelHeaderContext) Indentation() IIndentationContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IIndentationContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -687,12 +670,12 @@ func (s *ModelHeaderContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *ModelHeaderContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -707,10 +690,10 @@ func (s *ModelHeaderContext) Spacing(i int) ISpacingContext {
 }
 
 func (s *ModelHeaderContext) SchemaVersion() ISchemaVersionContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISchemaVersionContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -744,12 +727,12 @@ func (s *ModelHeaderContext) AllMultiLineComment() []IMultiLineCommentContext {
 }
 
 func (s *ModelHeaderContext) MultiLineComment(i int) IMultiLineCommentContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IMultiLineCommentContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -771,7 +754,6 @@ func (s *ModelHeaderContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *ModelHeaderContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterModelHeader(s)
@@ -783,9 +765,6 @@ func (s *ModelHeaderContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitModelHeader(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	localctx = NewModelHeaderContext(p, p.GetParserRuleContext(), p.GetState())
@@ -799,7 +778,6 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
-
 
 	if _la == OpenFGAParserT__16 || _la == OpenFGAParserT__19 {
 		{
@@ -816,8 +794,8 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		p.SetState(86)
 		p.Match(OpenFGAParserT__2)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	p.SetState(88)
@@ -826,7 +804,6 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
-
 
 	if _la == OpenFGAParserT__19 {
 		{
@@ -838,7 +815,6 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	p.SetState(93)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 3, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(90)
@@ -849,8 +825,8 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 			p.MultiLineComment()
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
 	{
 		p.SetState(95)
@@ -864,8 +840,8 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		p.SetState(97)
 		p.Match(OpenFGAParserT__3)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	{
@@ -883,7 +859,6 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__19 {
 		{
 			p.SetState(100)
@@ -891,8 +866,6 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		}
 
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -906,7 +879,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ITypeDefsContext is an interface to support dynamic dispatch.
 type ITypeDefsContext interface {
@@ -935,7 +907,7 @@ func NewEmptyTypeDefsContext() *TypeDefsContext {
 	return p
 }
 
-func InitEmptyTypeDefsContext(p *TypeDefsContext)  {
+func InitEmptyTypeDefsContext(p *TypeDefsContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_typeDefs
 }
@@ -977,12 +949,12 @@ func (s *TypeDefsContext) AllTypeDef() []ITypeDefContext {
 }
 
 func (s *TypeDefsContext) TypeDef(i int) ITypeDefContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ITypeDefContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1004,7 +976,6 @@ func (s *TypeDefsContext) ToStringTree(ruleNames []string, recog antlr.Recognize
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TypeDefsContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterTypeDefs(s)
@@ -1016,9 +987,6 @@ func (s *TypeDefsContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitTypeDefs(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) TypeDefs() (localctx ITypeDefsContext) {
 	localctx = NewTypeDefsContext(p, p.GetParserRuleContext(), p.GetState())
@@ -1042,20 +1010,17 @@ func (p *OpenFGAParser) TypeDefs() (localctx ITypeDefsContext) {
 				p.TypeDef()
 			}
 
-
 		}
 		p.SetState(108)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 5, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -1069,7 +1034,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ITypeDefContext is an interface to support dynamic dispatch.
 type ITypeDefContext interface {
@@ -1105,7 +1069,7 @@ func NewEmptyTypeDefContext() *TypeDefContext {
 	return p
 }
 
-func InitEmptyTypeDefContext(p *TypeDefContext)  {
+func InitEmptyTypeDefContext(p *TypeDefContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_typeDef
 }
@@ -1147,12 +1111,12 @@ func (s *TypeDefContext) AllNewline() []INewlineContext {
 }
 
 func (s *TypeDefContext) Newline(i int) INewlineContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INewlineContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1188,12 +1152,12 @@ func (s *TypeDefContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *TypeDefContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1208,10 +1172,10 @@ func (s *TypeDefContext) Spacing(i int) ISpacingContext {
 }
 
 func (s *TypeDefContext) TypeName() ITypeNameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ITypeNameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1224,10 +1188,10 @@ func (s *TypeDefContext) TypeName() ITypeNameContext {
 }
 
 func (s *TypeDefContext) MultiLineComment() IMultiLineCommentContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IMultiLineCommentContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1240,10 +1204,10 @@ func (s *TypeDefContext) MultiLineComment() IMultiLineCommentContext {
 }
 
 func (s *TypeDefContext) Indentation() IIndentationContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IIndentationContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1277,12 +1241,12 @@ func (s *TypeDefContext) AllRelationDeclaration() []IRelationDeclarationContext 
 }
 
 func (s *TypeDefContext) RelationDeclaration(i int) IRelationDeclarationContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDeclarationContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1304,7 +1268,6 @@ func (s *TypeDefContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TypeDefContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterTypeDef(s)
@@ -1317,9 +1280,6 @@ func (s *TypeDefContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	localctx = NewTypeDefContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 8, OpenFGAParserRULE_typeDef)
@@ -1331,7 +1291,6 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	p.SetState(112)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 6, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(109)
@@ -1342,8 +1301,8 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 			p.MultiLineComment()
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
 	{
 		p.SetState(114)
@@ -1353,8 +1312,8 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 		p.SetState(115)
 		p.Match(OpenFGAParserT__4)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	{
@@ -1372,7 +1331,6 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__19 {
 		{
 			p.SetState(118)
@@ -1382,7 +1340,6 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	}
 	p.SetState(132)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 10, p.GetParserRuleContext()) == 1 {
 		{
@@ -1397,8 +1354,8 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 			p.SetState(123)
 			p.Match(OpenFGAParserT__5)
 			if p.HasError() {
-					// Recognition error - abort rule
-					goto errorExit
+				// Recognition error - abort rule
+				goto errorExit
 			}
 		}
 		p.SetState(125)
@@ -1407,7 +1364,6 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 			goto errorExit
 		}
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == OpenFGAParserT__19 {
 			{
@@ -1425,13 +1381,10 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 		for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 			switch _alt {
 			case 1:
-					{
-						p.SetState(127)
-						p.RelationDeclaration()
-					}
-
-
-
+				{
+					p.SetState(127)
+					p.RelationDeclaration()
+				}
 
 			default:
 				p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -1446,11 +1399,9 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 			}
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -1464,7 +1415,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDeclarationContext is an interface to support dynamic dispatch.
 type IRelationDeclarationContext interface {
@@ -1500,7 +1450,7 @@ func NewEmptyRelationDeclarationContext() *RelationDeclarationContext {
 	return p
 }
 
-func InitEmptyRelationDeclarationContext(p *RelationDeclarationContext)  {
+func InitEmptyRelationDeclarationContext(p *RelationDeclarationContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDeclaration
 }
@@ -1542,12 +1492,12 @@ func (s *RelationDeclarationContext) AllNewline() []INewlineContext {
 }
 
 func (s *RelationDeclarationContext) Newline(i int) INewlineContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INewlineContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1583,12 +1533,12 @@ func (s *RelationDeclarationContext) AllIndentation() []IIndentationContext {
 }
 
 func (s *RelationDeclarationContext) Indentation(i int) IIndentationContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IIndentationContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1624,12 +1574,12 @@ func (s *RelationDeclarationContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *RelationDeclarationContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -1644,10 +1594,10 @@ func (s *RelationDeclarationContext) Spacing(i int) ISpacingContext {
 }
 
 func (s *RelationDeclarationContext) RelationName() IRelationNameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationNameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1660,10 +1610,10 @@ func (s *RelationDeclarationContext) RelationName() IRelationNameContext {
 }
 
 func (s *RelationDeclarationContext) RelationDef() IRelationDefContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1676,10 +1626,10 @@ func (s *RelationDeclarationContext) RelationDef() IRelationDefContext {
 }
 
 func (s *RelationDeclarationContext) MultiLineComment() IMultiLineCommentContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IMultiLineCommentContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1699,7 +1649,6 @@ func (s *RelationDeclarationContext) ToStringTree(ruleNames []string, recog antl
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDeclarationContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDeclaration(s)
@@ -1712,9 +1661,6 @@ func (s *RelationDeclarationContext) ExitRule(listener antlr.ParseTreeListener) 
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationContext) {
 	localctx = NewRelationDeclarationContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 10, OpenFGAParserRULE_relationDeclaration)
@@ -1723,7 +1669,6 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	p.EnterOuterAlt(localctx, 1)
 	p.SetState(137)
 	p.GetErrorHandler().Sync(p)
-
 
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 11, p.GetParserRuleContext()) == 1 {
 		{
@@ -1735,8 +1680,8 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 			p.MultiLineComment()
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
 	{
 		p.SetState(139)
@@ -1754,8 +1699,8 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 		p.SetState(142)
 		p.Match(OpenFGAParserT__6)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	{
@@ -1773,7 +1718,6 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__19 {
 		{
 			p.SetState(145)
@@ -1785,8 +1729,8 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 		p.SetState(148)
 		p.Match(OpenFGAParserT__7)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	p.SetState(150)
@@ -1795,7 +1739,6 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
-
 
 	if _la == OpenFGAParserT__19 {
 		{
@@ -1815,7 +1758,6 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__19 {
 		{
 			p.SetState(153)
@@ -1823,8 +1765,6 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 		}
 
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -1838,7 +1778,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefContext is an interface to support dynamic dispatch.
 type IRelationDefContext interface {
@@ -1868,7 +1807,7 @@ func NewEmptyRelationDefContext() *RelationDefContext {
 	return p
 }
 
-func InitEmptyRelationDefContext(p *RelationDefContext)  {
+func InitEmptyRelationDefContext(p *RelationDefContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDef
 }
@@ -1889,10 +1828,10 @@ func NewRelationDefContext(parser antlr.Parser, parent antlr.ParserRuleContext, 
 func (s *RelationDefContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefContext) RelationDefDirectAssignment() IRelationDefDirectAssignmentContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefDirectAssignmentContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1905,10 +1844,10 @@ func (s *RelationDefContext) RelationDefDirectAssignment() IRelationDefDirectAss
 }
 
 func (s *RelationDefContext) RelationDefGrouping() IRelationDefGroupingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefGroupingContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1921,10 +1860,10 @@ func (s *RelationDefContext) RelationDefGrouping() IRelationDefGroupingContext {
 }
 
 func (s *RelationDefContext) RelationDefPartials() IRelationDefPartialsContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefPartialsContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -1944,7 +1883,6 @@ func (s *RelationDefContext) ToStringTree(ruleNames []string, recog antlr.Recogn
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDef(s)
@@ -1956,9 +1894,6 @@ func (s *RelationDefContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitRelationDef(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 	localctx = NewRelationDefContext(p, p.GetParserRuleContext(), p.GetState())
@@ -1977,14 +1912,11 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 			p.RelationDefDirectAssignment()
 		}
 
-
 	case OpenFGAParserALPHA_NUMERIC:
 		{
 			p.SetState(157)
 			p.RelationDefGrouping()
 		}
-
-
 
 	default:
 		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -1993,18 +1925,15 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 	p.SetState(161)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 16, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(160)
 			p.RelationDefPartials()
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -2018,7 +1947,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefPartialsContext is an interface to support dynamic dispatch.
 type IRelationDefPartialsContext interface {
@@ -2048,7 +1976,7 @@ func NewEmptyRelationDefPartialsContext() *RelationDefPartialsContext {
 	return p
 }
 
-func InitEmptyRelationDefPartialsContext(p *RelationDefPartialsContext)  {
+func InitEmptyRelationDefPartialsContext(p *RelationDefPartialsContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefPartials
 }
@@ -2069,10 +1997,10 @@ func NewRelationDefPartialsContext(parser antlr.Parser, parent antlr.ParserRuleC
 func (s *RelationDefPartialsContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefPartialsContext) RelationDefPartialAllOr() IRelationDefPartialAllOrContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefPartialAllOrContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -2085,10 +2013,10 @@ func (s *RelationDefPartialsContext) RelationDefPartialAllOr() IRelationDefParti
 }
 
 func (s *RelationDefPartialsContext) RelationDefPartialAllAnd() IRelationDefPartialAllAndContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefPartialAllAndContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -2101,10 +2029,10 @@ func (s *RelationDefPartialsContext) RelationDefPartialAllAnd() IRelationDefPart
 }
 
 func (s *RelationDefPartialsContext) RelationDefPartialAllButNot() IRelationDefPartialAllButNotContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefPartialAllButNotContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -2124,7 +2052,6 @@ func (s *RelationDefPartialsContext) ToStringTree(ruleNames []string, recog antl
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefPartialsContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefPartials(s)
@@ -2136,9 +2063,6 @@ func (s *RelationDefPartialsContext) ExitRule(listener antlr.ParseTreeListener) 
 		listenerT.ExitRelationDefPartials(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsContext) {
 	localctx = NewRelationDefPartialsContext(p, p.GetParserRuleContext(), p.GetState())
@@ -2157,14 +2081,12 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 			p.RelationDefPartialAllOr()
 		}
 
-
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(164)
 			p.RelationDefPartialAllAnd()
 		}
-
 
 	case 3:
 		p.EnterOuterAlt(localctx, 3)
@@ -2176,7 +2098,6 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 	case antlr.ATNInvalidAltNumber:
 		goto errorExit
 	}
-
 
 errorExit:
 	if p.HasError() {
@@ -2190,7 +2111,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefPartialAllOrContext is an interface to support dynamic dispatch.
 type IRelationDefPartialAllOrContext interface {
@@ -2223,7 +2143,7 @@ func NewEmptyRelationDefPartialAllOrContext() *RelationDefPartialAllOrContext {
 	return p
 }
 
-func InitEmptyRelationDefPartialAllOrContext(p *RelationDefPartialAllOrContext)  {
+func InitEmptyRelationDefPartialAllOrContext(p *RelationDefPartialAllOrContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefPartialAllOr
 }
@@ -2265,12 +2185,12 @@ func (s *RelationDefPartialAllOrContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *RelationDefPartialAllOrContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2306,12 +2226,12 @@ func (s *RelationDefPartialAllOrContext) AllRelationDefOperatorOr() []IRelationD
 }
 
 func (s *RelationDefPartialAllOrContext) RelationDefOperatorOr(i int) IRelationDefOperatorOrContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorOrContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2347,12 +2267,12 @@ func (s *RelationDefPartialAllOrContext) AllRelationDefGrouping() []IRelationDef
 }
 
 func (s *RelationDefPartialAllOrContext) RelationDefGrouping(i int) IRelationDefGroupingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefGroupingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2374,7 +2294,6 @@ func (s *RelationDefPartialAllOrContext) ToStringTree(ruleNames []string, recog 
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefPartialAllOrContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefPartialAllOr(s)
@@ -2386,9 +2305,6 @@ func (s *RelationDefPartialAllOrContext) ExitRule(listener antlr.ParseTreeListen
 		listenerT.ExitRelationDefPartialAllOr(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialAllOrContext) {
 	localctx = NewRelationDefPartialAllOrContext(p, p.GetParserRuleContext(), p.GetState())
@@ -2405,25 +2321,22 @@ func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialA
 	for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		switch _alt {
 		case 1:
-				{
-					p.SetState(168)
-					p.Spacing()
-				}
-				{
-					p.SetState(169)
-					p.RelationDefOperatorOr()
-				}
-				{
-					p.SetState(170)
-					p.Spacing()
-				}
-				{
-					p.SetState(171)
-					p.RelationDefGrouping()
-				}
-
-
-
+			{
+				p.SetState(168)
+				p.Spacing()
+			}
+			{
+				p.SetState(169)
+				p.RelationDefOperatorOr()
+			}
+			{
+				p.SetState(170)
+				p.Spacing()
+			}
+			{
+				p.SetState(171)
+				p.RelationDefGrouping()
+			}
 
 		default:
 			p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -2438,8 +2351,6 @@ func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialA
 		}
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -2452,7 +2363,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefPartialAllAndContext is an interface to support dynamic dispatch.
 type IRelationDefPartialAllAndContext interface {
@@ -2485,7 +2395,7 @@ func NewEmptyRelationDefPartialAllAndContext() *RelationDefPartialAllAndContext 
 	return p
 }
 
-func InitEmptyRelationDefPartialAllAndContext(p *RelationDefPartialAllAndContext)  {
+func InitEmptyRelationDefPartialAllAndContext(p *RelationDefPartialAllAndContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefPartialAllAnd
 }
@@ -2527,12 +2437,12 @@ func (s *RelationDefPartialAllAndContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *RelationDefPartialAllAndContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2568,12 +2478,12 @@ func (s *RelationDefPartialAllAndContext) AllRelationDefOperatorAnd() []IRelatio
 }
 
 func (s *RelationDefPartialAllAndContext) RelationDefOperatorAnd(i int) IRelationDefOperatorAndContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorAndContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2609,12 +2519,12 @@ func (s *RelationDefPartialAllAndContext) AllRelationDefGrouping() []IRelationDe
 }
 
 func (s *RelationDefPartialAllAndContext) RelationDefGrouping(i int) IRelationDefGroupingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefGroupingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2636,7 +2546,6 @@ func (s *RelationDefPartialAllAndContext) ToStringTree(ruleNames []string, recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefPartialAllAndContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefPartialAllAnd(s)
@@ -2648,9 +2557,6 @@ func (s *RelationDefPartialAllAndContext) ExitRule(listener antlr.ParseTreeListe
 		listenerT.ExitRelationDefPartialAllAnd(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartialAllAndContext) {
 	localctx = NewRelationDefPartialAllAndContext(p, p.GetParserRuleContext(), p.GetState())
@@ -2667,25 +2573,22 @@ func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartial
 	for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		switch _alt {
 		case 1:
-				{
-					p.SetState(177)
-					p.Spacing()
-				}
-				{
-					p.SetState(178)
-					p.RelationDefOperatorAnd()
-				}
-				{
-					p.SetState(179)
-					p.Spacing()
-				}
-				{
-					p.SetState(180)
-					p.RelationDefGrouping()
-				}
-
-
-
+			{
+				p.SetState(177)
+				p.Spacing()
+			}
+			{
+				p.SetState(178)
+				p.RelationDefOperatorAnd()
+			}
+			{
+				p.SetState(179)
+				p.Spacing()
+			}
+			{
+				p.SetState(180)
+				p.RelationDefGrouping()
+			}
 
 		default:
 			p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -2700,8 +2603,6 @@ func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartial
 		}
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -2714,7 +2615,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefPartialAllButNotContext is an interface to support dynamic dispatch.
 type IRelationDefPartialAllButNotContext interface {
@@ -2747,7 +2647,7 @@ func NewEmptyRelationDefPartialAllButNotContext() *RelationDefPartialAllButNotCo
 	return p
 }
 
-func InitEmptyRelationDefPartialAllButNotContext(p *RelationDefPartialAllButNotContext)  {
+func InitEmptyRelationDefPartialAllButNotContext(p *RelationDefPartialAllButNotContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefPartialAllButNot
 }
@@ -2789,12 +2689,12 @@ func (s *RelationDefPartialAllButNotContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *RelationDefPartialAllButNotContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2830,12 +2730,12 @@ func (s *RelationDefPartialAllButNotContext) AllRelationDefOperatorButNot() []IR
 }
 
 func (s *RelationDefPartialAllButNotContext) RelationDefOperatorButNot(i int) IRelationDefOperatorButNotContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorButNotContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2871,12 +2771,12 @@ func (s *RelationDefPartialAllButNotContext) AllRelationDefGrouping() []IRelatio
 }
 
 func (s *RelationDefPartialAllButNotContext) RelationDefGrouping(i int) IRelationDefGroupingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefGroupingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -2898,7 +2798,6 @@ func (s *RelationDefPartialAllButNotContext) ToStringTree(ruleNames []string, re
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefPartialAllButNotContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefPartialAllButNot(s)
@@ -2910,9 +2809,6 @@ func (s *RelationDefPartialAllButNotContext) ExitRule(listener antlr.ParseTreeLi
 		listenerT.ExitRelationDefPartialAllButNot(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPartialAllButNotContext) {
 	localctx = NewRelationDefPartialAllButNotContext(p, p.GetParserRuleContext(), p.GetState())
@@ -2929,25 +2825,22 @@ func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPart
 	for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		switch _alt {
 		case 1:
-				{
-					p.SetState(186)
-					p.Spacing()
-				}
-				{
-					p.SetState(187)
-					p.RelationDefOperatorButNot()
-				}
-				{
-					p.SetState(188)
-					p.Spacing()
-				}
-				{
-					p.SetState(189)
-					p.RelationDefGrouping()
-				}
-
-
-
+			{
+				p.SetState(186)
+				p.Spacing()
+			}
+			{
+				p.SetState(187)
+				p.RelationDefOperatorButNot()
+			}
+			{
+				p.SetState(188)
+				p.Spacing()
+			}
+			{
+				p.SetState(189)
+				p.RelationDefGrouping()
+			}
 
 		default:
 			p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -2962,8 +2855,6 @@ func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPart
 		}
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -2976,7 +2867,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefDirectAssignmentContext is an interface to support dynamic dispatch.
 type IRelationDefDirectAssignmentContext interface {
@@ -3007,7 +2897,7 @@ func NewEmptyRelationDefDirectAssignmentContext() *RelationDefDirectAssignmentCo
 	return p
 }
 
-func InitEmptyRelationDefDirectAssignmentContext(p *RelationDefDirectAssignmentContext)  {
+func InitEmptyRelationDefDirectAssignmentContext(p *RelationDefDirectAssignmentContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefDirectAssignment
 }
@@ -3049,12 +2939,12 @@ func (s *RelationDefDirectAssignmentContext) AllRelationDefTypeRestriction() []I
 }
 
 func (s *RelationDefDirectAssignmentContext) RelationDefTypeRestriction(i int) IRelationDefTypeRestrictionContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -3090,12 +2980,12 @@ func (s *RelationDefDirectAssignmentContext) AllSpacing() []ISpacingContext {
 }
 
 func (s *RelationDefDirectAssignmentContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -3117,7 +3007,6 @@ func (s *RelationDefDirectAssignmentContext) ToStringTree(ruleNames []string, re
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefDirectAssignmentContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefDirectAssignment(s)
@@ -3130,9 +3019,6 @@ func (s *RelationDefDirectAssignmentContext) ExitRule(listener antlr.ParseTreeLi
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDirectAssignmentContext) {
 	localctx = NewRelationDefDirectAssignmentContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 22, OpenFGAParserRULE_relationDefDirectAssignment)
@@ -3143,8 +3029,8 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 		p.SetState(195)
 		p.Match(OpenFGAParserT__8)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	{
@@ -3154,15 +3040,14 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 	p.SetState(198)
 	p.GetErrorHandler().Sync(p)
 
-
 	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 21, p.GetParserRuleContext()) == 1 {
 		{
 			p.SetState(197)
 			p.Spacing()
 		}
 
-		} else if p.HasError() { // JIM
-			goto errorExit
+	} else if p.HasError() { // JIM
+		goto errorExit
 	}
 	p.SetState(207)
 	p.GetErrorHandler().Sync(p)
@@ -3171,14 +3056,13 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	for _la == OpenFGAParserT__9 {
 		{
 			p.SetState(200)
 			p.Match(OpenFGAParserT__9)
 			if p.HasError() {
-					// Recognition error - abort rule
-					goto errorExit
+				// Recognition error - abort rule
+				goto errorExit
 			}
 		}
 		p.SetState(202)
@@ -3187,7 +3071,6 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 			goto errorExit
 		}
 		_la = p.GetTokenStream().LA(1)
-
 
 		if _la == OpenFGAParserT__19 {
 			{
@@ -3201,12 +3084,11 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 			p.RelationDefTypeRestriction()
 		}
 
-
 		p.SetState(209)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_la = p.GetTokenStream().LA(1)
 	}
 	p.SetState(211)
@@ -3215,7 +3097,6 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
-
 
 	if _la == OpenFGAParserT__19 {
 		{
@@ -3228,12 +3109,10 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 		p.SetState(213)
 		p.Match(OpenFGAParserT__10)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -3247,7 +3126,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefRewriteContext is an interface to support dynamic dispatch.
 type IRelationDefRewriteContext interface {
@@ -3276,7 +3154,7 @@ func NewEmptyRelationDefRewriteContext() *RelationDefRewriteContext {
 	return p
 }
 
-func InitEmptyRelationDefRewriteContext(p *RelationDefRewriteContext)  {
+func InitEmptyRelationDefRewriteContext(p *RelationDefRewriteContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefRewrite
 }
@@ -3297,10 +3175,10 @@ func NewRelationDefRewriteContext(parser antlr.Parser, parent antlr.ParserRuleCo
 func (s *RelationDefRewriteContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefRewriteContext) RelationDefRelationOnSameObject() IRelationDefRelationOnSameObjectContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefRelationOnSameObjectContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3313,10 +3191,10 @@ func (s *RelationDefRewriteContext) RelationDefRelationOnSameObject() IRelationD
 }
 
 func (s *RelationDefRewriteContext) RelationDefRelationOnRelatedObject() IRelationDefRelationOnRelatedObjectContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefRelationOnRelatedObjectContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3336,7 +3214,6 @@ func (s *RelationDefRewriteContext) ToStringTree(ruleNames []string, recog antlr
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefRewriteContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefRewrite(s)
@@ -3348,9 +3225,6 @@ func (s *RelationDefRewriteContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitRelationDefRewrite(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContext) {
 	localctx = NewRelationDefRewriteContext(p, p.GetParserRuleContext(), p.GetState())
@@ -3369,7 +3243,6 @@ func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContex
 			p.RelationDefRelationOnSameObject()
 		}
 
-
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
@@ -3380,7 +3253,6 @@ func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContex
 	case antlr.ATNInvalidAltNumber:
 		goto errorExit
 	}
-
 
 errorExit:
 	if p.HasError() {
@@ -3394,7 +3266,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefRelationOnSameObjectContext is an interface to support dynamic dispatch.
 type IRelationDefRelationOnSameObjectContext interface {
@@ -3422,7 +3293,7 @@ func NewEmptyRelationDefRelationOnSameObjectContext() *RelationDefRelationOnSame
 	return p
 }
 
-func InitEmptyRelationDefRelationOnSameObjectContext(p *RelationDefRelationOnSameObjectContext)  {
+func InitEmptyRelationDefRelationOnSameObjectContext(p *RelationDefRelationOnSameObjectContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefRelationOnSameObject
 }
@@ -3443,10 +3314,10 @@ func NewRelationDefRelationOnSameObjectContext(parser antlr.Parser, parent antlr
 func (s *RelationDefRelationOnSameObjectContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefRelationOnSameObjectContext) RewriteComputedusersetName() IRewriteComputedusersetNameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRewriteComputedusersetNameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3466,7 +3337,6 @@ func (s *RelationDefRelationOnSameObjectContext) ToStringTree(ruleNames []string
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefRelationOnSameObjectContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefRelationOnSameObject(s)
@@ -3479,9 +3349,6 @@ func (s *RelationDefRelationOnSameObjectContext) ExitRule(listener antlr.ParseTr
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefRelationOnSameObject() (localctx IRelationDefRelationOnSameObjectContext) {
 	localctx = NewRelationDefRelationOnSameObjectContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 26, OpenFGAParserRULE_relationDefRelationOnSameObject)
@@ -3490,8 +3357,6 @@ func (p *OpenFGAParser) RelationDefRelationOnSameObject() (localctx IRelationDef
 		p.SetState(219)
 		p.RewriteComputedusersetName()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -3505,7 +3370,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefRelationOnRelatedObjectContext is an interface to support dynamic dispatch.
 type IRelationDefRelationOnRelatedObjectContext interface {
@@ -3537,7 +3401,7 @@ func NewEmptyRelationDefRelationOnRelatedObjectContext() *RelationDefRelationOnR
 	return p
 }
 
-func InitEmptyRelationDefRelationOnRelatedObjectContext(p *RelationDefRelationOnRelatedObjectContext)  {
+func InitEmptyRelationDefRelationOnRelatedObjectContext(p *RelationDefRelationOnRelatedObjectContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefRelationOnRelatedObject
 }
@@ -3558,10 +3422,10 @@ func NewRelationDefRelationOnRelatedObjectContext(parser antlr.Parser, parent an
 func (s *RelationDefRelationOnRelatedObjectContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefRelationOnRelatedObjectContext) RewriteTuplesetComputedusersetName() IRewriteTuplesetComputedusersetNameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRewriteTuplesetComputedusersetNameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3595,12 +3459,12 @@ func (s *RelationDefRelationOnRelatedObjectContext) AllSpacing() []ISpacingConte
 }
 
 func (s *RelationDefRelationOnRelatedObjectContext) Spacing(i int) ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -3615,10 +3479,10 @@ func (s *RelationDefRelationOnRelatedObjectContext) Spacing(i int) ISpacingConte
 }
 
 func (s *RelationDefRelationOnRelatedObjectContext) RelationDefKeywordFrom() IRelationDefKeywordFromContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefKeywordFromContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3631,10 +3495,10 @@ func (s *RelationDefRelationOnRelatedObjectContext) RelationDefKeywordFrom() IRe
 }
 
 func (s *RelationDefRelationOnRelatedObjectContext) RewriteTuplesetName() IRewriteTuplesetNameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRewriteTuplesetNameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3654,7 +3518,6 @@ func (s *RelationDefRelationOnRelatedObjectContext) ToStringTree(ruleNames []str
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefRelationOnRelatedObjectContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefRelationOnRelatedObject(s)
@@ -3666,9 +3529,6 @@ func (s *RelationDefRelationOnRelatedObjectContext) ExitRule(listener antlr.Pars
 		listenerT.ExitRelationDefRelationOnRelatedObject(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefRelationOnRelatedObject() (localctx IRelationDefRelationOnRelatedObjectContext) {
 	localctx = NewRelationDefRelationOnRelatedObjectContext(p, p.GetParserRuleContext(), p.GetState())
@@ -3695,8 +3555,6 @@ func (p *OpenFGAParser) RelationDefRelationOnRelatedObject() (localctx IRelation
 		p.RewriteTuplesetName()
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -3709,7 +3567,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefOperatorContext is an interface to support dynamic dispatch.
 type IRelationDefOperatorContext interface {
@@ -3739,7 +3596,7 @@ func NewEmptyRelationDefOperatorContext() *RelationDefOperatorContext {
 	return p
 }
 
-func InitEmptyRelationDefOperatorContext(p *RelationDefOperatorContext)  {
+func InitEmptyRelationDefOperatorContext(p *RelationDefOperatorContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefOperator
 }
@@ -3760,10 +3617,10 @@ func NewRelationDefOperatorContext(parser antlr.Parser, parent antlr.ParserRuleC
 func (s *RelationDefOperatorContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefOperatorContext) RelationDefOperatorOr() IRelationDefOperatorOrContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorOrContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3776,10 +3633,10 @@ func (s *RelationDefOperatorContext) RelationDefOperatorOr() IRelationDefOperato
 }
 
 func (s *RelationDefOperatorContext) RelationDefOperatorAnd() IRelationDefOperatorAndContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorAndContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3792,10 +3649,10 @@ func (s *RelationDefOperatorContext) RelationDefOperatorAnd() IRelationDefOperat
 }
 
 func (s *RelationDefOperatorContext) RelationDefOperatorButNot() IRelationDefOperatorButNotContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefOperatorButNotContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -3815,7 +3672,6 @@ func (s *RelationDefOperatorContext) ToStringTree(ruleNames []string, recog antl
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefOperatorContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefOperator(s)
@@ -3827,9 +3683,6 @@ func (s *RelationDefOperatorContext) ExitRule(listener antlr.ParseTreeListener) 
 		listenerT.ExitRelationDefOperator(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorContext) {
 	localctx = NewRelationDefOperatorContext(p, p.GetParserRuleContext(), p.GetState())
@@ -3848,14 +3701,12 @@ func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorCont
 			p.RelationDefOperatorOr()
 		}
 
-
 	case OpenFGAParserT__11:
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(228)
 			p.RelationDefOperatorAnd()
 		}
-
 
 	case OpenFGAParserT__13:
 		p.EnterOuterAlt(localctx, 3)
@@ -3864,13 +3715,10 @@ func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorCont
 			p.RelationDefOperatorButNot()
 		}
 
-
-
 	default:
 		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 		goto errorExit
 	}
-
 
 errorExit:
 	if p.HasError() {
@@ -3884,7 +3732,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefOperatorAndContext is an interface to support dynamic dispatch.
 type IRelationDefOperatorAndContext interface {
@@ -3908,7 +3755,7 @@ func NewEmptyRelationDefOperatorAndContext() *RelationDefOperatorAndContext {
 	return p
 }
 
-func InitEmptyRelationDefOperatorAndContext(p *RelationDefOperatorAndContext)  {
+func InitEmptyRelationDefOperatorAndContext(p *RelationDefOperatorAndContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefOperatorAnd
 }
@@ -3935,7 +3782,6 @@ func (s *RelationDefOperatorAndContext) ToStringTree(ruleNames []string, recog a
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefOperatorAndContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefOperatorAnd(s)
@@ -3948,9 +3794,6 @@ func (s *RelationDefOperatorAndContext) ExitRule(listener antlr.ParseTreeListene
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefOperatorAnd() (localctx IRelationDefOperatorAndContext) {
 	localctx = NewRelationDefOperatorAndContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 32, OpenFGAParserRULE_relationDefOperatorAnd)
@@ -3959,12 +3802,10 @@ func (p *OpenFGAParser) RelationDefOperatorAnd() (localctx IRelationDefOperatorA
 		p.SetState(232)
 		p.Match(OpenFGAParserT__11)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -3978,7 +3819,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefOperatorOrContext is an interface to support dynamic dispatch.
 type IRelationDefOperatorOrContext interface {
@@ -4002,7 +3842,7 @@ func NewEmptyRelationDefOperatorOrContext() *RelationDefOperatorOrContext {
 	return p
 }
 
-func InitEmptyRelationDefOperatorOrContext(p *RelationDefOperatorOrContext)  {
+func InitEmptyRelationDefOperatorOrContext(p *RelationDefOperatorOrContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefOperatorOr
 }
@@ -4029,7 +3869,6 @@ func (s *RelationDefOperatorOrContext) ToStringTree(ruleNames []string, recog an
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefOperatorOrContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefOperatorOr(s)
@@ -4042,9 +3881,6 @@ func (s *RelationDefOperatorOrContext) ExitRule(listener antlr.ParseTreeListener
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefOperatorOr() (localctx IRelationDefOperatorOrContext) {
 	localctx = NewRelationDefOperatorOrContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 34, OpenFGAParserRULE_relationDefOperatorOr)
@@ -4053,12 +3889,10 @@ func (p *OpenFGAParser) RelationDefOperatorOr() (localctx IRelationDefOperatorOr
 		p.SetState(234)
 		p.Match(OpenFGAParserT__12)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4072,7 +3906,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefOperatorButNotContext is an interface to support dynamic dispatch.
 type IRelationDefOperatorButNotContext interface {
@@ -4096,7 +3929,7 @@ func NewEmptyRelationDefOperatorButNotContext() *RelationDefOperatorButNotContex
 	return p
 }
 
-func InitEmptyRelationDefOperatorButNotContext(p *RelationDefOperatorButNotContext)  {
+func InitEmptyRelationDefOperatorButNotContext(p *RelationDefOperatorButNotContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefOperatorButNot
 }
@@ -4123,7 +3956,6 @@ func (s *RelationDefOperatorButNotContext) ToStringTree(ruleNames []string, reco
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefOperatorButNotContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefOperatorButNot(s)
@@ -4136,9 +3968,6 @@ func (s *RelationDefOperatorButNotContext) ExitRule(listener antlr.ParseTreeList
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefOperatorButNot() (localctx IRelationDefOperatorButNotContext) {
 	localctx = NewRelationDefOperatorButNotContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 36, OpenFGAParserRULE_relationDefOperatorButNot)
@@ -4147,12 +3976,10 @@ func (p *OpenFGAParser) RelationDefOperatorButNot() (localctx IRelationDefOperat
 		p.SetState(236)
 		p.Match(OpenFGAParserT__13)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4166,7 +3993,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefKeywordFromContext is an interface to support dynamic dispatch.
 type IRelationDefKeywordFromContext interface {
@@ -4190,7 +4016,7 @@ func NewEmptyRelationDefKeywordFromContext() *RelationDefKeywordFromContext {
 	return p
 }
 
-func InitEmptyRelationDefKeywordFromContext(p *RelationDefKeywordFromContext)  {
+func InitEmptyRelationDefKeywordFromContext(p *RelationDefKeywordFromContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefKeywordFrom
 }
@@ -4217,7 +4043,6 @@ func (s *RelationDefKeywordFromContext) ToStringTree(ruleNames []string, recog a
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefKeywordFromContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefKeywordFrom(s)
@@ -4230,9 +4055,6 @@ func (s *RelationDefKeywordFromContext) ExitRule(listener antlr.ParseTreeListene
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefKeywordFrom() (localctx IRelationDefKeywordFromContext) {
 	localctx = NewRelationDefKeywordFromContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 38, OpenFGAParserRULE_relationDefKeywordFrom)
@@ -4241,12 +4063,10 @@ func (p *OpenFGAParser) RelationDefKeywordFrom() (localctx IRelationDefKeywordFr
 		p.SetState(238)
 		p.Match(OpenFGAParserT__14)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4260,7 +4080,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefTypeRestrictionContext is an interface to support dynamic dispatch.
 type IRelationDefTypeRestrictionContext interface {
@@ -4290,7 +4109,7 @@ func NewEmptyRelationDefTypeRestrictionContext() *RelationDefTypeRestrictionCont
 	return p
 }
 
-func InitEmptyRelationDefTypeRestrictionContext(p *RelationDefTypeRestrictionContext)  {
+func InitEmptyRelationDefTypeRestrictionContext(p *RelationDefTypeRestrictionContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefTypeRestriction
 }
@@ -4311,10 +4130,10 @@ func NewRelationDefTypeRestrictionContext(parser antlr.Parser, parent antlr.Pars
 func (s *RelationDefTypeRestrictionContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefTypeRestrictionContext) RelationDefTypeRestrictionType() IRelationDefTypeRestrictionTypeContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionTypeContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4327,10 +4146,10 @@ func (s *RelationDefTypeRestrictionContext) RelationDefTypeRestrictionType() IRe
 }
 
 func (s *RelationDefTypeRestrictionContext) RelationDefTypeRestrictionWildcard() IRelationDefTypeRestrictionWildcardContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionWildcardContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4343,10 +4162,10 @@ func (s *RelationDefTypeRestrictionContext) RelationDefTypeRestrictionWildcard()
 }
 
 func (s *RelationDefTypeRestrictionContext) RelationDefTypeRestrictionUserset() IRelationDefTypeRestrictionUsersetContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionUsersetContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4366,7 +4185,6 @@ func (s *RelationDefTypeRestrictionContext) ToStringTree(ruleNames []string, rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefTypeRestrictionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefTypeRestriction(s)
@@ -4378,9 +4196,6 @@ func (s *RelationDefTypeRestrictionContext) ExitRule(listener antlr.ParseTreeLis
 		listenerT.ExitRelationDefTypeRestriction(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeRestrictionContext) {
 	localctx = NewRelationDefTypeRestrictionContext(p, p.GetParserRuleContext(), p.GetState())
@@ -4399,14 +4214,12 @@ func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeR
 			p.RelationDefTypeRestrictionType()
 		}
 
-
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(241)
 			p.RelationDefTypeRestrictionWildcard()
 		}
-
 
 	case 3:
 		p.EnterOuterAlt(localctx, 3)
@@ -4418,7 +4231,6 @@ func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeR
 	case antlr.ATNInvalidAltNumber:
 		goto errorExit
 	}
-
 
 errorExit:
 	if p.HasError() {
@@ -4432,7 +4244,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefTypeRestrictionTypeContext is an interface to support dynamic dispatch.
 type IRelationDefTypeRestrictionTypeContext interface {
@@ -4460,7 +4271,7 @@ func NewEmptyRelationDefTypeRestrictionTypeContext() *RelationDefTypeRestriction
 	return p
 }
 
-func InitEmptyRelationDefTypeRestrictionTypeContext(p *RelationDefTypeRestrictionTypeContext)  {
+func InitEmptyRelationDefTypeRestrictionTypeContext(p *RelationDefTypeRestrictionTypeContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefTypeRestrictionType
 }
@@ -4481,10 +4292,10 @@ func NewRelationDefTypeRestrictionTypeContext(parser antlr.Parser, parent antlr.
 func (s *RelationDefTypeRestrictionTypeContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefTypeRestrictionTypeContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4504,7 +4315,6 @@ func (s *RelationDefTypeRestrictionTypeContext) ToStringTree(ruleNames []string,
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefTypeRestrictionTypeContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefTypeRestrictionType(s)
@@ -4517,9 +4327,6 @@ func (s *RelationDefTypeRestrictionTypeContext) ExitRule(listener antlr.ParseTre
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefTypeRestrictionType() (localctx IRelationDefTypeRestrictionTypeContext) {
 	localctx = NewRelationDefTypeRestrictionTypeContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 42, OpenFGAParserRULE_relationDefTypeRestrictionType)
@@ -4528,8 +4335,6 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionType() (localctx IRelationDefT
 		p.SetState(245)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4543,7 +4348,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefTypeRestrictionRelationContext is an interface to support dynamic dispatch.
 type IRelationDefTypeRestrictionRelationContext interface {
@@ -4571,7 +4375,7 @@ func NewEmptyRelationDefTypeRestrictionRelationContext() *RelationDefTypeRestric
 	return p
 }
 
-func InitEmptyRelationDefTypeRestrictionRelationContext(p *RelationDefTypeRestrictionRelationContext)  {
+func InitEmptyRelationDefTypeRestrictionRelationContext(p *RelationDefTypeRestrictionRelationContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefTypeRestrictionRelation
 }
@@ -4592,10 +4396,10 @@ func NewRelationDefTypeRestrictionRelationContext(parser antlr.Parser, parent an
 func (s *RelationDefTypeRestrictionRelationContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefTypeRestrictionRelationContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4615,7 +4419,6 @@ func (s *RelationDefTypeRestrictionRelationContext) ToStringTree(ruleNames []str
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefTypeRestrictionRelationContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefTypeRestrictionRelation(s)
@@ -4628,9 +4431,6 @@ func (s *RelationDefTypeRestrictionRelationContext) ExitRule(listener antlr.Pars
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefTypeRestrictionRelation() (localctx IRelationDefTypeRestrictionRelationContext) {
 	localctx = NewRelationDefTypeRestrictionRelationContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 44, OpenFGAParserRULE_relationDefTypeRestrictionRelation)
@@ -4639,8 +4439,6 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionRelation() (localctx IRelation
 		p.SetState(247)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4654,7 +4452,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefTypeRestrictionWildcardContext is an interface to support dynamic dispatch.
 type IRelationDefTypeRestrictionWildcardContext interface {
@@ -4682,7 +4479,7 @@ func NewEmptyRelationDefTypeRestrictionWildcardContext() *RelationDefTypeRestric
 	return p
 }
 
-func InitEmptyRelationDefTypeRestrictionWildcardContext(p *RelationDefTypeRestrictionWildcardContext)  {
+func InitEmptyRelationDefTypeRestrictionWildcardContext(p *RelationDefTypeRestrictionWildcardContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefTypeRestrictionWildcard
 }
@@ -4703,10 +4500,10 @@ func NewRelationDefTypeRestrictionWildcardContext(parser antlr.Parser, parent an
 func (s *RelationDefTypeRestrictionWildcardContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefTypeRestrictionWildcardContext) RelationDefTypeRestrictionType() IRelationDefTypeRestrictionTypeContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionTypeContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4726,7 +4523,6 @@ func (s *RelationDefTypeRestrictionWildcardContext) ToStringTree(ruleNames []str
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefTypeRestrictionWildcardContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefTypeRestrictionWildcard(s)
@@ -4738,9 +4534,6 @@ func (s *RelationDefTypeRestrictionWildcardContext) ExitRule(listener antlr.Pars
 		listenerT.ExitRelationDefTypeRestrictionWildcard(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefTypeRestrictionWildcard() (localctx IRelationDefTypeRestrictionWildcardContext) {
 	localctx = NewRelationDefTypeRestrictionWildcardContext(p, p.GetParserRuleContext(), p.GetState())
@@ -4754,12 +4547,10 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionWildcard() (localctx IRelation
 		p.SetState(250)
 		p.Match(OpenFGAParserT__15)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4773,7 +4564,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefTypeRestrictionUsersetContext is an interface to support dynamic dispatch.
 type IRelationDefTypeRestrictionUsersetContext interface {
@@ -4802,7 +4592,7 @@ func NewEmptyRelationDefTypeRestrictionUsersetContext() *RelationDefTypeRestrict
 	return p
 }
 
-func InitEmptyRelationDefTypeRestrictionUsersetContext(p *RelationDefTypeRestrictionUsersetContext)  {
+func InitEmptyRelationDefTypeRestrictionUsersetContext(p *RelationDefTypeRestrictionUsersetContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefTypeRestrictionUserset
 }
@@ -4823,10 +4613,10 @@ func NewRelationDefTypeRestrictionUsersetContext(parser antlr.Parser, parent ant
 func (s *RelationDefTypeRestrictionUsersetContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefTypeRestrictionUsersetContext) RelationDefTypeRestrictionType() IRelationDefTypeRestrictionTypeContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionTypeContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4839,10 +4629,10 @@ func (s *RelationDefTypeRestrictionUsersetContext) RelationDefTypeRestrictionTyp
 }
 
 func (s *RelationDefTypeRestrictionUsersetContext) RelationDefTypeRestrictionRelation() IRelationDefTypeRestrictionRelationContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefTypeRestrictionRelationContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4862,7 +4652,6 @@ func (s *RelationDefTypeRestrictionUsersetContext) ToStringTree(ruleNames []stri
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefTypeRestrictionUsersetContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefTypeRestrictionUserset(s)
@@ -4874,9 +4663,6 @@ func (s *RelationDefTypeRestrictionUsersetContext) ExitRule(listener antlr.Parse
 		listenerT.ExitRelationDefTypeRestrictionUserset(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) RelationDefTypeRestrictionUserset() (localctx IRelationDefTypeRestrictionUsersetContext) {
 	localctx = NewRelationDefTypeRestrictionUsersetContext(p, p.GetParserRuleContext(), p.GetState())
@@ -4890,16 +4676,14 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionUserset() (localctx IRelationD
 		p.SetState(253)
 		p.Match(OpenFGAParserT__16)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	{
 		p.SetState(254)
 		p.RelationDefTypeRestrictionRelation()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -4913,7 +4697,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationDefGroupingContext is an interface to support dynamic dispatch.
 type IRelationDefGroupingContext interface {
@@ -4941,7 +4724,7 @@ func NewEmptyRelationDefGroupingContext() *RelationDefGroupingContext {
 	return p
 }
 
-func InitEmptyRelationDefGroupingContext(p *RelationDefGroupingContext)  {
+func InitEmptyRelationDefGroupingContext(p *RelationDefGroupingContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationDefGrouping
 }
@@ -4962,10 +4745,10 @@ func NewRelationDefGroupingContext(parser antlr.Parser, parent antlr.ParserRuleC
 func (s *RelationDefGroupingContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationDefGroupingContext) RelationDefRewrite() IRelationDefRewriteContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(IRelationDefRewriteContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -4985,7 +4768,6 @@ func (s *RelationDefGroupingContext) ToStringTree(ruleNames []string, recog antl
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationDefGroupingContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationDefGrouping(s)
@@ -4998,9 +4780,6 @@ func (s *RelationDefGroupingContext) ExitRule(listener antlr.ParseTreeListener) 
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationDefGrouping() (localctx IRelationDefGroupingContext) {
 	localctx = NewRelationDefGroupingContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 50, OpenFGAParserRULE_relationDefGrouping)
@@ -5009,8 +4788,6 @@ func (p *OpenFGAParser) RelationDefGrouping() (localctx IRelationDefGroupingCont
 		p.SetState(256)
 		p.RelationDefRewrite()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5024,7 +4801,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRewriteComputedusersetNameContext is an interface to support dynamic dispatch.
 type IRewriteComputedusersetNameContext interface {
@@ -5052,7 +4828,7 @@ func NewEmptyRewriteComputedusersetNameContext() *RewriteComputedusersetNameCont
 	return p
 }
 
-func InitEmptyRewriteComputedusersetNameContext(p *RewriteComputedusersetNameContext)  {
+func InitEmptyRewriteComputedusersetNameContext(p *RewriteComputedusersetNameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_rewriteComputedusersetName
 }
@@ -5073,10 +4849,10 @@ func NewRewriteComputedusersetNameContext(parser antlr.Parser, parent antlr.Pars
 func (s *RewriteComputedusersetNameContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RewriteComputedusersetNameContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5096,7 +4872,6 @@ func (s *RewriteComputedusersetNameContext) ToStringTree(ruleNames []string, rec
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RewriteComputedusersetNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRewriteComputedusersetName(s)
@@ -5109,9 +4884,6 @@ func (s *RewriteComputedusersetNameContext) ExitRule(listener antlr.ParseTreeLis
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RewriteComputedusersetName() (localctx IRewriteComputedusersetNameContext) {
 	localctx = NewRewriteComputedusersetNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 52, OpenFGAParserRULE_rewriteComputedusersetName)
@@ -5120,8 +4892,6 @@ func (p *OpenFGAParser) RewriteComputedusersetName() (localctx IRewriteComputedu
 		p.SetState(258)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5135,7 +4905,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRewriteTuplesetComputedusersetNameContext is an interface to support dynamic dispatch.
 type IRewriteTuplesetComputedusersetNameContext interface {
@@ -5163,7 +4932,7 @@ func NewEmptyRewriteTuplesetComputedusersetNameContext() *RewriteTuplesetCompute
 	return p
 }
 
-func InitEmptyRewriteTuplesetComputedusersetNameContext(p *RewriteTuplesetComputedusersetNameContext)  {
+func InitEmptyRewriteTuplesetComputedusersetNameContext(p *RewriteTuplesetComputedusersetNameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_rewriteTuplesetComputedusersetName
 }
@@ -5184,10 +4953,10 @@ func NewRewriteTuplesetComputedusersetNameContext(parser antlr.Parser, parent an
 func (s *RewriteTuplesetComputedusersetNameContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RewriteTuplesetComputedusersetNameContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5207,7 +4976,6 @@ func (s *RewriteTuplesetComputedusersetNameContext) ToStringTree(ruleNames []str
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RewriteTuplesetComputedusersetNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRewriteTuplesetComputedusersetName(s)
@@ -5220,9 +4988,6 @@ func (s *RewriteTuplesetComputedusersetNameContext) ExitRule(listener antlr.Pars
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RewriteTuplesetComputedusersetName() (localctx IRewriteTuplesetComputedusersetNameContext) {
 	localctx = NewRewriteTuplesetComputedusersetNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 54, OpenFGAParserRULE_rewriteTuplesetComputedusersetName)
@@ -5231,8 +4996,6 @@ func (p *OpenFGAParser) RewriteTuplesetComputedusersetName() (localctx IRewriteT
 		p.SetState(260)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5246,7 +5009,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRewriteTuplesetNameContext is an interface to support dynamic dispatch.
 type IRewriteTuplesetNameContext interface {
@@ -5274,7 +5036,7 @@ func NewEmptyRewriteTuplesetNameContext() *RewriteTuplesetNameContext {
 	return p
 }
 
-func InitEmptyRewriteTuplesetNameContext(p *RewriteTuplesetNameContext)  {
+func InitEmptyRewriteTuplesetNameContext(p *RewriteTuplesetNameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_rewriteTuplesetName
 }
@@ -5295,10 +5057,10 @@ func NewRewriteTuplesetNameContext(parser antlr.Parser, parent antlr.ParserRuleC
 func (s *RewriteTuplesetNameContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RewriteTuplesetNameContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5318,7 +5080,6 @@ func (s *RewriteTuplesetNameContext) ToStringTree(ruleNames []string, recog antl
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RewriteTuplesetNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRewriteTuplesetName(s)
@@ -5331,9 +5092,6 @@ func (s *RewriteTuplesetNameContext) ExitRule(listener antlr.ParseTreeListener) 
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RewriteTuplesetName() (localctx IRewriteTuplesetNameContext) {
 	localctx = NewRewriteTuplesetNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 56, OpenFGAParserRULE_rewriteTuplesetName)
@@ -5342,8 +5100,6 @@ func (p *OpenFGAParser) RewriteTuplesetName() (localctx IRewriteTuplesetNameCont
 		p.SetState(262)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5357,7 +5113,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IRelationNameContext is an interface to support dynamic dispatch.
 type IRelationNameContext interface {
@@ -5385,7 +5140,7 @@ func NewEmptyRelationNameContext() *RelationNameContext {
 	return p
 }
 
-func InitEmptyRelationNameContext(p *RelationNameContext)  {
+func InitEmptyRelationNameContext(p *RelationNameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_relationName
 }
@@ -5406,10 +5161,10 @@ func NewRelationNameContext(parser antlr.Parser, parent antlr.ParserRuleContext,
 func (s *RelationNameContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *RelationNameContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5429,7 +5184,6 @@ func (s *RelationNameContext) ToStringTree(ruleNames []string, recog antlr.Recog
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *RelationNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterRelationName(s)
@@ -5442,9 +5196,6 @@ func (s *RelationNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) RelationName() (localctx IRelationNameContext) {
 	localctx = NewRelationNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 58, OpenFGAParserRULE_relationName)
@@ -5453,8 +5204,6 @@ func (p *OpenFGAParser) RelationName() (localctx IRelationNameContext) {
 		p.SetState(264)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5468,7 +5217,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ITypeNameContext is an interface to support dynamic dispatch.
 type ITypeNameContext interface {
@@ -5496,7 +5244,7 @@ func NewEmptyTypeNameContext() *TypeNameContext {
 	return p
 }
 
-func InitEmptyTypeNameContext(p *TypeNameContext)  {
+func InitEmptyTypeNameContext(p *TypeNameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_typeName
 }
@@ -5517,10 +5265,10 @@ func NewTypeNameContext(parser antlr.Parser, parent antlr.ParserRuleContext, inv
 func (s *TypeNameContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *TypeNameContext) Name() INameContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INameContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5540,7 +5288,6 @@ func (s *TypeNameContext) ToStringTree(ruleNames []string, recog antlr.Recognize
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *TypeNameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterTypeName(s)
@@ -5553,9 +5300,6 @@ func (s *TypeNameContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) TypeName() (localctx ITypeNameContext) {
 	localctx = NewTypeNameContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 60, OpenFGAParserRULE_typeName)
@@ -5564,8 +5308,6 @@ func (p *OpenFGAParser) TypeName() (localctx ITypeNameContext) {
 		p.SetState(266)
 		p.Name()
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5579,7 +5321,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ICommentContext is an interface to support dynamic dispatch.
 type ICommentContext interface {
@@ -5607,7 +5348,7 @@ func NewEmptyCommentContext() *CommentContext {
 	return p
 }
 
-func InitEmptyCommentContext(p *CommentContext)  {
+func InitEmptyCommentContext(p *CommentContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_comment
 }
@@ -5628,10 +5369,10 @@ func NewCommentContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 func (s *CommentContext) GetParser() antlr.Parser { return s.parser }
 
 func (s *CommentContext) Spacing() ISpacingContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
-			t = ctx.(antlr.RuleContext);
+			t = ctx.(antlr.RuleContext)
 			break
 		}
 	}
@@ -5651,7 +5392,6 @@ func (s *CommentContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *CommentContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterComment(s)
@@ -5663,9 +5403,6 @@ func (s *CommentContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitComment(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	localctx = NewCommentContext(p, p.GetParserRuleContext(), p.GetState())
@@ -5680,7 +5417,6 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	if _la == OpenFGAParserT__19 {
 		{
 			p.SetState(268)
@@ -5692,8 +5428,8 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 		p.SetState(271)
 		p.Match(OpenFGAParserT__16)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
 	p.SetState(275)
@@ -5703,13 +5439,12 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
-	for ((int64(_la) & ^0x3f) == 0 && ((int64(1) << _la) & 7602174) != 0) {
+	for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&7602174) != 0 {
 		{
 			p.SetState(272)
 			_la = p.GetTokenStream().LA(1)
 
-			if _la <= 0 || _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18  {
+			if _la <= 0 || _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18 {
 				p.GetErrorHandler().RecoverInline(p)
 			} else {
 				p.GetErrorHandler().ReportMatch(p)
@@ -5717,16 +5452,13 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 			}
 		}
 
-
 		p.SetState(277)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_la = p.GetTokenStream().LA(1)
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5740,7 +5472,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // IMultiLineCommentContext is an interface to support dynamic dispatch.
 type IMultiLineCommentContext interface {
@@ -5771,7 +5502,7 @@ func NewEmptyMultiLineCommentContext() *MultiLineCommentContext {
 	return p
 }
 
-func InitEmptyMultiLineCommentContext(p *MultiLineCommentContext)  {
+func InitEmptyMultiLineCommentContext(p *MultiLineCommentContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_multiLineComment
 }
@@ -5813,12 +5544,12 @@ func (s *MultiLineCommentContext) AllComment() []ICommentContext {
 }
 
 func (s *MultiLineCommentContext) Comment(i int) ICommentContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ICommentContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -5854,12 +5585,12 @@ func (s *MultiLineCommentContext) AllNewline() []INewlineContext {
 }
 
 func (s *MultiLineCommentContext) Newline(i int) INewlineContext {
-	var t antlr.RuleContext;
+	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(INewlineContext); ok {
 			if j == i {
-				t = ctx.(antlr.RuleContext);
+				t = ctx.(antlr.RuleContext)
 				break
 			}
 			j++
@@ -5881,7 +5612,6 @@ func (s *MultiLineCommentContext) ToStringTree(ruleNames []string, recog antlr.R
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *MultiLineCommentContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterMultiLineComment(s)
@@ -5893,9 +5623,6 @@ func (s *MultiLineCommentContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitMultiLineComment(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) MultiLineComment() (localctx IMultiLineCommentContext) {
 	localctx = NewMultiLineCommentContext(p, p.GetParserRuleContext(), p.GetState())
@@ -5927,20 +5654,17 @@ func (p *OpenFGAParser) MultiLineComment() (localctx IMultiLineCommentContext) {
 				p.Comment()
 			}
 
-
 		}
 		p.SetState(286)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 30, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -5954,7 +5678,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ISpacingContext is an interface to support dynamic dispatch.
 type ISpacingContext interface {
@@ -5978,7 +5701,7 @@ func NewEmptySpacingContext() *SpacingContext {
 	return p
 }
 
-func InitEmptySpacingContext(p *SpacingContext)  {
+func InitEmptySpacingContext(p *SpacingContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_spacing
 }
@@ -6005,7 +5728,6 @@ func (s *SpacingContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *SpacingContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterSpacing(s)
@@ -6017,9 +5739,6 @@ func (s *SpacingContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitSpacing(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 	localctx = NewSpacingContext(p, p.GetParserRuleContext(), p.GetState())
@@ -6036,17 +5755,14 @@ func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 	for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		switch _alt {
 		case 1:
-				{
-					p.SetState(287)
-					p.Match(OpenFGAParserT__19)
-					if p.HasError() {
-							// Recognition error - abort rule
-							goto errorExit
-					}
+			{
+				p.SetState(287)
+				p.Match(OpenFGAParserT__19)
+				if p.HasError() {
+					// Recognition error - abort rule
+					goto errorExit
 				}
-
-
-
+			}
 
 		default:
 			p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
@@ -6061,8 +5777,6 @@ func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 		}
 	}
 
-
-
 errorExit:
 	if p.HasError() {
 		v := p.GetError()
@@ -6075,7 +5789,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // INewlineContext is an interface to support dynamic dispatch.
 type INewlineContext interface {
@@ -6099,7 +5812,7 @@ func NewEmptyNewlineContext() *NewlineContext {
 	return p
 }
 
-func InitEmptyNewlineContext(p *NewlineContext)  {
+func InitEmptyNewlineContext(p *NewlineContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_newline
 }
@@ -6126,7 +5839,6 @@ func (s *NewlineContext) ToStringTree(ruleNames []string, recog antlr.Recognizer
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *NewlineContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterNewline(s)
@@ -6138,9 +5850,6 @@ func (s *NewlineContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitNewline(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Newline() (localctx INewlineContext) {
 	localctx = NewNewlineContext(p, p.GetParserRuleContext(), p.GetState())
@@ -6155,7 +5864,6 @@ func (p *OpenFGAParser) Newline() (localctx INewlineContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	for ok := true; ok; ok = _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18 {
 		{
 			p.SetState(292)
@@ -6169,16 +5877,13 @@ func (p *OpenFGAParser) Newline() (localctx INewlineContext) {
 			}
 		}
 
-
 		p.SetState(295)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_la = p.GetTokenStream().LA(1)
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -6192,7 +5897,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // ISchemaVersionContext is an interface to support dynamic dispatch.
 type ISchemaVersionContext interface {
@@ -6216,7 +5920,7 @@ func NewEmptySchemaVersionContext() *SchemaVersionContext {
 	return p
 }
 
-func InitEmptySchemaVersionContext(p *SchemaVersionContext)  {
+func InitEmptySchemaVersionContext(p *SchemaVersionContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_schemaVersion
 }
@@ -6243,7 +5947,6 @@ func (s *SchemaVersionContext) ToStringTree(ruleNames []string, recog antlr.Reco
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *SchemaVersionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterSchemaVersion(s)
@@ -6256,9 +5959,6 @@ func (s *SchemaVersionContext) ExitRule(listener antlr.ParseTreeListener) {
 	}
 }
 
-
-
-
 func (p *OpenFGAParser) SchemaVersion() (localctx ISchemaVersionContext) {
 	localctx = NewSchemaVersionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 70, OpenFGAParserRULE_schemaVersion)
@@ -6267,12 +5967,10 @@ func (p *OpenFGAParser) SchemaVersion() (localctx ISchemaVersionContext) {
 		p.SetState(297)
 		p.Match(OpenFGAParserT__20)
 		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
+			// Recognition error - abort rule
+			goto errorExit
 		}
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -6286,7 +5984,6 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
 
 // INameContext is an interface to support dynamic dispatch.
 type INameContext interface {
@@ -6315,7 +6012,7 @@ func NewEmptyNameContext() *NameContext {
 	return p
 }
 
-func InitEmptyNameContext(p *NameContext)  {
+func InitEmptyNameContext(p *NameContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
 	p.RuleIndex = OpenFGAParserRULE_name
 }
@@ -6351,7 +6048,6 @@ func (s *NameContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) s
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-
 func (s *NameContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(OpenFGAListener); ok {
 		listenerT.EnterName(s)
@@ -6363,9 +6059,6 @@ func (s *NameContext) ExitRule(listener antlr.ParseTreeListener) {
 		listenerT.ExitName(s)
 	}
 }
-
-
-
 
 func (p *OpenFGAParser) Name() (localctx INameContext) {
 	localctx = NewNameContext(p, p.GetParserRuleContext(), p.GetState())
@@ -6380,27 +6073,23 @@ func (p *OpenFGAParser) Name() (localctx INameContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-
 	for ok := true; ok; ok = _la == OpenFGAParserALPHA_NUMERIC {
 		{
 			p.SetState(299)
 			p.Match(OpenFGAParserALPHA_NUMERIC)
 			if p.HasError() {
-					// Recognition error - abort rule
-					goto errorExit
+				// Recognition error - abort rule
+				goto errorExit
 			}
 		}
-
 
 		p.SetState(302)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
-	    	goto errorExit
-	    }
+			goto errorExit
+		}
 		_la = p.GetTokenStream().LA(1)
 	}
-
-
 
 errorExit:
 	if p.HasError() {
@@ -6414,5 +6103,3 @@ errorExit:
 	return localctx
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
-
-

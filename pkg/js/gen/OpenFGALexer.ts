@@ -33,7 +33,7 @@ export default class OpenFGALexer extends Lexer {
 	public static readonly T__18 = 19;
 	public static readonly T__19 = 20;
 	public static readonly T__20 = 21;
-	public static readonly WORD = 22;
+	public static readonly ALPHA_NUMERIC = 22;
 	public static readonly EOF = Token.EOF;
 
 	public static readonly channelNames: string[] = [ "DEFAULT_TOKEN_CHANNEL", "HIDDEN" ];
@@ -61,13 +61,13 @@ export default class OpenFGALexer extends Lexer {
                                                              null, null, 
                                                              null, null, 
                                                              null, null, 
-                                                             "WORD" ];
+                                                             "ALPHA_NUMERIC" ];
 	public static readonly modeNames: string[] = [ "DEFAULT_MODE", ];
 
 	public static readonly ruleNames: string[] = [
 		"T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
 		"T__9", "T__10", "T__11", "T__12", "T__13", "T__14", "T__15", "T__16", 
-		"T__17", "T__18", "T__19", "T__20", "WORD",
+		"T__17", "T__18", "T__19", "T__20", "ALPHA_NUMERIC",
 	];
 
 

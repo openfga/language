@@ -82,20 +82,16 @@ func (s *BaseOpenFGAListener) EnterRelationDefPartialAllAnd(ctx *RelationDefPart
 func (s *BaseOpenFGAListener) ExitRelationDefPartialAllAnd(ctx *RelationDefPartialAllAndContext) {}
 
 // EnterRelationDefPartialAllButNot is called when production relationDefPartialAllButNot is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {}
 
 // ExitRelationDefPartialAllButNot is called when production relationDefPartialAllButNot is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {}
 
 // EnterRelationDefDirectAssignment is called when production relationDefDirectAssignment is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {}
 
 // ExitRelationDefDirectAssignment is called when production relationDefDirectAssignment is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {}
 
 // EnterRelationDefRewrite is called when production relationDefRewrite is entered.
 func (s *BaseOpenFGAListener) EnterRelationDefRewrite(ctx *RelationDefRewriteContext) {}
@@ -104,20 +100,16 @@ func (s *BaseOpenFGAListener) EnterRelationDefRewrite(ctx *RelationDefRewriteCon
 func (s *BaseOpenFGAListener) ExitRelationDefRewrite(ctx *RelationDefRewriteContext) {}
 
 // EnterRelationDefRelationOnSameObject is called when production relationDefRelationOnSameObject is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {}
 
 // ExitRelationDefRelationOnSameObject is called when production relationDefRelationOnSameObject is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {}
 
 // EnterRelationDefRelationOnRelatedObject is called when production relationDefRelationOnRelatedObject is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {}
 
 // ExitRelationDefRelationOnRelatedObject is called when production relationDefRelationOnRelatedObject is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {}
 
 // EnterRelationDefOperator is called when production relationDefOperator is entered.
 func (s *BaseOpenFGAListener) EnterRelationDefOperator(ctx *RelationDefOperatorContext) {}
@@ -150,60 +142,52 @@ func (s *BaseOpenFGAListener) EnterRelationDefKeywordFrom(ctx *RelationDefKeywor
 func (s *BaseOpenFGAListener) ExitRelationDefKeywordFrom(ctx *RelationDefKeywordFromContext) {}
 
 // EnterRelationDefTypeRestriction is called when production relationDefTypeRestriction is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {}
 
 // ExitRelationDefTypeRestriction is called when production relationDefTypeRestriction is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {}
 
 // EnterRelationDefTypeRestrictionType is called when production relationDefTypeRestrictionType is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {}
 
 // ExitRelationDefTypeRestrictionType is called when production relationDefTypeRestrictionType is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {}
 
 // EnterRelationDefTypeRestrictionRelation is called when production relationDefTypeRestrictionRelation is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {}
 
 // ExitRelationDefTypeRestrictionRelation is called when production relationDefTypeRestrictionRelation is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {}
 
 // EnterRelationDefTypeRestrictionWildcard is called when production relationDefTypeRestrictionWildcard is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {}
 
 // ExitRelationDefTypeRestrictionWildcard is called when production relationDefTypeRestrictionWildcard is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {}
 
 // EnterRelationDefTypeRestrictionUserset is called when production relationDefTypeRestrictionUserset is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {
-}
+func (s *BaseOpenFGAListener) EnterRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {}
 
 // ExitRelationDefTypeRestrictionUserset is called when production relationDefTypeRestrictionUserset is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {
-}
+func (s *BaseOpenFGAListener) ExitRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {}
+
+// EnterRelationDefGrouping is called when production relationDefGrouping is entered.
+func (s *BaseOpenFGAListener) EnterRelationDefGrouping(ctx *RelationDefGroupingContext) {}
+
+// ExitRelationDefGrouping is called when production relationDefGrouping is exited.
+func (s *BaseOpenFGAListener) ExitRelationDefGrouping(ctx *RelationDefGroupingContext) {}
 
 // EnterRewriteComputedusersetName is called when production rewriteComputedusersetName is entered.
-func (s *BaseOpenFGAListener) EnterRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAListener) EnterRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {}
 
 // ExitRewriteComputedusersetName is called when production rewriteComputedusersetName is exited.
-func (s *BaseOpenFGAListener) ExitRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAListener) ExitRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {}
 
 // EnterRewriteTuplesetComputedusersetName is called when production rewriteTuplesetComputedusersetName is entered.
-func (s *BaseOpenFGAListener) EnterRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAListener) EnterRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {}
 
 // ExitRewriteTuplesetComputedusersetName is called when production rewriteTuplesetComputedusersetName is exited.
-func (s *BaseOpenFGAListener) ExitRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAListener) ExitRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {}
 
 // EnterRewriteTuplesetName is called when production rewriteTuplesetName is entered.
 func (s *BaseOpenFGAListener) EnterRewriteTuplesetName(ctx *RewriteTuplesetNameContext) {}

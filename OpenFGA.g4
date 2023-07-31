@@ -1,20 +1,20 @@
 grammar OpenFGA;
 
-main: modelHeader typeDefs newline*;
+main: modelHeader typeDefs newline?;
 
 indentation: '  ' | '	';
 
-modelHeader: 'model' (newline+ multiLineComment)? newline indentation 'schema' spacing schemaVersion;
+modelHeader: (multiLineComment newline)? 'model' spacing? (newline multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
 typeDefs: typeDef*;
-typeDef:  (newline+ multiLineComment)? newline+ 'type' spacing typeName (newline indentation 'relations' relationDeclaration+)?;
-relationDeclaration: (newline+ multiLineComment)? newline+ indentation indentation 'define' spacing relationName ':' spacing? relationDef;
+typeDef:  (newline multiLineComment)? newline 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
+relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef spacing?;
 
-relationDef: (relationDefDirectAssignment | relationDefRewrite) relationDefPartials?;
+relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
 
 relationDefPartials: relationDefPartialAllOr | relationDefPartialAllAnd | relationDefPartialAllButNot;
-relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefRewrite)+;
-relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefRewrite)+;
-relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefRewrite)+;
+relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefGrouping)+;
+relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefGrouping)+;
+relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefGrouping)+;
 
 relationDefDirectAssignment: '[' relationDefTypeRestriction spacing? (',' spacing? relationDefTypeRestriction)* spacing? ']';
 relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
@@ -33,11 +33,7 @@ relationDefTypeRestrictionRelation: name;
 relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType ':*';
 relationDefTypeRestrictionUserset: relationDefTypeRestrictionType '#' relationDefTypeRestrictionRelation;
 
-//relationDefComplexGrouping: relationDefGroup (spacing relationDefOperator spacing relationDefGroup)*;
-//relationDefGroup: '(' spacing? (relationDefOrGrouping | relationDefAndGrouping | relationDefButNotGrouping) spacing? ')';
-//relationDefAndGrouping: relationDefRewrite spacing relationDefOperatorAnd (spacing relationDefAndGrouping)+;
-//relationDefOrGrouping: relationDefRewrite spacing relationDefOperatorOr (spacing relationDefOrGrouping)+;
-//relationDefButNotGrouping: relationDefRewrite spacing relationDefOperatorButNot (spacing relationDefButNotGrouping)+;
+relationDefGrouping: relationDefRewrite;
 
 rewriteComputedusersetName: name;
 rewriteTuplesetComputedusersetName: name;
@@ -46,12 +42,12 @@ relationName: name;
 typeName: name;
 
 comment
-  : spacing*  '#' ~( '\r' | '\n' )*
+  : spacing?  '#' ~( '\r' | '\n' )*
   ;
-multiLineComment: comment (newline+ comment)*;
+multiLineComment: comment (newline comment)*;
 spacing: ' '+;
-newline: '\n';
+newline: ('\r' | '\n')+;
 schemaVersion: '1.1';
 
-name: WORD+;
-WORD: [a-zA-Z0-9_-]+;
+name: ALPHA_NUMERIC+;
+ALPHA_NUMERIC: [a-zA-Z0-9_-]+;

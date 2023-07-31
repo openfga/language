@@ -1,9 +1,9 @@
 package transformer
 
 import (
+	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
 	"github.com/antlr4-go/antlr/v4"
 	parser "github.com/openfga/language/pkg/go/gen"
-	pb "go.buf.build/openfga/go/openfga/api/openfga/v1"
 )
 
 type RelationDefinitionOperator string

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	pb "go.buf.build/openfga/go/openfga/api/openfga/v1"
+	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

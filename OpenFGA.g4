@@ -4,9 +4,9 @@ main: modelHeader typeDefs newline?;
 
 indentation: '  ' | '	';
 
-modelHeader: (multiLineComment newline)? 'model' spacing? (newline+ multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
+modelHeader: (multiLineComment newline)? 'model' spacing? (newline multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
 typeDefs: typeDef*;
-typeDef:  (newline multiLineComment)? newline+ 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
+typeDef:  (newline multiLineComment)? newline 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
 relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef spacing?;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
@@ -34,7 +34,6 @@ relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType ':*';
 relationDefTypeRestrictionUserset: relationDefTypeRestrictionType '#' relationDefTypeRestrictionRelation;
 
 relationDefGrouping: relationDefRewrite;
-relationDefGroup: '('  relationDefGrouping relationDefPartials* ')';
 
 rewriteComputedusersetName: name;
 rewriteTuplesetComputedusersetName: name;
@@ -43,12 +42,12 @@ relationName: name;
 typeName: name;
 
 comment
-  : spacing*  '#' ~( '\r' | '\n' )*
+  : spacing?  '#' ~( '\r' | '\n' )*
   ;
 multiLineComment: comment (newline comment)*;
 spacing: ' '+;
-newline: '\n'+;
+newline: ('\r' | '\n')+;
 schemaVersion: '1.1';
 
-name: WORD+;
-WORD: [a-zA-Z0-9_-]+;
+name: ALPHA_NUMERIC+;
+ALPHA_NUMERIC: [a-zA-Z0-9_-]+;

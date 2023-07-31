@@ -177,12 +177,6 @@ func (s *BaseOpenFGAListener) EnterRelationDefGrouping(ctx *RelationDefGroupingC
 // ExitRelationDefGrouping is called when production relationDefGrouping is exited.
 func (s *BaseOpenFGAListener) ExitRelationDefGrouping(ctx *RelationDefGroupingContext) {}
 
-// EnterRelationDefGroup is called when production relationDefGroup is entered.
-func (s *BaseOpenFGAListener) EnterRelationDefGroup(ctx *RelationDefGroupContext) {}
-
-// ExitRelationDefGroup is called when production relationDefGroup is exited.
-func (s *BaseOpenFGAListener) ExitRelationDefGroup(ctx *RelationDefGroupContext) {}
-
 // EnterRewriteComputedusersetName is called when production rewriteComputedusersetName is entered.
 func (s *BaseOpenFGAListener) EnterRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {}
 

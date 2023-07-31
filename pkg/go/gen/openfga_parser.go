@@ -36,11 +36,11 @@ func openfgaParserInit() {
   staticData.LiteralNames = []string{
     "", "'  '", "'\\u0009'", "'model'", "'schema'", "'type'", "'relations'", 
     "'define'", "':'", "'['", "','", "']'", "'and'", "'or'", "'but not'", 
-    "'from'", "':*'", "'#'", "'('", "')'", "'\\r'", "'\\n'", "' '", "'1.1'",
+    "'from'", "':*'", "'#'", "'\\r'", "'\\n'", "' '", "'1.1'",
   }
   staticData.SymbolicNames = []string{
     "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", 
-    "", "", "", "", "", "", "", "WORD",
+    "", "", "", "", "", "ALPHA_NUMERIC",
   }
   staticData.RuleNames = []string{
     "main", "indentation", "modelHeader", "typeDefs", "typeDef", "relationDeclaration", 
@@ -51,153 +51,141 @@ func openfgaParserInit() {
     "relationDefOperatorButNot", "relationDefKeywordFrom", "relationDefTypeRestriction", 
     "relationDefTypeRestrictionType", "relationDefTypeRestrictionRelation", 
     "relationDefTypeRestrictionWildcard", "relationDefTypeRestrictionUserset", 
-    "relationDefGrouping", "relationDefGroup", "rewriteComputedusersetName", 
-    "rewriteTuplesetComputedusersetName", "rewriteTuplesetName", "relationName", 
-    "typeName", "comment", "multiLineComment", "spacing", "newline", "schemaVersion", 
-    "name",
+    "relationDefGrouping", "rewriteComputedusersetName", "rewriteTuplesetComputedusersetName", 
+    "rewriteTuplesetName", "relationName", "typeName", "comment", "multiLineComment", 
+    "spacing", "newline", "schemaVersion", "name",
   }
   staticData.PredictionContextCache = antlr.NewPredictionContextCache()
   staticData.serializedATN = []int32{
-	4, 1, 24, 328, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 
+	4, 1, 22, 305, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 
 	4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 
 	10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15, 
 	2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2, 
 	21, 7, 21, 2, 22, 7, 22, 2, 23, 7, 23, 2, 24, 7, 24, 2, 25, 7, 25, 2, 26, 
 	7, 26, 2, 27, 7, 27, 2, 28, 7, 28, 2, 29, 7, 29, 2, 30, 7, 30, 2, 31, 7, 
 	31, 2, 32, 7, 32, 2, 33, 7, 33, 2, 34, 7, 34, 2, 35, 7, 35, 2, 36, 7, 36, 
-	2, 37, 7, 37, 1, 0, 1, 0, 1, 0, 3, 0, 80, 8, 0, 1, 1, 1, 1, 1, 2, 1, 2, 
-	1, 2, 3, 2, 87, 8, 2, 1, 2, 1, 2, 3, 2, 91, 8, 2, 1, 2, 4, 2, 94, 8, 2, 
-	11, 2, 12, 2, 95, 1, 2, 1, 2, 3, 2, 100, 8, 2, 1, 2, 1, 2, 1, 2, 1, 2, 
-	1, 2, 1, 2, 3, 2, 108, 8, 2, 1, 3, 5, 3, 111, 8, 3, 10, 3, 12, 3, 114, 
-	9, 3, 1, 4, 1, 4, 1, 4, 3, 4, 119, 8, 4, 1, 4, 4, 4, 122, 8, 4, 11, 4, 
-	12, 4, 123, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 130, 8, 4, 1, 4, 1, 4, 1, 4, 
-	1, 4, 3, 4, 136, 8, 4, 1, 4, 4, 4, 139, 8, 4, 11, 4, 12, 4, 140, 3, 4, 
-	143, 8, 4, 1, 5, 1, 5, 1, 5, 3, 5, 148, 8, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 
-	5, 1, 5, 1, 5, 3, 5, 157, 8, 5, 1, 5, 1, 5, 3, 5, 161, 8, 5, 1, 5, 1, 5, 
-	3, 5, 165, 8, 5, 1, 6, 1, 6, 3, 6, 169, 8, 6, 1, 6, 3, 6, 172, 8, 6, 1, 
-	7, 1, 7, 1, 7, 3, 7, 177, 8, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 4, 8, 184, 
-	8, 8, 11, 8, 12, 8, 185, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 4, 9, 193, 8, 9, 
-	11, 9, 12, 9, 194, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 4, 10, 202, 8, 10, 
-	11, 10, 12, 10, 203, 1, 11, 1, 11, 1, 11, 3, 11, 209, 8, 11, 1, 11, 1, 
-	11, 3, 11, 213, 8, 11, 1, 11, 5, 11, 216, 8, 11, 10, 11, 12, 11, 219, 9, 
-	11, 1, 11, 3, 11, 222, 8, 11, 1, 11, 1, 11, 1, 12, 1, 12, 3, 12, 228, 8, 
-	12, 1, 13, 1, 13, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 15, 1, 15, 
-	1, 15, 3, 15, 241, 8, 15, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 
-	19, 1, 19, 1, 20, 1, 20, 1, 20, 3, 20, 254, 8, 20, 1, 21, 1, 21, 1, 22, 
-	1, 22, 1, 23, 1, 23, 1, 23, 1, 24, 1, 24, 1, 24, 1, 24, 1, 25, 1, 25, 1, 
-	26, 1, 26, 1, 26, 5, 26, 272, 8, 26, 10, 26, 12, 26, 275, 9, 26, 1, 26, 
-	1, 26, 1, 27, 1, 27, 1, 28, 1, 28, 1, 29, 1, 29, 1, 30, 1, 30, 1, 31, 1, 
-	31, 1, 32, 5, 32, 290, 8, 32, 10, 32, 12, 32, 293, 9, 32, 1, 32, 1, 32, 
-	5, 32, 297, 8, 32, 10, 32, 12, 32, 300, 9, 32, 1, 33, 1, 33, 1, 33, 1, 
-	33, 5, 33, 306, 8, 33, 10, 33, 12, 33, 309, 9, 33, 1, 34, 4, 34, 312, 8, 
-	34, 11, 34, 12, 34, 313, 1, 35, 4, 35, 317, 8, 35, 11, 35, 12, 35, 318, 
-	1, 36, 1, 36, 1, 37, 4, 37, 324, 8, 37, 11, 37, 12, 37, 325, 1, 37, 0, 
-	0, 38, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 
-	36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 
-	72, 74, 0, 2, 1, 0, 1, 2, 1, 0, 20, 21, 329, 0, 76, 1, 0, 0, 0, 2, 81, 
-	1, 0, 0, 0, 4, 86, 1, 0, 0, 0, 6, 112, 1, 0, 0, 0, 8, 118, 1, 0, 0, 0, 
-	10, 147, 1, 0, 0, 0, 12, 168, 1, 0, 0, 0, 14, 176, 1, 0, 0, 0, 16, 183, 
-	1, 0, 0, 0, 18, 192, 1, 0, 0, 0, 20, 201, 1, 0, 0, 0, 22, 205, 1, 0, 0, 
-	0, 24, 227, 1, 0, 0, 0, 26, 229, 1, 0, 0, 0, 28, 231, 1, 0, 0, 0, 30, 240, 
-	1, 0, 0, 0, 32, 242, 1, 0, 0, 0, 34, 244, 1, 0, 0, 0, 36, 246, 1, 0, 0, 
-	0, 38, 248, 1, 0, 0, 0, 40, 253, 1, 0, 0, 0, 42, 255, 1, 0, 0, 0, 44, 257, 
-	1, 0, 0, 0, 46, 259, 1, 0, 0, 0, 48, 262, 1, 0, 0, 0, 50, 266, 1, 0, 0, 
-	0, 52, 268, 1, 0, 0, 0, 54, 278, 1, 0, 0, 0, 56, 280, 1, 0, 0, 0, 58, 282, 
-	1, 0, 0, 0, 60, 284, 1, 0, 0, 0, 62, 286, 1, 0, 0, 0, 64, 291, 1, 0, 0, 
-	0, 66, 301, 1, 0, 0, 0, 68, 311, 1, 0, 0, 0, 70, 316, 1, 0, 0, 0, 72, 320, 
-	1, 0, 0, 0, 74, 323, 1, 0, 0, 0, 76, 77, 3, 4, 2, 0, 77, 79, 3, 6, 3, 0, 
-	78, 80, 3, 70, 35, 0, 79, 78, 1, 0, 0, 0, 79, 80, 1, 0, 0, 0, 80, 1, 1, 
-	0, 0, 0, 81, 82, 7, 0, 0, 0, 82, 3, 1, 0, 0, 0, 83, 84, 3, 66, 33, 0, 84, 
-	85, 3, 70, 35, 0, 85, 87, 1, 0, 0, 0, 86, 83, 1, 0, 0, 0, 86, 87, 1, 0, 
-	0, 0, 87, 88, 1, 0, 0, 0, 88, 90, 5, 3, 0, 0, 89, 91, 3, 68, 34, 0, 90, 
-	89, 1, 0, 0, 0, 90, 91, 1, 0, 0, 0, 91, 99, 1, 0, 0, 0, 92, 94, 3, 70, 
-	35, 0, 93, 92, 1, 0, 0, 0, 94, 95, 1, 0, 0, 0, 95, 93, 1, 0, 0, 0, 95, 
-	96, 1, 0, 0, 0, 96, 97, 1, 0, 0, 0, 97, 98, 3, 66, 33, 0, 98, 100, 1, 0, 
-	0, 0, 99, 93, 1, 0, 0, 0, 99, 100, 1, 0, 0, 0, 100, 101, 1, 0, 0, 0, 101, 
-	102, 3, 70, 35, 0, 102, 103, 3, 2, 1, 0, 103, 104, 5, 4, 0, 0, 104, 105, 
-	3, 68, 34, 0, 105, 107, 3, 72, 36, 0, 106, 108, 3, 68, 34, 0, 107, 106, 
-	1, 0, 0, 0, 107, 108, 1, 0, 0, 0, 108, 5, 1, 0, 0, 0, 109, 111, 3, 8, 4, 
-	0, 110, 109, 1, 0, 0, 0, 111, 114, 1, 0, 0, 0, 112, 110, 1, 0, 0, 0, 112, 
-	113, 1, 0, 0, 0, 113, 7, 1, 0, 0, 0, 114, 112, 1, 0, 0, 0, 115, 116, 3, 
-	70, 35, 0, 116, 117, 3, 66, 33, 0, 117, 119, 1, 0, 0, 0, 118, 115, 1, 0, 
-	0, 0, 118, 119, 1, 0, 0, 0, 119, 121, 1, 0, 0, 0, 120, 122, 3, 70, 35, 
-	0, 121, 120, 1, 0, 0, 0, 122, 123, 1, 0, 0, 0, 123, 121, 1, 0, 0, 0, 123, 
-	124, 1, 0, 0, 0, 124, 125, 1, 0, 0, 0, 125, 126, 5, 5, 0, 0, 126, 127, 
-	3, 68, 34, 0, 127, 129, 3, 62, 31, 0, 128, 130, 3, 68, 34, 0, 129, 128, 
-	1, 0, 0, 0, 129, 130, 1, 0, 0, 0, 130, 142, 1, 0, 0, 0, 131, 132, 3, 70, 
-	35, 0, 132, 133, 3, 2, 1, 0, 133, 135, 5, 6, 0, 0, 134, 136, 3, 68, 34, 
-	0, 135, 134, 1, 0, 0, 0, 135, 136, 1, 0, 0, 0, 136, 138, 1, 0, 0, 0, 137, 
-	139, 3, 10, 5, 0, 138, 137, 1, 0, 0, 0, 139, 140, 1, 0, 0, 0, 140, 138, 
-	1, 0, 0, 0, 140, 141, 1, 0, 0, 0, 141, 143, 1, 0, 0, 0, 142, 131, 1, 0, 
-	0, 0, 142, 143, 1, 0, 0, 0, 143, 9, 1, 0, 0, 0, 144, 145, 3, 70, 35, 0, 
-	145, 146, 3, 66, 33, 0, 146, 148, 1, 0, 0, 0, 147, 144, 1, 0, 0, 0, 147, 
-	148, 1, 0, 0, 0, 148, 149, 1, 0, 0, 0, 149, 150, 3, 70, 35, 0, 150, 151, 
-	3, 2, 1, 0, 151, 152, 3, 2, 1, 0, 152, 153, 5, 7, 0, 0, 153, 154, 3, 68, 
-	34, 0, 154, 156, 3, 60, 30, 0, 155, 157, 3, 68, 34, 0, 156, 155, 1, 0, 
-	0, 0, 156, 157, 1, 0, 0, 0, 157, 158, 1, 0, 0, 0, 158, 160, 5, 8, 0, 0, 
-	159, 161, 3, 68, 34, 0, 160, 159, 1, 0, 0, 0, 160, 161, 1, 0, 0, 0, 161, 
-	162, 1, 0, 0, 0, 162, 164, 3, 12, 6, 0, 163, 165, 3, 68, 34, 0, 164, 163, 
-	1, 0, 0, 0, 164, 165, 1, 0, 0, 0, 165, 11, 1, 0, 0, 0, 166, 169, 3, 22, 
-	11, 0, 167, 169, 3, 50, 25, 0, 168, 166, 1, 0, 0, 0, 168, 167, 1, 0, 0, 
-	0, 169, 171, 1, 0, 0, 0, 170, 172, 3, 14, 7, 0, 171, 170, 1, 0, 0, 0, 171, 
-	172, 1, 0, 0, 0, 172, 13, 1, 0, 0, 0, 173, 177, 3, 16, 8, 0, 174, 177, 
-	3, 18, 9, 0, 175, 177, 3, 20, 10, 0, 176, 173, 1, 0, 0, 0, 176, 174, 1, 
-	0, 0, 0, 176, 175, 1, 0, 0, 0, 177, 15, 1, 0, 0, 0, 178, 179, 3, 68, 34, 
-	0, 179, 180, 3, 34, 17, 0, 180, 181, 3, 68, 34, 0, 181, 182, 3, 50, 25, 
-	0, 182, 184, 1, 0, 0, 0, 183, 178, 1, 0, 0, 0, 184, 185, 1, 0, 0, 0, 185, 
-	183, 1, 0, 0, 0, 185, 186, 1, 0, 0, 0, 186, 17, 1, 0, 0, 0, 187, 188, 3, 
-	68, 34, 0, 188, 189, 3, 32, 16, 0, 189, 190, 3, 68, 34, 0, 190, 191, 3, 
-	50, 25, 0, 191, 193, 1, 0, 0, 0, 192, 187, 1, 0, 0, 0, 193, 194, 1, 0, 
-	0, 0, 194, 192, 1, 0, 0, 0, 194, 195, 1, 0, 0, 0, 195, 19, 1, 0, 0, 0, 
-	196, 197, 3, 68, 34, 0, 197, 198, 3, 36, 18, 0, 198, 199, 3, 68, 34, 0, 
-	199, 200, 3, 50, 25, 0, 200, 202, 1, 0, 0, 0, 201, 196, 1, 0, 0, 0, 202, 
-	203, 1, 0, 0, 0, 203, 201, 1, 0, 0, 0, 203, 204, 1, 0, 0, 0, 204, 21, 1, 
-	0, 0, 0, 205, 206, 5, 9, 0, 0, 206, 208, 3, 40, 20, 0, 207, 209, 3, 68, 
-	34, 0, 208, 207, 1, 0, 0, 0, 208, 209, 1, 0, 0, 0, 209, 217, 1, 0, 0, 0, 
-	210, 212, 5, 10, 0, 0, 211, 213, 3, 68, 34, 0, 212, 211, 1, 0, 0, 0, 212, 
-	213, 1, 0, 0, 0, 213, 214, 1, 0, 0, 0, 214, 216, 3, 40, 20, 0, 215, 210, 
-	1, 0, 0, 0, 216, 219, 1, 0, 0, 0, 217, 215, 1, 0, 0, 0, 217, 218, 1, 0, 
-	0, 0, 218, 221, 1, 0, 0, 0, 219, 217, 1, 0, 0, 0, 220, 222, 3, 68, 34, 
-	0, 221, 220, 1, 0, 0, 0, 221, 222, 1, 0, 0, 0, 222, 223, 1, 0, 0, 0, 223, 
-	224, 5, 11, 0, 0, 224, 23, 1, 0, 0, 0, 225, 228, 3, 26, 13, 0, 226, 228, 
-	3, 28, 14, 0, 227, 225, 1, 0, 0, 0, 227, 226, 1, 0, 0, 0, 228, 25, 1, 0, 
-	0, 0, 229, 230, 3, 54, 27, 0, 230, 27, 1, 0, 0, 0, 231, 232, 3, 56, 28, 
-	0, 232, 233, 3, 68, 34, 0, 233, 234, 3, 38, 19, 0, 234, 235, 3, 68, 34, 
-	0, 235, 236, 3, 58, 29, 0, 236, 29, 1, 0, 0, 0, 237, 241, 3, 34, 17, 0, 
-	238, 241, 3, 32, 16, 0, 239, 241, 3, 36, 18, 0, 240, 237, 1, 0, 0, 0, 240, 
-	238, 1, 0, 0, 0, 240, 239, 1, 0, 0, 0, 241, 31, 1, 0, 0, 0, 242, 243, 5, 
-	12, 0, 0, 243, 33, 1, 0, 0, 0, 244, 245, 5, 13, 0, 0, 245, 35, 1, 0, 0, 
-	0, 246, 247, 5, 14, 0, 0, 247, 37, 1, 0, 0, 0, 248, 249, 5, 15, 0, 0, 249, 
-	39, 1, 0, 0, 0, 250, 254, 3, 42, 21, 0, 251, 254, 3, 46, 23, 0, 252, 254, 
-	3, 48, 24, 0, 253, 250, 1, 0, 0, 0, 253, 251, 1, 0, 0, 0, 253, 252, 1, 
-	0, 0, 0, 254, 41, 1, 0, 0, 0, 255, 256, 3, 74, 37, 0, 256, 43, 1, 0, 0, 
-	0, 257, 258, 3, 74, 37, 0, 258, 45, 1, 0, 0, 0, 259, 260, 3, 42, 21, 0, 
-	260, 261, 5, 16, 0, 0, 261, 47, 1, 0, 0, 0, 262, 263, 3, 42, 21, 0, 263, 
-	264, 5, 17, 0, 0, 264, 265, 3, 44, 22, 0, 265, 49, 1, 0, 0, 0, 266, 267, 
-	3, 24, 12, 0, 267, 51, 1, 0, 0, 0, 268, 269, 5, 18, 0, 0, 269, 273, 3, 
-	50, 25, 0, 270, 272, 3, 14, 7, 0, 271, 270, 1, 0, 0, 0, 272, 275, 1, 0, 
-	0, 0, 273, 271, 1, 0, 0, 0, 273, 274, 1, 0, 0, 0, 274, 276, 1, 0, 0, 0, 
-	275, 273, 1, 0, 0, 0, 276, 277, 5, 19, 0, 0, 277, 53, 1, 0, 0, 0, 278, 
-	279, 3, 74, 37, 0, 279, 55, 1, 0, 0, 0, 280, 281, 3, 74, 37, 0, 281, 57, 
-	1, 0, 0, 0, 282, 283, 3, 74, 37, 0, 283, 59, 1, 0, 0, 0, 284, 285, 3, 74, 
-	37, 0, 285, 61, 1, 0, 0, 0, 286, 287, 3, 74, 37, 0, 287, 63, 1, 0, 0, 0, 
-	288, 290, 3, 68, 34, 0, 289, 288, 1, 0, 0, 0, 290, 293, 1, 0, 0, 0, 291, 
-	289, 1, 0, 0, 0, 291, 292, 1, 0, 0, 0, 292, 294, 1, 0, 0, 0, 293, 291, 
-	1, 0, 0, 0, 294, 298, 5, 17, 0, 0, 295, 297, 8, 1, 0, 0, 296, 295, 1, 0, 
-	0, 0, 297, 300, 1, 0, 0, 0, 298, 296, 1, 0, 0, 0, 298, 299, 1, 0, 0, 0, 
-	299, 65, 1, 0, 0, 0, 300, 298, 1, 0, 0, 0, 301, 307, 3, 64, 32, 0, 302, 
-	303, 3, 70, 35, 0, 303, 304, 3, 64, 32, 0, 304, 306, 1, 0, 0, 0, 305, 302, 
-	1, 0, 0, 0, 306, 309, 1, 0, 0, 0, 307, 305, 1, 0, 0, 0, 307, 308, 1, 0, 
-	0, 0, 308, 67, 1, 0, 0, 0, 309, 307, 1, 0, 0, 0, 310, 312, 5, 22, 0, 0, 
-	311, 310, 1, 0, 0, 0, 312, 313, 1, 0, 0, 0, 313, 311, 1, 0, 0, 0, 313, 
-	314, 1, 0, 0, 0, 314, 69, 1, 0, 0, 0, 315, 317, 5, 21, 0, 0, 316, 315, 
-	1, 0, 0, 0, 317, 318, 1, 0, 0, 0, 318, 316, 1, 0, 0, 0, 318, 319, 1, 0, 
-	0, 0, 319, 71, 1, 0, 0, 0, 320, 321, 5, 23, 0, 0, 321, 73, 1, 0, 0, 0, 
-	322, 324, 5, 24, 0, 0, 323, 322, 1, 0, 0, 0, 324, 325, 1, 0, 0, 0, 325, 
-	323, 1, 0, 0, 0, 325, 326, 1, 0, 0, 0, 326, 75, 1, 0, 0, 0, 37, 79, 86, 
-	90, 95, 99, 107, 112, 118, 123, 129, 135, 140, 142, 147, 156, 160, 164, 
-	168, 171, 176, 185, 194, 203, 208, 212, 217, 221, 227, 240, 253, 273, 291, 
-	298, 307, 313, 318, 325,
+	1, 0, 1, 0, 1, 0, 3, 0, 78, 8, 0, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 3, 2, 85, 
+	8, 2, 1, 2, 1, 2, 3, 2, 89, 8, 2, 1, 2, 1, 2, 1, 2, 3, 2, 94, 8, 2, 1, 
+	2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 102, 8, 2, 1, 3, 5, 3, 105, 8, 3, 
+	10, 3, 12, 3, 108, 9, 3, 1, 4, 1, 4, 1, 4, 3, 4, 113, 8, 4, 1, 4, 1, 4, 
+	1, 4, 1, 4, 1, 4, 3, 4, 120, 8, 4, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 126, 8, 
+	4, 1, 4, 4, 4, 129, 8, 4, 11, 4, 12, 4, 130, 3, 4, 133, 8, 4, 1, 5, 1, 
+	5, 1, 5, 3, 5, 138, 8, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 3, 
+	5, 147, 8, 5, 1, 5, 1, 5, 3, 5, 151, 8, 5, 1, 5, 1, 5, 3, 5, 155, 8, 5, 
+	1, 6, 1, 6, 3, 6, 159, 8, 6, 1, 6, 3, 6, 162, 8, 6, 1, 7, 1, 7, 1, 7, 3, 
+	7, 167, 8, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 4, 8, 174, 8, 8, 11, 8, 12, 
+	8, 175, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 4, 9, 183, 8, 9, 11, 9, 12, 9, 184, 
+	1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 4, 10, 192, 8, 10, 11, 10, 12, 10, 193, 
+	1, 11, 1, 11, 1, 11, 3, 11, 199, 8, 11, 1, 11, 1, 11, 3, 11, 203, 8, 11, 
+	1, 11, 5, 11, 206, 8, 11, 10, 11, 12, 11, 209, 9, 11, 1, 11, 3, 11, 212, 
+	8, 11, 1, 11, 1, 11, 1, 12, 1, 12, 3, 12, 218, 8, 12, 1, 13, 1, 13, 1, 
+	14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 15, 1, 15, 1, 15, 3, 15, 231, 
+	8, 15, 1, 16, 1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 19, 1, 19, 1, 20, 1, 
+	20, 1, 20, 3, 20, 244, 8, 20, 1, 21, 1, 21, 1, 22, 1, 22, 1, 23, 1, 23, 
+	1, 23, 1, 24, 1, 24, 1, 24, 1, 24, 1, 25, 1, 25, 1, 26, 1, 26, 1, 27, 1, 
+	27, 1, 28, 1, 28, 1, 29, 1, 29, 1, 30, 1, 30, 1, 31, 3, 31, 270, 8, 31, 
+	1, 31, 1, 31, 5, 31, 274, 8, 31, 10, 31, 12, 31, 277, 9, 31, 1, 32, 1, 
+	32, 1, 32, 1, 32, 5, 32, 283, 8, 32, 10, 32, 12, 32, 286, 9, 32, 1, 33, 
+	4, 33, 289, 8, 33, 11, 33, 12, 33, 290, 1, 34, 4, 34, 294, 8, 34, 11, 34, 
+	12, 34, 295, 1, 35, 1, 35, 1, 36, 4, 36, 301, 8, 36, 11, 36, 12, 36, 302, 
+	1, 36, 0, 0, 37, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 
+	30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 
+	66, 68, 70, 72, 0, 2, 1, 0, 1, 2, 1, 0, 18, 19, 304, 0, 74, 1, 0, 0, 0, 
+	2, 79, 1, 0, 0, 0, 4, 84, 1, 0, 0, 0, 6, 106, 1, 0, 0, 0, 8, 112, 1, 0, 
+	0, 0, 10, 137, 1, 0, 0, 0, 12, 158, 1, 0, 0, 0, 14, 166, 1, 0, 0, 0, 16, 
+	173, 1, 0, 0, 0, 18, 182, 1, 0, 0, 0, 20, 191, 1, 0, 0, 0, 22, 195, 1, 
+	0, 0, 0, 24, 217, 1, 0, 0, 0, 26, 219, 1, 0, 0, 0, 28, 221, 1, 0, 0, 0, 
+	30, 230, 1, 0, 0, 0, 32, 232, 1, 0, 0, 0, 34, 234, 1, 0, 0, 0, 36, 236, 
+	1, 0, 0, 0, 38, 238, 1, 0, 0, 0, 40, 243, 1, 0, 0, 0, 42, 245, 1, 0, 0, 
+	0, 44, 247, 1, 0, 0, 0, 46, 249, 1, 0, 0, 0, 48, 252, 1, 0, 0, 0, 50, 256, 
+	1, 0, 0, 0, 52, 258, 1, 0, 0, 0, 54, 260, 1, 0, 0, 0, 56, 262, 1, 0, 0, 
+	0, 58, 264, 1, 0, 0, 0, 60, 266, 1, 0, 0, 0, 62, 269, 1, 0, 0, 0, 64, 278, 
+	1, 0, 0, 0, 66, 288, 1, 0, 0, 0, 68, 293, 1, 0, 0, 0, 70, 297, 1, 0, 0, 
+	0, 72, 300, 1, 0, 0, 0, 74, 75, 3, 4, 2, 0, 75, 77, 3, 6, 3, 0, 76, 78, 
+	3, 68, 34, 0, 77, 76, 1, 0, 0, 0, 77, 78, 1, 0, 0, 0, 78, 1, 1, 0, 0, 0, 
+	79, 80, 7, 0, 0, 0, 80, 3, 1, 0, 0, 0, 81, 82, 3, 64, 32, 0, 82, 83, 3, 
+	68, 34, 0, 83, 85, 1, 0, 0, 0, 84, 81, 1, 0, 0, 0, 84, 85, 1, 0, 0, 0, 
+	85, 86, 1, 0, 0, 0, 86, 88, 5, 3, 0, 0, 87, 89, 3, 66, 33, 0, 88, 87, 1, 
+	0, 0, 0, 88, 89, 1, 0, 0, 0, 89, 93, 1, 0, 0, 0, 90, 91, 3, 68, 34, 0, 
+	91, 92, 3, 64, 32, 0, 92, 94, 1, 0, 0, 0, 93, 90, 1, 0, 0, 0, 93, 94, 1, 
+	0, 0, 0, 94, 95, 1, 0, 0, 0, 95, 96, 3, 68, 34, 0, 96, 97, 3, 2, 1, 0, 
+	97, 98, 5, 4, 0, 0, 98, 99, 3, 66, 33, 0, 99, 101, 3, 70, 35, 0, 100, 102, 
+	3, 66, 33, 0, 101, 100, 1, 0, 0, 0, 101, 102, 1, 0, 0, 0, 102, 5, 1, 0, 
+	0, 0, 103, 105, 3, 8, 4, 0, 104, 103, 1, 0, 0, 0, 105, 108, 1, 0, 0, 0, 
+	106, 104, 1, 0, 0, 0, 106, 107, 1, 0, 0, 0, 107, 7, 1, 0, 0, 0, 108, 106, 
+	1, 0, 0, 0, 109, 110, 3, 68, 34, 0, 110, 111, 3, 64, 32, 0, 111, 113, 1, 
+	0, 0, 0, 112, 109, 1, 0, 0, 0, 112, 113, 1, 0, 0, 0, 113, 114, 1, 0, 0, 
+	0, 114, 115, 3, 68, 34, 0, 115, 116, 5, 5, 0, 0, 116, 117, 3, 66, 33, 0, 
+	117, 119, 3, 60, 30, 0, 118, 120, 3, 66, 33, 0, 119, 118, 1, 0, 0, 0, 119, 
+	120, 1, 0, 0, 0, 120, 132, 1, 0, 0, 0, 121, 122, 3, 68, 34, 0, 122, 123, 
+	3, 2, 1, 0, 123, 125, 5, 6, 0, 0, 124, 126, 3, 66, 33, 0, 125, 124, 1, 
+	0, 0, 0, 125, 126, 1, 0, 0, 0, 126, 128, 1, 0, 0, 0, 127, 129, 3, 10, 5, 
+	0, 128, 127, 1, 0, 0, 0, 129, 130, 1, 0, 0, 0, 130, 128, 1, 0, 0, 0, 130, 
+	131, 1, 0, 0, 0, 131, 133, 1, 0, 0, 0, 132, 121, 1, 0, 0, 0, 132, 133, 
+	1, 0, 0, 0, 133, 9, 1, 0, 0, 0, 134, 135, 3, 68, 34, 0, 135, 136, 3, 64, 
+	32, 0, 136, 138, 1, 0, 0, 0, 137, 134, 1, 0, 0, 0, 137, 138, 1, 0, 0, 0, 
+	138, 139, 1, 0, 0, 0, 139, 140, 3, 68, 34, 0, 140, 141, 3, 2, 1, 0, 141, 
+	142, 3, 2, 1, 0, 142, 143, 5, 7, 0, 0, 143, 144, 3, 66, 33, 0, 144, 146, 
+	3, 58, 29, 0, 145, 147, 3, 66, 33, 0, 146, 145, 1, 0, 0, 0, 146, 147, 1, 
+	0, 0, 0, 147, 148, 1, 0, 0, 0, 148, 150, 5, 8, 0, 0, 149, 151, 3, 66, 33, 
+	0, 150, 149, 1, 0, 0, 0, 150, 151, 1, 0, 0, 0, 151, 152, 1, 0, 0, 0, 152, 
+	154, 3, 12, 6, 0, 153, 155, 3, 66, 33, 0, 154, 153, 1, 0, 0, 0, 154, 155, 
+	1, 0, 0, 0, 155, 11, 1, 0, 0, 0, 156, 159, 3, 22, 11, 0, 157, 159, 3, 50, 
+	25, 0, 158, 156, 1, 0, 0, 0, 158, 157, 1, 0, 0, 0, 159, 161, 1, 0, 0, 0, 
+	160, 162, 3, 14, 7, 0, 161, 160, 1, 0, 0, 0, 161, 162, 1, 0, 0, 0, 162, 
+	13, 1, 0, 0, 0, 163, 167, 3, 16, 8, 0, 164, 167, 3, 18, 9, 0, 165, 167, 
+	3, 20, 10, 0, 166, 163, 1, 0, 0, 0, 166, 164, 1, 0, 0, 0, 166, 165, 1, 
+	0, 0, 0, 167, 15, 1, 0, 0, 0, 168, 169, 3, 66, 33, 0, 169, 170, 3, 34, 
+	17, 0, 170, 171, 3, 66, 33, 0, 171, 172, 3, 50, 25, 0, 172, 174, 1, 0, 
+	0, 0, 173, 168, 1, 0, 0, 0, 174, 175, 1, 0, 0, 0, 175, 173, 1, 0, 0, 0, 
+	175, 176, 1, 0, 0, 0, 176, 17, 1, 0, 0, 0, 177, 178, 3, 66, 33, 0, 178, 
+	179, 3, 32, 16, 0, 179, 180, 3, 66, 33, 0, 180, 181, 3, 50, 25, 0, 181, 
+	183, 1, 0, 0, 0, 182, 177, 1, 0, 0, 0, 183, 184, 1, 0, 0, 0, 184, 182, 
+	1, 0, 0, 0, 184, 185, 1, 0, 0, 0, 185, 19, 1, 0, 0, 0, 186, 187, 3, 66, 
+	33, 0, 187, 188, 3, 36, 18, 0, 188, 189, 3, 66, 33, 0, 189, 190, 3, 50, 
+	25, 0, 190, 192, 1, 0, 0, 0, 191, 186, 1, 0, 0, 0, 192, 193, 1, 0, 0, 0, 
+	193, 191, 1, 0, 0, 0, 193, 194, 1, 0, 0, 0, 194, 21, 1, 0, 0, 0, 195, 196, 
+	5, 9, 0, 0, 196, 198, 3, 40, 20, 0, 197, 199, 3, 66, 33, 0, 198, 197, 1, 
+	0, 0, 0, 198, 199, 1, 0, 0, 0, 199, 207, 1, 0, 0, 0, 200, 202, 5, 10, 0, 
+	0, 201, 203, 3, 66, 33, 0, 202, 201, 1, 0, 0, 0, 202, 203, 1, 0, 0, 0, 
+	203, 204, 1, 0, 0, 0, 204, 206, 3, 40, 20, 0, 205, 200, 1, 0, 0, 0, 206, 
+	209, 1, 0, 0, 0, 207, 205, 1, 0, 0, 0, 207, 208, 1, 0, 0, 0, 208, 211, 
+	1, 0, 0, 0, 209, 207, 1, 0, 0, 0, 210, 212, 3, 66, 33, 0, 211, 210, 1, 
+	0, 0, 0, 211, 212, 1, 0, 0, 0, 212, 213, 1, 0, 0, 0, 213, 214, 5, 11, 0, 
+	0, 214, 23, 1, 0, 0, 0, 215, 218, 3, 26, 13, 0, 216, 218, 3, 28, 14, 0, 
+	217, 215, 1, 0, 0, 0, 217, 216, 1, 0, 0, 0, 218, 25, 1, 0, 0, 0, 219, 220, 
+	3, 52, 26, 0, 220, 27, 1, 0, 0, 0, 221, 222, 3, 54, 27, 0, 222, 223, 3, 
+	66, 33, 0, 223, 224, 3, 38, 19, 0, 224, 225, 3, 66, 33, 0, 225, 226, 3, 
+	56, 28, 0, 226, 29, 1, 0, 0, 0, 227, 231, 3, 34, 17, 0, 228, 231, 3, 32, 
+	16, 0, 229, 231, 3, 36, 18, 0, 230, 227, 1, 0, 0, 0, 230, 228, 1, 0, 0, 
+	0, 230, 229, 1, 0, 0, 0, 231, 31, 1, 0, 0, 0, 232, 233, 5, 12, 0, 0, 233, 
+	33, 1, 0, 0, 0, 234, 235, 5, 13, 0, 0, 235, 35, 1, 0, 0, 0, 236, 237, 5, 
+	14, 0, 0, 237, 37, 1, 0, 0, 0, 238, 239, 5, 15, 0, 0, 239, 39, 1, 0, 0, 
+	0, 240, 244, 3, 42, 21, 0, 241, 244, 3, 46, 23, 0, 242, 244, 3, 48, 24, 
+	0, 243, 240, 1, 0, 0, 0, 243, 241, 1, 0, 0, 0, 243, 242, 1, 0, 0, 0, 244, 
+	41, 1, 0, 0, 0, 245, 246, 3, 72, 36, 0, 246, 43, 1, 0, 0, 0, 247, 248, 
+	3, 72, 36, 0, 248, 45, 1, 0, 0, 0, 249, 250, 3, 42, 21, 0, 250, 251, 5, 
+	16, 0, 0, 251, 47, 1, 0, 0, 0, 252, 253, 3, 42, 21, 0, 253, 254, 5, 17, 
+	0, 0, 254, 255, 3, 44, 22, 0, 255, 49, 1, 0, 0, 0, 256, 257, 3, 24, 12, 
+	0, 257, 51, 1, 0, 0, 0, 258, 259, 3, 72, 36, 0, 259, 53, 1, 0, 0, 0, 260, 
+	261, 3, 72, 36, 0, 261, 55, 1, 0, 0, 0, 262, 263, 3, 72, 36, 0, 263, 57, 
+	1, 0, 0, 0, 264, 265, 3, 72, 36, 0, 265, 59, 1, 0, 0, 0, 266, 267, 3, 72, 
+	36, 0, 267, 61, 1, 0, 0, 0, 268, 270, 3, 66, 33, 0, 269, 268, 1, 0, 0, 
+	0, 269, 270, 1, 0, 0, 0, 270, 271, 1, 0, 0, 0, 271, 275, 5, 17, 0, 0, 272, 
+	274, 8, 1, 0, 0, 273, 272, 1, 0, 0, 0, 274, 277, 1, 0, 0, 0, 275, 273, 
+	1, 0, 0, 0, 275, 276, 1, 0, 0, 0, 276, 63, 1, 0, 0, 0, 277, 275, 1, 0, 
+	0, 0, 278, 284, 3, 62, 31, 0, 279, 280, 3, 68, 34, 0, 280, 281, 3, 62, 
+	31, 0, 281, 283, 1, 0, 0, 0, 282, 279, 1, 0, 0, 0, 283, 286, 1, 0, 0, 0, 
+	284, 282, 1, 0, 0, 0, 284, 285, 1, 0, 0, 0, 285, 65, 1, 0, 0, 0, 286, 284, 
+	1, 0, 0, 0, 287, 289, 5, 20, 0, 0, 288, 287, 1, 0, 0, 0, 289, 290, 1, 0, 
+	0, 0, 290, 288, 1, 0, 0, 0, 290, 291, 1, 0, 0, 0, 291, 67, 1, 0, 0, 0, 
+	292, 294, 7, 1, 0, 0, 293, 292, 1, 0, 0, 0, 294, 295, 1, 0, 0, 0, 295, 
+	293, 1, 0, 0, 0, 295, 296, 1, 0, 0, 0, 296, 69, 1, 0, 0, 0, 297, 298, 5, 
+	21, 0, 0, 298, 71, 1, 0, 0, 0, 299, 301, 5, 22, 0, 0, 300, 299, 1, 0, 0, 
+	0, 301, 302, 1, 0, 0, 0, 302, 300, 1, 0, 0, 0, 302, 303, 1, 0, 0, 0, 303, 
+	73, 1, 0, 0, 0, 34, 77, 84, 88, 93, 101, 106, 112, 119, 125, 130, 132, 
+	137, 146, 150, 154, 158, 161, 166, 175, 184, 193, 198, 202, 207, 211, 217, 
+	230, 243, 269, 275, 284, 290, 295, 302,
 }
   deserializer := antlr.NewATNDeserializer(nil)
   staticData.atn = deserializer.Deserialize(staticData.serializedATN)
@@ -258,9 +246,7 @@ const (
 	OpenFGAParserT__18 = 19
 	OpenFGAParserT__19 = 20
 	OpenFGAParserT__20 = 21
-	OpenFGAParserT__21 = 22
-	OpenFGAParserT__22 = 23
-	OpenFGAParserWORD = 24
+	OpenFGAParserALPHA_NUMERIC = 22
 )
 
 // OpenFGAParser rules.
@@ -291,18 +277,17 @@ const (
 	OpenFGAParserRULE_relationDefTypeRestrictionWildcard = 23
 	OpenFGAParserRULE_relationDefTypeRestrictionUserset = 24
 	OpenFGAParserRULE_relationDefGrouping = 25
-	OpenFGAParserRULE_relationDefGroup = 26
-	OpenFGAParserRULE_rewriteComputedusersetName = 27
-	OpenFGAParserRULE_rewriteTuplesetComputedusersetName = 28
-	OpenFGAParserRULE_rewriteTuplesetName = 29
-	OpenFGAParserRULE_relationName = 30
-	OpenFGAParserRULE_typeName = 31
-	OpenFGAParserRULE_comment = 32
-	OpenFGAParserRULE_multiLineComment = 33
-	OpenFGAParserRULE_spacing = 34
-	OpenFGAParserRULE_newline = 35
-	OpenFGAParserRULE_schemaVersion = 36
-	OpenFGAParserRULE_name = 37
+	OpenFGAParserRULE_rewriteComputedusersetName = 26
+	OpenFGAParserRULE_rewriteTuplesetComputedusersetName = 27
+	OpenFGAParserRULE_rewriteTuplesetName = 28
+	OpenFGAParserRULE_relationName = 29
+	OpenFGAParserRULE_typeName = 30
+	OpenFGAParserRULE_comment = 31
+	OpenFGAParserRULE_multiLineComment = 32
+	OpenFGAParserRULE_spacing = 33
+	OpenFGAParserRULE_newline = 34
+	OpenFGAParserRULE_schemaVersion = 35
+	OpenFGAParserRULE_name = 36
 )
 
 // IMainContext is an interface to support dynamic dispatch.
@@ -432,14 +417,14 @@ func (p *OpenFGAParser) Main() (localctx IMainContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(76)
+		p.SetState(74)
 		p.ModelHeader()
 	}
 	{
-		p.SetState(77)
+		p.SetState(75)
 		p.TypeDefs()
 	}
-	p.SetState(79)
+	p.SetState(77)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -447,9 +432,9 @@ func (p *OpenFGAParser) Main() (localctx IMainContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__20 {
+	if _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18 {
 		{
-			p.SetState(78)
+			p.SetState(76)
 			p.Newline()
 		}
 
@@ -543,7 +528,7 @@ func (p *OpenFGAParser) Indentation() (localctx IIndentationContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(81)
+		p.SetState(79)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(_la == OpenFGAParserT__0 || _la == OpenFGAParserT__1) {
@@ -808,7 +793,7 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(86)
+	p.SetState(84)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -816,26 +801,26 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__16 || _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__16 || _la == OpenFGAParserT__19 {
 		{
-			p.SetState(83)
+			p.SetState(81)
 			p.MultiLineComment()
 		}
 		{
-			p.SetState(84)
+			p.SetState(82)
 			p.Newline()
 		}
 
 	}
 	{
-		p.SetState(88)
+		p.SetState(86)
 		p.Match(OpenFGAParserT__2)
 		if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 		}
 	}
-	p.SetState(90)
+	p.SetState(88)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -843,42 +828,24 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(89)
+			p.SetState(87)
 			p.Spacing()
 		}
 
 	}
-	p.SetState(99)
+	p.SetState(93)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 4, p.GetParserRuleContext()) == 1 {
-		p.SetState(93)
-		p.GetErrorHandler().Sync(p)
-		if p.HasError() {
-			goto errorExit
-		}
-		_la = p.GetTokenStream().LA(1)
-
-
-		for ok := true; ok; ok = _la == OpenFGAParserT__20 {
-			{
-				p.SetState(92)
-				p.Newline()
-			}
-
-
-			p.SetState(95)
-			p.GetErrorHandler().Sync(p)
-			if p.HasError() {
-		    	goto errorExit
-		    }
-			_la = p.GetTokenStream().LA(1)
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 3, p.GetParserRuleContext()) == 1 {
+		{
+			p.SetState(90)
+			p.Newline()
 		}
 		{
-			p.SetState(97)
+			p.SetState(91)
 			p.MultiLineComment()
 		}
 
@@ -886,15 +853,15 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 			goto errorExit
 	}
 	{
-		p.SetState(101)
+		p.SetState(95)
 		p.Newline()
 	}
 	{
-		p.SetState(102)
+		p.SetState(96)
 		p.Indentation()
 	}
 	{
-		p.SetState(103)
+		p.SetState(97)
 		p.Match(OpenFGAParserT__3)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -902,14 +869,14 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 		}
 	}
 	{
-		p.SetState(104)
+		p.SetState(98)
 		p.Spacing()
 	}
 	{
-		p.SetState(105)
+		p.SetState(99)
 		p.SchemaVersion()
 	}
-	p.SetState(107)
+	p.SetState(101)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -917,9 +884,9 @@ func (p *OpenFGAParser) ModelHeader() (localctx IModelHeaderContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(106)
+			p.SetState(100)
 			p.Spacing()
 		}
 
@@ -1059,30 +1026,30 @@ func (p *OpenFGAParser) TypeDefs() (localctx ITypeDefsContext) {
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(112)
+	p.SetState(106)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
-	_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 6, p.GetParserRuleContext())
+	_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 5, p.GetParserRuleContext())
 	if p.HasError() {
 		goto errorExit
 	}
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(109)
+				p.SetState(103)
 				p.TypeDef()
 			}
 
 
 		}
-		p.SetState(114)
+		p.SetState(108)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 	    	goto errorExit
 	    }
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 6, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 5, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -1112,11 +1079,11 @@ type ITypeDefContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
+	AllNewline() []INewlineContext
+	Newline(i int) INewlineContext
 	AllSpacing() []ISpacingContext
 	Spacing(i int) ISpacingContext
 	TypeName() ITypeNameContext
-	AllNewline() []INewlineContext
-	Newline(i int) INewlineContext
 	MultiLineComment() IMultiLineCommentContext
 	Indentation() IIndentationContext
 	AllRelationDeclaration() []IRelationDeclarationContext
@@ -1157,6 +1124,47 @@ func NewTypeDefContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 }
 
 func (s *TypeDefContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *TypeDefContext) AllNewline() []INewlineContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(INewlineContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]INewlineContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(INewlineContext); ok {
+			tst[i] = t.(INewlineContext)
+			i++
+		}
+	}
+
+	return tst
+}
+
+func (s *TypeDefContext) Newline(i int) INewlineContext {
+	var t antlr.RuleContext;
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(INewlineContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext);
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(INewlineContext)
+}
 
 func (s *TypeDefContext) AllSpacing() []ISpacingContext {
 	children := s.GetChildren()
@@ -1213,47 +1221,6 @@ func (s *TypeDefContext) TypeName() ITypeNameContext {
 	}
 
 	return t.(ITypeNameContext)
-}
-
-func (s *TypeDefContext) AllNewline() []INewlineContext {
-	children := s.GetChildren()
-	len := 0
-	for _, ctx := range children {
-		if _, ok := ctx.(INewlineContext); ok {
-			len++
-		}
-	}
-
-	tst := make([]INewlineContext, len)
-	i := 0
-	for _, ctx := range children {
-		if t, ok := ctx.(INewlineContext); ok {
-			tst[i] = t.(INewlineContext)
-			i++
-		}
-	}
-
-	return tst
-}
-
-func (s *TypeDefContext) Newline(i int) INewlineContext {
-	var t antlr.RuleContext;
-	j := 0
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(INewlineContext); ok {
-			if j == i {
-				t = ctx.(antlr.RuleContext);
-				break
-			}
-			j++
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(INewlineContext)
 }
 
 func (s *TypeDefContext) MultiLineComment() IMultiLineCommentContext {
@@ -1361,47 +1328,29 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(118)
+	p.SetState(112)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 7, p.GetParserRuleContext()) == 1 {
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 6, p.GetParserRuleContext()) == 1 {
 		{
-			p.SetState(115)
+			p.SetState(109)
 			p.Newline()
 		}
 		{
-			p.SetState(116)
+			p.SetState(110)
 			p.MultiLineComment()
 		}
 
 		} else if p.HasError() { // JIM
 			goto errorExit
 	}
-	p.SetState(121)
-	p.GetErrorHandler().Sync(p)
-	if p.HasError() {
-		goto errorExit
-	}
-	_la = p.GetTokenStream().LA(1)
-
-
-	for ok := true; ok; ok = _la == OpenFGAParserT__20 {
-		{
-			p.SetState(120)
-			p.Newline()
-		}
-
-
-		p.SetState(123)
-		p.GetErrorHandler().Sync(p)
-		if p.HasError() {
-	    	goto errorExit
-	    }
-		_la = p.GetTokenStream().LA(1)
+	{
+		p.SetState(114)
+		p.Newline()
 	}
 	{
-		p.SetState(125)
+		p.SetState(115)
 		p.Match(OpenFGAParserT__4)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -1409,14 +1358,14 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 		}
 	}
 	{
-		p.SetState(126)
+		p.SetState(116)
 		p.Spacing()
 	}
 	{
-		p.SetState(127)
+		p.SetState(117)
 		p.TypeName()
 	}
-	p.SetState(129)
+	p.SetState(119)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1424,35 +1373,35 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(128)
+			p.SetState(118)
 			p.Spacing()
 		}
 
 	}
-	p.SetState(142)
+	p.SetState(132)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 12, p.GetParserRuleContext()) == 1 {
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 10, p.GetParserRuleContext()) == 1 {
 		{
-			p.SetState(131)
+			p.SetState(121)
 			p.Newline()
 		}
 		{
-			p.SetState(132)
+			p.SetState(122)
 			p.Indentation()
 		}
 		{
-			p.SetState(133)
+			p.SetState(123)
 			p.Match(OpenFGAParserT__5)
 			if p.HasError() {
 					// Recognition error - abort rule
 					goto errorExit
 			}
 		}
-		p.SetState(135)
+		p.SetState(125)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -1460,14 +1409,14 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 		_la = p.GetTokenStream().LA(1)
 
 
-		if _la == OpenFGAParserT__21 {
+		if _la == OpenFGAParserT__19 {
 			{
-				p.SetState(134)
+				p.SetState(124)
 				p.Spacing()
 			}
 
 		}
-		p.SetState(138)
+		p.SetState(128)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -1477,7 +1426,7 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 			switch _alt {
 			case 1:
 					{
-						p.SetState(137)
+						p.SetState(127)
 						p.RelationDeclaration()
 					}
 
@@ -1489,9 +1438,9 @@ func (p *OpenFGAParser) TypeDef() (localctx ITypeDefContext) {
 				goto errorExit
 			}
 
-			p.SetState(140)
+			p.SetState(130)
 			p.GetErrorHandler().Sync(p)
-			_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 11, p.GetParserRuleContext())
+			_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 9, p.GetParserRuleContext())
 			if p.HasError() {
 				goto errorExit
 			}
@@ -1772,17 +1721,17 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(147)
+	p.SetState(137)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 13, p.GetParserRuleContext()) == 1 {
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 11, p.GetParserRuleContext()) == 1 {
 		{
-			p.SetState(144)
+			p.SetState(134)
 			p.Newline()
 		}
 		{
-			p.SetState(145)
+			p.SetState(135)
 			p.MultiLineComment()
 		}
 
@@ -1790,19 +1739,19 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 			goto errorExit
 	}
 	{
-		p.SetState(149)
+		p.SetState(139)
 		p.Newline()
 	}
 	{
-		p.SetState(150)
+		p.SetState(140)
 		p.Indentation()
 	}
 	{
-		p.SetState(151)
+		p.SetState(141)
 		p.Indentation()
 	}
 	{
-		p.SetState(152)
+		p.SetState(142)
 		p.Match(OpenFGAParserT__6)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -1810,14 +1759,14 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 		}
 	}
 	{
-		p.SetState(153)
+		p.SetState(143)
 		p.Spacing()
 	}
 	{
-		p.SetState(154)
+		p.SetState(144)
 		p.RelationName()
 	}
-	p.SetState(156)
+	p.SetState(146)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1825,22 +1774,22 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(155)
+			p.SetState(145)
 			p.Spacing()
 		}
 
 	}
 	{
-		p.SetState(158)
+		p.SetState(148)
 		p.Match(OpenFGAParserT__7)
 		if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 		}
 	}
-	p.SetState(160)
+	p.SetState(150)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1848,18 +1797,18 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(159)
+			p.SetState(149)
 			p.Spacing()
 		}
 
 	}
 	{
-		p.SetState(162)
+		p.SetState(152)
 		p.RelationDef()
 	}
-	p.SetState(164)
+	p.SetState(154)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1867,9 +1816,9 @@ func (p *OpenFGAParser) RelationDeclaration() (localctx IRelationDeclarationCont
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(163)
+			p.SetState(153)
 			p.Spacing()
 		}
 
@@ -2015,7 +1964,7 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 	localctx = NewRelationDefContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 12, OpenFGAParserRULE_relationDef)
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(168)
+	p.SetState(158)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -2024,14 +1973,14 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 	switch p.GetTokenStream().LA(1) {
 	case OpenFGAParserT__8:
 		{
-			p.SetState(166)
+			p.SetState(156)
 			p.RelationDefDirectAssignment()
 		}
 
 
-	case OpenFGAParserWORD:
+	case OpenFGAParserALPHA_NUMERIC:
 		{
-			p.SetState(167)
+			p.SetState(157)
 			p.RelationDefGrouping()
 		}
 
@@ -2041,13 +1990,13 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 		goto errorExit
 	}
-	p.SetState(171)
+	p.SetState(161)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 18, p.GetParserRuleContext()) == 1 {
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 16, p.GetParserRuleContext()) == 1 {
 		{
-			p.SetState(170)
+			p.SetState(160)
 			p.RelationDefPartials()
 		}
 
@@ -2194,17 +2143,17 @@ func (s *RelationDefPartialsContext) ExitRule(listener antlr.ParseTreeListener) 
 func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsContext) {
 	localctx = NewRelationDefPartialsContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 14, OpenFGAParserRULE_relationDefPartials)
-	p.SetState(176)
+	p.SetState(166)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 19, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 17, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(173)
+			p.SetState(163)
 			p.RelationDefPartialAllOr()
 		}
 
@@ -2212,7 +2161,7 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(174)
+			p.SetState(164)
 			p.RelationDefPartialAllAnd()
 		}
 
@@ -2220,7 +2169,7 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 	case 3:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(175)
+			p.SetState(165)
 			p.RelationDefPartialAllButNot()
 		}
 
@@ -2447,7 +2396,7 @@ func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialA
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(183)
+	p.SetState(173)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -2457,19 +2406,19 @@ func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialA
 		switch _alt {
 		case 1:
 				{
-					p.SetState(178)
+					p.SetState(168)
 					p.Spacing()
 				}
 				{
-					p.SetState(179)
+					p.SetState(169)
 					p.RelationDefOperatorOr()
 				}
 				{
-					p.SetState(180)
+					p.SetState(170)
 					p.Spacing()
 				}
 				{
-					p.SetState(181)
+					p.SetState(171)
 					p.RelationDefGrouping()
 				}
 
@@ -2481,9 +2430,9 @@ func (p *OpenFGAParser) RelationDefPartialAllOr() (localctx IRelationDefPartialA
 			goto errorExit
 		}
 
-		p.SetState(185)
+		p.SetState(175)
 		p.GetErrorHandler().Sync(p)
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 20, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 18, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -2709,7 +2658,7 @@ func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartial
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(192)
+	p.SetState(182)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -2719,19 +2668,19 @@ func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartial
 		switch _alt {
 		case 1:
 				{
-					p.SetState(187)
+					p.SetState(177)
 					p.Spacing()
 				}
 				{
-					p.SetState(188)
+					p.SetState(178)
 					p.RelationDefOperatorAnd()
 				}
 				{
-					p.SetState(189)
+					p.SetState(179)
 					p.Spacing()
 				}
 				{
-					p.SetState(190)
+					p.SetState(180)
 					p.RelationDefGrouping()
 				}
 
@@ -2743,9 +2692,9 @@ func (p *OpenFGAParser) RelationDefPartialAllAnd() (localctx IRelationDefPartial
 			goto errorExit
 		}
 
-		p.SetState(194)
+		p.SetState(184)
 		p.GetErrorHandler().Sync(p)
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 21, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 19, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -2971,7 +2920,7 @@ func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPart
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(201)
+	p.SetState(191)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -2981,19 +2930,19 @@ func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPart
 		switch _alt {
 		case 1:
 				{
-					p.SetState(196)
+					p.SetState(186)
 					p.Spacing()
 				}
 				{
-					p.SetState(197)
+					p.SetState(187)
 					p.RelationDefOperatorButNot()
 				}
 				{
-					p.SetState(198)
+					p.SetState(188)
 					p.Spacing()
 				}
 				{
-					p.SetState(199)
+					p.SetState(189)
 					p.RelationDefGrouping()
 				}
 
@@ -3005,9 +2954,9 @@ func (p *OpenFGAParser) RelationDefPartialAllButNot() (localctx IRelationDefPart
 			goto errorExit
 		}
 
-		p.SetState(203)
+		p.SetState(193)
 		p.GetErrorHandler().Sync(p)
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 22, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 20, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -3191,7 +3140,7 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(205)
+		p.SetState(195)
 		p.Match(OpenFGAParserT__8)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -3199,23 +3148,23 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 		}
 	}
 	{
-		p.SetState(206)
+		p.SetState(196)
 		p.RelationDefTypeRestriction()
 	}
-	p.SetState(208)
+	p.SetState(198)
 	p.GetErrorHandler().Sync(p)
 
 
-	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 23, p.GetParserRuleContext()) == 1 {
+	if p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 21, p.GetParserRuleContext()) == 1 {
 		{
-			p.SetState(207)
+			p.SetState(197)
 			p.Spacing()
 		}
 
 		} else if p.HasError() { // JIM
 			goto errorExit
 	}
-	p.SetState(217)
+	p.SetState(207)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3225,14 +3174,14 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 
 	for _la == OpenFGAParserT__9 {
 		{
-			p.SetState(210)
+			p.SetState(200)
 			p.Match(OpenFGAParserT__9)
 			if p.HasError() {
 					// Recognition error - abort rule
 					goto errorExit
 			}
 		}
-		p.SetState(212)
+		p.SetState(202)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -3240,27 +3189,27 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 		_la = p.GetTokenStream().LA(1)
 
 
-		if _la == OpenFGAParserT__21 {
+		if _la == OpenFGAParserT__19 {
 			{
-				p.SetState(211)
+				p.SetState(201)
 				p.Spacing()
 			}
 
 		}
 		{
-			p.SetState(214)
+			p.SetState(204)
 			p.RelationDefTypeRestriction()
 		}
 
 
-		p.SetState(219)
+		p.SetState(209)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 	    	goto errorExit
 	    }
 		_la = p.GetTokenStream().LA(1)
 	}
-	p.SetState(221)
+	p.SetState(211)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3268,15 +3217,15 @@ func (p *OpenFGAParser) RelationDefDirectAssignment() (localctx IRelationDefDire
 	_la = p.GetTokenStream().LA(1)
 
 
-	if _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(220)
+			p.SetState(210)
 			p.Spacing()
 		}
 
 	}
 	{
-		p.SetState(223)
+		p.SetState(213)
 		p.Match(OpenFGAParserT__10)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -3406,17 +3355,17 @@ func (s *RelationDefRewriteContext) ExitRule(listener antlr.ParseTreeListener) {
 func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContext) {
 	localctx = NewRelationDefRewriteContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 24, OpenFGAParserRULE_relationDefRewrite)
-	p.SetState(227)
+	p.SetState(217)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 27, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 25, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(225)
+			p.SetState(215)
 			p.RelationDefRelationOnSameObject()
 		}
 
@@ -3424,7 +3373,7 @@ func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContex
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(226)
+			p.SetState(216)
 			p.RelationDefRelationOnRelatedObject()
 		}
 
@@ -3538,7 +3487,7 @@ func (p *OpenFGAParser) RelationDefRelationOnSameObject() (localctx IRelationDef
 	p.EnterRule(localctx, 26, OpenFGAParserRULE_relationDefRelationOnSameObject)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(229)
+		p.SetState(219)
 		p.RewriteComputedusersetName()
 	}
 
@@ -3726,23 +3675,23 @@ func (p *OpenFGAParser) RelationDefRelationOnRelatedObject() (localctx IRelation
 	p.EnterRule(localctx, 28, OpenFGAParserRULE_relationDefRelationOnRelatedObject)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(231)
+		p.SetState(221)
 		p.RewriteTuplesetComputedusersetName()
 	}
 	{
-		p.SetState(232)
+		p.SetState(222)
 		p.Spacing()
 	}
 	{
-		p.SetState(233)
+		p.SetState(223)
 		p.RelationDefKeywordFrom()
 	}
 	{
-		p.SetState(234)
+		p.SetState(224)
 		p.Spacing()
 	}
 	{
-		p.SetState(235)
+		p.SetState(225)
 		p.RewriteTuplesetName()
 	}
 
@@ -3885,7 +3834,7 @@ func (s *RelationDefOperatorContext) ExitRule(listener antlr.ParseTreeListener) 
 func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorContext) {
 	localctx = NewRelationDefOperatorContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 30, OpenFGAParserRULE_relationDefOperator)
-	p.SetState(240)
+	p.SetState(230)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3895,7 +3844,7 @@ func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorCont
 	case OpenFGAParserT__12:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(237)
+			p.SetState(227)
 			p.RelationDefOperatorOr()
 		}
 
@@ -3903,7 +3852,7 @@ func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorCont
 	case OpenFGAParserT__11:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(238)
+			p.SetState(228)
 			p.RelationDefOperatorAnd()
 		}
 
@@ -3911,7 +3860,7 @@ func (p *OpenFGAParser) RelationDefOperator() (localctx IRelationDefOperatorCont
 	case OpenFGAParserT__13:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(239)
+			p.SetState(229)
 			p.RelationDefOperatorButNot()
 		}
 
@@ -4007,7 +3956,7 @@ func (p *OpenFGAParser) RelationDefOperatorAnd() (localctx IRelationDefOperatorA
 	p.EnterRule(localctx, 32, OpenFGAParserRULE_relationDefOperatorAnd)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(242)
+		p.SetState(232)
 		p.Match(OpenFGAParserT__11)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4101,7 +4050,7 @@ func (p *OpenFGAParser) RelationDefOperatorOr() (localctx IRelationDefOperatorOr
 	p.EnterRule(localctx, 34, OpenFGAParserRULE_relationDefOperatorOr)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(244)
+		p.SetState(234)
 		p.Match(OpenFGAParserT__12)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4195,7 +4144,7 @@ func (p *OpenFGAParser) RelationDefOperatorButNot() (localctx IRelationDefOperat
 	p.EnterRule(localctx, 36, OpenFGAParserRULE_relationDefOperatorButNot)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(246)
+		p.SetState(236)
 		p.Match(OpenFGAParserT__13)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4289,7 +4238,7 @@ func (p *OpenFGAParser) RelationDefKeywordFrom() (localctx IRelationDefKeywordFr
 	p.EnterRule(localctx, 38, OpenFGAParserRULE_relationDefKeywordFrom)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(248)
+		p.SetState(238)
 		p.Match(OpenFGAParserT__14)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4436,17 +4385,17 @@ func (s *RelationDefTypeRestrictionContext) ExitRule(listener antlr.ParseTreeLis
 func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeRestrictionContext) {
 	localctx = NewRelationDefTypeRestrictionContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 40, OpenFGAParserRULE_relationDefTypeRestriction)
-	p.SetState(253)
+	p.SetState(243)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 29, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 27, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(250)
+			p.SetState(240)
 			p.RelationDefTypeRestrictionType()
 		}
 
@@ -4454,7 +4403,7 @@ func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeR
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(251)
+			p.SetState(241)
 			p.RelationDefTypeRestrictionWildcard()
 		}
 
@@ -4462,7 +4411,7 @@ func (p *OpenFGAParser) RelationDefTypeRestriction() (localctx IRelationDefTypeR
 	case 3:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(252)
+			p.SetState(242)
 			p.RelationDefTypeRestrictionUserset()
 		}
 
@@ -4576,7 +4525,7 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionType() (localctx IRelationDefT
 	p.EnterRule(localctx, 42, OpenFGAParserRULE_relationDefTypeRestrictionType)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(255)
+		p.SetState(245)
 		p.Name()
 	}
 
@@ -4687,7 +4636,7 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionRelation() (localctx IRelation
 	p.EnterRule(localctx, 44, OpenFGAParserRULE_relationDefTypeRestrictionRelation)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(257)
+		p.SetState(247)
 		p.Name()
 	}
 
@@ -4798,11 +4747,11 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionWildcard() (localctx IRelation
 	p.EnterRule(localctx, 46, OpenFGAParserRULE_relationDefTypeRestrictionWildcard)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(259)
+		p.SetState(249)
 		p.RelationDefTypeRestrictionType()
 	}
 	{
-		p.SetState(260)
+		p.SetState(250)
 		p.Match(OpenFGAParserT__15)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4934,11 +4883,11 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionUserset() (localctx IRelationD
 	p.EnterRule(localctx, 48, OpenFGAParserRULE_relationDefTypeRestrictionUserset)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(262)
+		p.SetState(252)
 		p.RelationDefTypeRestrictionType()
 	}
 	{
-		p.SetState(263)
+		p.SetState(253)
 		p.Match(OpenFGAParserT__16)
 		if p.HasError() {
 				// Recognition error - abort rule
@@ -4946,7 +4895,7 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionUserset() (localctx IRelationD
 		}
 	}
 	{
-		p.SetState(264)
+		p.SetState(254)
 		p.RelationDefTypeRestrictionRelation()
 	}
 
@@ -5057,202 +5006,8 @@ func (p *OpenFGAParser) RelationDefGrouping() (localctx IRelationDefGroupingCont
 	p.EnterRule(localctx, 50, OpenFGAParserRULE_relationDefGrouping)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(266)
+		p.SetState(256)
 		p.RelationDefRewrite()
-	}
-
-
-
-errorExit:
-	if p.HasError() {
-		v := p.GetError()
-		localctx.SetException(v)
-		p.GetErrorHandler().ReportError(p, v)
-		p.GetErrorHandler().Recover(p, v)
-		p.SetError(nil)
-	}
-	p.ExitRule()
-	return localctx
-	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-
-// IRelationDefGroupContext is an interface to support dynamic dispatch.
-type IRelationDefGroupContext interface {
-	antlr.ParserRuleContext
-
-	// GetParser returns the parser.
-	GetParser() antlr.Parser
-
-	// Getter signatures
-	RelationDefGrouping() IRelationDefGroupingContext
-	AllRelationDefPartials() []IRelationDefPartialsContext
-	RelationDefPartials(i int) IRelationDefPartialsContext
-
-	// IsRelationDefGroupContext differentiates from other interfaces.
-	IsRelationDefGroupContext()
-}
-
-type RelationDefGroupContext struct {
-	antlr.BaseParserRuleContext
-	parser antlr.Parser
-}
-
-func NewEmptyRelationDefGroupContext() *RelationDefGroupContext {
-	var p = new(RelationDefGroupContext)
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = OpenFGAParserRULE_relationDefGroup
-	return p
-}
-
-func InitEmptyRelationDefGroupContext(p *RelationDefGroupContext)  {
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = OpenFGAParserRULE_relationDefGroup
-}
-
-func (*RelationDefGroupContext) IsRelationDefGroupContext() {}
-
-func NewRelationDefGroupContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *RelationDefGroupContext {
-	var p = new(RelationDefGroupContext)
-
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
-
-	p.parser = parser
-	p.RuleIndex = OpenFGAParserRULE_relationDefGroup
-
-	return p
-}
-
-func (s *RelationDefGroupContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *RelationDefGroupContext) RelationDefGrouping() IRelationDefGroupingContext {
-	var t antlr.RuleContext;
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IRelationDefGroupingContext); ok {
-			t = ctx.(antlr.RuleContext);
-			break
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IRelationDefGroupingContext)
-}
-
-func (s *RelationDefGroupContext) AllRelationDefPartials() []IRelationDefPartialsContext {
-	children := s.GetChildren()
-	len := 0
-	for _, ctx := range children {
-		if _, ok := ctx.(IRelationDefPartialsContext); ok {
-			len++
-		}
-	}
-
-	tst := make([]IRelationDefPartialsContext, len)
-	i := 0
-	for _, ctx := range children {
-		if t, ok := ctx.(IRelationDefPartialsContext); ok {
-			tst[i] = t.(IRelationDefPartialsContext)
-			i++
-		}
-	}
-
-	return tst
-}
-
-func (s *RelationDefGroupContext) RelationDefPartials(i int) IRelationDefPartialsContext {
-	var t antlr.RuleContext;
-	j := 0
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IRelationDefPartialsContext); ok {
-			if j == i {
-				t = ctx.(antlr.RuleContext);
-				break
-			}
-			j++
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IRelationDefPartialsContext)
-}
-
-func (s *RelationDefGroupContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *RelationDefGroupContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
-	return antlr.TreesStringTree(s, ruleNames, recog)
-}
-
-
-func (s *RelationDefGroupContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(OpenFGAListener); ok {
-		listenerT.EnterRelationDefGroup(s)
-	}
-}
-
-func (s *RelationDefGroupContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(OpenFGAListener); ok {
-		listenerT.ExitRelationDefGroup(s)
-	}
-}
-
-
-
-
-func (p *OpenFGAParser) RelationDefGroup() (localctx IRelationDefGroupContext) {
-	localctx = NewRelationDefGroupContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 52, OpenFGAParserRULE_relationDefGroup)
-	var _la int
-
-	p.EnterOuterAlt(localctx, 1)
-	{
-		p.SetState(268)
-		p.Match(OpenFGAParserT__17)
-		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-		}
-	}
-	{
-		p.SetState(269)
-		p.RelationDefGrouping()
-	}
-	p.SetState(273)
-	p.GetErrorHandler().Sync(p)
-	if p.HasError() {
-		goto errorExit
-	}
-	_la = p.GetTokenStream().LA(1)
-
-
-	for _la == OpenFGAParserT__21 {
-		{
-			p.SetState(270)
-			p.RelationDefPartials()
-		}
-
-
-		p.SetState(275)
-		p.GetErrorHandler().Sync(p)
-		if p.HasError() {
-	    	goto errorExit
-	    }
-		_la = p.GetTokenStream().LA(1)
-	}
-	{
-		p.SetState(276)
-		p.Match(OpenFGAParserT__18)
-		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-		}
 	}
 
 
@@ -5359,10 +5114,10 @@ func (s *RewriteComputedusersetNameContext) ExitRule(listener antlr.ParseTreeLis
 
 func (p *OpenFGAParser) RewriteComputedusersetName() (localctx IRewriteComputedusersetNameContext) {
 	localctx = NewRewriteComputedusersetNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 54, OpenFGAParserRULE_rewriteComputedusersetName)
+	p.EnterRule(localctx, 52, OpenFGAParserRULE_rewriteComputedusersetName)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(278)
+		p.SetState(258)
 		p.Name()
 	}
 
@@ -5470,10 +5225,10 @@ func (s *RewriteTuplesetComputedusersetNameContext) ExitRule(listener antlr.Pars
 
 func (p *OpenFGAParser) RewriteTuplesetComputedusersetName() (localctx IRewriteTuplesetComputedusersetNameContext) {
 	localctx = NewRewriteTuplesetComputedusersetNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 56, OpenFGAParserRULE_rewriteTuplesetComputedusersetName)
+	p.EnterRule(localctx, 54, OpenFGAParserRULE_rewriteTuplesetComputedusersetName)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(280)
+		p.SetState(260)
 		p.Name()
 	}
 
@@ -5581,10 +5336,10 @@ func (s *RewriteTuplesetNameContext) ExitRule(listener antlr.ParseTreeListener) 
 
 func (p *OpenFGAParser) RewriteTuplesetName() (localctx IRewriteTuplesetNameContext) {
 	localctx = NewRewriteTuplesetNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 58, OpenFGAParserRULE_rewriteTuplesetName)
+	p.EnterRule(localctx, 56, OpenFGAParserRULE_rewriteTuplesetName)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(282)
+		p.SetState(262)
 		p.Name()
 	}
 
@@ -5692,10 +5447,10 @@ func (s *RelationNameContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) RelationName() (localctx IRelationNameContext) {
 	localctx = NewRelationNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 60, OpenFGAParserRULE_relationName)
+	p.EnterRule(localctx, 58, OpenFGAParserRULE_relationName)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(284)
+		p.SetState(264)
 		p.Name()
 	}
 
@@ -5803,10 +5558,10 @@ func (s *TypeNameContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) TypeName() (localctx ITypeNameContext) {
 	localctx = NewTypeNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 62, OpenFGAParserRULE_typeName)
+	p.EnterRule(localctx, 60, OpenFGAParserRULE_typeName)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(286)
+		p.SetState(266)
 		p.Name()
 	}
 
@@ -5834,8 +5589,7 @@ type ICommentContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	AllSpacing() []ISpacingContext
-	Spacing(i int) ISpacingContext
+	Spacing() ISpacingContext
 
 	// IsCommentContext differentiates from other interfaces.
 	IsCommentContext()
@@ -5873,37 +5627,12 @@ func NewCommentContext(parser antlr.Parser, parent antlr.ParserRuleContext, invo
 
 func (s *CommentContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *CommentContext) AllSpacing() []ISpacingContext {
-	children := s.GetChildren()
-	len := 0
-	for _, ctx := range children {
-		if _, ok := ctx.(ISpacingContext); ok {
-			len++
-		}
-	}
-
-	tst := make([]ISpacingContext, len)
-	i := 0
-	for _, ctx := range children {
-		if t, ok := ctx.(ISpacingContext); ok {
-			tst[i] = t.(ISpacingContext)
-			i++
-		}
-	}
-
-	return tst
-}
-
-func (s *CommentContext) Spacing(i int) ISpacingContext {
+func (s *CommentContext) Spacing() ISpacingContext {
 	var t antlr.RuleContext;
-	j := 0
 	for _, ctx := range s.GetChildren() {
 		if _, ok := ctx.(ISpacingContext); ok {
-			if j == i {
-				t = ctx.(antlr.RuleContext);
-				break
-			}
-			j++
+			t = ctx.(antlr.RuleContext);
+			break
 		}
 	}
 
@@ -5940,11 +5669,11 @@ func (s *CommentContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	localctx = NewCommentContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 64, OpenFGAParserRULE_comment)
+	p.EnterRule(localctx, 62, OpenFGAParserRULE_comment)
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(291)
+	p.SetState(269)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -5952,29 +5681,22 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	for _la == OpenFGAParserT__21 {
+	if _la == OpenFGAParserT__19 {
 		{
-			p.SetState(288)
+			p.SetState(268)
 			p.Spacing()
 		}
 
-
-		p.SetState(293)
-		p.GetErrorHandler().Sync(p)
-		if p.HasError() {
-	    	goto errorExit
-	    }
-		_la = p.GetTokenStream().LA(1)
 	}
 	{
-		p.SetState(294)
+		p.SetState(271)
 		p.Match(OpenFGAParserT__16)
 		if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 		}
 	}
-	p.SetState(298)
+	p.SetState(275)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -5982,12 +5704,12 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	for ((int64(_la) & ^0x3f) == 0 && ((int64(1) << _la) & 30408702) != 0) {
+	for ((int64(_la) & ^0x3f) == 0 && ((int64(1) << _la) & 7602174) != 0) {
 		{
-			p.SetState(295)
+			p.SetState(272)
 			_la = p.GetTokenStream().LA(1)
 
-			if _la <= 0 || _la == OpenFGAParserT__19 || _la == OpenFGAParserT__20  {
+			if _la <= 0 || _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18  {
 				p.GetErrorHandler().RecoverInline(p)
 			} else {
 				p.GetErrorHandler().ReportMatch(p)
@@ -5996,7 +5718,7 @@ func (p *OpenFGAParser) Comment() (localctx ICommentContext) {
 		}
 
 
-		p.SetState(300)
+		p.SetState(277)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 	    	goto errorExit
@@ -6177,42 +5899,42 @@ func (s *MultiLineCommentContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) MultiLineComment() (localctx IMultiLineCommentContext) {
 	localctx = NewMultiLineCommentContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 66, OpenFGAParserRULE_multiLineComment)
+	p.EnterRule(localctx, 64, OpenFGAParserRULE_multiLineComment)
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(301)
+		p.SetState(278)
 		p.Comment()
 	}
-	p.SetState(307)
+	p.SetState(284)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
-	_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 33, p.GetParserRuleContext())
+	_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 30, p.GetParserRuleContext())
 	if p.HasError() {
 		goto errorExit
 	}
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(302)
+				p.SetState(279)
 				p.Newline()
 			}
 			{
-				p.SetState(303)
+				p.SetState(280)
 				p.Comment()
 			}
 
 
 		}
-		p.SetState(309)
+		p.SetState(286)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 	    	goto errorExit
 	    }
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 33, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 30, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -6301,11 +6023,11 @@ func (s *SpacingContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 	localctx = NewSpacingContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 68, OpenFGAParserRULE_spacing)
+	p.EnterRule(localctx, 66, OpenFGAParserRULE_spacing)
 	var _alt int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(311)
+	p.SetState(288)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -6315,8 +6037,8 @@ func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 		switch _alt {
 		case 1:
 				{
-					p.SetState(310)
-					p.Match(OpenFGAParserT__21)
+					p.SetState(287)
+					p.Match(OpenFGAParserT__19)
 					if p.HasError() {
 							// Recognition error - abort rule
 							goto errorExit
@@ -6331,9 +6053,9 @@ func (p *OpenFGAParser) Spacing() (localctx ISpacingContext) {
 			goto errorExit
 		}
 
-		p.SetState(313)
+		p.SetState(290)
 		p.GetErrorHandler().Sync(p)
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 34, p.GetParserRuleContext())
+		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 31, p.GetParserRuleContext())
 		if p.HasError() {
 			goto errorExit
 		}
@@ -6422,42 +6144,38 @@ func (s *NewlineContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) Newline() (localctx INewlineContext) {
 	localctx = NewNewlineContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 70, OpenFGAParserRULE_newline)
-	var _alt int
+	p.EnterRule(localctx, 68, OpenFGAParserRULE_newline)
+	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(316)
+	p.SetState(293)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
-	_alt = 1
-	for ok := true; ok; ok = _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
-		switch _alt {
-		case 1:
-				{
-					p.SetState(315)
-					p.Match(OpenFGAParserT__20)
-					if p.HasError() {
-							// Recognition error - abort rule
-							goto errorExit
-					}
-				}
+	_la = p.GetTokenStream().LA(1)
 
 
+	for ok := true; ok; ok = _la == OpenFGAParserT__17 || _la == OpenFGAParserT__18 {
+		{
+			p.SetState(292)
+			_la = p.GetTokenStream().LA(1)
 
-
-		default:
-			p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
-			goto errorExit
+			if !(_la == OpenFGAParserT__17 || _la == OpenFGAParserT__18) {
+				p.GetErrorHandler().RecoverInline(p)
+			} else {
+				p.GetErrorHandler().ReportMatch(p)
+				p.Consume()
+			}
 		}
 
-		p.SetState(318)
+
+		p.SetState(295)
 		p.GetErrorHandler().Sync(p)
-		_alt = p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 35, p.GetParserRuleContext())
 		if p.HasError() {
-			goto errorExit
-		}
+	    	goto errorExit
+	    }
+		_la = p.GetTokenStream().LA(1)
 	}
 
 
@@ -6543,11 +6261,11 @@ func (s *SchemaVersionContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) SchemaVersion() (localctx ISchemaVersionContext) {
 	localctx = NewSchemaVersionContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 72, OpenFGAParserRULE_schemaVersion)
+	p.EnterRule(localctx, 70, OpenFGAParserRULE_schemaVersion)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(320)
-		p.Match(OpenFGAParserT__22)
+		p.SetState(297)
+		p.Match(OpenFGAParserT__20)
 		if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
@@ -6578,8 +6296,8 @@ type INameContext interface {
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	AllWORD() []antlr.TerminalNode
-	WORD(i int) antlr.TerminalNode
+	AllALPHA_NUMERIC() []antlr.TerminalNode
+	ALPHA_NUMERIC(i int) antlr.TerminalNode
 
 	// IsNameContext differentiates from other interfaces.
 	IsNameContext()
@@ -6617,12 +6335,12 @@ func NewNameContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokin
 
 func (s *NameContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *NameContext) AllWORD() []antlr.TerminalNode {
-	return s.GetTokens(OpenFGAParserWORD)
+func (s *NameContext) AllALPHA_NUMERIC() []antlr.TerminalNode {
+	return s.GetTokens(OpenFGAParserALPHA_NUMERIC)
 }
 
-func (s *NameContext) WORD(i int) antlr.TerminalNode {
-	return s.GetToken(OpenFGAParserWORD, i)
+func (s *NameContext) ALPHA_NUMERIC(i int) antlr.TerminalNode {
+	return s.GetToken(OpenFGAParserALPHA_NUMERIC, i)
 }
 
 func (s *NameContext) GetRuleContext() antlr.RuleContext {
@@ -6651,11 +6369,11 @@ func (s *NameContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *OpenFGAParser) Name() (localctx INameContext) {
 	localctx = NewNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 74, OpenFGAParserRULE_name)
+	p.EnterRule(localctx, 72, OpenFGAParserRULE_name)
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(323)
+	p.SetState(300)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -6663,10 +6381,10 @@ func (p *OpenFGAParser) Name() (localctx INameContext) {
 	_la = p.GetTokenStream().LA(1)
 
 
-	for ok := true; ok; ok = _la == OpenFGAParserWORD {
+	for ok := true; ok; ok = _la == OpenFGAParserALPHA_NUMERIC {
 		{
-			p.SetState(322)
-			p.Match(OpenFGAParserWORD)
+			p.SetState(299)
+			p.Match(OpenFGAParserALPHA_NUMERIC)
 			if p.HasError() {
 					// Recognition error - abort rule
 					goto errorExit
@@ -6674,7 +6392,7 @@ func (p *OpenFGAParser) Name() (localctx INameContext) {
 		}
 
 
-		p.SetState(325)
+		p.SetState(302)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 	    	goto errorExit

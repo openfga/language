@@ -87,9 +87,6 @@ type OpenFGAListener interface {
 	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
 	EnterRelationDefGrouping(c *RelationDefGroupingContext)
 
-	// EnterRelationDefGroup is called when entering the relationDefGroup production.
-	EnterRelationDefGroup(c *RelationDefGroupContext)
-
 	// EnterRewriteComputedusersetName is called when entering the rewriteComputedusersetName production.
 	EnterRewriteComputedusersetName(c *RewriteComputedusersetNameContext)
 
@@ -200,9 +197,6 @@ type OpenFGAListener interface {
 
 	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
 	ExitRelationDefGrouping(c *RelationDefGroupingContext)
-
-	// ExitRelationDefGroup is called when exiting the relationDefGroup production.
-	ExitRelationDefGroup(c *RelationDefGroupContext)
 
 	// ExitRewriteComputedusersetName is called when exiting the rewriteComputedusersetName production.
 	ExitRewriteComputedusersetName(c *RewriteComputedusersetNameContext)

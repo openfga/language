@@ -1,7 +1,6 @@
 package transformer_test
 
 import (
-	"log"
 	"testing"
 
 	language "github.com/openfga/language/pkg/go/transformer"
@@ -9,9 +8,9 @@ import (
 )
 
 func TestJSONToDSLTransformer(t *testing.T) {
-	testCases, err := LoadValidTransformerTestCases()
+	testCases, err := loadValidTransformerTestCases()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {

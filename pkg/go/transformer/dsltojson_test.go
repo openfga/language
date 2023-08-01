@@ -1,7 +1,6 @@
 package transformer_test
 
 import (
-	"log"
 	"testing"
 
 	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
@@ -10,10 +9,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func TestDSLToJSONTransformer(t *testing.T) {
-	testCases, err := LoadValidTransformerTestCases()
+func TestDSLToJSONTransformerForValidCases(t *testing.T) {
+	testCases, err := loadValidTransformerTestCases()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {
@@ -39,13 +38,15 @@ func TestDSLToJSONTransformer(t *testing.T) {
 			require.JSONEq(t, string(jsonBytes), string(bytes))
 		})
 	}
+}
 
-	testCases2, err := LoadInvalidDslSyntaxTestCases()
+func TestDSLToJSONTransformerForSyntaxErrorCases(t *testing.T) {
+	testCases, err := loadInvalidDslSyntaxTestCases()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
-	for _, testCase := range testCases2 {
+	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, err := language.TransformDslToJSON(testCase.DSL)
 

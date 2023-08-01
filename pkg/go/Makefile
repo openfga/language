@@ -10,7 +10,7 @@ clean:
 	go clean
 
 test:
-	go test ./...
+	go test ./... -count=1
 
 lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint run

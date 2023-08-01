@@ -4,7 +4,6 @@ package parser // OpenFGA
 
 import "github.com/antlr4-go/antlr/v4"
 
-
 // OpenFGAListener is a complete listener for a parse tree produced by OpenFGAParser.
 type OpenFGAListener interface {
 	antlr.ParseTreeListener

@@ -1,25 +1,25 @@
 import * as path from "path";
 import * as fs from "fs";
 
-interface TestCase {
+interface ValidTestCase {
   name: string;
   dsl: string;
   json: string;
   skip: boolean;
 }
 
-export function loadTransformerTestCases(): TestCase[] {
+export function loadValidTransformerTestCases(): ValidTestCase[] {
   const testDataPath = path.join(__dirname, "../../../tests", "data", "transformer");
   const entries = fs.readdirSync(testDataPath, { withFileTypes: true });
 
-  const testCases: TestCase[] = [];
+  const testCases: ValidTestCase[] = [];
 
   for (const entry of entries) {
     if (!entry.isDirectory()) {
       continue;
     }
 
-    const testCase: Partial<TestCase> = {
+    const testCase: Partial<ValidTestCase> = {
       name: entry.name,
     };
 
@@ -38,8 +38,21 @@ export function loadTransformerTestCases(): TestCase[] {
     const dslData = fs.readFileSync(path.join(testDataPath, testCase.name!, "authorization-model.fga"));
     testCase.dsl = dslData.toString("utf8");
 
-    testCases.push(testCase as TestCase);
+    testCases.push(testCase as ValidTestCase);
   }
 
   return testCases;
+}
+
+interface InvalidDslSyntaxTestCase {
+  name: string;
+  dsl: string;
+  valid: boolean;
+  error_message: string;
+}
+
+export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
+  const jsonData = fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation.json"));
+
+  return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
 }

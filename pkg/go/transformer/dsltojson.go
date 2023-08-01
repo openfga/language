@@ -1,8 +1,11 @@
 package transformer
 
 import (
+	"fmt"
+
 	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/hashicorp/go-multierror"
 	parser "github.com/openfga/language/pkg/go/gen"
 )
 
@@ -15,30 +18,32 @@ const (
 	RELATION_DEFINITION_OPERATOR_BUT_NOT RelationDefinitionOperator = "but not"
 )
 
-type Relation struct {
+// OpenFGA DSL Listener
+
+type relation struct {
 	Name     string
 	Rewrites []*pb.Userset
 	Operator RelationDefinitionOperator
 	TypeInfo pb.RelationTypeInfo
 }
 
-type OpenFgaDslListener struct {
+type openFgaDslListener struct {
 	*parser.BaseOpenFGAListener
 
 	authorizationModel pb.AuthorizationModel
 	currentTypeDef     *pb.TypeDefinition
-	currentRelation    *Relation
+	currentRelation    *relation
 }
 
-func NewOpenFgaDslListener() *OpenFgaDslListener {
-	return new(OpenFgaDslListener)
+func newOpenFgaDslListener() *openFgaDslListener {
+	return new(openFgaDslListener)
 }
 
-func (l *OpenFgaDslListener) ExitSchemaVersion(ctx *parser.SchemaVersionContext) {
+func (l *openFgaDslListener) ExitSchemaVersion(ctx *parser.SchemaVersionContext) {
 	l.authorizationModel.SchemaVersion = ctx.GetText()
 }
 
-func (l *OpenFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
+func (l *openFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
 	l.currentTypeDef = &pb.TypeDefinition{
 		Relations: map[string]*pb.Userset{},
 		Metadata: &pb.Metadata{
@@ -47,7 +52,7 @@ func (l *OpenFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
 	}
 }
 
-func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
+func (l *openFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
 	typeName := ctx.TypeName().GetText()
 	typeDef := l.currentTypeDef
 	typeDef.Type = typeName
@@ -61,14 +66,14 @@ func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
 	l.currentTypeDef = nil
 }
 
-func (l *OpenFgaDslListener) EnterRelationDeclaration(_ctx *parser.RelationDeclarationContext) {
-	l.currentRelation = &Relation{
+func (l *openFgaDslListener) EnterRelationDeclaration(_ctx *parser.RelationDeclarationContext) {
+	l.currentRelation = &relation{
 		Rewrites: []*pb.Userset{},
 		TypeInfo: pb.RelationTypeInfo{DirectlyRelatedUserTypes: []*pb.RelationReference{}},
 	}
 }
 
-func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclarationContext) {
+func (l *openFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclarationContext) {
 	relationName := ctx.RelationName().GetText()
 
 	if len(l.currentRelation.Rewrites) == 1 {
@@ -109,17 +114,17 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 	l.currentRelation = nil
 }
 
-func (l *OpenFgaDslListener) EnterRelationDefDirectAssignment(_ctx *parser.RelationDefDirectAssignmentContext) {
+func (l *openFgaDslListener) EnterRelationDefDirectAssignment(_ctx *parser.RelationDefDirectAssignmentContext) {
 	l.currentRelation.TypeInfo = pb.RelationTypeInfo{DirectlyRelatedUserTypes: []*pb.RelationReference{}}
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefDirectAssignment(_ctx *parser.RelationDefDirectAssignmentContext) {
+func (l *openFgaDslListener) ExitRelationDefDirectAssignment(_ctx *parser.RelationDefDirectAssignmentContext) {
 	partialRewrite := &pb.Userset{Userset: &pb.Userset_This{}}
 
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.RelationDefTypeRestrictionContext) {
+func (l *openFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.RelationDefTypeRestrictionContext) {
 	relationRef := &pb.RelationReference{}
 	_type := ctx.RelationDefTypeRestrictionType()
 	usersetRestriction := ctx.RelationDefTypeRestrictionUserset()
@@ -144,7 +149,7 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 	l.currentRelation.TypeInfo.DirectlyRelatedUserTypes = append(l.currentRelation.TypeInfo.DirectlyRelatedUserTypes, relationRef)
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefRelationOnSameObject(ctx *parser.RelationDefRelationOnSameObjectContext) {
+func (l *openFgaDslListener) ExitRelationDefRelationOnSameObject(ctx *parser.RelationDefRelationOnSameObjectContext) {
 	partialRewrite := &pb.Userset{Userset: &pb.Userset_ComputedUserset{
 		ComputedUserset: &pb.ObjectRelation{
 			Object:   "",
@@ -154,7 +159,7 @@ func (l *OpenFgaDslListener) ExitRelationDefRelationOnSameObject(ctx *parser.Rel
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefRelationOnRelatedObject(
+func (l *openFgaDslListener) ExitRelationDefRelationOnRelatedObject(
 	ctx *parser.RelationDefRelationOnRelatedObjectContext,
 ) {
 	partialRewrite := &pb.Userset{Userset: &pb.Userset_TupleToUserset{
@@ -171,31 +176,68 @@ func (l *OpenFgaDslListener) ExitRelationDefRelationOnRelatedObject(
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
 
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllOr(_ctx *parser.RelationDefPartialAllOrContext) {
+func (l *openFgaDslListener) EnterRelationDefPartialAllOr(_ctx *parser.RelationDefPartialAllOrContext) {
 	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR
 }
 
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllAnd(_ctx *parser.RelationDefPartialAllAndContext) {
+func (l *openFgaDslListener) EnterRelationDefPartialAllAnd(_ctx *parser.RelationDefPartialAllAndContext) {
 	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND
 }
 
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllButNot(_ctx *parser.RelationDefPartialAllButNotContext) {
+func (l *openFgaDslListener) EnterRelationDefPartialAllButNot(_ctx *parser.RelationDefPartialAllButNotContext) {
 	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT
 }
 
-func TransformDslToJSON(data string) *pb.AuthorizationModel {
+//// Error Handling
+
+type OpenFgaDslSyntaxError struct {
+	line, column int
+	msg          string
+}
+
+func (err *OpenFgaDslSyntaxError) Error() string {
+	return fmt.Sprintf("syntax error at line=%d, column=%d: %s", err.line, err.column, err.msg)
+}
+
+type openFgaDslErrorListener struct {
+	*antlr.DefaultErrorListener // Embed default which ensures we fit the interface
+	Errors                      *multierror.Error
+}
+
+func (c *openFgaDslErrorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+	c.Errors = multierror.Append(c.Errors, &OpenFgaDslSyntaxError{
+		line:   line,
+		column: column,
+		msg:    msg,
+	})
+}
+
+///
+
+// TransformDslToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
+func TransformDslToJSON(data string) (*pb.AuthorizationModel, error) {
 	is := antlr.NewInputStream(data)
+
+	errorListener := openFgaDslErrorListener{}
 
 	// Create the Lexer
 	lexer := parser.NewOpenFGALexer(is)
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(&errorListener)
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 
 	// Create the Parser
 	p := parser.NewOpenFGAParser(stream)
+	p.RemoveErrorListeners()
+	p.AddErrorListener(&errorListener)
 
 	// Finally parse the expression
-	l := NewOpenFgaDslListener()
+	l := newOpenFgaDslListener()
 	antlr.ParseTreeWalkerDefault.Walk(l, p.Main())
 
-	return &l.authorizationModel
+	if errorListener.Errors != nil {
+		return nil, errorListener.Errors
+	}
+
+	return &l.authorizationModel, nil
 }

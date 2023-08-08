@@ -16,7 +16,7 @@ relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefGroup
 relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefGrouping)+;
 relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefGrouping)+;
 
-relationDefDirectAssignment: '[' relationDefTypeRestriction spacing? (',' spacing? relationDefTypeRestriction)* spacing? ']';
+relationDefDirectAssignment: '[' spacing? relationDefTypeRestriction spacing? (',' spacing? relationDefTypeRestriction)* spacing? ']';
 relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
 relationDefRelationOnSameObject: rewriteComputedusersetName;
 relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName spacing relationDefKeywordFrom spacing rewriteTuplesetName;

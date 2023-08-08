@@ -23,4 +23,7 @@ go.work
 # Node
 node_modules/
 
+# Mac
+.DS_Store
+
 # Generated code

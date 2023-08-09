@@ -4,7 +4,6 @@ import {ParseTreeListener} from "antlr4";
 
 
 import { MainContext } from "./OpenFGAParser";
-import { IndentationContext } from "./OpenFGAParser";
 import { ModelHeaderContext } from "./OpenFGAParser";
 import { TypeDefsContext } from "./OpenFGAParser";
 import { TypeDefContext } from "./OpenFGAParser";
@@ -19,10 +18,6 @@ import { RelationDefRewriteContext } from "./OpenFGAParser";
 import { RelationDefRelationOnSameObjectContext } from "./OpenFGAParser";
 import { RelationDefRelationOnRelatedObjectContext } from "./OpenFGAParser";
 import { RelationDefOperatorContext } from "./OpenFGAParser";
-import { RelationDefOperatorAndContext } from "./OpenFGAParser";
-import { RelationDefOperatorOrContext } from "./OpenFGAParser";
-import { RelationDefOperatorButNotContext } from "./OpenFGAParser";
-import { RelationDefKeywordFromContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionTypeContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionRelationContext } from "./OpenFGAParser";
@@ -34,10 +29,6 @@ import { RewriteTuplesetComputedusersetNameContext } from "./OpenFGAParser";
 import { RewriteTuplesetNameContext } from "./OpenFGAParser";
 import { RelationNameContext } from "./OpenFGAParser";
 import { TypeNameContext } from "./OpenFGAParser";
-import { CommentContext } from "./OpenFGAParser";
-import { MultiLineCommentContext } from "./OpenFGAParser";
-import { SpacingContext } from "./OpenFGAParser";
-import { NewlineContext } from "./OpenFGAParser";
 import { SchemaVersionContext } from "./OpenFGAParser";
 import { NameContext } from "./OpenFGAParser";
 
@@ -57,16 +48,6 @@ export default class OpenFGAListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitMain?: (ctx: MainContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.indentation`.
-	 * @param ctx the parse tree
-	 */
-	enterIndentation?: (ctx: IndentationContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.indentation`.
-	 * @param ctx the parse tree
-	 */
-	exitIndentation?: (ctx: IndentationContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.modelHeader`.
 	 * @param ctx the parse tree
@@ -208,46 +189,6 @@ export default class OpenFGAListener extends ParseTreeListener {
 	 */
 	exitRelationDefOperator?: (ctx: RelationDefOperatorContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorAnd`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorAnd?: (ctx: RelationDefOperatorAndContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorAnd`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorAnd?: (ctx: RelationDefOperatorAndContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorOr`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorOr?: (ctx: RelationDefOperatorOrContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorOr`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorOr?: (ctx: RelationDefOperatorOrContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorButNot`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorButNot?: (ctx: RelationDefOperatorButNotContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorButNot`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorButNot?: (ctx: RelationDefOperatorButNotContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefKeywordFrom`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefKeywordFrom?: (ctx: RelationDefKeywordFromContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefKeywordFrom`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefKeywordFrom?: (ctx: RelationDefKeywordFromContext) => void;
-	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestriction`.
 	 * @param ctx the parse tree
 	 */
@@ -357,46 +298,6 @@ export default class OpenFGAListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeName?: (ctx: TypeNameContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.comment`.
-	 * @param ctx the parse tree
-	 */
-	enterComment?: (ctx: CommentContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.comment`.
-	 * @param ctx the parse tree
-	 */
-	exitComment?: (ctx: CommentContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.multiLineComment`.
-	 * @param ctx the parse tree
-	 */
-	enterMultiLineComment?: (ctx: MultiLineCommentContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.multiLineComment`.
-	 * @param ctx the parse tree
-	 */
-	exitMultiLineComment?: (ctx: MultiLineCommentContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.spacing`.
-	 * @param ctx the parse tree
-	 */
-	enterSpacing?: (ctx: SpacingContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.spacing`.
-	 * @param ctx the parse tree
-	 */
-	exitSpacing?: (ctx: SpacingContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.newline`.
-	 * @param ctx the parse tree
-	 */
-	enterNewline?: (ctx: NewlineContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.newline`.
-	 * @param ctx the parse tree
-	 */
-	exitNewline?: (ctx: NewlineContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.schemaVersion`.
 	 * @param ctx the parse tree

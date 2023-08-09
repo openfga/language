@@ -1,37 +1,38 @@
 grammar OpenFGA;
 
-main: modelHeader typeDefs newline?;
+main: modelHeader typeDefs NEWLINES?;
 
-indentation: '  ' | '	';
+// COMMENT: HASH COMMENT_CONTENTS NEWLINE;
 
-modelHeader: (multiLineComment newline)? 'model' spacing? (newline multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
+// modelHeader: (multiLineComment NEWLINES)? MODEL  (NEWLINES multiLineComment)? NEWLINES INDENT SCHEMA  schemaVersion ;
+// typeDefs: typeDef*;
+// typeDef:  (NEWLINES multiLineComment)? NEWLINES TYPE  typeName  (NEWLINES INDENT RELATIONS  relationDeclaration+)?;
+// relationDeclaration: (NEWLINES multiLineComment)? NEWLINES INDENT INDENT DEFINE  relationName  COLLON  relationDef ;
+
+modelHeader: MODEL NEWLINES INDENT SCHEMA  schemaVersion ;
 typeDefs: typeDef*;
-typeDef:  (newline multiLineComment)? newline 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
-relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef spacing?;
+typeDef: NEWLINES TYPE typeName (NEWLINES INDENT RELATIONS relationDeclaration+)?;
+relationDeclaration: NEWLINES INDENT INDENT DEFINE  relationName  COLON  relationDef ;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
 
 relationDefPartials: relationDefPartialAllOr | relationDefPartialAllAnd | relationDefPartialAllButNot;
-relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefGrouping)+;
-relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefGrouping)+;
-relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefGrouping)+;
+relationDefPartialAllOr: (OR relationDefGrouping)+;
+relationDefPartialAllAnd: (AND relationDefGrouping)+;
+relationDefPartialAllButNot: (BUT_NOT relationDefGrouping)+;
 
-relationDefDirectAssignment: '[' relationDefTypeRestriction spacing? (',' spacing? relationDefTypeRestriction)* spacing? ']';
+relationDefDirectAssignment: L_SQUARE relationDefTypeRestriction  (COMMA  relationDefTypeRestriction)*  R_SQUARE;
 relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
 relationDefRelationOnSameObject: rewriteComputedusersetName;
-relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName spacing relationDefKeywordFrom spacing rewriteTuplesetName;
+relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName  FROM  rewriteTuplesetName;
 
-relationDefOperator: relationDefOperatorOr | relationDefOperatorAnd | relationDefOperatorButNot;
-relationDefOperatorAnd: 'and';
-relationDefOperatorOr: 'or';
-relationDefOperatorButNot: 'but not';
-relationDefKeywordFrom: 'from';
+relationDefOperator: OR | AND | BUT_NOT;
 
 relationDefTypeRestriction: relationDefTypeRestrictionType | relationDefTypeRestrictionWildcard | relationDefTypeRestrictionUserset;
 relationDefTypeRestrictionType: name;
 relationDefTypeRestrictionRelation: name;
-relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType ':*';
-relationDefTypeRestrictionUserset: relationDefTypeRestrictionType '#' relationDefTypeRestrictionRelation;
+relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType WILDCARD;
+relationDefTypeRestrictionUserset: relationDefTypeRestrictionType HASH relationDefTypeRestrictionRelation;
 
 relationDefGrouping: relationDefRewrite;
 
@@ -41,13 +42,35 @@ rewriteTuplesetName: name;
 relationName: name;
 typeName: name;
 
-comment
-  : spacing?  '#' ~( '\r' | '\n' )*
-  ;
-multiLineComment: comment (newline comment)*;
-spacing: ' '+;
-newline: ('\r' | '\n')+;
-schemaVersion: '1.1';
-
+schemaVersion: SCHEMA_VERSION;
 name: ALPHA_NUMERIC+;
+
+
+INDENT: '  ' | '\t';
+
+MODEL: 'model';
+TYPE: 'type';
+SCHEMA: 'schema';
+SCHEMA_VERSION: '1.'[0-1];
+RELATIONS: 'relations';
+DEFINE: 'define';
+
+AND: 'and';
+OR: 'or';
+BUT_NOT: 'but not';
+FROM: 'from';
+
+COLON: ':';
+HASH: '#';
+WILDCARD: ':*';
+L_SQUARE: '[';
+R_SQUARE: ']';
+COMMA: ',';
+
 ALPHA_NUMERIC: [a-zA-Z0-9_-]+;
+fragment COMMENT_CONTENTS: ~([\n\r\u2028\u2029])*;
+
+NEWLINES: NEWLINE+;
+fragment NEWLINE: '\r' '\n' | '\n' | '\r';
+
+WS: [ \t\r\n] -> channel(HIDDEN);

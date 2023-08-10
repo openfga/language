@@ -127,22 +127,18 @@ func (l *openFgaDslListener) ExitRelationDefDirectAssignment(_ctx *parser.Relati
 func (l *openFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.RelationDefTypeRestrictionContext) {
 	relationRef := &pb.RelationReference{}
 	_type := ctx.RelationDefTypeRestrictionType()
-	usersetRestriction := ctx.RelationDefTypeRestrictionUserset()
-	wildcardRestriction := ctx.RelationDefTypeRestrictionWildcard()
+	usersetRestriction := ctx.RelationDefTypeRestrictionRelation()
+	wildcardRestriction := ctx.WILDCARD()
 
-	if _type != nil {
-		relationRef.Type = _type.GetText()
-	}
+	relationRef.Type = _type.GetText()
 
 	if usersetRestriction != nil {
-		relationRef.Type = usersetRestriction.RelationDefTypeRestrictionType().GetText()
 		relationRef.RelationOrWildcard = &pb.RelationReference_Relation{
-			Relation: usersetRestriction.RelationDefTypeRestrictionRelation().GetText(),
+			Relation: usersetRestriction.GetText(),
 		}
 	}
 
 	if wildcardRestriction != nil {
-		relationRef.Type = wildcardRestriction.RelationDefTypeRestrictionType().GetText()
 		relationRef.RelationOrWildcard = &pb.RelationReference_Wildcard{Wildcard: &pb.Wildcard{}}
 	}
 

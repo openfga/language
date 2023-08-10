@@ -142,17 +142,14 @@ class OpenFgaDslListener extends OpenFGAListener {
     const relationRef: Partial<RelationReference> = {};
     const type = ctx.relationDefTypeRestrictionType();
 
-    const usersetRestriction = ctx.relationDefTypeRestrictionUserset();
-    const wildcardRestriction = ctx.relationDefTypeRestrictionWildcard();
-    if (type) {
-      relationRef.type = type.getText();
-    }
+    const usersetRestriction = ctx.relationDefTypeRestrictionRelation();
+    const wildcardRestriction = ctx.WILDCARD();
+
+    relationRef.type = type.getText();
     if (usersetRestriction) {
-      relationRef.type = usersetRestriction.relationDefTypeRestrictionType().getText();
-      relationRef.relation = usersetRestriction.relationDefTypeRestrictionRelation().getText();
+      relationRef.relation = usersetRestriction.getText();
     }
     if (wildcardRestriction) {
-      relationRef.type = wildcardRestriction.relationDefTypeRestrictionType().getText();
       relationRef.wildcard = {};
     }
     this.currentRelation!.typeInfo!.directly_related_user_types!.push(relationRef as RelationReference);

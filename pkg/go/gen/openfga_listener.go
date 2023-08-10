@@ -4,6 +4,7 @@ package parser // OpenFGA
 
 import "github.com/antlr4-go/antlr/v4"
 
+
 // OpenFGAListener is a complete listener for a parse tree produced by OpenFGAParser.
 type OpenFGAListener interface {
 	antlr.ParseTreeListener
@@ -11,8 +12,8 @@ type OpenFGAListener interface {
 	// EnterMain is called when entering the main production.
 	EnterMain(c *MainContext)
 
-	// EnterIndentation is called when entering the indentation production.
-	EnterIndentation(c *IndentationContext)
+	// EnterModelHeaderComment is called when entering the modelHeaderComment production.
+	EnterModelHeaderComment(c *ModelHeaderCommentContext)
 
 	// EnterModelHeader is called when entering the modelHeader production.
 	EnterModelHeader(c *ModelHeaderContext)
@@ -53,21 +54,6 @@ type OpenFGAListener interface {
 	// EnterRelationDefRelationOnRelatedObject is called when entering the relationDefRelationOnRelatedObject production.
 	EnterRelationDefRelationOnRelatedObject(c *RelationDefRelationOnRelatedObjectContext)
 
-	// EnterRelationDefOperator is called when entering the relationDefOperator production.
-	EnterRelationDefOperator(c *RelationDefOperatorContext)
-
-	// EnterRelationDefOperatorAnd is called when entering the relationDefOperatorAnd production.
-	EnterRelationDefOperatorAnd(c *RelationDefOperatorAndContext)
-
-	// EnterRelationDefOperatorOr is called when entering the relationDefOperatorOr production.
-	EnterRelationDefOperatorOr(c *RelationDefOperatorOrContext)
-
-	// EnterRelationDefOperatorButNot is called when entering the relationDefOperatorButNot production.
-	EnterRelationDefOperatorButNot(c *RelationDefOperatorButNotContext)
-
-	// EnterRelationDefKeywordFrom is called when entering the relationDefKeywordFrom production.
-	EnterRelationDefKeywordFrom(c *RelationDefKeywordFromContext)
-
 	// EnterRelationDefTypeRestriction is called when entering the relationDefTypeRestriction production.
 	EnterRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
@@ -76,12 +62,6 @@ type OpenFGAListener interface {
 
 	// EnterRelationDefTypeRestrictionRelation is called when entering the relationDefTypeRestrictionRelation production.
 	EnterRelationDefTypeRestrictionRelation(c *RelationDefTypeRestrictionRelationContext)
-
-	// EnterRelationDefTypeRestrictionWildcard is called when entering the relationDefTypeRestrictionWildcard production.
-	EnterRelationDefTypeRestrictionWildcard(c *RelationDefTypeRestrictionWildcardContext)
-
-	// EnterRelationDefTypeRestrictionUserset is called when entering the relationDefTypeRestrictionUserset production.
-	EnterRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
 
 	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
 	EnterRelationDefGrouping(c *RelationDefGroupingContext)
@@ -101,18 +81,6 @@ type OpenFGAListener interface {
 	// EnterTypeName is called when entering the typeName production.
 	EnterTypeName(c *TypeNameContext)
 
-	// EnterComment is called when entering the comment production.
-	EnterComment(c *CommentContext)
-
-	// EnterMultiLineComment is called when entering the multiLineComment production.
-	EnterMultiLineComment(c *MultiLineCommentContext)
-
-	// EnterSpacing is called when entering the spacing production.
-	EnterSpacing(c *SpacingContext)
-
-	// EnterNewline is called when entering the newline production.
-	EnterNewline(c *NewlineContext)
-
 	// EnterSchemaVersion is called when entering the schemaVersion production.
 	EnterSchemaVersion(c *SchemaVersionContext)
 
@@ -122,8 +90,8 @@ type OpenFGAListener interface {
 	// ExitMain is called when exiting the main production.
 	ExitMain(c *MainContext)
 
-	// ExitIndentation is called when exiting the indentation production.
-	ExitIndentation(c *IndentationContext)
+	// ExitModelHeaderComment is called when exiting the modelHeaderComment production.
+	ExitModelHeaderComment(c *ModelHeaderCommentContext)
 
 	// ExitModelHeader is called when exiting the modelHeader production.
 	ExitModelHeader(c *ModelHeaderContext)
@@ -164,21 +132,6 @@ type OpenFGAListener interface {
 	// ExitRelationDefRelationOnRelatedObject is called when exiting the relationDefRelationOnRelatedObject production.
 	ExitRelationDefRelationOnRelatedObject(c *RelationDefRelationOnRelatedObjectContext)
 
-	// ExitRelationDefOperator is called when exiting the relationDefOperator production.
-	ExitRelationDefOperator(c *RelationDefOperatorContext)
-
-	// ExitRelationDefOperatorAnd is called when exiting the relationDefOperatorAnd production.
-	ExitRelationDefOperatorAnd(c *RelationDefOperatorAndContext)
-
-	// ExitRelationDefOperatorOr is called when exiting the relationDefOperatorOr production.
-	ExitRelationDefOperatorOr(c *RelationDefOperatorOrContext)
-
-	// ExitRelationDefOperatorButNot is called when exiting the relationDefOperatorButNot production.
-	ExitRelationDefOperatorButNot(c *RelationDefOperatorButNotContext)
-
-	// ExitRelationDefKeywordFrom is called when exiting the relationDefKeywordFrom production.
-	ExitRelationDefKeywordFrom(c *RelationDefKeywordFromContext)
-
 	// ExitRelationDefTypeRestriction is called when exiting the relationDefTypeRestriction production.
 	ExitRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
@@ -187,12 +140,6 @@ type OpenFGAListener interface {
 
 	// ExitRelationDefTypeRestrictionRelation is called when exiting the relationDefTypeRestrictionRelation production.
 	ExitRelationDefTypeRestrictionRelation(c *RelationDefTypeRestrictionRelationContext)
-
-	// ExitRelationDefTypeRestrictionWildcard is called when exiting the relationDefTypeRestrictionWildcard production.
-	ExitRelationDefTypeRestrictionWildcard(c *RelationDefTypeRestrictionWildcardContext)
-
-	// ExitRelationDefTypeRestrictionUserset is called when exiting the relationDefTypeRestrictionUserset production.
-	ExitRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
 
 	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
 	ExitRelationDefGrouping(c *RelationDefGroupingContext)
@@ -211,18 +158,6 @@ type OpenFGAListener interface {
 
 	// ExitTypeName is called when exiting the typeName production.
 	ExitTypeName(c *TypeNameContext)
-
-	// ExitComment is called when exiting the comment production.
-	ExitComment(c *CommentContext)
-
-	// ExitMultiLineComment is called when exiting the multiLineComment production.
-	ExitMultiLineComment(c *MultiLineCommentContext)
-
-	// ExitSpacing is called when exiting the spacing production.
-	ExitSpacing(c *SpacingContext)
-
-	// ExitNewline is called when exiting the newline production.
-	ExitNewline(c *NewlineContext)
 
 	// ExitSchemaVersion is called when exiting the schemaVersion production.
 	ExitSchemaVersion(c *SchemaVersionContext)

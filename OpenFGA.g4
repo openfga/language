@@ -2,17 +2,11 @@ grammar OpenFGA;
 
 main: modelHeader typeDefs NEWLINES?;
 
-// COMMENT: HASH COMMENT_CONTENTS NEWLINE;
-
-// modelHeader: (multiLineComment NEWLINES)? MODEL  (NEWLINES multiLineComment)? NEWLINES INDENT SCHEMA  schemaVersion ;
-// typeDefs: typeDef*;
-// typeDef:  (NEWLINES multiLineComment)? NEWLINES TYPE  typeName  (NEWLINES INDENT RELATIONS  relationDeclaration+)?;
-// relationDeclaration: (NEWLINES multiLineComment)? NEWLINES INDENT INDENT DEFINE  relationName  COLLON  relationDef ;
-
-modelHeader: MODEL NEWLINES INDENT SCHEMA  schemaVersion ;
+modelHeaderComment: (HASH ~( '\r' | '\n' )*)? MULTILINE_COMMENT?;
+modelHeader: (modelHeaderComment NEWLINES)? MODEL NEWLINES INDENT SCHEMA schemaVersion;
 typeDefs: typeDef*;
-typeDef: NEWLINES TYPE typeName (NEWLINES INDENT RELATIONS relationDeclaration+)?;
-relationDeclaration: NEWLINES INDENT INDENT DEFINE  relationName  COLON  relationDef ;
+typeDef: MULTILINE_COMMENT? NEWLINES TYPE typeName (NEWLINES INDENT RELATIONS relationDeclaration+)?;
+relationDeclaration: MULTILINE_COMMENT? NEWLINES INDENT INDENT DEFINE relationName COLON relationDef ;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
 
@@ -21,18 +15,14 @@ relationDefPartialAllOr: (OR relationDefGrouping)+;
 relationDefPartialAllAnd: (AND relationDefGrouping)+;
 relationDefPartialAllButNot: (BUT_NOT relationDefGrouping)+;
 
-relationDefDirectAssignment: L_SQUARE relationDefTypeRestriction  (COMMA  relationDefTypeRestriction)*  R_SQUARE;
+relationDefDirectAssignment: L_SQUARE relationDefTypeRestriction (COMMA relationDefTypeRestriction)* R_SQUARE;
 relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
 relationDefRelationOnSameObject: rewriteComputedusersetName;
 relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName  FROM  rewriteTuplesetName;
 
-relationDefOperator: OR | AND | BUT_NOT;
-
-relationDefTypeRestriction: relationDefTypeRestrictionType | relationDefTypeRestrictionWildcard | relationDefTypeRestrictionUserset;
+relationDefTypeRestriction: relationDefTypeRestrictionType ((COLON WILDCARD) | (HASH relationDefTypeRestrictionRelation))?;
 relationDefTypeRestrictionType: name;
 relationDefTypeRestrictionRelation: name;
-relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType WILDCARD;
-relationDefTypeRestrictionUserset: relationDefTypeRestrictionType HASH relationDefTypeRestrictionRelation;
 
 relationDefGrouping: relationDefRewrite;
 
@@ -45,13 +35,13 @@ typeName: name;
 schemaVersion: SCHEMA_VERSION;
 name: ALPHA_NUMERIC+;
 
-
+MULTILINE_COMMENT: (NEWLINES WS* HASH COMMENT_CONTENTS)+;
 INDENT: '  ' | '\t';
 
 MODEL: 'model';
 TYPE: 'type';
 SCHEMA: 'schema';
-SCHEMA_VERSION: '1.'[0-1];
+SCHEMA_VERSION: '1.1';
 RELATIONS: 'relations';
 DEFINE: 'define';
 
@@ -62,15 +52,18 @@ FROM: 'from';
 
 COLON: ':';
 HASH: '#';
-WILDCARD: ':*';
+WILDCARD: '*';
 L_SQUARE: '[';
 R_SQUARE: ']';
 COMMA: ',';
 
-ALPHA_NUMERIC: [a-zA-Z0-9_-]+;
+SYMBOL: [~!@#$%^&*()_[\]{}:";',.\\/<>`] | '+' | '=' | '-';
+ALPHA_NUMERIC_CHAR: [a-zA-Z0-9_-];
+ALPHA_NUMERIC: ALPHA_NUMERIC_CHAR+;
 fragment COMMENT_CONTENTS: ~([\n\r\u2028\u2029])*;
 
 NEWLINES: NEWLINE+;
 fragment NEWLINE: '\r' '\n' | '\n' | '\r';
 
-WS: [ \t\r\n] -> channel(HIDDEN);
+
+WS: [ \t] -> channel(HIDDEN);

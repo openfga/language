@@ -3,9 +3,9 @@ package transformer
 import (
 	"fmt"
 
-	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/hashicorp/go-multierror"
+	pb "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/gen"
 )
 

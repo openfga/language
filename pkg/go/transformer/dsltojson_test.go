@@ -3,7 +3,7 @@ package transformer_test
 import (
 	"testing"
 
-	pb "buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1"
+	pb "github.com/openfga/api/proto/openfga/v1"
 	language "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"

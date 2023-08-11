@@ -31,8 +31,8 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - github.com/openfga/api
           - github.com/openfga/cli
-          - buf.build/gen/go/openfga/api/protocolbuffers/go/openfga/v1
           - google.golang.org/protobuf/encoding/protojson
       test:
         files:

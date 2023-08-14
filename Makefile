@@ -58,7 +58,7 @@ all-tests-go: antlr-gen-go
 
 .PHONY: antlr-gen-js
 antlr-gen-js: build-antlr-container
-	${ANTLR_CMD} -Dlanguage=TypeScript -o pkg/js/gen /app/OpenFGA.g4
+	${ANTLR_CMD} -Dlanguage=TypeScript -o pkg/js/gen /app/OpenFGALexer.g4 /app/OpenFGAParser.g4
 
 .PHONY: build-js
 build-js: antlr-gen-js

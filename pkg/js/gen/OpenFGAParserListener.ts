@@ -1,4 +1,4 @@
-// Generated from /app/OpenFGA.g4 by ANTLR 4.13.0
+// Generated from /app/OpenFGAParser.g4 by ANTLR 4.13.0
 
 import {ParseTreeListener} from "antlr4";
 
@@ -46,7 +46,7 @@ import { NameContext } from "./OpenFGAParser";
  * This interface defines a complete listener for a parse tree produced by
  * `OpenFGAParser`.
  */
-export default class OpenFGAListener extends ParseTreeListener {
+export default class OpenFGAParserListener extends ParseTreeListener {
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.main`.
 	 * @param ctx the parse tree

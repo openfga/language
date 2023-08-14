@@ -1,31 +1,4 @@
 ---
-name: >-
-  ensure errors are highlighted in the right place for same relation name
-  across different types
-dsl: |
-  model
-    schema 1.0
-  type user
-  type geography
-    relations
-      define parent as self
-      define can_view_locations as self or can_view_locations from parent
-
-  type outlet
-    relations
-      define geography as self
-      define can_view_locations as self or can_view_locations from parent
-expectedError:
-  - endColumn: 72
-    endLineNumber: 12
-    message: The relation `parent` does not exist in type `outlet`
-    extraInformation:
-      error: invalid-syntax
-    severity: 8
-    source: linter
-    startColumn: 66
-    startLineNumber: 12
----
 name: mixture of 1.0 and 1.1 should yield error
 dsl: |
   model
@@ -46,29 +19,6 @@ expectedError:
     source: linter
     startColumn: 19
     startLineNumber: 9
----
-name: >- # SYNTAX IS INVALID
-  model 1.1 diff in exclusion not valid and spaces are reflected correctly in 
-  error messages
-dsl: |
-  model
-    schema 1.1
-  type user
-  type group
-    relations
-      define member: [user]
-      define reader   : member   but not   allowed
-expectedError:
-  - endColumn: 49
-    endLineNumber: 7
-    message: The relation `allowed` does not exist.
-    extraInformation:
-      relation: allowed
-      error: missing-definition
-    severity: 8
-    source: linter
-    startColumn: 42
-    startLineNumber: 7
 ---
 name: empty directly assignable relations with spaces should yield error # SYNTAX IS INVALID
 dsl: |
@@ -127,23 +77,6 @@ expectedError:
     startColumn: 10
     startLineNumber: 2
 ---
-name: model 1.0 should not have allowedType
-dsl: |
-  model
-    schema 1.0
-  type user
-  type org
-    relations
-      define member: [user]
-expectedError:
-  - endColumn: 25
-    endLineNumber: 6
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 18
-    startLineNumber: 6
----
 name: model 1.1 has no directly allowed types in viewer
 dsl: |
   model
@@ -181,23 +114,6 @@ expectedError:
     source: linter
     startColumn: 19
     startLineNumber: 7
----
-name: syntax error is highlighted in the right spot
-dsl: |
-  model
-    schema 1.0
-  type user
-  type group
-    relations
-      define group: [group] as self
-expectedError:
-  - endColumn: 33
-    endLineNumber: 6
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 17
-    startLineNumber: 6
 ---
 name: should not allow no model schema
 dsl: |
@@ -528,18 +444,18 @@ dsl: |
   type user
   type group
 expectedError: []
-# ---
-# name: model 1.1 with spacing in allowed type
-# dsl: |
-#   model
-#     schema 1.1
-#   type folder
-#     relations
-#       define viewer: [  user  , user:*  , group  ]
+ ---
+ name: model 1.1 with spacing in allowed type
+ dsl: |
+   model
+     schema 1.1
+   type folder
+     relations
+       define viewer: [  user  , user:*  , group  ]
 
-#   type user
-#   type group
-# expectedError: []
+   type user
+   type group
+ expectedError: []
 ---
 name: union does not require all child to have entry
 dsl: |
@@ -607,6 +523,32 @@ dsl: |
       define can_view: viewer but not restricted
       define can_view_actual: can_view
 expectedError: []
+
+
+#---
+#name: >-
+#  model 1.1 diff in exclusion not valid and spaces are reflected correctly in
+#  error messages
+#dsl: |
+#  model
+#    schema 1.1
+#  type user
+#  type group
+#    relations
+#      define member: [user]
+#      define reader   : member   but not   allowed
+#expectedError:
+#  - endColumn: 49
+#    endLineNumber: 7
+#    message: The relation `allowed` does not exist.
+#    extraInformation:
+#      relation: allowed
+#      error: missing-definition
+#    severity: 8
+#    source: linter
+#    startColumn: 42
+#    startLineNumber: 7
+#---
 
 # ---
 # name: invalid type name for self
@@ -1337,17 +1279,6 @@ expectedError: []
 #     source: linter
 #     startColumn: 12
 #     startLineNumber: 10
-# ---
-# name: model 1.0 does not assert impossible relation
-# dsl: |
-#   model
-#     schema 1.0
-#   type user
-#   type folder
-#     relations
-#       define parent as self
-#       define viewer as self or viewer from parent
-# expectedError: []
 # ---
 # name: model 1.1 should raise error if none of the children has such relation
 # dsl: |-

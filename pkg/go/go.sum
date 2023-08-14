@@ -1,10 +1,3 @@
-buf.build/gen/go/envoyproxy/protoc-gen-validate/protocolbuffers/go v1.31.0-20221025150516-6607b10f00ed.1 h1:TsyeIqC+Te5TtKrScWnd7EPCVWNeYn3U1VrvNBTedAA=
-buf.build/gen/go/envoyproxy/protoc-gen-validate/protocolbuffers/go v1.31.0-20221025150516-6607b10f00ed.1/go.mod h1:Piak8t898VnXArmyLTXHwiVis+pdk9Yxsu5TwwmFnsA=
-buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.31.0-20221127060915-a1ecdc58eccd.1/go.mod h1:/j/LOrpev/FdyGhdj/sOc0peUf2KR0y4nMmLp4t1g14=
-buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.31.0-20230727201445-fed2dcdcfd69.1 h1:se5S80druZ47eN+I7uffQYlp9HqdjSz8Hjm8/m8fcLg=
-buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.31.0-20230727201445-fed2dcdcfd69.1/go.mod h1:/j/LOrpev/FdyGhdj/sOc0peUf2KR0y4nMmLp4t1g14=
-buf.build/gen/go/openfga/api/protocolbuffers/go v1.31.0-20230717171250-faa56cb1c8d1.1 h1:ETufRwHMdqEIgzigdJZJXIwM7FKylX30EoQ5MtT/BNA=
-buf.build/gen/go/openfga/api/protocolbuffers/go v1.31.0-20230717171250-faa56cb1c8d1.1/go.mod h1:mvU/FI2/G+OoTjgHGHjfKSixj43hG1JyCQFvRszJQMs=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

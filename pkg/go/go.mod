@@ -3,7 +3,6 @@ module github.com/openfga/language/pkg/go
 go 1.20
 
 require (
-	buf.build/gen/go/openfga/api/protocolbuffers/go v1.31.0-20230717171250-faa56cb1c8d1.1
 	github.com/antlr4-go/antlr/v4 v4.13.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/openfga/api/proto v0.0.0-20230801154117-db20ad164368
@@ -12,8 +11,6 @@ require (
 )
 
 require (
-	buf.build/gen/go/envoyproxy/protoc-gen-validate/protocolbuffers/go v1.31.0-20221025150516-6607b10f00ed.1 // indirect
-	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.31.0-20230727201445-fed2dcdcfd69.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

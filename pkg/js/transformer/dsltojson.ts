@@ -221,6 +221,7 @@ export class OpenFgaDslSyntaxError extends Error {
 export class OpenFgaDslSyntaxMultipleError extends Error {
   constructor(public errors: OpenFgaDslSyntaxError[]) {
     super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
+    this.errors = errors;
   }
 
   toString() {

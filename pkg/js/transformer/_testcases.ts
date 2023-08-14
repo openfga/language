@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
+import * as yaml from "js-yaml";
 
 interface ValidTestCase {
   name: string;
@@ -55,4 +56,15 @@ export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
   const jsonData = fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation.json"));
 
   return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
+}
+
+interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expectedError: any;
+}
+
+export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
+  const yamlData = yaml.loadAll(fs.readFileSync(
+    path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"));
+  return yamlData as MultipleInvalidDslSyntaxTestCase[];
 }

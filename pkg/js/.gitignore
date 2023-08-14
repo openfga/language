@@ -12,3 +12,4 @@ tests/coverage
 .env
 credentials.json
 
+test-report.html

@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import * as yaml from "js-yaml";
+import * as yaml from "yaml";
 
 interface ValidTestCase {
   name: string;
@@ -64,7 +64,10 @@ interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
 }
 
 export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
-  const yamlData = yaml.loadAll(fs.readFileSync(
+  const docs = yaml.parseAllDocuments(fs.readFileSync(
     path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"));
-  return yamlData as MultipleInvalidDslSyntaxTestCase[];
+
+  const jsonDocs = docs.map((d) => d.toJSON());
+
+  return jsonDocs as MultipleInvalidDslSyntaxTestCase[];
 }

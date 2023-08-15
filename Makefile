@@ -20,7 +20,7 @@ lint: lint-go lint-js
 
 .PHONY: antlr-gen-go
 antlr-gen-go: build-antlr-container
-	${ANTLR_CMD} -Dlanguage=Go -o pkg/go/gen /app/OpenFGA.g4
+	$(MAKE) antlr-gen-base language=Go packageName=go
 
 .PHONY: build-go
 build-go: antlr-gen-go
@@ -58,7 +58,7 @@ all-tests-go: antlr-gen-go
 
 .PHONY: antlr-gen-js
 antlr-gen-js: build-antlr-container
-	${ANTLR_CMD} -Dlanguage=TypeScript -o pkg/js/gen /app/OpenFGA.g4
+	$(MAKE) antlr-gen-base language=TypeScript packageName=js
 
 .PHONY: build-js
 build-js: antlr-gen-js
@@ -97,3 +97,7 @@ all-tests-js: antlr-gen-js
 .PHONY: build-antlr-container
 build-antlr-container:
 	docker build -f antlr.Containerfile -t ${ANTLR_DOCKER_IMAGE} .
+
+.PHONY: antlr-gen-base
+antlr-gen-base: build-antlr-container
+	${ANTLR_CMD} -Dlanguage=${language} -o pkg/${packageName}/gen /app/OpenFGALexer.g4 /app/OpenFGAParser.g4

@@ -1,13 +1,14 @@
-grammar OpenFGA;
+parser grammar OpenFGAParser;
+options { tokenVocab=OpenFGALexer; }
 
 main: modelHeader typeDefs newline?;
 
-indentation: '  ' | '	';
+indentation: INDENT;
 
-modelHeader: (multiLineComment newline)? 'model' spacing? (newline multiLineComment)? newline indentation 'schema' spacing schemaVersion spacing?;
+modelHeader: (multiLineComment newline)? MODEL spacing? (newline multiLineComment)? indentation SCHEMA spacing schemaVersion spacing?;
 typeDefs: typeDef*;
-typeDef:  (newline multiLineComment)? newline 'type' spacing typeName spacing? (newline indentation 'relations' spacing? relationDeclaration+)?;
-relationDeclaration: (newline multiLineComment)? newline indentation indentation 'define' spacing relationName spacing? ':' spacing? relationDef spacing?;
+typeDef:  (newline multiLineComment)? newline TYPE spacing typeName spacing? (indentation RELATIONS spacing? relationDeclaration+)?;
+relationDeclaration: (newline multiLineComment)? indentation DEFINE spacing relationName spacing? COLON spacing? relationDef spacing?;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
 
@@ -16,22 +17,22 @@ relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefGroup
 relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefGrouping)+;
 relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefGrouping)+;
 
-relationDefDirectAssignment: '[' spacing? relationDefTypeRestriction spacing? (',' spacing? relationDefTypeRestriction)* spacing? ']';
+relationDefDirectAssignment: L_SQUARE spacing? relationDefTypeRestriction spacing? (COMMA spacing? relationDefTypeRestriction)* spacing? R_SQUARE;
 relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
 relationDefRelationOnSameObject: rewriteComputedusersetName;
 relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName spacing relationDefKeywordFrom spacing rewriteTuplesetName;
 
 relationDefOperator: relationDefOperatorOr | relationDefOperatorAnd | relationDefOperatorButNot;
-relationDefOperatorAnd: 'and';
-relationDefOperatorOr: 'or';
-relationDefOperatorButNot: 'but not';
-relationDefKeywordFrom: 'from';
+relationDefOperatorAnd: AND;
+relationDefOperatorOr: OR;
+relationDefOperatorButNot: BUT_NOT;
+relationDefKeywordFrom: FROM;
 
 relationDefTypeRestriction: relationDefTypeRestrictionType | relationDefTypeRestrictionWildcard | relationDefTypeRestrictionUserset;
 relationDefTypeRestrictionType: name;
 relationDefTypeRestrictionRelation: name;
-relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType ':*';
-relationDefTypeRestrictionUserset: relationDefTypeRestrictionType '#' relationDefTypeRestrictionRelation;
+relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType COLON WILDCARD spacing?;
+relationDefTypeRestrictionUserset: relationDefTypeRestrictionType HASH relationDefTypeRestrictionRelation;
 
 relationDefGrouping: relationDefRewrite;
 
@@ -41,13 +42,11 @@ rewriteTuplesetName: name;
 relationName: name;
 typeName: name;
 
-comment
-  : spacing?  '#' ~( '\r' | '\n' )*
-  ;
+comment: WS* HASH ~(NEWLINE)*;
 multiLineComment: comment (newline comment)*;
-spacing: ' '+;
-newline: ('\r' | '\n')+;
-schemaVersion: '1.1';
+spacing: WS+;
+newline: NEWLINE+;
+schemaVersion: SCHEMA_VERSION;
 
 name: ALPHA_NUMERIC+;
-ALPHA_NUMERIC: [a-zA-Z0-9_-]+;
+

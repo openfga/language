@@ -3,13 +3,13 @@
     "name": "invalid-syntax-1",
     "dsl": "type user\n",
     "valid": false,
-    "error_message": "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', ' '}\n\t* syntax error at line=1, column=5: missing '#' at 'user'\n\t* syntax error at line=2, column=0: mismatched input '<EOF>' expecting 'model'\n\n"
+    "error_message": "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', WS}\n\t* syntax error at line=1, column=5: extraneous input 'user' expecting {'#', WS}\n\t* syntax error at line=2, column=0: mismatched input '<EOF>' expecting 'model'\n\n"
   },
   {
     "name": "invalid-syntax-2",
     "dsl": "model\ntype user\n",
     "valid": false,
-    "error_message": "1 error occurred:\n\t* syntax error at line=2, column=0: no viable alternative at input '\\ntype'\n\n"
+    "error_message": "2 errors occurred:\n\t* syntax error at line=2, column=0: extraneous input 'type' expecting {'#', WS}\n\t* syntax error at line=2, column=5: extraneous input 'user' expecting {'#', WS}\n\n"
   },
   {
     "name": "invalid-syntax-4",

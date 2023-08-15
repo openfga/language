@@ -1,4 +1,4 @@
-import OpenFGAListener from "../gen/OpenFGAListener";
+import OpenFGAListener from "../gen/OpenFGAParserListener";
 import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
 import * as antlr from "antlr4";
 import OpenFGALexer from "../gen/OpenFGALexer";

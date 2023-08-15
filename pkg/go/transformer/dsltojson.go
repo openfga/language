@@ -28,7 +28,7 @@ type relation struct {
 }
 
 type openFgaDslListener struct {
-	*parser.BaseOpenFGAListener
+	*parser.BaseOpenFGAParserListener
 
 	authorizationModel pb.AuthorizationModel
 	currentTypeDef     *pb.TypeDefinition

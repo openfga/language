@@ -36,8 +36,8 @@ OpenFGA is designed to make it easy for application builders to model their perm
 This repo contains everything needed to interact with the OpenFGA Authorization Models, in multiple languages (currently, Go and JS are supported).
 
 It is planned to include:
-- [ ] [ANTLR Grammar for the DSL](./OpenFGA.g4)
-- [ ] Transformer from the DSL to JSON and from JSON to DSL
+- [ ] ANTLR Grammar for the DSL (in progress)
+- [x] Transformer from the DSL to JSON and from JSON to DSL
 - [ ] Validation functions that allow ensuring the model is valid
 - [ ] Graphing Utility functions that allow visualizing the model
 - [ ] Model complexity calculator to understand how complex the model is

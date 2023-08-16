@@ -36,7 +36,7 @@ describe("dslToJSON", () => {
       if (errorsCount === 0) {
         expect(() => transformDslToJSON(testCase.dsl)).not.toThrow();
       } else {
-        expect(() => transformDslToJSON(testCase.dsl)).toThrow();
+        expect(() => transformDslToJSON(testCase.dsl)).toThrow(testCase.error_message);
       }
     });
   });

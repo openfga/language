@@ -3,7 +3,7 @@ import {
   loadValidTransformerTestCases, 
   loadDslSyntaxErrorTestCases
 } from "./_testcases";
-import transformDslToJSON from "./dsltojson";
+import transformDslToJSON, { validateDsl } from "./dsltojson";
 
 describe("dslToJSON", () => {
   const testCases = loadValidTransformerTestCases();
@@ -30,13 +30,24 @@ describe("dslToJSON", () => {
 
   const testCase3 = loadDslSyntaxErrorTestCases();
   testCase3.forEach((testCase) => {
-    const errorsCount = testCase.expectedError.length;
+
+    const errorsCount = testCase.expected_errors.length;
     it(`case ${testCase.name} should throw ${errorsCount} errors`, () => {
 
-      if (errorsCount === 0) {
-        expect(() => transformDslToJSON(testCase.dsl)).not.toThrow();
-      } else {
-        expect(() => transformDslToJSON(testCase.dsl)).toThrow(testCase.error_message);
+      const result = validateDsl(testCase.dsl);
+
+      expect(result.errors.length).toEqual(errorsCount);
+
+      if (result.errors.length) {
+        expect(result.message).toEqual(testCase.error_message);
+
+        for(let i = 0; i < result.errors.length; i++) {
+          const expectedError = testCase.expected_errors[i];
+
+          expect(result.errors[i].msg).toEqual(expectedError.msg);
+          expect(result.errors[i].line).toEqual(expectedError.line);
+          expect(result.errors[i].column).toEqual(expectedError.column);
+        }
       }
     });
   });

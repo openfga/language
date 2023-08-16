@@ -58,9 +58,14 @@ export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
   return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
 }
 
+interface SingleInvalidDslSyntaxTestCase {
+  msg: string,
+  line: number,
+  column: number
+} 
+
 interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  expectedError: any;
+  expected_errors: SingleInvalidDslSyntaxTestCase[];
 }
 
 export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {

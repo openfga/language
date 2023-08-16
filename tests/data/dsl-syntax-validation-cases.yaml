@@ -12,16 +12,12 @@ dsl: |
       define parent as self
       define viewer as viewer from parent
 error_message: "1 error occurred:\n\t* syntax error at line=9, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 25
-    endLineNumber: 9
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 9
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 9
+    column: 18 
 ---
-name: empty directly assignable relations with spaces should yield error # SYNTAX IS INVALID
+name: empty directly assignable relations with spaces should yield error 
 dsl: |
   model
     schema 1.1
@@ -31,18 +27,12 @@ dsl: |
       define member: [ ]
       define reader: [user]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=21: mismatched input ']' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 23
-    endLineNumber: 6
-    message: Assignable relation 'member' must have types
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 20
-    startLineNumber: 6
+expected_errors:
+  - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
+    line: 6
+    column: 21 
 ---
-name: empty directly assignable relations without spaces should yield error # SYNTAX IS INVALID
+name: empty directly assignable relations without spaces should yield error 
 dsl: |
   model
     schema 1.1
@@ -52,16 +42,11 @@ dsl: |
       define member: []
       define reader: [user]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=20: mismatched input ']' expecting {ALPHA_NUMERIC, WS}\n\n"
-expectedError:
-  - endColumn: 22
-    endLineNumber: 6
-    message: Assignable relation 'member' must have types
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 20
-    startLineNumber: 6
+expected_errors:
+expected_errors:
+  - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
+    line: 6
+    column: 20 
 ---
 name: unsupported schema version should yield error
 dsl: |
@@ -72,14 +57,13 @@ dsl: |
     relations
       define member: [user]
 error_message: "2 errors occurred:\n\t* syntax error at line=2, column=10: token recognition error at: '.'\n\t* syntax error at line=2, column=9: mismatched input '0' expecting '1.1'\n\n"
-expectedError:
-  - endColumn: 12
-    endLineNumber: 2
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 10
-    startLineNumber: 2
+expected_errors:
+  - msg: "token recognition error at: '.'"
+    line: 2
+    column: 10
+  - msg: "mismatched input '0' expecting '1.1'"
+    line: 2
+    column: 9
 ---
 name: model 1.1 has no directly allowed types in viewer
 dsl: |
@@ -91,14 +75,10 @@ dsl: |
       define parent: [folder]
       define viewer as self or viewer from parent
 error_message:  "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 47
-    endLineNumber: 7
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 7
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 7
+    column: 18
 ---
 name: >-
   mixing 1.0 and 1.1 should not be allowed as non assignable self is not
@@ -112,14 +92,10 @@ dsl: |
       define reader: [user]
       define viewer as self or reader
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 35
-    endLineNumber: 7
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 7
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 7
+    column: 18
 ---
 name: should not allow no model schema
 dsl: |
@@ -128,14 +104,16 @@ dsl: |
     relations
       define group: [user] as self
 error_message: "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', WS}\n\t* syntax error at line=1, column=5: extraneous input 'user' expecting {'#', WS}\n\t* syntax error at line=2, column=0: mismatched input 'type' expecting 'model'\n\n"
-expectedError:
-  - endColumn: 9
-    endLineNumber: 1
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 1
-    startLineNumber: 1
+expected_errors:
+  - msg: "extraneous input 'type' expecting {'model', '#', WS}"
+    line: 1
+    column: 0
+  - msg: "extraneous input 'user' expecting {'#', WS}"
+    line: 1
+    column: 5
+  - msg: "mismatched input 'type' expecting 'model'"
+    line: 2
+    column: 0
 ---
 name: incorrect wildcard restriction should be raised
 dsl: |
@@ -146,16 +124,12 @@ dsl: |
     relations
       define member: [user, user:*:*]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=32: extraneous input ':' expecting {']', ',', WS}\n\n"
-expectedError:
-  - endColumn: 35
-    endLineNumber: 6
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 33
-    startLineNumber: 6
+expected_errors:
+  - msg: "extraneous input ':' expecting {']', ',', WS}"
+    line: 6
+    column: 32
 ---
-name: exclusion target not allow to reference itself in TTU  # SYNTAX IS INVALID
+name: exclusion target not allow to reference itself in TTU  
 dsl: |
   model
     schema 1.1
@@ -165,19 +139,12 @@ dsl: |
       define editor: [user]
       define viewer: editor but not [document#viewer]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    message: '`viewer` is an impossible relation (no entrypoint).'
-    extraInformation:
-      relation: viewer
-      error: relation-no-entry-point
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 34
 ---
-name: detect if every child in union are related  # SYNTAX IS INVALID
+name: detect if every child in union are related  
 dsl: |
   model
     schema 1.1
@@ -186,27 +153,12 @@ dsl: |
       define viewer: [document#viewer] or [document#editor]
       define editor: [document#viewer] or [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=5, column=40: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 5
-    message: Each relationship must have at most 1 set of direct relations defined.
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 5
-  - endColumn: 18
-    endLineNumber: 6
-    message: Each relationship must have at most 1 set of direct relations defined.
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 6
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 5
+    column: 40
 ---
-name: intersection child to reference other relations for same type # SYNTAX ERROR
+name: intersection child to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -216,18 +168,12 @@ dsl: |
       define editor: [user]
       define viewer: [user] and [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=30: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 30
 ---
-name: exclusion base to reference other relations for same type # SYNTAX ERROR
+name: exclusion base to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -237,18 +183,12 @@ dsl: |
       define editor: [user]
       define viewer: [document#editor] but not [user]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=45: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 45
 ---
-name: exclusion target to reference other relations for same type # SYNTAX ERROR
+name: exclusion target to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -258,18 +198,12 @@ dsl: |
       define editor: [user]
       define viewer: [user] but not [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 34
 ---
-name: union child to reference other relations for same type # SYNTAX ERROR
+name: union child to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -279,16 +213,10 @@ dsl: |
       define editor: [user]
       define viewer: [user] or [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=29: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 29
 ---
 name: simple group reference to itself
 dsl: |
@@ -298,7 +226,7 @@ dsl: |
   type group
     relations
       define group: [group]
-expectedError: []
+expected_errors: []
 ---
 name: group has entry point to itself
 dsl: |
@@ -312,7 +240,7 @@ dsl: |
     relations
       define parent: [group, org]
       define viewer: viewer from parent
-expectedError: []
+expected_errors: []
 ---
 name: intersection with directly related
 dsl: |
@@ -327,7 +255,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] or writer
-expectedError: []
+expected_errors: []
 ---
 name: should allow directly assigned as last item
 dsl: |
@@ -342,7 +270,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] or writer
-expectedError: []
+expected_errors: []
 ---
 name: union with directly related
 dsl: |
@@ -357,7 +285,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] and writer
-expectedError: []
+expected_errors: []
 ---
 name: union allow directly assigned as last item
 dsl: |
@@ -372,7 +300,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] and writer
-expectedError: []
+expected_errors: []
 ---
 name: but not with directly linked
 dsl: |
@@ -383,7 +311,7 @@ dsl: |
     relations
       define blocked: [user]
       define can_view: [user] but not blocked
-expectedError: []
+expected_errors: []
 ---
 name: intersection with directly related and has spaces and blank lines
 dsl: |
@@ -400,7 +328,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer:    [   user,    org#member   ]       or    writer
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 tuple to userset
 dsl: |
@@ -415,7 +343,7 @@ dsl: |
       define parent: [folder]
       define viewer: [user] or viewer from parent
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 allow TTU with relations as long as 1 child has such relation
 dsl: |-
@@ -434,7 +362,7 @@ dsl: |-
       define role: [user]
       define u2: role
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 wildcard restricted type
 dsl: |
@@ -445,7 +373,7 @@ dsl: |
       define viewer: [user, user:*]
 
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 wildcard restricted type in the middle
 dsl: |
@@ -457,7 +385,7 @@ dsl: |
 
   type user
   type group
-expectedError: []
+expected_errors: []
  ---
  name: model 1.1 with spacing in allowed type
  dsl: |
@@ -482,7 +410,7 @@ dsl: |
       define action1: admin or action2 or action3
       define action2: admin or action3 or action1
       define action3: admin or action1 or action2
-expectedError: []
+expected_errors: []
 ---
 name: union does not require all child to have entry even for intersection child
 dsl: |
@@ -496,7 +424,7 @@ dsl: |
       define union2: admin or union1
       define intersection1: union1 and union2
       define intersection2: union1 and union2
-expectedError: []
+expected_errors: []
 ---
 name: union does not require all child to have entry even for exclusion child
 dsl: |
@@ -510,7 +438,7 @@ dsl: |
       define union2: admin or union1
       define exclusion1: admin but not union1
       define exclusion2: admin but not union2
-expectedError: []
+expected_errors: []
 ---
 name: union child allow to reference itself in TTU
 dsl: |
@@ -521,7 +449,7 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [document#viewer] or editor
-expectedError: []
+expected_errors: []
 ---
 name: mixture of relations from relations for same type
 dsl: |
@@ -536,7 +464,7 @@ dsl: |
       define viewer: [document#viewer] or editor
       define can_view: viewer but not restricted
       define can_view_actual: can_view
-expectedError: []
+expected_errors: []
 
 
 #---

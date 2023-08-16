@@ -43,7 +43,6 @@ dsl: |
       define reader: [user]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=20: mismatched input ']' expecting {ALPHA_NUMERIC, WS}\n\n"
 expected_errors:
-expected_errors:
   - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
     line: 6
     column: 20 

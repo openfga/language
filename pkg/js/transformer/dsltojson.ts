@@ -244,7 +244,7 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
   }
 }
 
-function parseDSL(dsl: string): {listener: OpenFgaDslListener, errorListener: OpenFgaDslErrorListener<unknown>} {
+export function parseDSL(dsl: string): {listener: OpenFgaDslListener, errorListener: OpenFgaDslErrorListener<unknown>} {
   const is = new antlr.InputStream(dsl);
 
   const errorListener = new OpenFgaDslErrorListener();
@@ -280,16 +280,5 @@ export default function transformDslToJSON(dsl: string): AuthorizationModel {
   }
 
   return listener.authorizationModel as AuthorizationModel;
-}
-
-/**
- * validateDSL - Validates model authored in FGA DSL syntax, returning all found errors
- * @param {string} dsl 
- * @returns {OpenFgaDslSyntaxMultipleError}
- */
-export function validateDsl(dsl: string): OpenFgaDslSyntaxMultipleError {
-  const { errorListener } = parseDSL(dsl);
-
-  return new OpenFgaDslSyntaxMultipleError(errorListener.errors);
 }
 

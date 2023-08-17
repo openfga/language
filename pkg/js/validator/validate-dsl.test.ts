@@ -5,7 +5,7 @@ const testCases = loadDslSyntaxErrorTestCases();
   testCases.forEach((testCase) => {
 
     const errorsCount = testCase.expected_errors.length;
-    it(`case ${testCase.name} should throw ${errorsCount} errors`, () => {
+    it(`case ${testCase.name} should return ${errorsCount} errors on validation`, () => {
 
       const result = validateDsl(testCase.dsl);
 

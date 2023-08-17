@@ -446,18 +446,18 @@ dsl: |
   type user
   type group
 expected_errors: []
- ---
- name: model 1.1 with spacing in allowed type
- dsl: |
-   model
-     schema 1.1
-   type folder
-     relations
-       define viewer: [  user  , user:*  , group  ]
+---
+name: model 1.1 with spacing in allowed type
+dsl: |
+  model
+    schema 1.1
+  type folder
+    relations
+      define viewer: [  user  , user:*  , group  ]
 
-   type user
-   type group
- expectedError: []
+  type user
+  type group
+expected_errors: []
 ---
 name: union does not require all child to have entry
 dsl: |
@@ -526,12 +526,10 @@ dsl: |
       define can_view_actual: can_view
 expected_errors: []
 
-
-#---
-#name: >-
-#  model 1.1 diff in exclusion not valid and spaces are reflected correctly in
-#  error messages
-#dsl: |
+### Parser neeeds to catch these ###
+# ---
+# name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
+# dsl: |
 #  model
 #    schema 1.1
 #  type user
@@ -539,7 +537,7 @@ expected_errors: []
 #    relations
 #      define member: [user]
 #      define reader   : member   but not   allowed
-#expectedError:
+# expected_errors:
 #  - endColumn: 49
 #    endLineNumber: 7
 #    message: The relation `allowed` does not exist.
@@ -561,7 +559,7 @@ expected_errors: []
 #   type self
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 4
 #     message: A type cannot be named 'self' or 'this'.
@@ -580,7 +578,7 @@ expected_errors: []
 #   type this
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 4
 #     message: A type cannot be named 'self' or 'this'.
@@ -599,7 +597,7 @@ expected_errors: []
 #   type group
 #     relations
 #       define self: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 16
 #     endLineNumber: 6
 #     message: A relation cannot be named 'self' or 'this'.
@@ -618,7 +616,7 @@ expected_errors: []
 #   type group
 #     relations
 #       define this: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 16
 #     endLineNumber: 6
 #     message: A relation cannot be named 'self' or 'this'.
@@ -640,7 +638,7 @@ expected_errors: []
 #   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 350
 #     endLineNumber: 4
 #     message: >-
@@ -662,7 +660,7 @@ expected_errors: []
 #   type org
 #     relations
 #       define aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 112
 #     endLineNumber: 6
 #     message: >-
@@ -689,7 +687,7 @@ expected_errors: []
 #     relations
 #       define parent: [team]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -719,7 +717,7 @@ expected_errors: []
 #   type group
 #     relations
 #       define group: group from group
-# expectedError:
+# expected_errors:
 #   - endColumn: 17
 #     endLineNumber: 6
 #     message: '`group` is an impossible relation (no entrypoint).'
@@ -740,7 +738,7 @@ expected_errors: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -760,7 +758,7 @@ expected_errors: []
 #     relations
 #       define viewer: [group#viewer]
    
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 5
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -781,7 +779,7 @@ expected_errors: []
 #     relations
 #       define parent: [group]
 #       define viewer: reader from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 38
 #     endLineNumber: 7
 #     message: '`reader` is not a valid relation for `group`.'
@@ -802,7 +800,7 @@ expected_errors: []
 #   type group
 #     relations
 #       define parent: [unknown]
-# expectedError:
+# expected_errors:
 #   - endColumn: 28
 #     endLineNumber: 6
 #     message: '`unknown` is not a valid type.'
@@ -824,7 +822,7 @@ expected_errors: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from org
-# expectedError:
+# expected_errors:
 #   - endColumn: 35
 #     endLineNumber: 8
 #     message: '`org` is not a valid relation for `group`.'
@@ -847,7 +845,7 @@ expected_errors: []
 #     relations
 #       define parent: [group]
 #       define viewer: org from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 35
 #     endLineNumber: 8
 #     message: '`org` is not a valid relation for `group`.'
@@ -869,7 +867,7 @@ expected_errors: []
 #   type group
 #     relations
 #       define parent: [group, group#org]
-# expectedError:
+# expected_errors:
 #   - endColumn: 37
 #     endLineNumber: 7
 #     message: '`org` is not a valid relation for `group`.'
@@ -894,7 +892,7 @@ expected_errors: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 10
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -914,7 +912,7 @@ expected_errors: []
 #     relations
 #       define reader: writer
 #       define writer: reader
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 5
 #     message: '`reader` is an impossible relation (no entrypoint).'
@@ -945,7 +943,7 @@ expected_errors: []
 #     relations
 #       define parent: [folder] or parent from parent
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 50
 #     endLineNumber: 6
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -977,7 +975,7 @@ expected_errors: []
 #       define root: [folder]
 #       define parent: [folder] or root
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 48
 #     endLineNumber: 8
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -999,7 +997,7 @@ expected_errors: []
 #       define root: [folder]
 #       define parent: [folder, folder#parent]
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 48
 #     endLineNumber: 8
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -1020,7 +1018,7 @@ expected_errors: []
 #     relations
 #       define member: [user]
 #       define reader: member and allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 38
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1041,7 +1039,7 @@ expected_errors: []
 #     relations
 #       define member: [user]
 #       define reader: member or allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 37
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1062,7 +1060,7 @@ expected_errors: []
 #     relations
 #       define member: [user]
 #       define reader: allowed but not member
-# expectedError:
+# expected_errors:
 #   - endColumn: 27
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1083,7 +1081,7 @@ expected_errors: []
 #     relations
 #       define member: [user]
 #       define reader: member but not allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 42
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1107,7 +1105,7 @@ expected_errors: []
 #     relations
 #       define reader: [department, department#member:*]
     
-# expectedError:
+# expected_errors:
 #   - endColumn: 52
 #     endLineNumber: 9
 #     message: >-
@@ -1131,7 +1129,7 @@ expected_errors: []
 #       define action1: admin and action2 and action3
 #       define action2: admin and action3 and action1
 #       define action3: admin and action1 and action2
-# expectedError:
+# expected_errors:
 #   - endColumn: 19
 #     endLineNumber: 7
 #     message: '`action1` is an impossible relation (no entrypoint).'
@@ -1174,7 +1172,7 @@ expected_errors: []
 #       define action1: admin but not action2
 #       define action2: admin but not action3
 #       define action3: admin but not action1
-# expectedError:
+# expected_errors:
 #   - endColumn: 19
 #     endLineNumber: 7
 #     message: '`action1` is an impossible relation (no entrypoint).'
@@ -1215,7 +1213,7 @@ expected_errors: []
 #     relations
 #       define editor: [user]
 #       define viewer: [document#viewer] and editor
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1236,7 +1234,7 @@ expected_errors: []
 #     relations
 #       define editor: [user]
 #       define viewer: [document#viewer] but not editor
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1260,7 +1258,7 @@ expected_errors: []
 #     relations
 #       define parent: [folder]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 6
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1299,7 +1297,7 @@ expected_errors: []
 #       define role: [user]
 #       define u4: role
 #   type user
-# expectedError:
+# expected_errors:
 #   - endColumn: 42
 #     endLineNumber: 6
 #     extraInformation:
@@ -1355,7 +1353,7 @@ expected_errors: []
 #     relations
 #       define parent: [document, document:*]
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 8
 #     extraInformation:

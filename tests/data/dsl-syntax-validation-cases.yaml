@@ -145,7 +145,10 @@ expected_errors:
   - msg: "mismatched input 'type' expecting 'model'"
     line: 2
     column: 0
-    
+    metadata:
+      symbol: 'type'
+      start: 10
+      stop: 13
 ---
 name: incorrect wildcard restriction should be raised
 dsl: |

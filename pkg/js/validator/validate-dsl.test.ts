@@ -27,14 +27,17 @@ describe("validateDsl", () => {
             expect(exception.errors[i].line).toEqual(expectedError.line);
             expect(exception.errors[i].column).toEqual(expectedError.column);
             
-            if (expectedError.metadata) {
-              const resultMetadata = exception.errors[i].metadata;
-              const expectedMetadata = expectedError.metadata;
-  
+            const resultMetadata = exception.errors[i].metadata;
+            const expectedMetadata = expectedError.metadata;
+
+            if (expectedMetadata) {
               expect(resultMetadata?.symbol).toEqual(expectedMetadata.symbol);
               expect(resultMetadata?.start).toEqual(expectedMetadata.start);
               expect(resultMetadata?.stop).toEqual(expectedMetadata.stop);
+            } else {
+              expect(resultMetadata).toBeUndefined();
             }
+
           }
         }
 

@@ -5,10 +5,12 @@ import { OpenFgaDslSyntaxMultipleError, parseDSL } from "../transformer/dsltojso
  * @param {string} dsl 
  * @returns {OpenFgaDslSyntaxMultipleError}
  */
-export default function validateDsl(dsl: string): OpenFgaDslSyntaxMultipleError {
+export default function validateDsl(dsl: string): void {
     const { errorListener } = parseDSL(dsl);
   
-    return new OpenFgaDslSyntaxMultipleError(errorListener.errors);
+    if (errorListener.errors.length) {
+        throw new OpenFgaDslSyntaxMultipleError(errorListener.errors);
+    }
 }
   
   

@@ -16,6 +16,10 @@ expected_errors:
   - msg: "missing ':' at 'as'"
     line: 9
     column: 18 
+    metadata: 
+      symbol: 'as'
+      start: 117
+      stop: 118
 ---
 name: empty directly assignable relations with spaces should yield error 
 dsl: |
@@ -31,6 +35,10 @@ expected_errors:
   - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
     line: 6
     column: 21 
+    metadata: 
+      symbol: ']'
+      start: 71
+      stop: 71
 ---
 name: empty directly assignable relations without spaces should yield error 
 dsl: |
@@ -46,6 +54,10 @@ expected_errors:
   - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
     line: 6
     column: 20 
+    metadata: 
+      symbol: ']'
+      start: 70
+      stop: 70
 ---
 name: unsupported schema version should yield error
 dsl: |
@@ -63,6 +75,10 @@ expected_errors:
   - msg: "mismatched input '0' expecting '1.1'"
     line: 2
     column: 9
+    metadata: 
+      symbol: '0'
+      start: 15
+      stop: 15
 ---
 name: model 1.1 has no directly allowed types in viewer
 dsl: |
@@ -78,6 +94,10 @@ expected_errors:
   - msg: "missing ':' at 'as'"
     line: 7
     column: 18
+    metadata:
+      symbol: 'as'
+      start: 99
+      stop: 100
 ---
 name: >-
   mixing 1.0 and 1.1 should not be allowed as non assignable self is not
@@ -95,6 +115,10 @@ expected_errors:
   - msg: "missing ':' at 'as'"
     line: 7
     column: 18
+    metadata:
+      symbol: 'as'
+      start: 97
+      stop: 98
 ---
 name: should not allow no model schema
 dsl: |
@@ -107,12 +131,21 @@ expected_errors:
   - msg: "extraneous input 'type' expecting {'model', '#', WS}"
     line: 1
     column: 0
+    metadata:
+      symbol: 'type'
+      start: 0
+      stop: 3
   - msg: "extraneous input 'user' expecting {'#', WS}"
     line: 1
     column: 5
+    metadata:
+      symbol: 'user'
+      start: 5
+      stop: 8
   - msg: "mismatched input 'type' expecting 'model'"
     line: 2
     column: 0
+    
 ---
 name: incorrect wildcard restriction should be raised
 dsl: |
@@ -127,6 +160,10 @@ expected_errors:
   - msg: "extraneous input ':' expecting {']', ',', WS}"
     line: 6
     column: 32
+    metadata:
+      symbol: ':'
+      start: 84
+      stop: 84
 ---
 name: exclusion target not allow to reference itself in TTU  
 dsl: |
@@ -142,6 +179,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
     column: 34
+    metadata:
+      symbol: '['
+      start: 115
+      stop: 115
 ---
 name: detect if every child in union are related  
 dsl: |
@@ -156,6 +197,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 5
     column: 40
+    metadata:
+      symbol: '['
+      start: 85
+      stop: 85
 ---
 name: intersection child to reference other relations for same type 
 dsl: |
@@ -171,6 +216,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
     column: 30
+    metadata:
+      symbol: '['
+      start: 111
+      stop: 111
 ---
 name: exclusion base to reference other relations for same type 
 dsl: |
@@ -186,6 +235,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
     column: 45
+    metadata:
+      symbol: '['
+      start: 126
+      stop: 126
 ---
 name: exclusion target to reference other relations for same type 
 dsl: |
@@ -201,6 +254,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
     column: 34
+    metadata:
+      symbol: '['
+      start: 115
+      stop: 115
 ---
 name: union child to reference other relations for same type 
 dsl: |
@@ -216,6 +273,10 @@ expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
     column: 29
+    metadata:
+      symbol: '['
+      start: 110
+      stop: 110
 ---
 name: simple group reference to itself
 dsl: |

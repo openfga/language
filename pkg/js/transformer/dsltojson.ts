@@ -205,12 +205,18 @@ export class OpenFgaDslSyntaxError extends Error {
     public line: number,
     public column: number,
     public msg: string,
+    public metadata? : {
+      symbol: string,
+      start: number,
+      stop: number,
+    },
     e?: RecognitionException,
   ) {
     super(`syntax error at line=${line}, column=${column}: ${msg}`);
     if (e?.stack) {
       this.stack = e.stack;
     }
+    this.metadata = metadata;
   }
 
   toString() {
@@ -240,7 +246,17 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
     msg: string,
     e: RecognitionException | undefined,
   ) {
-    this.errors.push(new OpenFgaDslSyntaxError(line, column, msg, e));
+    let metadata = undefined;
+
+    if (offendingSymbol instanceof antlr.Token) {
+      metadata = {
+        symbol: offendingSymbol.text,
+        start: offendingSymbol.start,
+        stop: offendingSymbol.stop,
+      };
+    }
+
+    this.errors.push(new OpenFgaDslSyntaxError(line, column, msg, metadata, e));
   }
 }
 

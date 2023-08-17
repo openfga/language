@@ -62,6 +62,11 @@ interface SingleInvalidDslSyntaxTestCase {
   msg: string,
   line: number,
   column: number
+  metadata: {
+    symbol: string,
+    start: number,
+    stop: number,
+  }
 } 
 
 interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {

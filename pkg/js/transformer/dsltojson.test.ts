@@ -1,7 +1,6 @@
 import { 
   loadInvalidDslSyntaxTestCases,
-  loadValidTransformerTestCases, 
-  loadDslSyntaxErrorTestCases
+  loadValidTransformerTestCases,
 } from "./_testcases";
 import transformDslToJSON from "./dsltojson";
 
@@ -21,19 +20,6 @@ describe("dslToJSON", () => {
   testCases2.forEach((testCase) => {
     it(`case ${testCase.name} should pass`, () => {
       if (testCase.valid) {
-        expect(() => transformDslToJSON(testCase.dsl)).not.toThrow();
-      } else {
-        expect(() => transformDslToJSON(testCase.dsl)).toThrow(testCase.error_message);
-      }
-    });
-  });
-
-  const testCase3 = loadDslSyntaxErrorTestCases();
-  testCase3.forEach((testCase) => {
-    const errorsCount = testCase.expectedError.length;
-    it(`case ${testCase.name} should throw ${errorsCount} errors`, () => {
-
-      if (errorsCount === 0) {
         expect(() => transformDslToJSON(testCase.dsl)).not.toThrow();
       } else {
         expect(() => transformDslToJSON(testCase.dsl)).toThrow(testCase.error_message);

@@ -12,16 +12,16 @@ dsl: |
       define parent as self
       define viewer as viewer from parent
 error_message: "1 error occurred:\n\t* syntax error at line=9, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 25
-    endLineNumber: 9
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 9
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 9
+    column: 18 
+    metadata: 
+      symbol: 'as'
+      start: 117
+      stop: 118
 ---
-name: empty directly assignable relations with spaces should yield error # SYNTAX IS INVALID
+name: empty directly assignable relations with spaces should yield error 
 dsl: |
   model
     schema 1.1
@@ -31,18 +31,16 @@ dsl: |
       define member: [ ]
       define reader: [user]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=21: mismatched input ']' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 23
-    endLineNumber: 6
-    message: Assignable relation 'member' must have types
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 20
-    startLineNumber: 6
+expected_errors:
+  - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
+    line: 6
+    column: 21 
+    metadata: 
+      symbol: ']'
+      start: 71
+      stop: 71
 ---
-name: empty directly assignable relations without spaces should yield error # SYNTAX IS INVALID
+name: empty directly assignable relations without spaces should yield error 
 dsl: |
   model
     schema 1.1
@@ -52,16 +50,14 @@ dsl: |
       define member: []
       define reader: [user]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=20: mismatched input ']' expecting {ALPHA_NUMERIC, WS}\n\n"
-expectedError:
-  - endColumn: 22
-    endLineNumber: 6
-    message: Assignable relation 'member' must have types
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 20
-    startLineNumber: 6
+expected_errors:
+  - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
+    line: 6
+    column: 20 
+    metadata: 
+      symbol: ']'
+      start: 70
+      stop: 70
 ---
 name: unsupported schema version should yield error
 dsl: |
@@ -72,14 +68,17 @@ dsl: |
     relations
       define member: [user]
 error_message: "2 errors occurred:\n\t* syntax error at line=2, column=10: token recognition error at: '.'\n\t* syntax error at line=2, column=9: mismatched input '0' expecting '1.1'\n\n"
-expectedError:
-  - endColumn: 12
-    endLineNumber: 2
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 10
-    startLineNumber: 2
+expected_errors:
+  - msg: "token recognition error at: '.'"
+    line: 2
+    column: 10
+  - msg: "mismatched input '0' expecting '1.1'"
+    line: 2
+    column: 9
+    metadata: 
+      symbol: '0'
+      start: 15
+      stop: 15
 ---
 name: model 1.1 has no directly allowed types in viewer
 dsl: |
@@ -91,14 +90,14 @@ dsl: |
       define parent: [folder]
       define viewer as self or viewer from parent
 error_message:  "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 47
-    endLineNumber: 7
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 7
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 7
+    column: 18
+    metadata:
+      symbol: 'as'
+      start: 99
+      stop: 100
 ---
 name: >-
   mixing 1.0 and 1.1 should not be allowed as non assignable self is not
@@ -112,14 +111,14 @@ dsl: |
       define reader: [user]
       define viewer as self or reader
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
-expectedError:
-  - endColumn: 35
-    endLineNumber: 7
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 19
-    startLineNumber: 7
+expected_errors:
+  - msg: "missing ':' at 'as'"
+    line: 7
+    column: 18
+    metadata:
+      symbol: 'as'
+      start: 97
+      stop: 98
 ---
 name: should not allow no model schema
 dsl: |
@@ -128,14 +127,28 @@ dsl: |
     relations
       define group: [user] as self
 error_message: "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', WS}\n\t* syntax error at line=1, column=5: extraneous input 'user' expecting {'#', WS}\n\t* syntax error at line=2, column=0: mismatched input 'type' expecting 'model'\n\n"
-expectedError:
-  - endColumn: 9
-    endLineNumber: 1
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 1
-    startLineNumber: 1
+expected_errors:
+  - msg: "extraneous input 'type' expecting {'model', '#', WS}"
+    line: 1
+    column: 0
+    metadata:
+      symbol: 'type'
+      start: 0
+      stop: 3
+  - msg: "extraneous input 'user' expecting {'#', WS}"
+    line: 1
+    column: 5
+    metadata:
+      symbol: 'user'
+      start: 5
+      stop: 8
+  - msg: "mismatched input 'type' expecting 'model'"
+    line: 2
+    column: 0
+    metadata:
+      symbol: 'type'
+      start: 10
+      stop: 13
 ---
 name: incorrect wildcard restriction should be raised
 dsl: |
@@ -146,16 +159,16 @@ dsl: |
     relations
       define member: [user, user:*:*]
 error_message: "1 error occurred:\n\t* syntax error at line=6, column=32: extraneous input ':' expecting {']', ',', WS}\n\n"
-expectedError:
-  - endColumn: 35
-    endLineNumber: 6
-    message: Invalid syntax
-    severity: 8
-    source: linter
-    startColumn: 33
-    startLineNumber: 6
+expected_errors:
+  - msg: "extraneous input ':' expecting {']', ',', WS}"
+    line: 6
+    column: 32
+    metadata:
+      symbol: ':'
+      start: 84
+      stop: 84
 ---
-name: exclusion target not allow to reference itself in TTU  # SYNTAX IS INVALID
+name: exclusion target not allow to reference itself in TTU  
 dsl: |
   model
     schema 1.1
@@ -165,19 +178,16 @@ dsl: |
       define editor: [user]
       define viewer: editor but not [document#viewer]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    message: '`viewer` is an impossible relation (no entrypoint).'
-    extraInformation:
-      relation: viewer
-      error: relation-no-entry-point
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 34
+    metadata:
+      symbol: '['
+      start: 115
+      stop: 115
 ---
-name: detect if every child in union are related  # SYNTAX IS INVALID
+name: detect if every child in union are related  
 dsl: |
   model
     schema 1.1
@@ -186,27 +196,16 @@ dsl: |
       define viewer: [document#viewer] or [document#editor]
       define editor: [document#viewer] or [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=5, column=40: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 5
-    message: Each relationship must have at most 1 set of direct relations defined.
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 5
-  - endColumn: 18
-    endLineNumber: 6
-    message: Each relationship must have at most 1 set of direct relations defined.
-    extraInformation:
-      error: assignable-relation-must-have-type
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 6
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 5
+    column: 40
+    metadata:
+      symbol: '['
+      start: 85
+      stop: 85
 ---
-name: intersection child to reference other relations for same type # SYNTAX ERROR
+name: intersection child to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -216,18 +215,16 @@ dsl: |
       define editor: [user]
       define viewer: [user] and [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=30: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 30
+    metadata:
+      symbol: '['
+      start: 111
+      stop: 111
 ---
-name: exclusion base to reference other relations for same type # SYNTAX ERROR
+name: exclusion base to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -237,18 +234,16 @@ dsl: |
       define editor: [user]
       define viewer: [document#editor] but not [user]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=45: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 45
+    metadata:
+      symbol: '['
+      start: 126
+      stop: 126
 ---
-name: exclusion target to reference other relations for same type # SYNTAX ERROR
+name: exclusion target to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -258,18 +253,16 @@ dsl: |
       define editor: [user]
       define viewer: [user] but not [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 34
+    metadata:
+      symbol: '['
+      start: 115
+      stop: 115
 ---
-name: union child to reference other relations for same type # SYNTAX ERROR
+name: union child to reference other relations for same type 
 dsl: |
   model
     schema 1.1
@@ -279,16 +272,14 @@ dsl: |
       define editor: [user]
       define viewer: [user] or [document#editor]
 error_message: "1 error occurred:\n\t* syntax error at line=7, column=29: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
-expectedError:
-  - endColumn: 18
-    endLineNumber: 7
-    extraInformation:
-      error: assignable-relation-must-have-type
-    message: Each relationship must have at most 1 set of direct relations defined.
-    severity: 8
-    source: linter
-    startColumn: 12
-    startLineNumber: 7
+expected_errors:
+  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+    line: 7
+    column: 29
+    metadata:
+      symbol: '['
+      start: 110
+      stop: 110
 ---
 name: simple group reference to itself
 dsl: |
@@ -298,7 +289,7 @@ dsl: |
   type group
     relations
       define group: [group]
-expectedError: []
+expected_errors: []
 ---
 name: group has entry point to itself
 dsl: |
@@ -312,7 +303,7 @@ dsl: |
     relations
       define parent: [group, org]
       define viewer: viewer from parent
-expectedError: []
+expected_errors: []
 ---
 name: intersection with directly related
 dsl: |
@@ -327,7 +318,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] or writer
-expectedError: []
+expected_errors: []
 ---
 name: should allow directly assigned as last item
 dsl: |
@@ -342,7 +333,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] or writer
-expectedError: []
+expected_errors: []
 ---
 name: union with directly related
 dsl: |
@@ -357,7 +348,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] and writer
-expectedError: []
+expected_errors: []
 ---
 name: union allow directly assigned as last item
 dsl: |
@@ -372,7 +363,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer: [user, org#member] and writer
-expectedError: []
+expected_errors: []
 ---
 name: but not with directly linked
 dsl: |
@@ -383,7 +374,7 @@ dsl: |
     relations
       define blocked: [user]
       define can_view: [user] but not blocked
-expectedError: []
+expected_errors: []
 ---
 name: intersection with directly related and has spaces and blank lines
 dsl: |
@@ -400,7 +391,7 @@ dsl: |
       define parent: [group]
       define writer: [user, org#member]
       define viewer:    [   user,    org#member   ]       or    writer
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 tuple to userset
 dsl: |
@@ -415,7 +406,7 @@ dsl: |
       define parent: [folder]
       define viewer: [user] or viewer from parent
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 allow TTU with relations as long as 1 child has such relation
 dsl: |-
@@ -434,7 +425,7 @@ dsl: |-
       define role: [user]
       define u2: role
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 wildcard restricted type
 dsl: |
@@ -445,7 +436,7 @@ dsl: |
       define viewer: [user, user:*]
 
   type user
-expectedError: []
+expected_errors: []
 ---
 name: model 1.1 wildcard restricted type in the middle
 dsl: |
@@ -457,19 +448,19 @@ dsl: |
 
   type user
   type group
-expectedError: []
- ---
- name: model 1.1 with spacing in allowed type
- dsl: |
-   model
-     schema 1.1
-   type folder
-     relations
-       define viewer: [  user  , user:*  , group  ]
+expected_errors: []
+---
+name: model 1.1 with spacing in allowed type
+dsl: |
+  model
+    schema 1.1
+  type folder
+    relations
+      define viewer: [  user  , user:*  , group  ]
 
-   type user
-   type group
- expectedError: []
+  type user
+  type group
+expected_errors: []
 ---
 name: union does not require all child to have entry
 dsl: |
@@ -482,7 +473,7 @@ dsl: |
       define action1: admin or action2 or action3
       define action2: admin or action3 or action1
       define action3: admin or action1 or action2
-expectedError: []
+expected_errors: []
 ---
 name: union does not require all child to have entry even for intersection child
 dsl: |
@@ -496,7 +487,7 @@ dsl: |
       define union2: admin or union1
       define intersection1: union1 and union2
       define intersection2: union1 and union2
-expectedError: []
+expected_errors: []
 ---
 name: union does not require all child to have entry even for exclusion child
 dsl: |
@@ -510,7 +501,7 @@ dsl: |
       define union2: admin or union1
       define exclusion1: admin but not union1
       define exclusion2: admin but not union2
-expectedError: []
+expected_errors: []
 ---
 name: union child allow to reference itself in TTU
 dsl: |
@@ -521,7 +512,7 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [document#viewer] or editor
-expectedError: []
+expected_errors: []
 ---
 name: mixture of relations from relations for same type
 dsl: |
@@ -536,14 +527,12 @@ dsl: |
       define viewer: [document#viewer] or editor
       define can_view: viewer but not restricted
       define can_view_actual: can_view
-expectedError: []
+expected_errors: []
 
-
-#---
-#name: >-
-#  model 1.1 diff in exclusion not valid and spaces are reflected correctly in
-#  error messages
-#dsl: |
+### Parser neeeds to catch these ###
+# ---
+# name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
+# dsl: |
 #  model
 #    schema 1.1
 #  type user
@@ -551,7 +540,7 @@ expectedError: []
 #    relations
 #      define member: [user]
 #      define reader   : member   but not   allowed
-#expectedError:
+# expected_errors:
 #  - endColumn: 49
 #    endLineNumber: 7
 #    message: The relation `allowed` does not exist.
@@ -573,7 +562,7 @@ expectedError: []
 #   type self
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 4
 #     message: A type cannot be named 'self' or 'this'.
@@ -592,7 +581,7 @@ expectedError: []
 #   type this
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 4
 #     message: A type cannot be named 'self' or 'this'.
@@ -611,7 +600,7 @@ expectedError: []
 #   type group
 #     relations
 #       define self: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 16
 #     endLineNumber: 6
 #     message: A relation cannot be named 'self' or 'this'.
@@ -630,7 +619,7 @@ expectedError: []
 #   type group
 #     relations
 #       define this: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 16
 #     endLineNumber: 6
 #     message: A relation cannot be named 'self' or 'this'.
@@ -652,7 +641,7 @@ expectedError: []
 #   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 #     relations
 #       define member: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 350
 #     endLineNumber: 4
 #     message: >-
@@ -674,7 +663,7 @@ expectedError: []
 #   type org
 #     relations
 #       define aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: [user]
-# expectedError:
+# expected_errors:
 #   - endColumn: 112
 #     endLineNumber: 6
 #     message: >-
@@ -701,7 +690,7 @@ expectedError: []
 #     relations
 #       define parent: [team]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -731,7 +720,7 @@ expectedError: []
 #   type group
 #     relations
 #       define group: group from group
-# expectedError:
+# expected_errors:
 #   - endColumn: 17
 #     endLineNumber: 6
 #     message: '`group` is an impossible relation (no entrypoint).'
@@ -752,7 +741,7 @@ expectedError: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -772,7 +761,7 @@ expectedError: []
 #     relations
 #       define viewer: [group#viewer]
    
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 5
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -793,7 +782,7 @@ expectedError: []
 #     relations
 #       define parent: [group]
 #       define viewer: reader from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 38
 #     endLineNumber: 7
 #     message: '`reader` is not a valid relation for `group`.'
@@ -814,7 +803,7 @@ expectedError: []
 #   type group
 #     relations
 #       define parent: [unknown]
-# expectedError:
+# expected_errors:
 #   - endColumn: 28
 #     endLineNumber: 6
 #     message: '`unknown` is not a valid type.'
@@ -836,7 +825,7 @@ expectedError: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from org
-# expectedError:
+# expected_errors:
 #   - endColumn: 35
 #     endLineNumber: 8
 #     message: '`org` is not a valid relation for `group`.'
@@ -859,7 +848,7 @@ expectedError: []
 #     relations
 #       define parent: [group]
 #       define viewer: org from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 35
 #     endLineNumber: 8
 #     message: '`org` is not a valid relation for `group`.'
@@ -881,7 +870,7 @@ expectedError: []
 #   type group
 #     relations
 #       define parent: [group, group#org]
-# expectedError:
+# expected_errors:
 #   - endColumn: 37
 #     endLineNumber: 7
 #     message: '`org` is not a valid relation for `group`.'
@@ -906,7 +895,7 @@ expectedError: []
 #     relations
 #       define parent: [group]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 10
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -926,7 +915,7 @@ expectedError: []
 #     relations
 #       define reader: writer
 #       define writer: reader
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 5
 #     message: '`reader` is an impossible relation (no entrypoint).'
@@ -957,7 +946,7 @@ expectedError: []
 #     relations
 #       define parent: [folder] or parent from parent
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 50
 #     endLineNumber: 6
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -989,7 +978,7 @@ expectedError: []
 #       define root: [folder]
 #       define parent: [folder] or root
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 48
 #     endLineNumber: 8
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -1011,7 +1000,7 @@ expectedError: []
 #       define root: [folder]
 #       define parent: [folder, folder#parent]
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 48
 #     endLineNumber: 8
 #     message: '`parent` relation used inside from allows only direct relation.'
@@ -1032,7 +1021,7 @@ expectedError: []
 #     relations
 #       define member: [user]
 #       define reader: member and allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 38
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1053,7 +1042,7 @@ expectedError: []
 #     relations
 #       define member: [user]
 #       define reader: member or allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 37
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1074,7 +1063,7 @@ expectedError: []
 #     relations
 #       define member: [user]
 #       define reader: allowed but not member
-# expectedError:
+# expected_errors:
 #   - endColumn: 27
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1095,7 +1084,7 @@ expectedError: []
 #     relations
 #       define member: [user]
 #       define reader: member but not allowed
-# expectedError:
+# expected_errors:
 #   - endColumn: 42
 #     endLineNumber: 7
 #     message: The relation `allowed` does not exist.
@@ -1119,7 +1108,7 @@ expectedError: []
 #     relations
 #       define reader: [department, department#member:*]
     
-# expectedError:
+# expected_errors:
 #   - endColumn: 52
 #     endLineNumber: 9
 #     message: >-
@@ -1143,7 +1132,7 @@ expectedError: []
 #       define action1: admin and action2 and action3
 #       define action2: admin and action3 and action1
 #       define action3: admin and action1 and action2
-# expectedError:
+# expected_errors:
 #   - endColumn: 19
 #     endLineNumber: 7
 #     message: '`action1` is an impossible relation (no entrypoint).'
@@ -1186,7 +1175,7 @@ expectedError: []
 #       define action1: admin but not action2
 #       define action2: admin but not action3
 #       define action3: admin but not action1
-# expectedError:
+# expected_errors:
 #   - endColumn: 19
 #     endLineNumber: 7
 #     message: '`action1` is an impossible relation (no entrypoint).'
@@ -1227,7 +1216,7 @@ expectedError: []
 #     relations
 #       define editor: [user]
 #       define viewer: [document#viewer] and editor
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1248,7 +1237,7 @@ expectedError: []
 #     relations
 #       define editor: [user]
 #       define viewer: [document#viewer] but not editor
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 7
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1272,7 +1261,7 @@ expectedError: []
 #     relations
 #       define parent: [folder]
 #       define viewer: viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 18
 #     endLineNumber: 6
 #     message: '`viewer` is an impossible relation (no entrypoint).'
@@ -1311,7 +1300,7 @@ expectedError: []
 #       define role: [user]
 #       define u4: role
 #   type user
-# expectedError:
+# expected_errors:
 #   - endColumn: 42
 #     endLineNumber: 6
 #     extraInformation:
@@ -1367,7 +1356,7 @@ expectedError: []
 #     relations
 #       define parent: [document, document:*]
 #       define viewer: [user] or viewer from parent
-# expectedError:
+# expected_errors:
 #   - endColumn: 10
 #     endLineNumber: 8
 #     extraInformation:

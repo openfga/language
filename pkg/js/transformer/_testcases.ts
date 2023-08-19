@@ -1,12 +1,13 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "yaml";
+import { DSLSyntaxSingleError, ModelValidationSingleError } from "../errors";
 
 interface ValidTestCase {
   name: string;
   dsl: string;
   json: string;
-  skip: boolean;
+  skip?: boolean;
 }
 
 export function loadValidTransformerTestCases(): ValidTestCase[] {
@@ -50,6 +51,7 @@ interface InvalidDslSyntaxTestCase {
   dsl: string;
   valid: boolean;
   error_message: string;
+  skip?: boolean;
 }
 
 export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
@@ -58,19 +60,8 @@ export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
   return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
 }
 
-interface SingleInvalidDslSyntaxTestCase {
-  msg: string,
-  line: number,
-  column: number
-  metadata: {
-    symbol: string,
-    start: number,
-    stop: number,
-  }
-} 
-
 interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
-  expected_errors: SingleInvalidDslSyntaxTestCase[];
+  expected_errors: DSLSyntaxSingleError[];
 }
 
 export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
@@ -80,4 +71,17 @@ export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[
   const jsonDocs = docs.map((d) => d.toJSON());
 
   return jsonDocs as MultipleInvalidDslSyntaxTestCase[];
+}
+
+interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
+  expected_errors: ModelValidationSingleError[];
+}
+
+export function loadDslValidationErrorTestCases(): MultipleInvalidTestCase[] {
+  const docs = yaml.parseAllDocuments(fs.readFileSync(
+    path.join(__dirname, "../../../tests", "data", "dsl-validation-cases.yaml"), "utf-8"));
+
+  const jsonDocs = docs.map((d) => d.toJSON());
+
+  return jsonDocs as MultipleInvalidTestCase[];
 }

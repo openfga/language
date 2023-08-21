@@ -9,40 +9,25 @@ describe("validateDsl", () => {
     const errorsCount = testCase.expected_errors.length;
     it(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
 
+      if (!testCase.expected_errors?.length) {
+        expect(() => validateDsl(testCase.dsl)).not.toThrow();
+        return;
+      }
+
+      expect(() => validateDsl(testCase.dsl)).toThrowError(OpenFgaDslSyntaxMultipleError);
       try {
         validateDsl(testCase.dsl);
       } catch(thrownError) {
 
         const exception = thrownError as OpenFgaDslSyntaxMultipleError;
-
-        expect(exception.errors.length).toEqual(errorsCount);
-
         if (errorsCount) {
-          expect(exception.message).toEqual(testCase.error_message);
-  
+          expect(exception.message).toEqual(`${testCase.expected_errors.length} error${testCase.expected_errors.length === 1 ? "" : "s"} occurred:\n\t* ${testCase.expected_errors.map(err => `syntax error at line=${err.line}, column=${err.column}: ${err.msg}`).join("\n\t* ")}\n\n`);
+
           for (let i = 0; i < errorsCount; i++) {
-            const expectedError = testCase.expected_errors[i];
-  
-            expect(exception.errors[i].msg).toEqual(expectedError.msg);
-            expect(exception.errors[i].line).toEqual(expectedError.line);
-            expect(exception.errors[i].column).toEqual(expectedError.column);
-            
-            const resultMetadata = exception.errors[i].metadata;
-            const expectedMetadata = expectedError.metadata;
-
-            if (expectedMetadata) {
-              expect(resultMetadata?.symbol).toEqual(expectedMetadata.symbol);
-              expect(resultMetadata?.start).toEqual(expectedMetadata.start);
-              expect(resultMetadata?.stop).toEqual(expectedMetadata.stop);
-            } else {
-              expect(resultMetadata).toBeUndefined();
-            }
-
+            expect(exception.errors[i]).toMatchObject(testCase.expected_errors[i]);
           }
         }
-
       }
-      
     });
   });
 });

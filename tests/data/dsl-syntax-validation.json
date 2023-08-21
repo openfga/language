@@ -36,6 +36,12 @@
     "error_message": "2 errors occurred:\n\t* syntax error at line=2, column=9: token recognition error at: '.'\n\t* syntax error at line=2, column=8: mismatched input 'a' expecting '1.1'\n\n"
   },
   {
+    "name": "invalid-syntax-8",
+    "dsl": "model\n\tschema 1.1\ntype user\n\trelations\n\t\tdefine own: [user]\n\t\tdefine follower: [user]\n\t\tdefine blocked: [user]\n\t\tdefine viewer: [user] and follower or own but not blocked",
+    "valid": false,
+    "error_message": "1 error occurred:\n\t* syntax error at line=8, column=37: mismatched input 'or' expecting {<EOF>, NEWLINE}\n\n"
+  },
+  {
     "name": "valid-syntax-1",
     "dsl": "model\n\tschema 1.1\n",
     "valid": true

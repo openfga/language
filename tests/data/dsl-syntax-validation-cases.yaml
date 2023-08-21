@@ -11,7 +11,6 @@ dsl: |
     relations
       define parent as self
       define viewer as viewer from parent
-error_message: "1 error occurred:\n\t* syntax error at line=9, column=18: missing ':' at 'as'\n\n"
 expected_errors:
   - msg: "missing ':' at 'as'"
     line: 9
@@ -37,7 +36,6 @@ dsl: |
     relations
       define member: [ ]
       define reader: [user]
-error_message: "1 error occurred:\n\t* syntax error at line=6, column=21: mismatched input ']' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
     line: 6
@@ -56,7 +54,6 @@ dsl: |
     relations
       define member: []
       define reader: [user]
-error_message: "1 error occurred:\n\t* syntax error at line=6, column=20: mismatched input ']' expecting {ALPHA_NUMERIC, WS}\n\n"
 expected_errors:
   - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
     line: 6
@@ -74,7 +71,6 @@ dsl: |
   type org
     relations
       define member: [user]
-error_message: "2 errors occurred:\n\t* syntax error at line=2, column=10: token recognition error at: '.'\n\t* syntax error at line=2, column=9: mismatched input '0' expecting '1.1'\n\n"
 expected_errors:
   - msg: "token recognition error at: '.'"
     line: 2
@@ -96,7 +92,6 @@ dsl: |
     relations
       define parent: [folder]
       define viewer as self or viewer from parent
-error_message:  "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
 expected_errors:
   - msg: "missing ':' at 'as'"
     line: 7
@@ -124,7 +119,6 @@ dsl: |
     relations
       define reader: [user]
       define viewer as self or reader
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=18: missing ':' at 'as'\n\n"
 expected_errors:
   - msg: "missing ':' at 'as'"
     line: 7
@@ -147,7 +141,6 @@ dsl: |
   type group
     relations
       define group: [user] as self
-error_message: "3 errors occurred:\n\t* syntax error at line=1, column=0: extraneous input 'type' expecting {'model', '#', WS}\n\t* syntax error at line=1, column=5: extraneous input 'user' expecting {'#', WS}\n\t* syntax error at line=2, column=0: mismatched input 'type' expecting 'model'\n\n"
 expected_errors:
   - msg: "extraneous input 'type' expecting {'model', '#', WS}"
     line: 1
@@ -179,7 +172,6 @@ dsl: |
   type group
     relations
       define member: [user, user:*:*]
-error_message: "1 error occurred:\n\t* syntax error at line=6, column=32: extraneous input ':' expecting {']', ',', WS}\n\n"
 expected_errors:
   - msg: "extraneous input ':' expecting {']', ',', WS}"
     line: 6
@@ -198,7 +190,6 @@ dsl: |
     relations
       define editor: [user]
       define viewer: editor but not [document#viewer]
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
@@ -223,7 +214,6 @@ dsl: |
     relations
       define viewer: [document#viewer] or [document#editor]
       define editor: [document#viewer] or [document#editor]
-error_message: "1 error occurred:\n\t* syntax error at line=5, column=40: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 5
@@ -249,7 +239,6 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [user] and [document#editor]
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=30: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
@@ -275,7 +264,6 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [document#editor] but not [user]
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=45: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
@@ -301,7 +289,6 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [user] but not [document#editor]
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=34: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7
@@ -327,7 +314,6 @@ dsl: |
     relations
       define editor: [user]
       define viewer: [user] or [document#editor]
-error_message: "1 error occurred:\n\t* syntax error at line=7, column=29: extraneous input '[' expecting ALPHA_NUMERIC\n\n"
 expected_errors:
   - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
     line: 7

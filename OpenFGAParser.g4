@@ -1,7 +1,7 @@
 parser grammar OpenFGAParser;
 options { tokenVocab=OpenFGALexer; }
 
-main: modelHeader typeDefs newline?;
+main: modelHeader typeDefs newline? EOF;
 
 indentation: INDENT;
 

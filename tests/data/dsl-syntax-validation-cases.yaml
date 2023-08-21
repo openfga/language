@@ -20,6 +20,13 @@ expected_errors:
       symbol: 'as'
       start: 117
       stop: 118
+  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+    line: 9
+    column: 21
+    metadata:
+      symbol: 'self'
+      start: 120
+      stop: 123
 ---
 name: empty directly assignable relations with spaces should yield error 
 dsl: |
@@ -98,6 +105,13 @@ expected_errors:
       symbol: 'as'
       start: 99
       stop: 100
+  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 21
+    metadata:
+      symbol: 'self'
+      start: 102
+      stop: 105
 ---
 name: >-
   mixing 1.0 and 1.1 should not be allowed as non assignable self is not
@@ -119,6 +133,13 @@ expected_errors:
       symbol: 'as'
       start: 97
       stop: 98
+  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 21
+    metadata:
+      symbol: 'self'
+      start: 100
+      stop: 103
 ---
 name: should not allow no model schema
 dsl: |
@@ -186,6 +207,13 @@ expected_errors:
       symbol: '['
       start: 115
       stop: 115
+  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 43
+    metadata:
+      symbol: '#'
+      start: 124
+      stop: 124
 ---
 name: detect if every child in union are related  
 dsl: |
@@ -204,6 +232,13 @@ expected_errors:
       symbol: '['
       start: 85
       stop: 85
+  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+    line: 5
+    column: 49
+    metadata:
+      symbol: '#'
+      start: 94
+      stop: 94
 ---
 name: intersection child to reference other relations for same type 
 dsl: |
@@ -223,6 +258,13 @@ expected_errors:
       symbol: '['
       start: 111
       stop: 111
+  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 39
+    metadata:
+      symbol: '#'
+      start: 120
+      stop: 120
 ---
 name: exclusion base to reference other relations for same type 
 dsl: |
@@ -242,6 +284,13 @@ expected_errors:
       symbol: '['
       start: 126
       stop: 126
+  - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 50
+    metadata:
+      symbol: ']'
+      start: 131
+      stop: 131
 ---
 name: exclusion target to reference other relations for same type 
 dsl: |
@@ -261,6 +310,13 @@ expected_errors:
       symbol: '['
       start: 115
       stop: 115
+  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 43
+    metadata:
+      symbol: '#'
+      start: 124
+      stop: 124
 ---
 name: union child to reference other relations for same type 
 dsl: |
@@ -280,6 +336,13 @@ expected_errors:
       symbol: '['
       start: 110
       stop: 110
+  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+    line: 7
+    column: 38
+    metadata:
+      symbol: '#'
+      start: 119
+      stop: 119
 ---
 name: simple group reference to itself
 dsl: |

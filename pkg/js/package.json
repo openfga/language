@@ -29,21 +29,21 @@
   ],
   "author": "OpenFGA",
   "dependencies": {
-    "@openfga/sdk": "^0.2.6",
+    "@openfga/sdk": "^0.2.8",
     "antlr4": "^4.13.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "^20.5.0",
-    "@typescript-eslint/eslint-plugin": "^6.3.0",
-    "@typescript-eslint/parser": "^6.3.0",
+    "@types/node": "^20.5.1",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
     "eslint": "^8.47.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-import": "^2.28.0",
+    "eslint-plugin-import": "^2.28.1",
     "jest": "^29.6.2",
     "jest-html-reporter": "^3.10.1",
-    "prettier": "^3.0.1",
+    "prettier": "^3.0.2",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4",
     "yaml": "^2.3.1"

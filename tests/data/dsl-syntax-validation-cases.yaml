@@ -1,4 +1,19 @@
 ---
+name: misspelled define
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      defne viewer: [user]
+expected_errors:
+  - msg: "mismatched input 'defne' expecting 'define'"
+    line: 6
+    column: 4
+    metadata:
+      symbol: "defne"
+---
 name: mixture of 1.0 and 1.1 should yield error
 dsl: |
   model

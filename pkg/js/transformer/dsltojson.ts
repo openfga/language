@@ -88,9 +88,16 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   exitRelationDeclaration = (ctx: RelationDeclarationContext) => {
+    if (!ctx.relationName()) {
+      return;
+    }
+
     const relationName = ctx.relationName().getText();
     let relationDef: Userset | undefined;
     const rewrites = this.currentRelation?.rewrites;
+    if (!rewrites?.length) {
+      return;
+    }
     if (rewrites?.length === 1) {
       relationDef = rewrites[0];
     } else {
@@ -116,6 +123,13 @@ class OpenFgaDslListener extends OpenFGAListener {
       }
     }
     if (relationDef) {
+      // Throw error if same named relation occurs more than once in a relationship definition block
+      if (this.currentTypeDef!.relations![relationName]) {
+        ctx.parser?.notifyErrorListeners(
+          `\`${relationName}\` is already defined in \`${this.currentTypeDef?.type}.\``,
+          ctx.parser?.getCurrentToken(), undefined);
+      }
+
       this.currentTypeDef!.relations![relationName] = relationDef;
       const directlyRelatedUserTypes = this.currentRelation?.typeInfo?.directly_related_user_types;
       this.currentTypeDef!.metadata!.relations![relationName] = {

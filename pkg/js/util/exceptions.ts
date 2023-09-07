@@ -217,7 +217,7 @@ export const createMaximumOneDirectRelationship = (props: BaseProps) => {
 
 function constructValidationError(props: ValidationErrorProps): ModelValidationSingleError {
     const { message, lines, lineIndex, customResolver, metadata } = props;
-    
+
     const rawLine = lines[lineIndex];
     const re = new RegExp("\\b" + metadata.symbol + "\\b");
     let wordIdx = rawLine.search(re) + 1;

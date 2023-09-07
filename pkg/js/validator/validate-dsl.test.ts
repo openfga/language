@@ -9,7 +9,7 @@ describe("validateDsl", () => {
     const errorsCount = testCase.expected_errors.length;
 
     const testFn = testCase.skip ? it.skip : it;
-    
+
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
 
       if (!testCase.expected_errors?.length) {
@@ -43,7 +43,7 @@ describe("validateDsl", () => {
 
     const errorsCount = testCase.expected_errors.length;
     const testFn = testCase.skip ? it.skip : it;
-    
+
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
 
       if (!testCase.expected_errors?.length) {

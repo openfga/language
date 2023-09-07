@@ -54,6 +54,10 @@ func (l *OpenFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
 }
 
 func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
+	if ctx.TypeName() == nil {
+		return
+	}
+
 	typeName := ctx.TypeName().GetText()
 	typeDef := l.currentTypeDef
 	typeDef.Type = typeName
@@ -216,7 +220,7 @@ type OpenFgaDslSyntaxError struct {
 	line, column int
 	msg          string
 	metadata     *OpenFgaDslSyntaxErrorMetadata
-	e            antlr.RecognitionException
+	e            antlr.RecognitionException //nolint:unused
 }
 
 func (err *OpenFgaDslSyntaxError) Error() string {

@@ -16,6 +16,7 @@ import OpenFGAParser, {
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
 import { ErrorListener, RecognitionException, Recognizer } from "antlr4";
+import { DSLSyntaxError, DSLSyntaxSingleError } from "../errors";
 
 enum RelationDefinitionOperator {
   RELATION_DEFINITION_OPERATOR_NONE = "",
@@ -60,16 +61,16 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterTypeDef = (_ctx: TypeDefContext) => {
+  enterTypeDef = (ctx: TypeDefContext) => {
     this.currentTypeDef = {
+      type: ctx.typeName().getText(),
       relations: {},
       metadata: { relations: {} },
     };
   };
 
-  exitTypeDef = (ctx: TypeDefContext) => {
-    this.currentTypeDef!.type = ctx.typeName().getText();
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  exitTypeDef = (_ctx: TypeDefContext) => {
     if (!Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.currentTypeDef!.metadata = null as any;
@@ -214,43 +215,8 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 }
 
-export class OpenFgaDslSyntaxError extends Error {
-  constructor(
-    public line: number,
-    public column: number,
-    public msg: string,
-    public metadata? : {
-      symbol: string,
-      start: number,
-      stop: number,
-    },
-    e?: RecognitionException,
-  ) {
-    super(`syntax error at line=${line}, column=${column}: ${msg}`);
-    if (e?.stack) {
-      this.stack = e.stack;
-    }
-    this.metadata = metadata;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
-
-export class OpenFgaDslSyntaxMultipleError extends Error {
-  constructor(public errors: OpenFgaDslSyntaxError[]) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
-
 class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
-  errors: OpenFgaDslSyntaxError[] = [];
+  errors: DSLSyntaxSingleError[] = [];
 
   syntaxError(
     recognizer: Recognizer<T>,
@@ -261,20 +227,23 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
     e: RecognitionException | undefined,
   ) {
     let metadata = undefined;
+    let columnOffset = 0;
 
     if (offendingSymbol instanceof antlr.Token) {
       metadata = {
         symbol: offendingSymbol.text,
-        start: offendingSymbol.start,
-        stop: offendingSymbol.stop,
       };
+      columnOffset = metadata.symbol.length;
     }
 
-    this.errors.push(new OpenFgaDslSyntaxError(line, column, msg, metadata, e));
+    this.errors.push(new DSLSyntaxSingleError({
+      line: { start: line, end: line },
+      column: { start: column, end: column + columnOffset }, msg }, metadata, e));
   }
 }
 
-export function parseDSL(dsl: string): {listener: OpenFgaDslListener, errorListener: OpenFgaDslErrorListener<unknown>} {
+export function parseDSL(dsl: string): {
+  listener: OpenFgaDslListener, errorListener: OpenFgaDslErrorListener<unknown>} {
   const is = new antlr.InputStream(dsl);
 
   const errorListener = new OpenFgaDslErrorListener();
@@ -306,7 +275,7 @@ export default function transformDslToJSON(dsl: string): AuthorizationModel {
   const { listener, errorListener } = parseDSL(dsl);
 
   if (errorListener.errors.length) {
-    throw new OpenFgaDslSyntaxMultipleError(errorListener.errors);
+    throw new DSLSyntaxError(errorListener.errors);
   }
 
   return listener.authorizationModel as AuthorizationModel;

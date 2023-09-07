@@ -1,0 +1,1105 @@
+
+---
+name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
+dsl: |
+ model
+   schema 1.1
+ type user
+ type group
+   relations
+     define member: [user]
+     define reader   : member   but not   allowed
+expected_errors:
+  - msg: "The relation `allowed` does not exist."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 42
+      end: 49
+    metadata:
+      symbol: "allowed"
+      errorType: missing-definition
+---
+name: invalid type name for self
+dsl: |
+  model
+    schema 1.1
+  type user
+  type self
+    relations
+      define member: [user]
+expected_errors:
+  - msg: "A type cannot be named 'self' or 'this'."
+    line:
+      start: 4
+      end: 4
+    column:
+      start: 6
+      end: 10
+    metadata:
+      symbol: "self"
+      errorType: reserved-type-keywords
+---
+name: invalid type name for this
+dsl: |
+  model
+    schema 1.1
+  type user
+  type this
+    relations
+      define member: [user]
+expected_errors:
+  - msg: "A type cannot be named 'self' or 'this'."
+    line:
+      start: 4
+      end: 4
+    column:
+      start: 6
+      end: 10
+    metadata:
+      symbol: "this"
+      errorType: reserved-type-keywords
+---
+name: invalid relation name for self
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define self: [user]
+expected_errors:
+  - msg: "A relation cannot be named 'self' or 'this'."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 12
+      end: 16
+    metadata:
+      symbol: "self"
+      errorType: reserved-relation-keywords
+---
+name: invalid relation name for this
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define this: [user]
+expected_errors:
+  - msg: "A relation cannot be named 'self' or 'this'."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 12
+      end: 16
+    metadata:
+      symbol: "this"
+      errorType: reserved-relation-keywords
+---
+name: invalid type name
+dsl: >
+  model
+    schema 1.1
+  type user
+
+  type
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    relations
+      define member: [user]
+expected_errors:
+  - msg: >-
+      Type
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      does not match naming rule: '^[^:#@\s]{1,254}$'.
+    line:
+      start: 4
+      end: 4
+    column:
+      start: 6
+      end: 350
+    metadata:
+      symbol: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      errorType: invalid-name
+---
+name: invalid relation name
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+    relations
+      define aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: [user]
+expected_errors:
+  - msg: >-
+      Relation
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      of type 'org' does not match naming rule: '^[^:#@\s]{1,50}$'.
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 12
+      end: 112
+    metadata:
+      symbol: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      errorType: invalid-name
+---
+name: no entry point for multiple type
+dsl: |
+  model
+    schema 1.1
+  type user
+  type team
+    relations
+      define parent: [group]
+      define viewer: viewer from parent
+  type group
+    relations
+      define parent: [team]
+      define viewer: viewer from parent
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `team` (no entrypoint).'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 12
+      end: 18
+    metadata:
+      symbol: "viewer"
+      errorType: relation-no-entry-point
+  - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    line:
+      start: 11
+      end: 11
+    column:
+      start: 12
+      end: 18
+    metadata:
+      symbol: "viewer"
+      errorType: relation-no-entry-point
+---
+name: no entry point for single type single relation
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define group: group from group
+expected_errors:
+- msg: '`group` is an impossible relation for `group` (no entrypoint).'
+  line:
+    start: 6
+    end: 6
+  column:
+    start: 12
+    end: 17
+  metadata:
+    symbol: "group"
+    errorType: relation-no-entry-point
+---
+name: no entry point for single type multiple relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define parent: [group]
+      define viewer: viewer from parent
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 12
+      end: 18
+    metadata:
+      symbol: "viewer"
+      errorType: relation-no-entry-point
+---
+name: no entry point if directly assignable value is itself
+dsl: |
+  model
+    schema 1.1
+  type group
+    relations
+      define viewer: [group#viewer]
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    line:
+      start: 5
+      end: 5
+    column:
+      start: 12
+      end: 18
+    metadata:
+      symbol: "viewer"
+      errorType: relation-no-entry-point
+---
+name: from target relation is valid
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define parent: [group]
+      define viewer: reader from parent
+expected_errors:
+  - msg: '`reader` is not a valid relation for `group`.'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 38
+    metadata:
+      symbol: "reader from parent"
+      errorType: invalid-relation-type
+---
+name: invalid type is used
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define parent: [unknown]
+expected_errors:
+  - msg: '`unknown` is not a valid type.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 21
+      end: 28
+    metadata:
+      errorType: invalid-type
+---
+name: from target relation is not a valid relation for the from child
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+  type group
+    relations
+      define parent: [group]
+      define viewer: viewer from org
+expected_errors:
+  - msg: '`org` is not a valid relation for `group`.'
+    line:
+      start: 8
+      end: 8
+    column:
+      start: 20
+      end: 35
+    metadata:
+      errorType: invalid-relation-type
+---
+name: org is not a relation for group
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+  type group
+    relations
+      define parent: [group]
+      define viewer: org from parent
+expected_errors:
+  - msg: '`org` is not a valid relation for `group`.'
+    line:
+      start: 8
+      end: 8
+    column:
+      start: 20
+      end: 35
+    metadata:
+      errorType: invalid-relation-type
+---
+name: direct relation assignment not found
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+  type group
+    relations
+      define parent: [group, group#org]
+expected_errors:
+  - msg: '`org` is not a valid relation for `group`.'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 28
+      end: 37
+    metadata:
+      errorType: invalid-relation-type
+---
+name: group viewer no entry point
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+    relations
+      define viewer: [user]
+  type group
+    relations
+      define parent: [group]
+      define viewer: viewer from parent
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    line:
+      start: 10
+      end: 10
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: cyclic loop
+dsl: |
+  model
+    schema 1.1
+  type document
+    relations
+      define reader: writer
+      define writer: reader
+expected_errors:
+  - msg: '`reader` is an impossible relation for `document` (no entrypoint).'
+    line:
+      start: 5
+      end: 5
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+  - msg: '`writer` is an impossible relation for `document` (no entrypoint).'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: parent relation used inside contains a write
+dsl: |
+  model
+    schema 1.1
+  type user
+  type folder
+    relations
+      define parent: [folder] or parent from parent
+      define viewer: [user] or viewer from parent
+expected_errors:
+  - msg: '`parent` relation used inside from allows only direct relation.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 44
+      end: 50
+    metadata:
+      symbol: "parent"
+      errorType: tupleuset-not-direct
+  - msg: '`parent` relation used inside from allows only direct relation.'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 42
+      end: 48
+    metadata:
+      symbol: "parent"
+      errorType: tupleuset-not-direct
+---
+name: parent relation used inside viewer contains a write
+dsl: |
+  model
+    schema 1.1
+  type user
+  type folder
+    relations
+      define root: [folder]
+      define parent: [folder] or root
+      define viewer: [user] or viewer from parent
+expected_errors:
+  - msg: '`parent` relation used inside from allows only direct relation.'
+    line:
+      start: 8
+      end: 8
+    column:
+      start: 42
+      end: 48
+    metadata:
+      symbol: "parent"
+      errorType: tupleuset-not-direct
+---
+name: from is another tuple to userset
+dsl: |
+  model
+    schema 1.1
+  type user
+  type folder
+    relations
+      define root: [folder]
+      define parent: [folder, folder#parent]
+      define viewer: [user] or viewer from parent
+expected_errors:
+  - msg: '`parent` relation used inside from allows only direct relation.'
+    line:
+      start: 8
+      end: 8
+    column:
+      start: 42
+      end: 48
+    metadata:
+      symbol: "parent"
+      errorType: tupleuset-not-direct
+---
+name: model 1.1 one of the intersection relation is not valid
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define member: [user]
+      define reader: member and allowed
+expected_errors:
+  - msg: "The relation `allowed` does not exist."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 31
+      end: 38
+    metadata:
+      symbol: "allowed"
+      errorType: missing-definition
+---
+name: model 1.1 one of the union relation is not valid
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define member: [user]
+      define reader: member or allowed
+expected_errors:
+  - msg: "The relation `allowed` does not exist."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 30
+      end: 37
+    metadata:
+      symbol: "allowed"
+      errorType: missing-definition
+---
+name: model 1.1 base in exclusion not valid
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define member: [user]
+      define reader: allowed but not member
+expected_errors:
+  - msg: "The relation `allowed` does not exist."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 27
+    metadata:
+      symbol: "allowed"
+      errorType: missing-definition
+---
+name: model 1.1 diff in exclusion not valid
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define member: [user]
+      define reader: member but not allowed
+expected_errors:
+  - msg: "The relation `allowed` does not exist."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 35
+      end: 42
+    metadata:
+      symbol: "allowed"
+      errorType: missing-definition
+---
+name: no entry point intersection that relates to itself
+dsl: |
+  model
+    schema 1.1
+  type user
+  type doc
+    relations
+      define admin: [user]
+      define action1: admin and action2 and action3
+      define action2: admin and action3 and action1
+      define action3: admin and action1 and action2
+expected_errors:
+  - msg: '`action1` is an impossible relation for `doc` (no entrypoint).'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 12
+      end: 19
+    metadata:
+      errorType: relation-no-entry-point
+  - msg: '`action2` is an impossible relation for `doc` (no entrypoint).'
+    line:
+      start: 8
+      end: 8
+    column:
+      start: 12
+      end: 19
+    metadata:
+      errorType: relation-no-entry-point
+  - msg: '`action3` is an impossible relation for `doc` (no entrypoint).'
+    line:
+      start: 9
+      end: 9
+    column:
+      start: 12
+      end: 19
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: no entry point exclusion that relates to itself
+dsl: |
+  model
+    schema 1.1
+  type user
+  type doc
+    relations
+      define admin: [user]
+      define action1: admin but not action2
+      define action2: admin but not action3
+      define action3: admin but not action1
+expected_errors:
+- msg: '`action1` is an impossible relation for `doc` (no entrypoint).'
+  line:
+    start: 7
+    end: 7
+  column:
+    start: 12
+    end: 19
+  metadata:
+    errorType: relation-no-entry-point
+- msg: '`action2` is an impossible relation for `doc` (no entrypoint).'
+  line:
+    start: 8
+    end: 8
+  column:
+    start: 12
+    end: 19
+  metadata:
+    errorType: relation-no-entry-point
+- msg: '`action3` is an impossible relation for `doc` (no entrypoint).'
+  line:
+    start: 9
+    end: 9
+  column:
+    start: 12
+    end: 19
+  metadata:
+    errorType: relation-no-entry-point
+---
+name: intersection child not allow to reference itself in TTU
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define editor: [user]
+      define viewer: [document#viewer] and editor
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: exclusion base not allow to reference itself in TTU
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define editor: [user]
+      define viewer: [document#viewer] but not editor
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: detect loop in TTU dependency
+dsl: |
+  model
+    schema 1.1
+  type folder
+    relations
+      define parent: [document]
+      define viewer: viewer from parent
+  type document
+    relations
+      define parent: [folder]
+      define viewer: viewer from parent
+expected_errors:
+  - msg: '`viewer` is an impossible relation for `folder` (no entrypoint).'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+  - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    line:
+      start: 10
+      end: 10
+    column:
+      start: 12
+      end: 18
+    metadata:
+      errorType: relation-no-entry-point
+---
+name: model 1.1 should raise error if none of the children has such relation
+dsl: |-
+  model
+    schema 1.1
+  type final
+    relations
+      define children: [child1, child2]
+      define has_assigned: u3 from children or u2 from children
+  type child1
+    relations
+      define role: [user]
+      define u1: role
+  type child2
+    relations
+      define role: [user]
+      define u4: role
+  type user
+expected_errors:
+  - msg: '`u3` is not a valid relation for `child1`.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 26
+      end: 42
+    metadata:
+      errorType: invalid-relation-type
+  - msg: '`u3` is not a valid relation for `child2`.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 26
+      end: 42
+    metadata:
+      errorType: invalid-relation-type
+  - msg: '`u2` is not a valid relation for `child1`.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 46
+      end: 62
+    metadata:
+      errorType: invalid-relation-type
+  - msg: '`u2` is not a valid relation for `child2`.'
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 46
+      end: 62
+    metadata:
+      errorType: invalid-relation-type
+---
+name: self reference with wildcard
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define parent: [document, document:*]
+      define viewer: [user] or viewer from parent
+expected_errors:
+  - msg: 'Type restriction `document:*` cannot contain both wildcard and relation'
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 0
+      end: 10
+    metadata:
+      symbol: "document:*"
+      errorType: type-wildcard-relation
+---
+name: duplicate types
+dsl: |
+  model
+    schema 1.1
+  type user
+  type user
+expected_errors:
+  - msg: "The type `user` is a duplicate."
+    line:
+      start: 3
+      end: 3
+    column:
+      start: 6
+      end: 10
+    metadata:
+      symbol: "user"
+      errorType: duplicated-error
+
+---
+name: duplicate type in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define viewer: [user, user]
+expected_errors:
+  - msg: "The type restriction `user` is a duplicate in the relation `viewer`."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 21
+      end: 25
+    metadata:
+      symbol: "user"
+      errorType: duplicated-error
+---
+name: duplicate type relation in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type group
+    relations
+      define member: [user]
+  type document
+    relations
+      define viewer: [group#member, group#member]
+expected_errors:
+  - msg: "The type restriction `group#member` is a duplicate in the relation `viewer`."
+    line:
+      start: 9
+      end: 9
+    column:
+      start: 21
+      end: 33
+    metadata:
+      symbol: "group#member"
+      errorType: duplicated-error
+---
+name: duplicate type wildcard in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define viewer: [user:*, user:*]
+expected_errors:
+  - msg: "The type restriction `user:*` is a duplicate in the relation `viewer`."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 21
+      end: 27
+    metadata:
+      symbol: "user:*"
+      errorType: duplicated-error
+---
+name: duplicate relation union in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define viewer: [user]
+      define editor: viewer or viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: duplicate relation intersection in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define viewer: [user]
+      define editor: viewer and viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: duplicate relation difference in relations
+dsl: |
+  model
+    schema 1.1
+  type user
+  type document
+    relations
+      define viewer: [user]
+      define editor: viewer but not viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: Duplicate type in relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type team
+    relations
+      define member: [user, user]
+expected_errors:
+  - msg: "The type restriction `user` is a duplicate in the relation `member`."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 21
+      end: 25
+    metadata:
+      symbol: "user"
+      errorType: duplicated-error
+---
+name: Duplicate wildcard type in relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type folder
+    relations
+      define member: [user:*, user:*]
+expected_errors:
+  - msg: "The type restriction `user:*` is a duplicate in the relation `member`."
+    line:
+      start: 6
+      end: 6
+    column:
+      start: 21
+      end: 27
+    metadata:
+      symbol: "user:*"
+      errorType: duplicated-error
+---
+name: Duplicate relationship symbol in union relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type team
+    relations
+      define viewer: [user]
+      define member: viewer or viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: Duplicate relationship symbol in intersection relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type team
+    relations
+      define viewer: [user]
+      define member: viewer and viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: Duplicate relationship symbol in difference relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type team
+    relations
+      define viewer: [user]
+      define member: viewer but not viewer
+expected_errors:
+  - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    line:
+      start: 7
+      end: 7
+    column:
+      start: 20
+      end: 26
+    metadata:
+      symbol: "viewer"
+      errorType: duplicated-error
+---
+name: Duplicate union relationship import in parent relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+    relations
+      define viewer: [user]
+  type group
+    relations
+      define parent: [group, org]
+      define viewer: viewer from parent or viewer from parent
+expected_errors:
+  - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    line:
+      start: 10
+      end: 10
+    column:
+      start: 20
+      end: 38
+    metadata:
+      symbol: "viewer from parent"
+      errorType: duplicated-error
+---
+name: Duplicate intersection relationship import in parent relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+    relations
+      define viewer: [user]
+  type group
+    relations
+      define parent: [group, org]
+      define viewer: viewer from parent and viewer from parent
+expected_errors:
+  - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    line:
+      start: 10
+      end: 10
+    column:
+      start: 20
+      end: 38
+    metadata:
+      symbol: "viewer from parent"
+      errorType: duplicated-error
+---
+name: Duplicate difference relationship import in parent relationship definition
+dsl: |
+  model
+    schema 1.1
+  type user
+  type org
+    relations
+      define viewer: [user]
+  type group
+    relations
+      define parent: [group, org]
+      define viewer: viewer from parent but not viewer from parent
+expected_errors:
+  - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    line:
+      start: 10
+      end: 10
+    column:
+      start: 20
+      end: 38
+    metadata:
+      symbol: "viewer from parent"
+      errorType: duplicated-error

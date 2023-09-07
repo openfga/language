@@ -5,9 +5,13 @@ on:
   merge_group:
     paths:
       - 'pkg/go/**'
+      - 'OpenFGAParser.g4'
+      - 'OpenFGALexer.g4'
   pull_request:
     paths:
       - 'pkg/go/**'
+      - 'OpenFGAParser.g4'
+      - 'OpenFGALexer.g4'
 
 permissions:
   contents: read

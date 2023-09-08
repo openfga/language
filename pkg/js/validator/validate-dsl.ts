@@ -71,12 +71,12 @@ const getTypeRestrictionString = (typeRestriction: RelationReference): string =>
 };
 
 const getAllowedTypes = (relatedTypes: Array<RelationReference>): string[] => {
-  return relatedTypes.map(u => getTypeRestrictionString(u));
+  return relatedTypes.map((u) => getTypeRestrictionString(u));
 };
 
 const getRelationalParserResult = (userset: Userset): RelationTargetParserResult => {
-
-  let target, from = undefined;
+  let target,
+    from = undefined;
 
   if (userset.computedUserset) {
     target = userset.computedUserset.relation || undefined;
@@ -95,7 +95,6 @@ const getRelationalParserResult = (userset: Userset): RelationTargetParserResult
   return { target, from, rewrite };
 };
 
-
 // helper function to figure out whether the specified allowable types
 // are tuple to user set.  If so, return the type and relationship.
 // Otherwise, return null as relationship
@@ -110,7 +109,6 @@ interface destructedAssignableType {
   decodedRelation?: string;
   isWildcard: boolean;
 }
-
 
 const relationIsSingle = (currentRelation: Userset): boolean => {
   return (
@@ -132,22 +130,17 @@ const getRelationDefName = (userset: Userset): string | undefined => {
   return relationDefName;
 };
 
-
 // Return all the allowable types for the specified type/relation
-function allowableTypes(
-  typeName: Record<string, TypeDefinition>,
-  type: string,
-  relation: string,
-): [string[], boolean] {
+function allowableTypes(typeName: Record<string, TypeDefinition>, type: string, relation: string): [string[], boolean] {
   const allowedTypes: string[] = [];
   const currentRelations = typeName[type].relations![relation];
   const currentRelationMetadata = getAllowedTypes(
-    typeName[type].metadata?.relations![relation].directly_related_user_types || []);
+    typeName[type].metadata?.relations![relation].directly_related_user_types || [],
+  );
 
   const isValid = relationIsSingle(currentRelations);
   // for now, we assume that the type/relation must be single and rewrite is direct
   if (isValid) {
-
     const childDef = getRelationalParserResult(currentRelations);
 
     switch (childDef.rewrite) {
@@ -158,7 +151,6 @@ function allowableTypes(
   }
   return [allowedTypes, isValid];
 }
-
 
 // helper function to parse thru a child relation to see if there are unique entry points.
 // Entry point describes ways that tuples can be assigned to the relation
@@ -209,7 +201,8 @@ function childHasEntryPoint(
     // there is a from.  We need to parse thru all the from's possible type
     // to see if there are unique entry point
     const fromPossibleTypes = getAllowedTypes(
-      transformedTypes[type].metadata?.relations![childDef.from].directly_related_user_types || []);
+      transformedTypes[type].metadata?.relations![childDef.from].directly_related_user_types || [],
+    );
 
     for (const fromType of fromPossibleTypes) {
       const { decodedType } = destructTupleToUserset(fromType);
@@ -224,7 +217,6 @@ function childHasEntryPoint(
   }
   return false;
 }
-
 
 // for the type/relation, whether there are any unique entry points
 // if there are unique entry points (i.e., direct relations) then it will return true
@@ -314,22 +306,13 @@ function hasEntryPoint(
   } else {
     // Single
     const values = getRelationalParserResult(currentRelation[relation]);
-    if (
-      childHasEntryPoint(
-        typeMap,
-        JSON.parse(JSON.stringify(visitedRecords)),
-        type,
-        values,
-        allowedTypes,
-      )
-    ) {
+    if (childHasEntryPoint(typeMap, JSON.parse(JSON.stringify(visitedRecords)), type, values, allowedTypes)) {
       return true;
     }
 
     return false;
   }
 }
-
 
 function checkForDuplicatesTypeNamesInRelation(
   lines: string[],
@@ -340,7 +323,6 @@ function checkForDuplicatesTypeNamesInRelation(
 ) {
   const typeNameSet = new Set();
   relationDef.directly_related_user_types?.forEach((typeDef) => {
-
     const typeDefName = getTypeRestrictionString(typeDef);
 
     if (typeNameSet.has(typeDefName)) {
@@ -360,7 +342,6 @@ function checkForDuplicatesInRelation(
   typeDef: TypeDefinition,
   relationName: string,
 ) {
-
   const relationDef = typeDef.relations![relationName];
 
   // Union
@@ -409,7 +390,6 @@ function childDefDefined(
   relation: string,
   childDef: RelationTargetParserResult,
 ) {
-
   const relations = typeMap[type].relations;
   if (!relations || !relations[relation]) {
     return;
@@ -439,7 +419,11 @@ function childDefDefined(
             const typeIndex = getTypeLineNumber(type, lines);
             const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
             collector.raiseInvalidTypeRelation(
-              lineIndex, `${decodedType}#${decodedRelation}`, decodedType, decodedRelation);
+              lineIndex,
+              `${decodedType}#${decodedRelation}`,
+              decodedType,
+              decodedRelation,
+            );
           }
         } else if (!typeMap[decodedType]) {
           // type is not defined
@@ -467,7 +451,11 @@ function childDefDefined(
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
           collector.raiseInvalidTypeRelation(
-            lineIndex, `${childDef.target} from ${childDef.from}`, type, childDef.from);
+            lineIndex,
+            `${childDef.target} from ${childDef.from}`,
+            type,
+            childDef.from,
+          );
         } else {
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
           if (isValid) {
@@ -527,7 +515,6 @@ function relationDefined(
   type: string,
   relation: string,
 ) {
-
   const relations = typeMap[type].relations;
   if (!relations || !relations[relation]) {
     return;
@@ -536,29 +523,37 @@ function relationDefined(
   const currentRelation = relations[relation];
   if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union)) {
     for (const childDef of currentRelation.union?.child || []) {
-      childDefDefined(lines, collector, typeMap, type, relation,
-        getRelationalParserResult(childDef));
+      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(childDef));
     }
   } else if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Intersection)) {
     for (const childDef of currentRelation.intersection?.child || []) {
-      childDefDefined(lines, collector, typeMap, type, relation,
-        getRelationalParserResult(childDef));
+      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(childDef));
     }
   } else if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference)) {
     if (currentRelation.difference?.base) {
-      childDefDefined(lines, collector, typeMap, type, relation,
-        getRelationalParserResult(currentRelation.difference.base));
+      childDefDefined(
+        lines,
+        collector,
+        typeMap,
+        type,
+        relation,
+        getRelationalParserResult(currentRelation.difference.base),
+      );
     }
     if (currentRelation.difference?.subtract) {
-      childDefDefined(lines, collector, typeMap, type, relation,
-        getRelationalParserResult(currentRelation.difference.subtract));
+      childDefDefined(
+        lines,
+        collector,
+        typeMap,
+        type,
+        relation,
+        getRelationalParserResult(currentRelation.difference.subtract),
+      );
     }
   } else {
-    childDefDefined(lines, collector, typeMap, type, relation,
-      getRelationalParserResult(currentRelation));
+    childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(currentRelation));
   }
 }
-
 
 function mode11Validation(
   lines: string[],
@@ -621,7 +616,11 @@ function mode11Validation(
     parserResults.type_definitions?.forEach((typeDef) => {
       for (const relationDefKey in typeDef.metadata?.relations) {
         checkForDuplicatesTypeNamesInRelation(
-          lines, collector, typeDef.metadata?.relations[relationDefKey], relationDefKey);
+          lines,
+          collector,
+          typeDef.metadata?.relations[relationDefKey],
+          relationDefKey,
+        );
       }
     });
 
@@ -630,10 +629,8 @@ function mode11Validation(
         checkForDuplicatesInRelation(lines, collector, typeDef, relationDefKey);
       }
     });
-
   }
 }
-
 
 function populateRelations(
   lines: string[],
@@ -745,7 +742,6 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
   }
 }
 
-
 /**
  * validateDSL - Validates model authored in FGA DSL syntax, throwing all found errors
  * @param {string} dsl
@@ -760,4 +756,3 @@ export default function validateDsl(dsl: string, options: ValidationOptions = {}
 
   validateJson(dsl, listener.authorizationModel as AuthorizationModel, options);
 }
-

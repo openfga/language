@@ -65,8 +65,9 @@ interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
 }
 
 export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
-  const docs = yaml.parseAllDocuments(fs.readFileSync(
-    path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"));
+  const docs = yaml.parseAllDocuments(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"),
+  );
 
   const jsonDocs = docs.map((d) => d.toJSON());
 
@@ -78,8 +79,9 @@ interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
 }
 
 export function loadDslValidationErrorTestCases(): MultipleInvalidTestCase[] {
-  const docs = yaml.parseAllDocuments(fs.readFileSync(
-    path.join(__dirname, "../../../tests", "data", "dsl-validation-cases.yaml"), "utf-8"));
+  const docs = yaml.parseAllDocuments(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-validation-cases.yaml"), "utf-8"),
+  );
 
   const jsonDocs = docs.map((d) => d.toJSON());
 

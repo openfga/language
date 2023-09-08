@@ -1,7 +1,4 @@
-import {
-  loadInvalidDslSyntaxTestCases,
-  loadValidTransformerTestCases,
-} from "./_testcases";
+import { loadInvalidDslSyntaxTestCases, loadValidTransformerTestCases } from "./_testcases";
 import transformDslToJSON from "./dsltojson";
 
 describe("dslToJSON", () => {

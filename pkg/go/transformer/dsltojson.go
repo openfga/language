@@ -94,7 +94,8 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 	if len(l.currentRelation.Rewrites) == 1 {
 		relationDef = l.currentRelation.Rewrites[0]
 	} else {
-		if l.currentRelation.Operator == RELATION_DEFINITION_OPERATOR_OR {
+		switch l.currentRelation.Operator {
+		case RELATION_DEFINITION_OPERATOR_OR:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Union{
 					Union: &pb.Usersets{
@@ -102,7 +103,8 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 					},
 				},
 			}
-		} else if l.currentRelation.Operator == RELATION_DEFINITION_OPERATOR_AND {
+			break
+		case RELATION_DEFINITION_OPERATOR_AND:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Intersection{
 					Intersection: &pb.Usersets{
@@ -110,7 +112,8 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 					},
 				},
 			}
-		} else if l.currentRelation.Operator == RELATION_DEFINITION_OPERATOR_BUT_NOT {
+			break
+		case RELATION_DEFINITION_OPERATOR_BUT_NOT:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Difference{
 					Difference: &pb.Difference{
@@ -238,8 +241,8 @@ func (err *OpenFgaDslSyntaxMultipleError) Error() string {
 	}
 
 	errorsString := []string{}
-	for index := 0; index < len(errors); index++ {
-		errorsString = append(errorsString, errors[index].Error())
+	for _, item := range errors {
+		errorsString = append(errorsString, item.Error())
 	}
 
 	return fmt.Sprintf("%d error%s occurred:\n\t* %s\n\n", len(errors), pluralS, strings.Join(errorsString, "\n\t* "))

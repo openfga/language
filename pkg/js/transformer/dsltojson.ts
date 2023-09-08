@@ -102,25 +102,29 @@ class OpenFgaDslListener extends OpenFGAListener {
     if (rewrites?.length === 1) {
       relationDef = rewrites[0];
     } else {
-      if (this.currentRelation?.operator === RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR) {
-        relationDef = {
-          union: {
-            child: rewrites,
-          },
-        };
-      } else if (this.currentRelation?.operator === RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND) {
-        relationDef = {
-          intersection: {
-            child: rewrites,
-          },
-        };
-      } else if (this.currentRelation?.operator === RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT) {
-        relationDef = {
-          difference: {
-            base: rewrites![0],
-            subtract: rewrites![1],
-          },
-        };
+      switch (this.currentRelation?.operator) {
+        case RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR:
+          relationDef = {
+            union: {
+              child: rewrites,
+            },
+          };
+          break;
+        case RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND:
+          relationDef = {
+            intersection: {
+              child: rewrites,
+            },
+          };
+          break;
+        case RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT:
+          relationDef = {
+            difference: {
+              base: rewrites![0],
+              subtract: rewrites![1],
+            },
+          };
+          break;
       }
     }
     if (relationDef) {
@@ -128,7 +132,9 @@ class OpenFgaDslListener extends OpenFGAListener {
       if (this.currentTypeDef!.relations![relationName]) {
         ctx.parser?.notifyErrorListeners(
           `\`${relationName}\` is already defined in \`${this.currentTypeDef?.type}.\``,
-          ctx.parser?.getCurrentToken(), undefined);
+          ctx.parser?.getCurrentToken(),
+          undefined,
+        );
       }
 
       this.currentTypeDef!.relations![relationName] = relationDef;
@@ -236,14 +242,24 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
       columnOffset = metadata.symbol.length;
     }
 
-    this.errors.push(new DSLSyntaxSingleError({
-      line: { start: line, end: line },
-      column: { start: column, end: column + columnOffset }, msg }, metadata, e));
+    this.errors.push(
+      new DSLSyntaxSingleError(
+        {
+          line: { start: line, end: line },
+          column: { start: column, end: column + columnOffset },
+          msg,
+        },
+        metadata,
+        e,
+      ),
+    );
   }
 }
 
 export function parseDSL(dsl: string): {
-  listener: OpenFgaDslListener, errorListener: OpenFgaDslErrorListener<unknown>} {
+  listener: OpenFgaDslListener;
+  errorListener: OpenFgaDslErrorListener<unknown>;
+} {
   const is = new antlr.InputStream(dsl);
 
   const errorListener = new OpenFgaDslErrorListener();
@@ -280,4 +296,3 @@ export default function transformDslToJSON(dsl: string): AuthorizationModel {
 
   return listener.authorizationModel as AuthorizationModel;
 }
-

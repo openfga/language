@@ -1,8 +1,8 @@
 export enum Keyword {
-    SELF = "self",
-    DEFINE = "DEFINE"
+  SELF = "self",
+  DEFINE = "DEFINE",
 }
 
-export  enum ReservedKeywords {
-    THIS = "this",
-  }
+export enum ReservedKeywords {
+  THIS = "this",
+}

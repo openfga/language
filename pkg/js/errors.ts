@@ -51,6 +51,14 @@ export abstract class BaseError extends Error {
         this.msg = properties.msg;
     }
 
+    public getLine(offset = 0) {
+        return { start: this.line.start + offset, end: this.line.end + offset };
+    }
+
+    public getColumn(offset = 0) {
+        return { start: this.column.start + offset, end: this.column.end + offset };
+    }
+
     toString() {
         return this.message;
     }

@@ -10,14 +10,7 @@
     "strict": true,
     "outDir": "dist",
     "rootDir": ".",
-    "typeRoots": [
-      "node_modules/@types"
-    ]
+    "typeRoots": ["node_modules/@types"]
   },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "**/*.test.ts",
-    "tests"
-  ]
+  "exclude": ["dist", "node_modules", "**/*.test.ts", "tests"]
 }

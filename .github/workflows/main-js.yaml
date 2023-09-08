@@ -17,6 +17,28 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+
+      - name: Set up node
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./pkg/js/package-lock.json  
+      
+      - name: Audit dependencies
+        run: make audit-js
+
+      - name: Run Prettier
+        run: make format-js
+
+      - name: Run eslint
+        run: make lint-js
+
   build:
     runs-on: ubuntu-latest
 
@@ -25,12 +47,12 @@ jobs:
         node-version: [16.x, 18.x, 20.x]
 
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
         with:
           fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55 # v2.10.0
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -40,7 +62,7 @@ jobs:
           scope: '@openfga'
           always-auth: false
           cache: 'npm'
-          cache-dependency-path: ./pkg/js/package-lock.json
+          cache-dependency-path: ./pkg/js/package-lock.json  
 
       - name: Build
         run: make all-tests-js

@@ -35,12 +35,12 @@ export interface ErrorProperties {
 
 /**
  * Abstract base class for syntax and validation exceptions
- */ 
+ */
 export abstract class BaseError extends Error {
     public line: { start: number; end: number; };
     public column: { start: number; end: number; };
     public msg: string;
-    
+
     constructor(
         public properties: ErrorProperties,
         public type: string,
@@ -56,9 +56,9 @@ export abstract class BaseError extends Error {
     }
 }
 
-/** 
+/**
  * Added to listener during syntax parsing, when syntax errors are encountered
- */ 
+ */
 export class DSLSyntaxSingleError extends BaseError {
     constructor(
         public properties: ErrorProperties,
@@ -113,7 +113,7 @@ export class ModelValidationSingleError extends BaseError {
     }
 }
 
-/** 
+/**
  * Thrown at end of checkDSL validation, collecting all encountered validation errors
  */
 export class ModelValidationError extends Error {

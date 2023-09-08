@@ -1,4 +1,4 @@
-import { 
+import {
   loadInvalidDslSyntaxTestCases,
   loadValidTransformerTestCases,
 } from "./_testcases";

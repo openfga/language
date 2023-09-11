@@ -30,15 +30,15 @@
   "author": "OpenFGA",
   "dependencies": {
     "@openfga/sdk": "^0.2.8",
-    "antlr4": "^4.13.0"
+    "antlr4": "^4.13.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.4",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "^20.5.9",
-    "@typescript-eslint/eslint-plugin": "^6.5.0",
-    "@typescript-eslint/parser": "^6.5.0",
-    "eslint": "^8.48.0",
+    "@types/node": "^20.6.0",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
+    "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.28.1",
     "jest": "^29.6.4",

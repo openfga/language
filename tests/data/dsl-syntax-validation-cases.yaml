@@ -695,3 +695,57 @@ dsl: |
       define can_view: viewer but not restricted
       define can_view_actual: can_view
 expected_errors: []
+---
+name: poorly formatted DSL
+dsl: |
+
+  model
+     schema 1.1
+   type user
+ 
+expected_errors:
+  - msg: "extraneous input '\\n' expecting {'model', '#', WS}"
+    line:
+      start: 1
+      end: 1
+    column:
+      start: 0
+      end: 1
+    metadata:
+      symbol: "\n"
+  - msg: "extraneous input ' ' expecting 'schema'"
+    line:
+      start: 3
+      end: 3
+    column:
+      start: 2
+      end: 3
+    metadata:
+      symbol: " "
+  - msg: "extraneous input 'type' expecting {'#', WS}"
+    line:
+      start: 4
+      end: 4
+    column:
+      start: 1
+      end: 5
+    metadata:
+      symbol: "type"
+  - msg: "extraneous input 'user' expecting {'#', WS}"
+    line:
+      start: 4
+      end: 4
+    column:
+      start: 6
+      end: 10
+    metadata:
+      symbol: "user"
+  - msg: "mismatched input '<EOF>' expecting 'type'"
+    line:
+      start: 5
+      end: 5
+    column:
+      start: 0
+      end: 5
+    metadata:
+      symbol: "<EOF>"

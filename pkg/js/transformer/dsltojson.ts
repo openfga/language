@@ -62,6 +62,10 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enterTypeDef = (ctx: TypeDefContext) => {
+    if (!ctx.typeName()) {
+      return;
+    }
+
     this.currentTypeDef = {
       type: ctx.typeName().getText(),
       relations: {},
@@ -70,7 +74,11 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  exitTypeDef = (_ctx: TypeDefContext) => {
+  exitTypeDef = (ctx: TypeDefContext) => {
+    if (!this.currentTypeDef?.type) {
+      return;
+    }
+
     if (!Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.currentTypeDef!.metadata = null as any;

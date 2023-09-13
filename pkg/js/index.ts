@@ -1,5 +1,6 @@
 import validateDsl, {ValidationOptions, ValidationRegex} from './validator/validate-dsl';
 import {DSLSyntaxError, DSLSyntaxSingleError, ModelValidationError, ModelValidationSingleError} from './errors';
+import {generateSymbols, SymbolMap} from './symbolcollector';
 
 export {
     validateDsl,
@@ -8,5 +9,8 @@ export {
     DSLSyntaxError,
     DSLSyntaxSingleError,
     ModelValidationError,
-    ModelValidationSingleError
+    ModelValidationSingleError,
+
+    generateSymbols,
+    SymbolMap,
 }

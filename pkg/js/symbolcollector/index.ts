@@ -1,7 +1,7 @@
 import OpenFGALexer from "../gen/OpenFGALexer";
 import OpenFGAParser, { TypeNameContext, RelationNameContext, MainContext } from "../gen/OpenFGAParser";
 import OpenFGAVisitor from "../gen/OpenFGAParserVisitor";
-import * as antlr from "antlr4";
+import { CharStream, CommonTokenStream, InputStream, TerminalNode } from "antlr4";
 
 export interface SymbolMap {
   typeNames: Record<string, Set<string>>;
@@ -43,15 +43,15 @@ class OpenFgaDslVisitor extends OpenFGAVisitor<void> {
     this.suggestions.restrictions.add(this.currentType + "#" + this.currentRelation);
   };
 
-  visitTerminal(node: antlr.TerminalNode): void {
+  visitTerminal(node: TerminalNode): void {
     if (!(node.parentCtx instanceof MainContext)) return;
   }
 }
 
 export function generateSymbols(dsl: string): SymbolMap {
-  const is = new antlr.InputStream(dsl);
-  const lexer = new OpenFGALexer(is as antlr.CharStream);
-  const stream = new antlr.CommonTokenStream(lexer);
+  const is = new InputStream(dsl);
+  const lexer = new OpenFGALexer(is as CharStream);
+  const stream = new CommonTokenStream(lexer);
 
   // Create the Parser
   const parser = new OpenFGAParser(stream);

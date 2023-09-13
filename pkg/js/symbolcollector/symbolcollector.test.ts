@@ -1,5 +1,4 @@
 import { generateSymbols } from "./index";
-import validateDsl from "../validator/validate-dsl";
 
 describe("generateSymbols", () => {
   const dsl = `model
@@ -25,7 +24,6 @@ type organization
     define repo_writer: [user,organization#member]`;
 
   it(`Visits tree and generates all symbols`, () => {
-    validateDsl(dsl);
     const result = generateSymbols(dsl);
     expect(result).toMatchSnapshot();
   });

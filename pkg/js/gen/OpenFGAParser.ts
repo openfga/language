@@ -12,6 +12,8 @@ import {
 	Interval, IntervalSet
 } from 'antlr4';
 import OpenFGAParserListener from "./OpenFGAParserListener.js";
+import OpenFGAParserVisitor from "./OpenFGAParserVisitor.js";
+
 // for running tests with parameters, TODO: discuss strategy for typed parameters in CI
 // eslint-disable-next-line no-unused-vars
 type int = number;
@@ -1770,6 +1772,14 @@ export class MainContext extends ParserRuleContext {
 	 		listener.exitMain(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitMain) {
+			return visitor.visitMain(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -1792,6 +1802,14 @@ export class IndentationContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitIndentation) {
 	 		listener.exitIndentation(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitIndentation) {
+			return visitor.visitIndentation(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -1845,6 +1863,14 @@ export class ModelHeaderContext extends ParserRuleContext {
 	 		listener.exitModelHeader(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitModelHeader) {
+			return visitor.visitModelHeader(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -1870,6 +1896,14 @@ export class TypeDefsContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitTypeDefs) {
 	 		listener.exitTypeDefs(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitTypeDefs) {
+			return visitor.visitTypeDefs(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -1926,6 +1960,14 @@ export class TypeDefContext extends ParserRuleContext {
 	 		listener.exitTypeDef(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitTypeDef) {
+			return visitor.visitTypeDef(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -1974,6 +2016,14 @@ export class RelationDeclarationContext extends ParserRuleContext {
 	 		listener.exitRelationDeclaration(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDeclaration) {
+			return visitor.visitRelationDeclaration(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2004,6 +2054,14 @@ export class RelationDefContext extends ParserRuleContext {
 	 		listener.exitRelationDef(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDef) {
+			return visitor.visitRelationDef(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2032,6 +2090,14 @@ export class RelationDefPartialsContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefPartials) {
 	 		listener.exitRelationDefPartials(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefPartials) {
+			return visitor.visitRelationDefPartials(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2073,6 +2139,14 @@ export class RelationDefPartialAllOrContext extends ParserRuleContext {
 	 		listener.exitRelationDefPartialAllOr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefPartialAllOr) {
+			return visitor.visitRelationDefPartialAllOr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2112,6 +2186,14 @@ export class RelationDefPartialAllAndContext extends ParserRuleContext {
 	 		listener.exitRelationDefPartialAllAnd(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefPartialAllAnd) {
+			return visitor.visitRelationDefPartialAllAnd(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2149,6 +2231,14 @@ export class RelationDefPartialAllButNotContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefPartialAllButNot) {
 	 		listener.exitRelationDefPartialAllButNot(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefPartialAllButNot) {
+			return visitor.visitRelationDefPartialAllButNot(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2196,6 +2286,14 @@ export class RelationDefDirectAssignmentContext extends ParserRuleContext {
 	 		listener.exitRelationDefDirectAssignment(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefDirectAssignment) {
+			return visitor.visitRelationDefDirectAssignment(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2223,6 +2321,14 @@ export class RelationDefRewriteContext extends ParserRuleContext {
 	 		listener.exitRelationDefRewrite(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefRewrite) {
+			return visitor.visitRelationDefRewrite(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2245,6 +2351,14 @@ export class RelationDefRelationOnSameObjectContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefRelationOnSameObject) {
 	 		listener.exitRelationDefRelationOnSameObject(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefRelationOnSameObject) {
+			return visitor.visitRelationDefRelationOnSameObject(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2283,6 +2397,14 @@ export class RelationDefRelationOnRelatedObjectContext extends ParserRuleContext
 	 		listener.exitRelationDefRelationOnRelatedObject(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefRelationOnRelatedObject) {
+			return visitor.visitRelationDefRelationOnRelatedObject(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2313,6 +2435,14 @@ export class RelationDefOperatorContext extends ParserRuleContext {
 	 		listener.exitRelationDefOperator(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefOperator) {
+			return visitor.visitRelationDefOperator(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2335,6 +2465,14 @@ export class RelationDefOperatorAndContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefOperatorAnd) {
 	 		listener.exitRelationDefOperatorAnd(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefOperatorAnd) {
+			return visitor.visitRelationDefOperatorAnd(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2361,6 +2499,14 @@ export class RelationDefOperatorOrContext extends ParserRuleContext {
 	 		listener.exitRelationDefOperatorOr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefOperatorOr) {
+			return visitor.visitRelationDefOperatorOr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2385,6 +2531,14 @@ export class RelationDefOperatorButNotContext extends ParserRuleContext {
 	 		listener.exitRelationDefOperatorButNot(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefOperatorButNot) {
+			return visitor.visitRelationDefOperatorButNot(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2407,6 +2561,14 @@ export class RelationDefKeywordFromContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefKeywordFrom) {
 	 		listener.exitRelationDefKeywordFrom(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefKeywordFrom) {
+			return visitor.visitRelationDefKeywordFrom(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2439,6 +2601,14 @@ export class RelationDefTypeRestrictionContext extends ParserRuleContext {
 	 		listener.exitRelationDefTypeRestriction(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefTypeRestriction) {
+			return visitor.visitRelationDefTypeRestriction(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2463,6 +2633,14 @@ export class RelationDefTypeRestrictionTypeContext extends ParserRuleContext {
 	 		listener.exitRelationDefTypeRestrictionType(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefTypeRestrictionType) {
+			return visitor.visitRelationDefTypeRestrictionType(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2485,6 +2663,14 @@ export class RelationDefTypeRestrictionRelationContext extends ParserRuleContext
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefTypeRestrictionRelation) {
 	 		listener.exitRelationDefTypeRestrictionRelation(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefTypeRestrictionRelation) {
+			return visitor.visitRelationDefTypeRestrictionRelation(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2520,6 +2706,14 @@ export class RelationDefTypeRestrictionWildcardContext extends ParserRuleContext
 	 		listener.exitRelationDefTypeRestrictionWildcard(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefTypeRestrictionWildcard) {
+			return visitor.visitRelationDefTypeRestrictionWildcard(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2550,6 +2744,14 @@ export class RelationDefTypeRestrictionUsersetContext extends ParserRuleContext 
 	 		listener.exitRelationDefTypeRestrictionUserset(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefTypeRestrictionUserset) {
+			return visitor.visitRelationDefTypeRestrictionUserset(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2572,6 +2774,14 @@ export class RelationDefGroupingContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRelationDefGrouping) {
 	 		listener.exitRelationDefGrouping(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationDefGrouping) {
+			return visitor.visitRelationDefGrouping(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2598,6 +2808,14 @@ export class RewriteComputedusersetNameContext extends ParserRuleContext {
 	 		listener.exitRewriteComputedusersetName(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRewriteComputedusersetName) {
+			return visitor.visitRewriteComputedusersetName(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2620,6 +2838,14 @@ export class RewriteTuplesetComputedusersetNameContext extends ParserRuleContext
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitRewriteTuplesetComputedusersetName) {
 	 		listener.exitRewriteTuplesetComputedusersetName(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRewriteTuplesetComputedusersetName) {
+			return visitor.visitRewriteTuplesetComputedusersetName(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2646,6 +2872,14 @@ export class RewriteTuplesetNameContext extends ParserRuleContext {
 	 		listener.exitRewriteTuplesetName(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRewriteTuplesetName) {
+			return visitor.visitRewriteTuplesetName(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2670,6 +2904,14 @@ export class RelationNameContext extends ParserRuleContext {
 	 		listener.exitRelationName(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitRelationName) {
+			return visitor.visitRelationName(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2692,6 +2934,14 @@ export class TypeNameContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitTypeName) {
 	 		listener.exitTypeName(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitTypeName) {
+			return visitor.visitTypeName(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2730,6 +2980,14 @@ export class CommentContext extends ParserRuleContext {
 	 		listener.exitComment(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitComment) {
+			return visitor.visitComment(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2763,6 +3021,14 @@ export class MultiLineCommentContext extends ParserRuleContext {
 	 		listener.exitMultiLineComment(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitMultiLineComment) {
+			return visitor.visitMultiLineComment(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2788,6 +3054,14 @@ export class SpacingContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitSpacing) {
 	 		listener.exitSpacing(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitSpacing) {
+			return visitor.visitSpacing(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2817,6 +3091,14 @@ export class NewlineContext extends ParserRuleContext {
 	 		listener.exitNewline(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitNewline) {
+			return visitor.visitNewline(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -2839,6 +3121,14 @@ export class SchemaVersionContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitSchemaVersion) {
 	 		listener.exitSchemaVersion(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitSchemaVersion) {
+			return visitor.visitSchemaVersion(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -2866,6 +3156,14 @@ export class NameContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitName) {
 	 		listener.exitName(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: OpenFGAParserVisitor<Result>): Result {
+		if (visitor.visitName) {
+			return visitor.visitName(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }

@@ -5,12 +5,12 @@ import validateDsl from "./validate-dsl";
 describe("validateDsl", () => {
   const syntacticTests = loadDslSyntaxErrorTestCases();
   syntacticTests.forEach((testCase) => {
-    const errorsCount = testCase.expected_errors.length;
+    const errorsCount = testCase.expected_errors?.length || 0;
 
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
-      if (!testCase.expected_errors?.length) {
+      if (!errorsCount) {
         expect(() => validateDsl(testCase.dsl)).not.toThrow();
         return;
       }
@@ -29,8 +29,8 @@ describe("validateDsl", () => {
               .join("\n\t* ")}\n\n`,
           );
 
-          for (let i = 0; i < errorsCount; i++) {
-            expect(exception.errors[i]).toMatchObject(testCase.expected_errors[i]);
+          for (let index = 0; index < errorsCount; index++) {
+            expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
           }
         }
       }
@@ -39,11 +39,11 @@ describe("validateDsl", () => {
 
   const semanticTests = loadDslValidationErrorTestCases();
   semanticTests.forEach((testCase) => {
-    const errorsCount = testCase.expected_errors.length;
+    const errorsCount = testCase.expected_errors?.length || 0;
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
-      if (!testCase.expected_errors?.length) {
+      if (!errorsCount) {
         expect(() => validateDsl(testCase.dsl)).not.toThrow();
         return;
       }
@@ -63,8 +63,8 @@ describe("validateDsl", () => {
               .join("\n\t* ")}\n\n`,
           );
 
-          for (let i = 0; i < errorsCount; i++) {
-            expect(exception.errors[i]).toMatchObject(testCase.expected_errors[i]);
+          for (let index = 0; index < errorsCount; index++) {
+            expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
           }
         }
       }

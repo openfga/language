@@ -1,4 +1,5 @@
 import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import { UnsupportedDSLNestingError } from "../errors";
 
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;
@@ -40,35 +41,60 @@ function parseComputedUserset(relationDefinition: Userset): string {
   return relationDefinition!.computedUserset!.relation!;
 }
 
-function parseDifference(relationDefinition: Userset, typeRestrictions: RelationReference[]): string {
-  const base = parseSubRelation(relationDefinition!.difference!.base!, typeRestrictions);
-  const difference = parseSubRelation(relationDefinition!.difference!.subtract!, typeRestrictions);
+function parseDifference(
+  typeName: string,
+  relationName: string,
+  relationDefinition: Userset,
+  typeRestrictions: RelationReference[],
+): string {
+  const base = parseSubRelation(typeName, relationName, relationDefinition!.difference!.base!, typeRestrictions);
+  const difference = parseSubRelation(
+    typeName,
+    relationName,
+    relationDefinition!.difference!.subtract!,
+    typeRestrictions,
+  );
   return `${base} but not ${difference}`;
 }
 
-function parseUnion(relationDefinition: Userset, typeRestrictions: RelationReference[]): string {
+function parseUnion(
+  typeName: string,
+  relationName: string,
+  relationDefinition: Userset,
+  typeRestrictions: RelationReference[],
+): string {
   const parsedString: string[] = [];
   const children = relationDefinition?.union?.child;
 
   for (const child of children || []) {
-    parsedString.push(parseSubRelation(child, typeRestrictions));
+    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions));
   }
 
   return parsedString.join(" or ");
 }
 
-function parseIntersection(relationDefinition: Userset, typeRestrictions: RelationReference[]): string {
+function parseIntersection(
+  typeName: string,
+  relationName: string,
+  relationDefinition: Userset,
+  typeRestrictions: RelationReference[],
+): string {
   const parsedString: string[] = [];
   const children = relationDefinition?.intersection?.child;
 
   for (const child of children || []) {
-    parsedString.push(parseSubRelation(child, typeRestrictions));
+    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions));
   }
 
   return parsedString.join(" and ");
 }
 
-function parseSubRelation(relationDefinition: Userset, typeRestrictions: RelationReference[]): string {
+function parseSubRelation(
+  typeName: string,
+  relationName: string,
+  relationDefinition: Userset,
+  typeRestrictions: RelationReference[],
+): string {
   if (relationDefinition.this != null) {
     return parseThis(typeRestrictions);
   }
@@ -81,10 +107,11 @@ function parseSubRelation(relationDefinition: Userset, typeRestrictions: Relatio
     return parseTupleToUserset(relationDefinition);
   }
 
-  return "";
+  throw new UnsupportedDSLNestingError(typeName, relationName);
 }
 
 function parseRelation(
+  typeName: string,
   relationName: string,
   relationDefinition: Userset = {},
   relationMetadata: RelationMetadata = {},
@@ -93,13 +120,13 @@ function parseRelation(
   const typeRestrictions = relationMetadata.directly_related_user_types || [];
 
   if (relationDefinition.difference != null) {
-    parsedRelationString += parseDifference(relationDefinition, typeRestrictions);
+    parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions);
   } else if (relationDefinition.union != null) {
-    parsedRelationString += parseUnion(relationDefinition, typeRestrictions);
+    parsedRelationString += parseUnion(typeName, relationName, relationDefinition, typeRestrictions);
   } else if (relationDefinition.intersection != null) {
-    parsedRelationString += parseIntersection(relationDefinition, typeRestrictions);
+    parsedRelationString += parseIntersection(typeName, relationName, relationDefinition, typeRestrictions);
   } else {
-    parsedRelationString += parseSubRelation(relationDefinition, typeRestrictions);
+    parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions);
   }
 
   return parsedRelationString;
@@ -114,8 +141,13 @@ const parseType = (typeDef: TypeDefinition): string => {
 
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
-    for (const relation in relations) {
-      const parsedRelationString = parseRelation(relation, relations[relation], metadata?.relations?.[relation]);
+    for (const relationName in relations) {
+      const parsedRelationString = parseRelation(
+        typeName,
+        relationName,
+        relations[relationName],
+        metadata?.relations?.[relationName],
+      );
       parsedTypeString += `\n${parsedRelationString}`;
     }
   }

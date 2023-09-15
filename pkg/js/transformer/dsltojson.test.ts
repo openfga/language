@@ -2,9 +2,9 @@ import { loadInvalidDslSyntaxTestCases, loadValidTransformerTestCases } from "./
 import transformDslToJSON from "./dsltojson";
 
 describe("dslToJSON", () => {
-  const testCases = loadValidTransformerTestCases();
+  const validTestCases = loadValidTransformerTestCases();
 
-  testCases.forEach((testCase) => {
+  validTestCases.forEach((testCase) => {
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`should transform ${testCase.name} from DSL to JSON`, () => {
@@ -13,8 +13,8 @@ describe("dslToJSON", () => {
     });
   });
 
-  const testCases2 = loadInvalidDslSyntaxTestCases();
-  testCases2.forEach((testCase) => {
+  const invalidTestCases = loadInvalidDslSyntaxTestCases();
+  invalidTestCases.forEach((testCase) => {
     it(`case ${testCase.name} should pass`, () => {
       if (testCase.valid) {
         expect(() => transformDslToJSON(testCase.dsl)).not.toThrow();

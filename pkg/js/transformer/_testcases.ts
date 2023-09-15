@@ -46,6 +46,24 @@ export function loadValidTransformerTestCases(): ValidTestCase[] {
   return testCases;
 }
 
+interface InvalidJSONSyntaxTestCase {
+  name: string;
+  json: string;
+  error_message: string;
+  skip?: boolean;
+}
+
+export function loadInvalidJsonSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
+  const docs = yaml.parseAllDocuments(
+    fs.readFileSync(
+      path.join(__dirname, "../../../tests", "data", "json-syntax-transformer-validation-cases.yaml"),
+      "utf-8",
+    ),
+  );
+
+  return docs.map((d) => d.toJSON()) as InvalidJSONSyntaxTestCase[];
+}
+
 interface InvalidDslSyntaxTestCase {
   name: string;
   dsl: string;
@@ -55,7 +73,7 @@ interface InvalidDslSyntaxTestCase {
 }
 
 export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
-  const jsonData = fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation.json"));
+  const jsonData = fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.json"));
 
   return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
 }
@@ -65,13 +83,9 @@ interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
 }
 
 export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
-  const docs = yaml.parseAllDocuments(
+  return yaml.parse(
     fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"),
-  );
-
-  const jsonDocs = docs.map((d) => d.toJSON());
-
-  return jsonDocs as MultipleInvalidDslSyntaxTestCase[];
+  ) as MultipleInvalidDslSyntaxTestCase[];
 }
 
 interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
@@ -79,11 +93,7 @@ interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
 }
 
 export function loadDslValidationErrorTestCases(): MultipleInvalidTestCase[] {
-  const docs = yaml.parseAllDocuments(
-    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-validation-cases.yaml"), "utf-8"),
-  );
-
-  const jsonDocs = docs.map((d) => d.toJSON());
-
-  return jsonDocs as MultipleInvalidTestCase[];
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-semantic-validation-cases.yaml"), "utf-8"),
+  ) as MultipleInvalidTestCase[];
 }

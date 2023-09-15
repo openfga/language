@@ -3,11 +3,24 @@
   dsl: |
     model
       schema 1.1
-- name: valid syntax (2)
+- name: "valid syntax (2): comment preceding model"
   dsl: |
     # ID: 123
     model
       schema 1.1
+- name: "valid syntax (3): extraneous spacing"
+  dsl: |
+    model
+      schema 1.1
+    type user    
+    type folder    
+            
+      relations     
+        define admin: [user]     
+        define viewer: [user]   
+          
+        define can_view: viewer or admin
+
 - name: no model header
   dsl: |
     type user
@@ -184,7 +197,7 @@
         define viewer: [user]
         define viewer: [user]
   expected_errors:
-    - msg: "`viewer` is already defined in `document.`"
+    - msg: "'viewer' is already defined in 'document'"
       line:
         start: 8
         end: 8

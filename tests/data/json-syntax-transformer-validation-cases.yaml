@@ -80,4 +80,4 @@
       ]
     }
   valid: false,
-  error_message: the 'can_view' relation under the 'folder' type has mixed operators which are not supported by the OpenFGA DSL syntax yet.
+  error_message: the 'can_view' relation under the 'folder' type has mixed operators which are not supported by the OpenFGA DSL syntax yet

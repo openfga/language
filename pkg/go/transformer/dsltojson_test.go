@@ -50,10 +50,11 @@ func TestDSLToJSONTransformerForSyntaxErrorCases(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, err := language.TransformDslToJSON(testCase.DSL)
 
-			if testCase.Valid {
+			errorsCount := len(testCase.ExpectedErrors)
+			if errorsCount == 0 {
 				require.NoError(t, err)
 			} else {
-				require.EqualErrorf(t, err, testCase.ErrorMessage, "")
+				require.EqualErrorf(t, err, testCase.GetErrorString(), "")
 			}
 		})
 	}

@@ -10,6 +10,28 @@ interface ValidTestCase {
   skip?: boolean;
 }
 
+interface InvalidJSONSyntaxTestCase {
+  name: string;
+  json: string;
+  error_message: string;
+  skip?: boolean;
+}
+
+interface InvalidDslSyntaxTestCase {
+  name: string;
+  dsl: string;
+  error_message: string;
+  skip?: boolean;
+}
+
+interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
+  expected_errors: DSLSyntaxSingleError[];
+}
+
+interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
+  expected_errors: ModelValidationSingleError[];
+}
+
 export function loadValidTransformerTestCases(): ValidTestCase[] {
   const testDataPath = path.join(__dirname, "../../../tests", "data", "transformer");
   const entries = fs.readdirSync(testDataPath, { withFileTypes: true });
@@ -46,11 +68,16 @@ export function loadValidTransformerTestCases(): ValidTestCase[] {
   return testCases;
 }
 
-interface InvalidJSONSyntaxTestCase {
-  name: string;
-  json: string;
-  error_message: string;
-  skip?: boolean;
+export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"),
+  ) as MultipleInvalidDslSyntaxTestCase[];
+}
+
+export function loadDslValidationErrorTestCases(): MultipleInvalidTestCase[] {
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-semantic-validation-cases.yaml"), "utf-8"),
+  ) as MultipleInvalidTestCase[];
 }
 
 export function loadInvalidJsonSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
@@ -62,38 +89,4 @@ export function loadInvalidJsonSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
   );
 
   return docs.map((d) => d.toJSON()) as InvalidJSONSyntaxTestCase[];
-}
-
-interface InvalidDslSyntaxTestCase {
-  name: string;
-  dsl: string;
-  valid: boolean;
-  error_message: string;
-  skip?: boolean;
-}
-
-export function loadInvalidDslSyntaxTestCases(): InvalidDslSyntaxTestCase[] {
-  const jsonData = fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.json"));
-
-  return JSON.parse(jsonData.toString("utf8")) as InvalidDslSyntaxTestCase[];
-}
-
-interface MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
-  expected_errors: DSLSyntaxSingleError[];
-}
-
-export function loadDslSyntaxErrorTestCases(): MultipleInvalidDslSyntaxTestCase[] {
-  return yaml.parse(
-    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-syntax-validation-cases.yaml"), "utf-8"),
-  ) as MultipleInvalidDslSyntaxTestCase[];
-}
-
-interface MultipleInvalidTestCase extends InvalidDslSyntaxTestCase {
-  expected_errors: ModelValidationSingleError[];
-}
-
-export function loadDslValidationErrorTestCases(): MultipleInvalidTestCase[] {
-  return yaml.parse(
-    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "dsl-semantic-validation-cases.yaml"), "utf-8"),
-  ) as MultipleInvalidTestCase[];
 }

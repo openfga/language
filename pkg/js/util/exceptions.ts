@@ -220,7 +220,7 @@ const createInvalidRelationError = (props: BaseProps, validRelations: string[]) 
   }
 };
 
-export const createInvalidSyntaxVersionError = (props: BaseProps) => {
+export const createInvalidSchemaVersionError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
@@ -228,6 +228,18 @@ export const createInvalidSyntaxVersionError = (props: BaseProps) => {
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.InvalidSchema },
+    }),
+  );
+};
+
+export const createSchemaVersionRequiredError = (props: BaseProps) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  errors.push(
+    constructValidationError({
+      message: `schema version required`,
+      lines,
+      lineIndex,
+      metadata: { symbol, errorType: ValidationError.SchemaVersionRequired },
     }),
   );
 };
@@ -314,7 +326,10 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines: 
       createInvalidRelationError({ errors, lines, lineIndex, symbol }, validRelations);
     },
     raiseInvalidSchemaVersion(lineIndex: number, symbol: string) {
-      createInvalidSyntaxVersionError({ errors, lines, lineIndex, symbol });
+      createInvalidSchemaVersionError({ errors, lines, lineIndex, symbol });
+    },
+    raiseSchemaVersionRequired(lineIndex: number, symbol: string) {
+      createSchemaVersionRequiredError({ errors, lines, lineIndex, symbol });
     },
     raiseMaximumOneDirectRelationship(lineIndex: number, symbol: string) {
       createMaximumOneDirectRelationship({ errors, lines, lineIndex, symbol });

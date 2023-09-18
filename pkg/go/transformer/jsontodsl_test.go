@@ -26,3 +26,22 @@ func TestJSONToDSLTransformer(t *testing.T) {
 		})
 	}
 }
+
+func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
+	testCases, err := loadInvalidJsonSyntaxTestCases()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, err := language.TransformJSONStringToDSL(testCase.JSON)
+
+			if testCase.ErrorMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualErrorf(t, err, testCase.ErrorMessage, "")
+			}
+		})
+	}
+}

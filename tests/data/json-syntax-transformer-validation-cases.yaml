@@ -1,0 +1,83 @@
+- name: mixed operators
+  json: >-2
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user",
+          "relations": {}
+        },
+        {
+          "type": "folder",
+          "relations": {
+            "admin": {
+              "this": {}
+            },
+            "viewer": {
+              "this": {}
+            },
+            "blocked": {
+              "this": {}
+            },
+            "can_view": {
+              "union": {
+                "child": [
+                  {
+                    "computedUserset": {
+                      "object": "",
+                      "relation": "admin"
+                    }
+                  },
+                  {
+                    "difference": {
+                      "base": {
+                        "computedUserset": {
+                          "object": "",
+                          "relation": "viewer"
+                        }
+                      },
+                      "subtract": {
+                        "computedUserset": {
+                          "object": "",
+                          "relation": "blocked"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "admin": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "viewer": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "blocked": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "can_view": {
+                "directly_related_user_types": []
+              }
+            }
+          }
+        }
+      ]
+    }
+  valid: false,
+  error_message: the 'can_view' relation under the 'folder' type has mixed operators which are not supported by the OpenFGA DSL syntax yet.

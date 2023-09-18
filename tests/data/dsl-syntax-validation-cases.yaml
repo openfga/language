@@ -1,751 +1,872 @@
 ---
-name: misspelled define
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      defne viewer: [user]
-expected_errors:
-  - msg: "mismatched input 'defne' expecting 'define'"
-    line:
-      start: 6
-      end: 6
-    column:
-      start: 4
-      end: 9
-    metadata:
-      symbol: "defne"
----
-# Needs to be thrown in parsing
-name: duplicate relations
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
+- name: valid syntax (1)
+  dsl: |
+    model
+      schema 1.1
+- name: valid syntax (2)
+  dsl: |
+    # ID: 123
+    model
+      schema 1.1
+- name: no model header
+  dsl: |
+    type user
+  expected_errors:
+    - msg: "extraneous input 'type' expecting {'model', '#', WS}"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 0
+        end: 4
+      metadata:
+        symbol: "type"
+    - msg: "extraneous input 'user' expecting {'#', WS}"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 5
+        end: 9
+      metadata:
+        symbol: "user"
+    - msg: "mismatched input '<EOF>' expecting 'model'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 0
+        end: 5
+      metadata:
+        symbol: "<EOF>"
+- name: no schema value
+  dsl: |
+    model
+    type user
+  expected_errors:
+    - msg: "extraneous input 'type' expecting {'#', WS}"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 0
+        end: 4
+      metadata:
+        symbol: "type"
+    - msg: "extraneous input 'user' expecting {'#', WS}"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 5
+        end: 9
+      metadata:
+        symbol: "user"
+- name: schema required
+  dsl: |
+    model
+      schema1.1
+  expected_errors:
+    - msg: "token recognition error at: '.'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 9
+        end: 9
+    - msg: "mismatched input 'schema1' expecting 'schema'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 2
+        end: 9
+      metadata:
+        symbol: "schema1"
+- name: schema 1.1 required
+  dsl: |
+    model
+      schema 11
+  expected_errors:
+    - msg: "mismatched input '11' expecting '1.1'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 9
+        end: 11
+      metadata:
+        symbol: "11"
+- name: schema 1.1 required (2)
+  dsl: |
+    model
+      schema a.b
+  expected_errors:
+    - msg: "token recognition error at: '.'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 10
+        end: 10
+    - msg: "mismatched input 'a' expecting '1.1'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 9
+        end: 10
+      metadata:
+        symbol: "a"
+- name: no relations keyword
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder
       define viewer: [user]
-      define viewer: [user]
-expected_errors:
-  - msg: "`viewer` is already defined in `document.`"
-    line:
-      start: 8
-      end: 8
-    column:
-      start: 0
-      end: 5
-    metadata:
-      symbol: "<EOF>"
----
-name: mixture of 1.0 and 1.1 should yield error
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [user]
-  type group
-    relations
-      define parent as self
-      define viewer as viewer from parent
-expected_errors:
-  - msg: "missing ':' at 'as'"
-    line:
-      start: 9
-      end: 9
-    column:
-      start: 18
-      end: 20
-    metadata: 
-      symbol: 'as'
-  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
-    line:
-      start: 9
-      end: 9
-    column:
-      start: 21
-      end: 25
-    metadata:
-      symbol: 'self'
----
-name: empty directly assignable relations with spaces should yield error 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [ ]
-      define reader: [user]
-expected_errors:
-  - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
-    line:
-      start: 6
-      end: 6
-    column:
-      start: 21
-      end: 22
-    metadata: 
-      symbol: ']'
----
-name: empty directly assignable relations without spaces should yield error 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: []
-      define reader: [user]
-expected_errors:
-  - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
-    line:
-      start: 6
-      end: 6
-    column:
-      start: 20
-      end: 21
-    metadata: 
-      symbol: ']'
----
-name: unsupported schema version should yield error
-dsl: |
-  model
-    schema 0.9
-  type user
-  type org
-    relations
-      define member: [user]
-expected_errors:
-  - msg: "token recognition error at: '.'" # LexerError
-    line:
-      start: 2
-      end: 2
-    column:
-      start: 10
-      end: 10
-  - msg: "mismatched input '0' expecting '1.1'"
-    line:
-      start: 2
-      end: 2
-    column:
-      start: 9
-      end: 10
-    metadata: 
-      symbol: '0'
----
-name: model 1.1 has no directly allowed types in viewer
-dsl: |
-  model
-    schema 1.1
-  type user
-  type folder
-    relations
-      define parent: [folder]
-      define viewer as self or viewer from parent
-expected_errors:
-  - msg: "missing ':' at 'as'"
-    line:
-      start: 7
-      end: 7
-    column:
-      start: 18
-      end: 20
-    metadata:
-      symbol: 'as'
-  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
-    line:
-      start: 7
-      end: 7
-    column:
-      start: 21
-      end: 25
-    metadata:
-      symbol: 'self'
----
-name: >-
-  mixing 1.0 and 1.1 should not be allowed as non assignable self is not
-  allowed
-dsl: |
-  model
-    schema 1.1
-  type user
-  type folder
-    relations
-      define reader: [user]
-      define viewer as self or reader
-expected_errors:
-  - msg: "missing ':' at 'as'"
-    line:
-      start: 7
-      end: 7
-    column:
-      start: 18
-      end: 20
-    metadata:
-      symbol: 'as'
-  - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
-    line:
-      start: 7
-      end: 7
-    column:
-      start: 21
-      end: 25
-    metadata:
-      symbol: 'self'
+  expected_errors:
+    - msg: "mismatched input 'define' expecting 'relations'"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 2
+        end: 8
+      metadata:
+        symbol: "define"
+- name: mixed operators
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define own: [user]
+        define follower: [user]
+        define blocked: [user]
+        define viewer: [user] and follower or own but not blocked
+  expected_errors:
+    - msg: "mismatched input 'or' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 39
+        end: 41
+      metadata:
+        symbol: "or"
+- name: misspelled define
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        defne viewer: [user]
+  expected_errors:
+    - msg: "mismatched input 'defne' expecting 'define'"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 4
+        end: 9
+      metadata:
+        symbol: "defne"
+  # Needs to be thrown in parsing
+- name: duplicate relations
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user]
+        define viewer: [user]
+  expected_errors:
+    - msg: "`viewer` is already defined in `document.`"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 0
+        end: 5
+      metadata:
+        symbol: "<EOF>"
+- name: mixture of 1.0 and 1.1 should yield error
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [user]
+    type group
+      relations
+        define parent as self
+        define viewer as viewer from parent
+  expected_errors:
+    - msg: "missing ':' at 'as'"
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 18
+        end: 20
+      metadata:
+        symbol: 'as'
+    - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 21
+        end: 25
+      metadata:
+        symbol: 'self'
+- name: empty directly assignable relations with spaces should yield error
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [ ]
+        define reader: [user]
+  expected_errors:
+    - msg: "mismatched input ']' expecting ALPHA_NUMERIC"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 21
+        end: 22
+      metadata:
+        symbol: ']'
+- name: empty directly assignable relations without spaces should yield error
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: []
+        define reader: [user]
+  expected_errors:
+    - msg: "mismatched input ']' expecting {ALPHA_NUMERIC, WS}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 20
+        end: 21
+      metadata:
+        symbol: ']'
+- name: unsupported schema version should yield error
+  dsl: |
+    model
+      schema 0.9
+    type user
+    type org
+      relations
+        define member: [user]
+  expected_errors:
+    - msg: "token recognition error at: '.'" # LexerError
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 10
+        end: 10
+    - msg: "mismatched input '0' expecting '1.1'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 9
+        end: 10
+      metadata:
+        symbol: '0'
+- name: model 1.1 has no directly allowed types in viewer
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder
+      relations
+        define parent: [folder]
+        define viewer as self or viewer from parent
+  expected_errors:
+    - msg: "missing ':' at 'as'"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 18
+        end: 20
+      metadata:
+        symbol: 'as'
+    - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 21
+        end: 25
+      metadata:
+        symbol: 'self'
+- name: >-
+    mixing 1.0 and 1.1 should not be allowed as non assignable self is not
+    allowed
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder
+      relations
+        define reader: [user]
+        define viewer as self or reader
+  expected_errors:
+    - msg: "missing ':' at 'as'"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 18
+        end: 20
+      metadata:
+        symbol: 'as'
+    - msg: "mismatched input 'self' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 21
+        end: 25
+      metadata:
+        symbol: 'self'
 
----
-name: should not allow no model schema
-dsl: |
-  type user
-  type group
-    relations
-      define group: [user] as self
-expected_errors:
-  - msg: "extraneous input 'type' expecting {'model', '#', WS}"
-    line: 
-      start: 1
-      end: 1
-    column:
-      start: 0
-      end: 4
-    metadata:
-      symbol: 'type'
-  - msg: "extraneous input 'user' expecting {'#', WS}"
-    line: 
-      start: 1
-      end: 1
-    column:
-      start: 5
-      end: 9
-    metadata:
-      symbol: 'user'
-  - msg: "mismatched input 'type' expecting 'model'"
-    line: 
-      start: 2
-      end: 2
-    column:
-      start: 0
-      end: 4
-    metadata:
-      symbol: 'type'
----
-name: incorrect wildcard restriction should be raised
-dsl: |
-  model
-    schema 1.1
-  type user
-  type group
-    relations
-      define member: [user, user:*:*]
-expected_errors:
-  - msg: "extraneous input ':' expecting {']', ',', WS}"
-    line: 
-      start: 6
-      end: 6
-    column:
-      start: 32
-      end: 33
-    metadata:
-      symbol: ':'
----
-name: exclusion target not allow to reference itself in TTU 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: editor but not [document#viewer]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 34
-      end: 35
-    metadata:
-      symbol: '['
-  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
-        line: 
-      start: 7
-      end: 7
-    column:
-      start: 43
-      end: 44
-    metadata:
-      symbol: '#'
----
-name: detect if every child in union are related  
-dsl: |
-  model
-    schema 1.1
-  type document
-    relations
-      define viewer: [document#viewer] or [document#editor]
-      define editor: [document#viewer] or [document#editor]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 5
-      end: 5
-    column:
-      start: 40
-      end: 41
-    metadata:
-      symbol: '['
-  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
-    line: 
-      start: 5
-      end: 5
-    column:
-      start: 49
-      end: 50
-    metadata:
-      symbol: '#'
----
-name: intersection child to reference other relations for same type 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: [user] and [document#editor]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 30
-      end: 31
-    metadata:
-      symbol: '['
-  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 39
-      end: 40
-    metadata:
-      symbol: '#'
----
-name: exclusion base to reference other relations for same type 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: [document#editor] but not [user]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 45
-      end: 46
-    metadata:
-      symbol: '['
-  - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 50
-      end: 51
-    metadata:
-      symbol: ']'
----
-name: exclusion target to reference other relations for same type 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: [user] but not [document#editor]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 34
-      end: 35
-    metadata:
-      symbol: '['
-  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 43
-      end: 44
-    metadata:
-      symbol: '#'
----
-name: union child to reference other relations for same type 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: [user] or [document#editor]
-expected_errors:
-  - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 29
-      end: 30
-    metadata:
-      symbol: '['
-  - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
-    line: 
-      start: 7
-      end: 7
-    column:
-      start: 38
-      end: 39
-    metadata:
-      symbol: '#'
----
-name: type restriction cannot contains both wildcard and relation
-dsl: |
-  model
-    schema 1.1
-  type user
-  type department
-    relations
-      define member: [user]
-  type org
-    relations
-      define reader: [department, department#member:*]
-expected_errors:
-  - msg: "extraneous input ':' expecting {']', ',', WS}"
-    line:
-      start: 9
-      end: 9
-    column:
-      start: 49
-      end: 50
-    metadata:
-      symbol: ':'
----
-name: simple group reference to itself
-dsl: |
-  model
-    schema 1.1
-  type user
-  type group
-    relations
-      define group: [group]
-expected_errors: []
----
-name: group has entry point to itself
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define viewer: [user]
-  type group
-    relations
-      define parent: [group, org]
-      define viewer: viewer from parent
-expected_errors: []
----
-name: intersection with directly related
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [user]
-  type group
-    relations
-      define parent: [group]
-      define writer: [user, org#member]
-      define viewer: [user, org#member] or writer
-expected_errors: []
----
-name: should allow directly assigned as last item
+- name: should not allow no model schema
+  dsl: |
+    type user
+    type group
+      relations
+        define group: [user] as self
+  expected_errors:
+    - msg: "extraneous input 'type' expecting {'model', '#', WS}"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 0
+        end: 4
+      metadata:
+        symbol: 'type'
+    - msg: "extraneous input 'user' expecting {'#', WS}"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 5
+        end: 9
+      metadata:
+        symbol: 'user'
+    - msg: "mismatched input 'type' expecting 'model'"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 0
+        end: 4
+      metadata:
+        symbol: 'type'
+- name: incorrect wildcard restriction should be raised
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, user:*:*]
+  expected_errors:
+    - msg: "extraneous input ':' expecting {']', ',', WS}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 32
+        end: 33
+      metadata:
+        symbol: ':'
+- name: exclusion target not allow to reference itself in TTU
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: editor but not [document#viewer]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 34
+        end: 35
+      metadata:
+        symbol: '['
+    - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 43
+        end: 44
+      metadata:
+        symbol: '#'
+- name: detect if every child in union are related
+  dsl: |
+    model
+      schema 1.1
+    type document
+      relations
+        define viewer: [document#viewer] or [document#editor]
+        define editor: [document#viewer] or [document#editor]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 40
+        end: 41
+      metadata:
+        symbol: '['
+    - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 49
+        end: 50
+      metadata:
+        symbol: '#'
+- name: intersection child to reference other relations for same type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: [user] and [document#editor]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 30
+        end: 31
+      metadata:
+        symbol: '['
+    - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 39
+        end: 40
+      metadata:
+        symbol: '#'
+- name: exclusion base to reference other relations for same type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: [document#editor] but not [user]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 45
+        end: 46
+      metadata:
+        symbol: '['
+    - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 50
+        end: 51
+      metadata:
+        symbol: ']'
+- name: exclusion target to reference other relations for same type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: [user] but not [document#editor]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 34
+        end: 35
+      metadata:
+        symbol: '['
+    - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 43
+        end: 44
+      metadata:
+        symbol: '#'
+- name: union child to reference other relations for same type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: [user] or [document#editor]
+  expected_errors:
+    - msg: "extraneous input '[' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 29
+        end: 30
+      metadata:
+        symbol: '['
+    - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 38
+        end: 39
+      metadata:
+        symbol: '#'
+- name: type restriction cannot contains both wildcard and relation
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type department
+      relations
+        define member: [user]
+    type org
+      relations
+        define reader: [department, department#member:*]
+  expected_errors:
+    - msg: "extraneous input ':' expecting {']', ',', WS}"
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 49
+        end: 50
+      metadata:
+        symbol: ':'
+- name: simple group reference to itself
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define group: [group]
+  expected_errors: []
+- name: group has entry point to itself
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define viewer: [user]
+    type group
+      relations
+        define parent: [group, org]
+        define viewer: viewer from parent
+  expected_errors: []
+- name: intersection with directly related
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [user]
+    type group
+      relations
+        define parent: [group]
+        define writer: [user, org#member]
+        define viewer: [user, org#member] or writer
+  expected_errors: []
+- name: should allow directly assigned as last item
 
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [user]
-  type group
-    relations
-      define parent: [group]
-      define writer: [user, org#member]
-      define viewer: [user, org#member] or writer
-expected_errors: []
----
-name: union with directly related
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [user]
-  type group
-    relations
-      define parent: [group]
-      define writer: [user, org#member]
-      define viewer: [user, org#member] and writer
-expected_errors: []
----
-name: union allow directly assigned as last item
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
-    relations
-      define member: [user]
-  type group
-    relations
-      define parent: [group]
-      define writer: [user, org#member]
-      define viewer: [user, org#member] and writer
-expected_errors: []
----
-name: but not with directly linked
-dsl: |
-  model
-    schema 1.1
-  type user
-  type docs
-    relations
-      define blocked: [user]
-      define can_view: [user] but not blocked
-expected_errors: []
----
-name: intersection with directly related and has spaces and blank lines
-dsl: |
-  model
-    schema 1.1
-  type user
-  type org
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [user]
+    type group
+      relations
+        define parent: [group]
+        define writer: [user, org#member]
+        define viewer: [user, org#member] or writer
+  expected_errors: []
+- name: union with directly related
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [user]
+    type group
+      relations
+        define parent: [group]
+        define writer: [user, org#member]
+        define viewer: [user, org#member] and writer
+  expected_errors: []
+- name: union allow directly assigned as last item
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define member: [user]
+    type group
+      relations
+        define parent: [group]
+        define writer: [user, org#member]
+        define viewer: [user, org#member] and writer
+  expected_errors: []
+- name: but not with directly linked
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type docs
+      relations
+        define blocked: [user]
+        define can_view: [user] but not blocked
+  expected_errors: []
+- name: intersection with directly related and has spaces and blank lines
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+  
+      relations
+        define member: [user]    
+  
+    type group
+      relations
+        define parent: [group]
+        define writer: [user, org#member]
+        define viewer:    [   user,    org#member   ]       or    writer
+  expected_errors: []
+- name: model 1.1 tuple to userset
+  dsl: |
+    model
+      schema 1.1
+    type folder
+      relations
+        define viewer: [user]
+  
+    type document
+      relations
+        define parent: [folder]
+        define viewer: [user] or viewer from parent
+    type user
+  expected_errors: []
+- name: model 1.1 allow TTU with relations as long as 1 child has such relation
+  dsl: |
+    model
+      schema 1.1
+    type final
+      relations
+        define children: [child1, child2]
+        define has_assigned: u1 from children or u2 from children
+    type child1
+      relations
+        define role: [user]
+        define u1: role
+    type child2
+      relations
+        define role: [user]
+        define u2: role
+    type user
+  expected_errors: []
+- name: model 1.1 wildcard restricted type
+  dsl: |
+    model
+      schema 1.1
+    type folder
+      relations
+        define viewer: [user, user:*]
+  
+    type user
+  expected_errors: []
+- name: model 1.1 wildcard restricted type in the middle
+  dsl: |
+    model
+      schema 1.1
+    type folder
+      relations
+        define viewer: [user, user:*, group]
+  
+    type user
+    type group
+  expected_errors: []
+- name: model 1.1 with spacing in allowed type
+  dsl: |
+    model
+      schema 1.1
+    type folder
+      relations
+        define viewer: [  user  , user:*  , group  ]
+  
+    type user
+    type group
+  expected_errors: []
+- name: union does not require all child to have entry
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define admin: [user]
+        define action1: admin or action2 or action3
+        define action2: admin or action3 or action1
+        define action3: admin or action1 or action2
+  expected_errors: []
+- name: union does not require all child to have entry even for intersection child
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type docs
+      relations
+        define admin: [user]
+        define union1: admin or union2
+        define union2: admin or union1
+        define intersection1: union1 and union2
+        define intersection2: union1 and union2
+  expected_errors: []
+- name: union does not require all child to have entry even for exclusion child
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type docs
+      relations
+        define admin: [user]
+        define union1: admin or union2
+        define union2: admin or union1
+        define exclusion1: admin but not union1
+        define exclusion2: admin but not union2
+  expected_errors: []
+- name: union child allow to reference itself in TTU
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user]
+        define viewer: [document#viewer] or editor
+  expected_errors: []
+- name: mixture of relations from relations for same type
+  dsl: |
+    model
+      schema 1.1
+    type user
+  
+    type document
+      relations
+        define restricted: [user]
+        define editor: [user]
+        define viewer: [document#viewer] or editor
+        define can_view: viewer but not restricted
+        define can_view_actual: can_view
+  expected_errors: []
+- name: poorly formatted DSL
+  dsl: |
+  
+    model
+       schema 1.1
+     type user
 
-    relations
-      define member: [user]    
-
-  type group
-    relations
-      define parent: [group]
-      define writer: [user, org#member]
-      define viewer:    [   user,    org#member   ]       or    writer
-expected_errors: []
----
-name: model 1.1 tuple to userset
-dsl: |
-  model
-    schema 1.1
-  type folder
-    relations
-      define viewer: [user]
-
-  type document
-    relations
-      define parent: [folder]
-      define viewer: [user] or viewer from parent
-  type user
-expected_errors: []
----
-name: model 1.1 allow TTU with relations as long as 1 child has such relation
-dsl: |
-  model
-    schema 1.1
-  type final
-    relations
-      define children: [child1, child2]
-      define has_assigned: u1 from children or u2 from children
-  type child1
-    relations
-      define role: [user]
-      define u1: role
-  type child2
-    relations
-      define role: [user]
-      define u2: role
-  type user
-expected_errors: []
----
-name: model 1.1 wildcard restricted type
-dsl: |
-  model
-    schema 1.1
-  type folder
-    relations
-      define viewer: [user, user:*]
-
-  type user
-expected_errors: []
----
-name: model 1.1 wildcard restricted type in the middle
-dsl: |
-  model
-    schema 1.1
-  type folder
-    relations
-      define viewer: [user, user:*, group]
-
-  type user
-  type group
-expected_errors: []
----
-name: model 1.1 with spacing in allowed type
-dsl: |
-  model
-    schema 1.1
-  type folder
-    relations
-      define viewer: [  user  , user:*  , group  ]
-
-  type user
-  type group
-expected_errors: []
----
-name: union does not require all child to have entry
-dsl: |
-  model
-    schema 1.1
-  type user
-  type doc
-    relations
-      define admin: [user]
-      define action1: admin or action2 or action3
-      define action2: admin or action3 or action1
-      define action3: admin or action1 or action2
-expected_errors: []
----
-name: union does not require all child to have entry even for intersection child
-dsl: |
-  model
-    schema 1.1
-  type user
-  type docs
-    relations
-      define admin: [user]
-      define union1: admin or union2
-      define union2: admin or union1
-      define intersection1: union1 and union2
-      define intersection2: union1 and union2
-expected_errors: []
----
-name: union does not require all child to have entry even for exclusion child
-dsl: |
-  model
-    schema 1.1
-  type user
-  type docs
-    relations
-      define admin: [user]
-      define union1: admin or union2
-      define union2: admin or union1
-      define exclusion1: admin but not union1
-      define exclusion2: admin but not union2
-expected_errors: []
----
-name: union child allow to reference itself in TTU
-dsl: |
-  model
-    schema 1.1
-  type user
-  type document
-    relations
-      define editor: [user]
-      define viewer: [document#viewer] or editor
-expected_errors: []
----
-name: mixture of relations from relations for same type
-dsl: |
-  model
-    schema 1.1
-  type user
-
-  type document
-    relations
-      define restricted: [user]
-      define editor: [user]
-      define viewer: [document#viewer] or editor
-      define can_view: viewer but not restricted
-      define can_view_actual: can_view
-expected_errors: []
----
-name: poorly formatted DSL
-dsl: |
-
-  model
-     schema 1.1
-   type user
- 
-expected_errors:
-  - msg: "extraneous input '\\n' expecting {'model', '#', WS}"
-    line:
-      start: 1
-      end: 1
-    column:
-      start: 0
-      end: 1
-    metadata:
-      symbol: "\n"
-  - msg: "extraneous input ' ' expecting 'schema'"
-    line:
-      start: 3
-      end: 3
-    column:
-      start: 2
-      end: 3
-    metadata:
-      symbol: " "
-  - msg: "extraneous input 'type' expecting {'#', WS}"
-    line:
-      start: 4
-      end: 4
-    column:
-      start: 1
-      end: 5
-    metadata:
-      symbol: "type"
-  - msg: "extraneous input 'user' expecting {'#', WS}"
-    line:
-      start: 4
-      end: 4
-    column:
-      start: 6
-      end: 10
-    metadata:
-      symbol: "user"
-  - msg: "mismatched input '<EOF>' expecting 'type'"
-    line:
-      start: 5
-      end: 5
-    column:
-      start: 0
-      end: 5
-    metadata:
-      symbol: "<EOF>"
+  expected_errors:
+    - msg: "extraneous input '\\n' expecting {'model', '#', WS}"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 0
+        end: 1
+      metadata:
+        symbol: "\n"
+    - msg: "extraneous input ' ' expecting 'schema'"
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 2
+        end: 3
+      metadata:
+        symbol: " "
+    - msg: "extraneous input 'type' expecting {'#', WS}"
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 1
+        end: 5
+      metadata:
+        symbol: "type"
+    - msg: "extraneous input 'user' expecting {'#', WS}"
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 6
+        end: 10
+      metadata:
+        symbol: "user"
+    - msg: "mismatched input '<EOF>' expecting 'type'"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 0
+        end: 5
+      metadata:
+        symbol: "<EOF>"

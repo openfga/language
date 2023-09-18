@@ -1,7 +1,7 @@
 import { parseDSL } from "../transformer/dsltojson";
 import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
 import { Keyword, ReservedKeywords } from "./Keywords";
-import { ConfigurationException, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
+import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { exceptionCollector } from "../util/exceptions";
 
 // eslint-disable-next-line no-useless-escape
@@ -700,7 +700,7 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
-    throw new ConfigurationException(`Incorrect type regex specification for ${typeValidation}`, e);
+    throw new ConfigurationError(`Incorrect type regex specification for ${typeValidation}`, e);
   }
 
   let relationRegex: ValidationRegex = {
@@ -714,7 +714,7 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
-    throw new ConfigurationException(`Incorrect relation regex specification for ${relationValidation}`, e);
+    throw new ConfigurationError(`Incorrect relation regex specification for ${relationValidation}`, e);
   }
 
   populateRelations(lines, collector, parserResults, typeRegex, relationRegex);

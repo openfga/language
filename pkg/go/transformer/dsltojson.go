@@ -103,7 +103,6 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 					},
 				},
 			}
-			break
 		case RELATION_DEFINITION_OPERATOR_AND:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Intersection{
@@ -112,7 +111,6 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 					},
 				},
 			}
-			break
 		case RELATION_DEFINITION_OPERATOR_BUT_NOT:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Difference{

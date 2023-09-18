@@ -138,7 +138,7 @@ export class ModelValidationError extends Error {
 /**
  * Thrown when improper values are passed.
  */
-export class ConfigurationException extends Error {
+export class ConfigurationError extends Error {
   constructor(
     public message: string,
     public e: Error,
@@ -147,5 +147,11 @@ export class ConfigurationException extends Error {
     if (e?.stack) {
       this.stack = e.stack;
     }
+  }
+}
+
+export class UnsupportedDSLNestingError extends Error {
+  constructor(public typeName: string, public relationName: string) {
+    super(`the '${relationName}' relation under the '${typeName}' type has mixed operators which are not supported by the OpenFGA DSL syntax yet.`);
   }
 }

@@ -1,9 +1,10 @@
 package transformer_test
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 type validTestCase struct {
@@ -50,20 +51,39 @@ func loadValidTransformerTestCases() ([]validTestCase, error) {
 }
 
 type invalidDslSyntaxTestCase struct {
-	Name         string `json:"name"`
-	DSL          string `json:"dsl"`
-	Valid        bool   `json:"valid"`
-	ErrorMessage string `json:"error_message"`
+	Name         string `json:"name" yaml:"name"`
+	DSL          string `json:"dsl" yaml:"dsl"`
+	Valid        bool   `json:"valid" yaml:"valid"`
+	ErrorMessage string `json:"error_message" yaml:"error_message"`
 }
 
 func loadInvalidDslSyntaxTestCases() ([]invalidDslSyntaxTestCase, error) {
-	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "dsl-syntax-validation.json"))
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "dsl-syntax-validation-cases.json"))
 	if err != nil {
 		return nil, err
 	}
 
 	testCases := []invalidDslSyntaxTestCase{}
-	err = json.Unmarshal(data, &testCases)
+	err = yaml.Unmarshal(data, &testCases)
+
+	return testCases, err
+}
+
+type invalidJsonSyntaxTestCase struct {
+	Name         string `json:"name" yaml:"name"`
+	JSON         string `json:"json" yaml:"json"`
+	ErrorMessage string `json:"error_message" yaml:"error_message"`
+	Skip         bool   `json:"skip" yaml:"skip"`
+}
+
+func loadInvalidJsonSyntaxTestCases() ([]invalidJsonSyntaxTestCase, error) {
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "json-syntax-transformer-validation-cases.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	testCases := []invalidJsonSyntaxTestCase{}
+	err = yaml.Unmarshal(data, &testCases)
 
 	return testCases, err
 }

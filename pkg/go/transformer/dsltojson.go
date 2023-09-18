@@ -44,8 +44,13 @@ func (l *OpenFgaDslListener) ExitSchemaVersion(ctx *parser.SchemaVersionContext)
 	l.authorizationModel.SchemaVersion = ctx.GetText()
 }
 
-func (l *OpenFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
+func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
+	if ctx.TypeName() == nil {
+		return
+	}
+
 	l.currentTypeDef = &pb.TypeDefinition{
+		Type:      ctx.TypeName().GetText(),
 		Relations: map[string]*pb.Userset{},
 		Metadata: &pb.Metadata{
 			Relations: map[string]*pb.RelationMetadata{},
@@ -53,14 +58,10 @@ func (l *OpenFgaDslListener) EnterTypeDef(_ctx *parser.TypeDefContext) {
 	}
 }
 
-func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
-	if ctx.TypeName() == nil {
+func (l *OpenFgaDslListener) ExitTypeDef(_ctx *parser.TypeDefContext) {
+	if l.currentTypeDef == nil || l.currentTypeDef.Type == "" {
 		return
 	}
-
-	typeName := ctx.TypeName().GetText()
-	typeDef := l.currentTypeDef
-	typeDef.Type = typeName
 
 	if len(l.currentTypeDef.Metadata.Relations) == 0 {
 		l.currentTypeDef.Metadata = nil
@@ -125,7 +126,7 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 
 	if relationDef != nil {
 		if l.currentTypeDef.Relations[relationName] != nil {
-			ctx.GetParser().NotifyErrorListeners(fmt.Sprintf("%s is already defined in %s", relationName, l.currentTypeDef.Type), ctx.GetParser().GetCurrentToken(), nil)
+			ctx.GetParser().NotifyErrorListeners(fmt.Sprintf("'%s' is already defined in '%s'", relationName, l.currentTypeDef.Type), ctx.GetParser().GetCurrentToken(), nil)
 		}
 
 		l.currentTypeDef.Relations[relationName] = relationDef
@@ -277,7 +278,13 @@ func (c *OpenFgaDslErrorListener) SyntaxError(recognizer antlr.Recognizer, offen
 ///
 
 func ParseDsl(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
-	inputStream := antlr.NewInputStream(data)
+	cleanedLines := []string{}
+	for _, line := range strings.Split(data, "\n") {
+		cleanedLines = append(cleanedLines, strings.TrimRight(line, " "))
+	}
+	cleanedData := strings.Join(cleanedLines, "\n")
+
+	inputStream := antlr.NewInputStream(cleanedData)
 
 	errorListener := newOpenFgaDslErrorListener()
 

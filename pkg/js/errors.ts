@@ -152,6 +152,6 @@ export class ConfigurationError extends Error {
 
 export class UnsupportedDSLNestingError extends Error {
   constructor(public typeName: string, public relationName: string) {
-    super(`the '${relationName}' relation under the '${typeName}' type has mixed operators which are not supported by the OpenFGA DSL syntax yet.`);
+    super(`the '${relationName}' relation under the '${typeName}' type has mixed operators which are not supported by the OpenFGA DSL syntax yet`);
   }
 }

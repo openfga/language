@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	pb "github.com/openfga/api/proto/openfga/v1"
+	"github.com/openfga/language/pkg/go/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -121,7 +122,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 		return parseTupleToUserset(relationDefinition), nil
 	}
 
-	return "", fmt.Errorf("the '%s' relation under the '%s' type has mixed operators which are not supported by the OpenFGA DSL syntax yet.", relationName, typeName)
+	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
 }
 
 func parseRelation(

@@ -24,7 +24,7 @@ interface BaseProps {
 const createInvalidName = (props: BaseProps, clause: string, typeName?: string) => {
   const { errors, lines, lineIndex, symbol } = props;
   const errorMessage =
-    (typeName ? `Relation '${symbol}' of type '${typeName}' ` : `Type '${symbol}' `) +
+    (typeName ? `relation '${symbol}' of type '${typeName}' ` : `type '${symbol}' `) +
     `does not match naming rule: '${clause}'.`;
   errors.push(
     constructValidationError({
@@ -40,7 +40,7 @@ const createReservedTypeNameError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `A type cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
+      message: `a type cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.ReservedTypeKeywords },
@@ -52,7 +52,7 @@ const createReservedRelationNameError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `A relation cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
+      message: `a relation cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.ReservedRelationKeywords },
@@ -123,7 +123,7 @@ const createAssignableRelationMustHaveTypesError = (props: BaseProps) => {
 
   errors.push(
     constructValidationError({
-      message: `Assignable relation '${actualValue}' must have types`,
+      message: `assignable relation '${actualValue}' must have types`,
       lines,
       lineIndex,
       customResolver: (wordIdx, rawLine, symbol) => {
@@ -139,7 +139,7 @@ const createDuplicateTypeNameError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `The type \`${symbol}\` is a duplicate.`,
+      message: `the type \`${symbol}\` is a duplicate.`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.DuplicatedError },
@@ -151,7 +151,7 @@ const createDuplicateTypeRestrictionError = (props: BaseProps, relationName: str
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `The type restriction \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
+      message: `the type restriction \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: symbol },
@@ -163,7 +163,7 @@ const createDuplicateRelationError = (props: BaseProps, relationName: string) =>
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `The partial relation definition \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
+      message: `the partial relation definition \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: symbol },
@@ -178,7 +178,7 @@ const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
   errors.push(
     new ModelValidationSingleError(
       {
-        msg: `Duplicate definition \`${symbol}\`.`,
+        msg: `duplicate definition \`${symbol}\`.`,
         line: {
           start: lineIndex + 1,
           end: lineIndex + 1,
@@ -197,7 +197,7 @@ const createAssignableTypeWildcardRelationError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `Type restriction \`${symbol}\` cannot contain both wildcard and relation`,
+      message: `type restriction \`${symbol}\` cannot contain both wildcard and relation`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.TypeRestrictionCannotHaveWildcardAndRelation },
@@ -211,7 +211,7 @@ const createInvalidRelationError = (props: BaseProps, validRelations: string[]) 
   if (isInValid) {
     errors.push(
       constructValidationError({
-        message: `The relation \`${symbol}\` does not exist.`,
+        message: `the relation \`${symbol}\` does not exist.`,
         lines,
         lineIndex,
         metadata: { symbol, errorType: ValidationError.MissingDefinition, relation: symbol },
@@ -220,14 +220,26 @@ const createInvalidRelationError = (props: BaseProps, validRelations: string[]) 
   }
 };
 
-export const createInvalidSyntaxVersionError = (props: BaseProps) => {
+export const createInvalidSchemaVersionError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `Invalid schema ${symbol}`,
+      message: `invalid schema ${symbol}`,
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.InvalidSchema },
+    }),
+  );
+};
+
+export const createSchemaVersionRequiredError = (props: BaseProps) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  errors.push(
+    constructValidationError({
+      message: `schema version required`,
+      lines,
+      lineIndex,
+      metadata: { symbol, errorType: ValidationError.SchemaVersionRequired },
     }),
   );
 };
@@ -236,7 +248,7 @@ export const createMaximumOneDirectRelationship = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: "Each relationship must have at most 1 set of direct relations defined.",
+      message: "each relationship must have at most 1 set of direct relations defined.",
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.AssignableRelationsMustHaveType },
@@ -314,7 +326,10 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines: 
       createInvalidRelationError({ errors, lines, lineIndex, symbol }, validRelations);
     },
     raiseInvalidSchemaVersion(lineIndex: number, symbol: string) {
-      createInvalidSyntaxVersionError({ errors, lines, lineIndex, symbol });
+      createInvalidSchemaVersionError({ errors, lines, lineIndex, symbol });
+    },
+    raiseSchemaVersionRequired(lineIndex: number, symbol: string) {
+      createSchemaVersionRequiredError({ errors, lines, lineIndex, symbol });
     },
     raiseMaximumOneDirectRelationship(lineIndex: number, symbol: string) {
       createMaximumOneDirectRelationship({ errors, lines, lineIndex, symbol });

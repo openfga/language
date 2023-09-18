@@ -1,8 +1,10 @@
 package transformer_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -12,6 +14,38 @@ type validTestCase struct {
 	DSL  string
 	JSON string
 	Skip bool
+}
+
+type startEnd struct {
+	Start int `json:"start,omitempty" yaml:"start,omitempty"`
+	End   int `json:"end,omitempty" yaml:"end,omitempty"`
+}
+
+type expectedError struct {
+	Msg    string   `json:"msg" yaml:"msg"`
+	Line   startEnd `json:"line" yaml:"line"`
+	Column startEnd `json:"column" yaml:"column"`
+}
+
+func (testCase *invalidDslSyntaxTestCase) GetErrorString() string {
+	pluralS := "s"
+	if len(testCase.ExpectedErrors) == 1 {
+		pluralS = ""
+	}
+
+	errorLines := []string{}
+	for _, e := range testCase.ExpectedErrors {
+		errorLines = append(errorLines, fmt.Sprintf(`syntax error at line=%d, column=%d: %s`, e.Line.Start, e.Column.Start, e.Msg))
+	}
+
+	return fmt.Sprintf("%d error%s occurred:\n\t* %v\n\n", len(testCase.ExpectedErrors), pluralS, strings.Join(errorLines, "\n\t* "))
+}
+
+type invalidDslSyntaxTestCase struct {
+	Name           string          `json:"name" yaml:"name"`
+	DSL            string          `json:"dsl" yaml:"dsl"`
+	Valid          bool            `json:"valid" yaml:"valid"`
+	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
 }
 
 func loadValidTransformerTestCases() ([]validTestCase, error) {
@@ -50,15 +84,8 @@ func loadValidTransformerTestCases() ([]validTestCase, error) {
 	return testCases, nil
 }
 
-type invalidDslSyntaxTestCase struct {
-	Name         string `json:"name" yaml:"name"`
-	DSL          string `json:"dsl" yaml:"dsl"`
-	Valid        bool   `json:"valid" yaml:"valid"`
-	ErrorMessage string `json:"error_message" yaml:"error_message"`
-}
-
 func loadInvalidDslSyntaxTestCases() ([]invalidDslSyntaxTestCase, error) {
-	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "dsl-syntax-validation-cases.json"))
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "dsl-syntax-validation-cases.yaml"))
 	if err != nil {
 		return nil, err
 	}

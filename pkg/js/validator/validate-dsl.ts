@@ -722,8 +722,7 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
   const schemaVersion = parserResults.schema_version;
 
   if (!schemaVersion) {
-    // TODO: choose a better exception to reprot
-    collector.raiseReservedTypeName(0, "");
+    collector.raiseSchemaVersionRequired(0, "");
   }
 
   switch (schemaVersion) {
@@ -745,6 +744,7 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
 /**
  * validateDSL - Validates model authored in FGA DSL syntax, throwing all found errors
  * @param {string} dsl
+ * @param options
  * @returns {DSLSyntaxError}
  */
 export default function validateDsl(dsl: string, options: ValidationOptions = {}): void {

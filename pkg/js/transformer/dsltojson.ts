@@ -139,7 +139,7 @@ class OpenFgaDslListener extends OpenFGAListener {
       // Throw error if same named relation occurs more than once in a relationship definition block
       if (this.currentTypeDef!.relations![relationName]) {
         ctx.parser?.notifyErrorListeners(
-          `\`${relationName}\` is already defined in \`${this.currentTypeDef?.type}.\``,
+          `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
           ctx.parser?.getCurrentToken(),
           undefined,
         );
@@ -264,11 +264,16 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
   }
 }
 
-export function parseDSL(dsl: string): {
+export function parseDSL(data: string): {
   listener: OpenFgaDslListener;
   errorListener: OpenFgaDslErrorListener<unknown>;
 } {
-  const is = new antlr.InputStream(dsl);
+  const cleanedData = data
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n");
+
+  const is = new antlr.InputStream(cleanedData);
 
   const errorListener = new OpenFgaDslErrorListener();
 
@@ -292,11 +297,11 @@ export function parseDSL(dsl: string): {
 
 /**
  * transformDslToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
- * @param {string} dsl
+ * @param {string} data
  * @returns {AuthorizationModel}
  */
-export default function transformDslToJSON(dsl: string): AuthorizationModel {
-  const { listener, errorListener } = parseDSL(dsl);
+export default function transformDslToJSON(data: string): AuthorizationModel {
+  const { listener, errorListener } = parseDSL(data);
 
   if (errorListener.errors.length) {
     throw new DSLSyntaxError(errorListener.errors);

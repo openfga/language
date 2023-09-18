@@ -9,7 +9,7 @@
        define member: [user]
        define reader   : member   but not   allowed
   expected_errors:
-    - msg: "The relation `allowed` does not exist."
+    - msg: "the relation `allowed` does not exist."
       line:
         start: 7
         end: 7
@@ -28,7 +28,7 @@
       relations
         define member: [user]
   expected_errors:
-    - msg: "A type cannot be named 'self' or 'this'."
+    - msg: "a type cannot be named 'self' or 'this'."
       line:
         start: 4
         end: 4
@@ -47,7 +47,7 @@
       relations
         define member: [user]
   expected_errors:
-    - msg: "A type cannot be named 'self' or 'this'."
+    - msg: "a type cannot be named 'self' or 'this'."
       line:
         start: 4
         end: 4
@@ -66,7 +66,7 @@
       relations
         define self: [user]
   expected_errors:
-    - msg: "A relation cannot be named 'self' or 'this'."
+    - msg: "a relation cannot be named 'self' or 'this'."
       line:
         start: 6
         end: 6
@@ -85,7 +85,7 @@
       relations
         define this: [user]
   expected_errors:
-    - msg: "A relation cannot be named 'self' or 'this'."
+    - msg: "a relation cannot be named 'self' or 'this'."
       line:
         start: 6
         end: 6
@@ -107,7 +107,7 @@
         define member: [user]
   expected_errors:
     - msg: >-
-        Type
+        type
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         does not match naming rule: '^[^:#@\s]{1,254}$'.
       line:
@@ -129,7 +129,7 @@
         define aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: [user]
   expected_errors:
     - msg: >-
-        Relation
+        relation
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         of type 'org' does not match naming rule: '^[^:#@\s]{1,50}$'.
       line:
@@ -460,7 +460,7 @@
         define member: [user]
         define reader: member and allowed
   expected_errors:
-    - msg: "The relation `allowed` does not exist."
+    - msg: "the relation `allowed` does not exist."
       line:
         start: 7
         end: 7
@@ -480,7 +480,7 @@
         define member: [user]
         define reader: member or allowed
   expected_errors:
-    - msg: "The relation `allowed` does not exist."
+    - msg: "the relation `allowed` does not exist."
       line:
         start: 7
         end: 7
@@ -500,7 +500,7 @@
         define member: [user]
         define reader: allowed but not member
   expected_errors:
-    - msg: "The relation `allowed` does not exist."
+    - msg: "the relation `allowed` does not exist."
       line:
         start: 7
         end: 7
@@ -520,7 +520,7 @@
         define member: [user]
         define reader: member but not allowed
   expected_errors:
-    - msg: "The relation `allowed` does not exist."
+    - msg: "the relation `allowed` does not exist."
       line:
         start: 7
         end: 7
@@ -741,7 +741,7 @@
         define parent: [document, document:*]
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: 'Type restriction `document:*` cannot contain both wildcard and relation'
+    - msg: 'type restriction `document:*` cannot contain both wildcard and relation'
       line:
         start: 7
         end: 7
@@ -758,7 +758,7 @@
     type user
     type user
   expected_errors:
-    - msg: "The type `user` is a duplicate."
+    - msg: "the type `user` is a duplicate."
       line:
         start: 3
         end: 3
@@ -778,7 +778,7 @@
       relations
         define viewer: [user, user]
   expected_errors:
-    - msg: "The type restriction `user` is a duplicate in the relation `viewer`."
+    - msg: "the type restriction `user` is a duplicate in the relation `viewer`."
       line:
         start: 6
         end: 6
@@ -800,7 +800,7 @@
       relations
         define viewer: [group#member, group#member]
   expected_errors:
-    - msg: "The type restriction `group#member` is a duplicate in the relation `viewer`."
+    - msg: "the type restriction `group#member` is a duplicate in the relation `viewer`."
       line:
         start: 9
         end: 9
@@ -819,7 +819,7 @@
       relations
         define viewer: [user:*, user:*]
   expected_errors:
-    - msg: "The type restriction `user:*` is a duplicate in the relation `viewer`."
+    - msg: "the type restriction `user:*` is a duplicate in the relation `viewer`."
       line:
         start: 6
         end: 6
@@ -839,7 +839,7 @@
         define viewer: [user]
         define editor: viewer or viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
         start: 7
         end: 7
@@ -859,7 +859,7 @@
         define viewer: [user]
         define editor: viewer and viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
         start: 7
         end: 7
@@ -879,7 +879,7 @@
         define viewer: [user]
         define editor: viewer but not viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `editor`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
         start: 7
         end: 7
@@ -889,7 +889,7 @@
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
-- name: Duplicate type in relationship definition
+- name: duplicate type in relationship definition
   dsl: |
     model
       schema 1.1
@@ -898,7 +898,7 @@
       relations
         define member: [user, user]
   expected_errors:
-    - msg: "The type restriction `user` is a duplicate in the relation `member`."
+    - msg: "the type restriction `user` is a duplicate in the relation `member`."
       line:
         start: 6
         end: 6
@@ -908,7 +908,7 @@
       metadata:
         symbol: "user"
         errorType: duplicated-error
-- name: Duplicate wildcard type in relationship definition
+- name: duplicate wildcard type in relationship definition
   dsl: |
     model
       schema 1.1
@@ -917,7 +917,7 @@
       relations
         define member: [user:*, user:*]
   expected_errors:
-    - msg: "The type restriction `user:*` is a duplicate in the relation `member`."
+    - msg: "the type restriction `user:*` is a duplicate in the relation `member`."
       line:
         start: 6
         end: 6
@@ -927,7 +927,7 @@
       metadata:
         symbol: "user:*"
         errorType: duplicated-error
-- name: Duplicate relationship symbol in union relationship definition
+- name: duplicate relationship symbol in union relationship definition
   dsl: |
     model
       schema 1.1
@@ -937,7 +937,7 @@
         define viewer: [user]
         define member: viewer or viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
         start: 7
         end: 7
@@ -947,7 +947,7 @@
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
-- name: Duplicate relationship symbol in intersection relationship definition
+- name: duplicate relationship symbol in intersection relationship definition
   dsl: |
     model
       schema 1.1
@@ -957,7 +957,7 @@
         define viewer: [user]
         define member: viewer and viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
         start: 7
         end: 7
@@ -967,7 +967,7 @@
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
-- name: Duplicate relationship symbol in difference relationship definition
+- name: duplicate relationship symbol in difference relationship definition
   dsl: |
     model
       schema 1.1
@@ -977,7 +977,7 @@
         define viewer: [user]
         define member: viewer but not viewer
   expected_errors:
-    - msg: "The partial relation definition `viewer` is a duplicate in the relation `member`."
+    - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
         start: 7
         end: 7
@@ -987,7 +987,7 @@
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
-- name: Duplicate union relationship import in parent relationship definition
+- name: duplicate union relationship import in parent relationship definition
   dsl: |
     model
       schema 1.1
@@ -1000,7 +1000,7 @@
         define parent: [group, org]
         define viewer: viewer from parent or viewer from parent
   expected_errors:
-    - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
         start: 10
         end: 10
@@ -1010,7 +1010,7 @@
       metadata:
         symbol: "viewer from parent"
         errorType: duplicated-error
-- name: Duplicate intersection relationship import in parent relationship definition
+- name: duplicate intersection relationship import in parent relationship definition
   dsl: |
     model
       schema 1.1
@@ -1023,7 +1023,7 @@
         define parent: [group, org]
         define viewer: viewer from parent and viewer from parent
   expected_errors:
-    - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
         start: 10
         end: 10
@@ -1033,7 +1033,7 @@
       metadata:
         symbol: "viewer from parent"
         errorType: duplicated-error
-- name: Duplicate difference relationship import in parent relationship definition
+- name: duplicate difference relationship import in parent relationship definition
   dsl: |
     model
       schema 1.1
@@ -1046,7 +1046,7 @@
         define parent: [group, org]
         define viewer: viewer from parent but not viewer from parent
   expected_errors:
-    - msg: "The partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
+    - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
         start: 10
         end: 10

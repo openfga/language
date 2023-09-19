@@ -277,7 +277,7 @@ func (c *OpenFgaDslErrorListener) SyntaxError(recognizer antlr.Recognizer, offen
 
 ///
 
-func ParseDsl(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
+func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	cleanedLines := []string{}
 	for _, line := range strings.Split(data, "\n") {
 		cleanedLines = append(cleanedLines, strings.TrimRight(line, " "))
@@ -305,9 +305,9 @@ func ParseDsl(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	return listener, errorListener
 }
 
-// TransformDslToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
-func TransformDslToJSON(data string) (*pb.AuthorizationModel, error) {
-	listener, errorListener := ParseDsl(data)
+// TransformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
+func TransformDSLToJSON(data string) (*pb.AuthorizationModel, error) {
+	listener, errorListener := ParseDSL(data)
 
 	if errorListener.Errors != nil {
 		return nil, errorListener.Errors

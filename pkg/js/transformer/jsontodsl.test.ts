@@ -1,9 +1,9 @@
-import { loadValidTransformerTestCases, loadInvalidJsonSyntaxTestCases } from "./_testcases";
+import { loadValidTransformerTestCases, loadInvalidJSONSyntaxTestCases } from "./_testcases";
 import { transformJSONStringToDSL } from "./jsontodsl";
 
 describe("jsonToDSL", () => {
   const testCases = loadValidTransformerTestCases();
-  const invalidTestCases = loadInvalidJsonSyntaxTestCases();
+  const invalidTestCases = loadInvalidJSONSyntaxTestCases();
 
   testCases.forEach((testCase) => {
     const testFn = testCase.skip ? it.skip : it;

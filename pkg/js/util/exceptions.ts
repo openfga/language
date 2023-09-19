@@ -1,5 +1,5 @@
 import { ModelValidationSingleError, ValidationError } from "../errors";
-import { Keyword, ReservedKeywords } from "../validator/Keywords";
+import { Keyword, ReservedKeywords } from "../validator/keywords";
 
 interface ValidationErrorProps {
   message: string;

@@ -1,9 +1,9 @@
-import { loadDslSyntaxErrorTestCases, loadDslValidationErrorTestCases } from "../transformer/_testcases";
+import { loadDSLSyntaxErrorTestCases, loadDSLValidationErrorTestCases } from "../transformer/_testcases";
 import { DSLSyntaxError, DSLSyntaxSingleError, ModelValidationError, ModelValidationSingleError } from "../errors";
-import validateDsl from "./validate-dsl";
+import { validateDSL } from "./validate-dsl";
 
-describe("validateDsl", () => {
-  const syntacticTests = loadDslSyntaxErrorTestCases();
+describe("validateDSL", () => {
+  const syntacticTests = loadDSLSyntaxErrorTestCases();
   [syntacticTests[2]].forEach((testCase) => {
     const errorsCount = testCase.expected_errors?.length || 0;
 
@@ -11,13 +11,13 @@ describe("validateDsl", () => {
 
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
       if (!errorsCount) {
-        expect(() => validateDsl(testCase.dsl)).not.toThrow();
+        expect(() => validateDSL(testCase.dsl)).not.toThrow();
         return;
       }
 
-      expect(() => validateDsl(testCase.dsl)).toThrowError(DSLSyntaxError);
+      expect(() => validateDSL(testCase.dsl)).toThrowError(DSLSyntaxError);
       try {
-        validateDsl(testCase.dsl);
+        validateDSL(testCase.dsl);
       } catch (thrownError) {
         const exception = thrownError as DSLSyntaxError;
         if (errorsCount) {
@@ -37,20 +37,20 @@ describe("validateDsl", () => {
     });
   });
 
-  const semanticTests = loadDslValidationErrorTestCases();
+  const semanticTests = loadDSLValidationErrorTestCases();
   semanticTests.forEach((testCase) => {
     const errorsCount = testCase.expected_errors?.length || 0;
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`case ${testCase.name} should throw ${errorsCount} errors on validation`, () => {
       if (!errorsCount) {
-        expect(() => validateDsl(testCase.dsl)).not.toThrow();
+        expect(() => validateDSL(testCase.dsl)).not.toThrow();
         return;
       }
 
-      expect(() => validateDsl(testCase.dsl)).toThrowError(ModelValidationError);
+      expect(() => validateDSL(testCase.dsl)).toThrowError(ModelValidationError);
       try {
-        validateDsl(testCase.dsl);
+        validateDSL(testCase.dsl);
       } catch (thrownError) {
         const exception = thrownError as ModelValidationError;
         if (errorsCount) {

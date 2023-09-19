@@ -76,10 +76,10 @@ type folder
     define viewer: [user]`
 
 // Transform from DSL to a JSON string
-jsonStringModel, err := transformer.TransformDslToJSON(dslString)
+jsonStringModel, err := transformer.TransformDSLToJSON(dslString)
 
 // Transform from a JSON string to DSL
-dslString, err := transformer.TransformJSONStringToDSL(jsonStringModel)
+dslString, err = transformer.TransformJSONStringToDSL(jsonStringModel)
 ```
 
 #### Node
@@ -94,7 +94,7 @@ type folder
     define viewer: [user]`;
 
 // Transform from DSL to a JSON string
-const jsonStringModel = transformer.transformDslToJSON(dslString)
+const jsonStringModel = transformer.transformDSLToJSON(dslString)
 
 // Transform from a JSON string to DSL
 dslString = transformer.transformJSONStringToDSL(jsonString)

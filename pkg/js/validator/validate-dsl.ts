@@ -1,6 +1,6 @@
-import { parseDSL } from "../transformer/dsltojson";
 import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
-import { Keyword, ReservedKeywords } from "./Keywords";
+import { Keyword, ReservedKeywords } from "./keywords";
+import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { exceptionCollector } from "../util/exceptions";
 
@@ -152,7 +152,7 @@ function allowableTypes(typeName: Record<string, TypeDefinition>, type: string, 
   return [allowedTypes, isValid];
 }
 
-// helper function to parse thru a child relation to see if there are unique entry points.
+// helper function to parse through a child relation to see if there are unique entry points.
 // Entry point describes ways that tuples can be assigned to the relation
 // For example,
 // type user
@@ -555,7 +555,7 @@ function relationDefined(
   }
 }
 
-function mode11Validation(
+function mode1Validation(
   lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
@@ -681,8 +681,14 @@ function populateRelations(
   });
 }
 
-export function validateJson(dsl: string, parserResults: AuthorizationModel, options: ValidationOptions = {}): void {
-  const lines = dsl.split("\n");
+/**
+ * validateJSON - Given a JSON string, validates that it is a valid OpenFGA model
+ * @param {string} jsonString
+ * @param {AuthorizationModel} parserResults
+ * @param {ValidationOptions} options
+ */
+export function validateJSON(jsonString: string, parserResults: AuthorizationModel, options: ValidationOptions = {}): void {
+  const lines = jsonString.split("\n");
   const errors: ModelValidationSingleError[] = [];
   const collector = exceptionCollector(errors, lines);
   const typeValidation = options.typeValidation || defaultTypeRule;
@@ -727,7 +733,7 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
 
   switch (schemaVersion) {
     case "1.1":
-      mode11Validation(lines, collector, errors, parserResults);
+      mode1Validation(lines, collector, errors, parserResults);
       break;
     default: {
       const lineIndex = getSchemaLineNumber(schemaVersion, lines);
@@ -742,17 +748,17 @@ export function validateJson(dsl: string, parserResults: AuthorizationModel, opt
 }
 
 /**
- * validateDSL - Validates model authored in FGA DSL syntax, throwing all found errors
+ * validateDSL - Given a string, validates that it is in valid FGA DSL syntax
  * @param {string} dsl
- * @param options
- * @returns {DSLSyntaxError}
+ * @param {ValidationOptions} options
+ * @throws {DSLSyntaxError}
  */
-export default function validateDsl(dsl: string, options: ValidationOptions = {}): void {
+export function validateDSL(dsl: string, options: ValidationOptions = {}): void {
   const { listener, errorListener } = parseDSL(dsl);
 
   if (errorListener.errors.length) {
     throw new DSLSyntaxError(errorListener.errors);
   }
 
-  validateJson(dsl, listener.authorizationModel as AuthorizationModel, options);
+  validateJSON(dsl, listener.authorizationModel as AuthorizationModel, options);
 }

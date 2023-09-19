@@ -296,11 +296,11 @@ export function parseDSL(data: string): {
 }
 
 /**
- * transformDslToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
+ * transformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
  * @param {string} data
  * @returns {AuthorizationModel}
  */
-export default function transformDslToJSON(data: string): AuthorizationModel {
+export function transformDSLToJSON(data: string): AuthorizationModel {
   const { listener, errorListener } = parseDSL(data);
 
   if (errorListener.errors.length) {

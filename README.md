@@ -33,20 +33,72 @@ OpenFGA is designed to make it easy for application builders to model their perm
 - [Google's Zanzibar Paper (2019)](https://research.google/pubs/pub48190/)
 
 ## About This Repo
-This repo contains everything needed to interact with the OpenFGA Authorization Models, in multiple languages (currently, Go and JS are supported).
+This repo contains everything needed to interact with the OpenFGA Authorization Models schema versions 1.1+, in multiple languages (currently, Go and JS are supported).
 
-It is planned to include:
-- [ ] ANTLR Grammar for the DSL (in progress)
-- [x] Transformer from the DSL to JSON and from JSON to DSL
-- [ ] Validation functions that allow ensuring the model is valid
-- [ ] Graphing Utility functions that allow visualizing the model
-- [ ] Model complexity calculator to understand how complex the model is
+| Feature    | Implemented in ANTLR        |
+|------------|-----------------------------|
+| Basic DSL  | ✅  |
+| Nesting    | ❌ (planned)                 |
+| Conditions | ❌ (planned)                 |
+
+| Feature                                               | Go          | JS          |
+|-------------------------------------------------------|-------------|-------------|
+| Transformer from the DSL to JSON and from JSON to DSL | ✅           | ✅           |
+| Syntactic Model Validations                           | ✅           | ✅           |
+| Semantic Model Validations                            | ❌ (planned) | ✅           |
+| Graphing & Utility Methods                            | ❌ (planned) | ❌ (planned) |
+
 
 ## Installation
-TBD
+### Go
+```bash
+go get github.com/openfga/language/pkg/go
+```
+
+### Node
+```bash
+npm install @openfga/syntax-transformer@v0.2.0-language
+```
 
 ## Usage
-TBD
+
+### Transformer
+
+#### Go
+```go
+import "github.com/openfga/language/pkg/go/transformer"
+
+dslString := `model
+  schema 1.1
+type user
+type folder
+  relations
+    define viewer: [user]`
+
+// Transform from DSL to a JSON string
+jsonStringModel, err := transformer.TransformDSLToJSON(dslString)
+
+// Transform from a JSON string to DSL
+dslString, err = transformer.TransformJSONStringToDSL(jsonStringModel)
+```
+
+#### Node
+```typescript
+import { transformer } from "@openfga/syntax-transformer"
+
+let dslString = `model
+  schema 1.1
+type user
+type folder
+  relations
+    define viewer: [user]`;
+
+// Transform from DSL to a JSON string
+const jsonStringModel = transformer.transformDSLToJSON(dslString)
+
+// Transform from a JSON string to DSL
+dslString = transformer.transformJSONStringToDSL(jsonString)
+```
 
 ## Contributing
 

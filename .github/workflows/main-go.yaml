@@ -2,6 +2,11 @@ name: Build and Test (Go)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   merge_group:
     paths:
       - 'pkg/go/**'

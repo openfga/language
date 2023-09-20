@@ -687,7 +687,11 @@ function populateRelations(
  * @param {AuthorizationModel} parserResults
  * @param {ValidationOptions} options
  */
-export function validateJSON(jsonString: string, parserResults: AuthorizationModel, options: ValidationOptions = {}): void {
+export function validateJSON(
+  jsonString: string,
+  parserResults: AuthorizationModel,
+  options: ValidationOptions = {},
+): void {
   const lines = jsonString.split("\n");
   const errors: ModelValidationSingleError[] = [];
   const collector = exceptionCollector(errors, lines);

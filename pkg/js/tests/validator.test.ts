@@ -1,6 +1,6 @@
-import { loadDSLSyntaxErrorTestCases, loadDSLValidationErrorTestCases } from "../transformer/_testcases";
+import { loadDSLSyntaxErrorTestCases, loadDSLValidationErrorTestCases } from "./_testcases";
 import { DSLSyntaxError, DSLSyntaxSingleError, ModelValidationError, ModelValidationSingleError } from "../errors";
-import { validateDSL } from "./validate-dsl";
+import { validateDSL } from "../validator";
 
 describe("validateDSL", () => {
   const syntacticTests = loadDSLSyntaxErrorTestCases();

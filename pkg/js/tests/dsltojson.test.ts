@@ -1,5 +1,5 @@
 import { loadDSLSyntaxErrorTestCases, loadValidTransformerTestCases } from "./_testcases";
-import { transformDSLToJSON } from "./dsltojson";
+import { transformDSLToJSON } from "../transformer";
 
 describe("dslToJSON", () => {
   const validTestCases = loadValidTransformerTestCases();

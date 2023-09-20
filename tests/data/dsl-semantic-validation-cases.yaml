@@ -100,7 +100,7 @@
     model
       schema 1.1
     type user
-  
+
     type
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       relations
@@ -1055,4 +1055,35 @@
         end: 38
       metadata:
         symbol: "viewer from parent"
+        errorType: duplicated-error
+- name: duplicate in type name
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type organization
+      relations
+        define member: [user]
+    type group
+      relations
+        define member: [user]
+    type account
+      relations
+        define org: [organization]
+        define can_view: member from org
+        define viewer: member from org
+    type account
+      relations
+        define group: [group]
+        define viewer: member from group
+  expected_errors:
+    - msg: "the type `account` is a duplicate."
+      line:
+        start: 10
+        end: 10
+      column:
+        start: 6
+        end: 13
+      metadata:
+        symbol: "account"
         errorType: duplicated-error

@@ -196,16 +196,17 @@
       relations
         define viewer: [user]
         define viewer: [user]
+    type member
   expected_errors:
     - msg: "'viewer' is already defined in 'document'"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 0
-        end: 5
+        start: 11
+        end: 17
       metadata:
-        symbol: "<EOF>"
+        symbol: "viewer"
 - name: mixture of 1.0 and 1.1 should yield error
   dsl: |
     model

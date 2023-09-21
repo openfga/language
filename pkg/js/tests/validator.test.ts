@@ -4,7 +4,8 @@ import { validateDSL } from "../validator";
 
 describe("validateDSL", () => {
   const syntacticTests = loadDSLSyntaxErrorTestCases();
-  [syntacticTests[2]].forEach((testCase) => {
+
+  syntacticTests.forEach((testCase) => {
     const errorsCount = testCase.expected_errors?.length || 0;
 
     const testFn = testCase.skip ? it.skip : it;

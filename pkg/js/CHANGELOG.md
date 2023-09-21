@@ -1,8 +1,17 @@
 # Changelog
 
-## v0.2.0-language
+## v0.2.0-beta.2
 
-### [0.2.0-language](https://github.com/openfga/language/releases/tag/v0.2.0-language) (2023-09-19)
+### [v0.2.0-beta.2](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.1...v0.2.0-beta.2) (2023-09-21)
+
+Fixes:
+- Fixed improper offset on the duplicate relations error (https://github.com/openfga/language/pull/70)
+- Fixed other errors triggering before duplicate type (https://github.com/openfga/language/pull/67)
+- Add README to the published SDK (https://github.com/openfga/language/pull/65)
+
+## v0.2.0-beta.1
+
+### [v0.2.0-beta.1](https://github.com/openfga/language/releases/tag/v0.2.0-language) (2023-09-19)
 
 Changed:
 [BREAKING]

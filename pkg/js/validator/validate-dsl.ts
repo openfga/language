@@ -585,23 +585,7 @@ function mode1Validation(
     }
   });
 
-  // next, ensure all relation have entry point
-  // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
-  if (errors.length === 0) {
-    parserResults.type_definitions?.forEach((typeDef) => {
-      const typeName = typeDef.type;
-      // parse through each of the relations to do validation
-      for (const relationName in typeDef.relations) {
-        if (!hasEntryPoint(typeMap, {}, typeName, relationName)) {
-          const typeIndex = getTypeLineNumber(typeName, lines);
-          const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-          collector.raiseNoEntryPoint(lineIndex, relationName, typeName);
-        }
-      }
-    });
-  }
-
-  // Finally check for duplicates
+  // Check for duplicates
   if (errors.length === 0) {
     const typeSet = new Set();
     parserResults.type_definitions?.forEach((typeDef) => {
@@ -627,6 +611,22 @@ function mode1Validation(
     parserResults.type_definitions?.forEach((typeDef) => {
       for (const relationDefKey in typeDef.relations) {
         checkForDuplicatesInRelation(lines, collector, typeDef, relationDefKey);
+      }
+    });
+  }
+
+  // next, ensure all relation have entry point
+  // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
+  if (errors.length === 0) {
+    parserResults.type_definitions?.forEach((typeDef) => {
+      const typeName = typeDef.type;
+      // parse through each of the relations to do validation
+      for (const relationName in typeDef.relations) {
+        if (!hasEntryPoint(typeMap, {}, typeName, relationName)) {
+          const typeIndex = getTypeLineNumber(typeName, lines);
+          const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
+          collector.raiseNoEntryPoint(lineIndex, relationName, typeName);
+        }
       }
     });
   }

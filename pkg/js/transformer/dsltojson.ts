@@ -140,8 +140,8 @@ class OpenFgaDslListener extends OpenFGAListener {
       if (this.currentTypeDef!.relations![relationName]) {
         ctx.parser?.notifyErrorListeners(
           `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
-          ctx.parser?.getCurrentToken(),
-          undefined,
+          ctx.relationName().start,
+          undefined
         );
       }
 

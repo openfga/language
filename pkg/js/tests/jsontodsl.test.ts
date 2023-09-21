@@ -1,5 +1,5 @@
 import { loadValidTransformerTestCases, loadInvalidJSONSyntaxTestCases } from "./_testcases";
-import { transformJSONStringToDSL } from "./jsontodsl";
+import { transformJSONStringToDSL } from "../transformer";
 
 describe("jsonToDSL", () => {
   const testCases = loadValidTransformerTestCases();

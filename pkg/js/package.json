@@ -1,6 +1,6 @@
 {
   "name": "@openfga/syntax-transformer",
-  "version": "0.2.0-language",
+  "version": "0.2.0-beta.1",
   "description": "",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
@@ -11,7 +11,8 @@
     "build": "npm run build:ts",
     "build:npx": "tsc --build tsconfig.json",
     "clean": "rm -r dist/",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build && cp ../../README.md . && cp ../../LICENSE .",
+    "postpublish": "rm -f README.md LICENSE",
     "test": "jest --config ./jest.config.js",
     "typecheck": "tsc  --skipLibCheck",
     "lint": "eslint -c .eslintrc.js --ext .ts",

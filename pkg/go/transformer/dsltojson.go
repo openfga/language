@@ -126,7 +126,10 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 
 	if relationDef != nil {
 		if l.currentTypeDef.Relations[relationName] != nil {
-			ctx.GetParser().NotifyErrorListeners(fmt.Sprintf("'%s' is already defined in '%s'", relationName, l.currentTypeDef.Type), ctx.GetParser().GetCurrentToken(), nil)
+			ctx.GetParser().NotifyErrorListeners(
+				fmt.Sprintf("'%s' is already defined in '%s'", relationName, l.currentTypeDef.Type),
+				ctx.RelationName().GetStart(),
+				nil)
 		}
 
 		l.currentTypeDef.Relations[relationName] = relationDef

@@ -8,6 +8,7 @@ require (
 	github.com/openfga/api/proto v0.0.0-20230829001212-d0942ea5a226
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.31.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -27,5 +28,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/grpc v1.58.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

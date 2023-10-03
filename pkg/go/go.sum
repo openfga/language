@@ -21,8 +21,8 @@ github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/openfga/api/proto v0.0.0-20230929191201-dba5895fbc4c h1:2BdpkoTpVMug9nxCie1MN+sHiv/O8+YyYmX9Mcs51Ko=
-github.com/openfga/api/proto v0.0.0-20230929191201-dba5895fbc4c/go.mod h1:/edBiulCLBxFw+Q1wfWyURo/grVjueLo6JWFPHHFTos=
+github.com/openfga/api/proto v0.0.0-20231013151311-0fc80192d14c h1:kJBvLd6z/863RG+u0xiUJb/Rm7T99gvcQnYLgsM+wN4=
+github.com/openfga/api/proto v0.0.0-20231013151311-0fc80192d14c/go.mod h1:/edBiulCLBxFw+Q1wfWyURo/grVjueLo6JWFPHHFTos=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=

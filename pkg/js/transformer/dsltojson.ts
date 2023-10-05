@@ -47,8 +47,8 @@ interface Relation {
 }
 
 interface ConditionParameterDefinition {
-  typeName: string;
-  genericTypes?: ConditionParameterDefinition[];
+  type_name: string;
+  generic_types?: ConditionParameterDefinition[];
 }
 
 interface Condition {
@@ -168,7 +168,7 @@ class OpenFgaDslListener extends OpenFGAListener {
         ctx.parser?.notifyErrorListeners(
           `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
           ctx.relationName().start,
-          undefined
+          undefined,
         );
       }
 
@@ -290,7 +290,7 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   exitConditionParameter = (ctx: ConditionParameterContext) => {
     this.currentCondition!.parameters[ctx.parameterName().getText()] = {
-      typeName: `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}`,
+      type_name: `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}`,
     };
   };
 

@@ -100,4 +100,4 @@ build-antlr-container:
 
 .PHONY: antlr-gen-base
 antlr-gen-base: build-antlr-container
-	${ANTLR_CMD} -Dlanguage=${language} -o pkg/${packageName}/gen /app/OpenFGALexer.g4 /app/OpenFGAParser.g4
+	${ANTLR_CMD} -Dlanguage=${language} -visitor -o pkg/${packageName}/gen /app/OpenFGALexer.g4 /app/OpenFGAParser.g4

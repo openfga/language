@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`generateSymbols Visits tree and autocomplete text 1`] = `
+Set {
+  "relations",
+}
+`;
+
+exports[`generateSymbols Visits tree and generates all symbols 1`] = `
+{
+  "literals": Set {
+    "model",
+    "schema",
+    "type",
+    "relations",
+    "define",
+  },
+  "operators": Set {
+    "and",
+    "or",
+    "but not",
+    "from",
+  },
+  "restrictions": Set {
+    "user",
+    "user:*",
+    "team",
+    "team:*",
+    "team#member",
+    "repo",
+    "repo:*",
+    "repo#admin",
+    "repo#maintainer",
+    "repo#owner",
+    "repo#reader",
+    "repo#triager",
+    "repo#writer",
+    "organization",
+    "organization:*",
+    "organization#member",
+    "organization#owner",
+    "organization#repo_admin",
+    "organization#repo_reader",
+    "organization#repo_writer",
+  },
+  "typeNames": {
+    "organization": Set {
+      "member",
+      "owner",
+      "repo_admin",
+      "repo_reader",
+      "repo_writer",
+    },
+    "repo": Set {
+      "admin",
+      "maintainer",
+      "owner",
+      "reader",
+      "triager",
+      "writer",
+    },
+    "team": Set {
+      "member",
+    },
+    "user": Set {},
+  },
+}
+`;

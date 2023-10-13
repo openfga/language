@@ -10,15 +10,29 @@ MODEL: 'model';
 SCHEMA: 'schema';
 SCHEMA_VERSION: '1.1';
 TYPE: 'type';
+CONDITION: 'condition';
+
 RELATIONS: 'relations';
 DEFINE: 'define';
+WTH: 'with';
 
 HASH: '#';
 COLON: ':';
 WILDCARD: '*';
 L_SQUARE: '[';
 R_SQUARE: ']';
+L_PARANTHESES: '(';
+R_PARANTHESES: ')';
+L_BRACES: '{';
+R_BRACES: '}';
 COMMA: ',';
+CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
+  'double' | 'duration' | 'timestamp' | 'map' | 'list' | 'ipaddress';
+CONDITION_SYMBOL:
+ '==' | '!=' | 'in' | '<' | '<=' | '>=' | '>' | '&&' | '||'
+ | L_SQUARE | R_SQUARE | L_BRACES | L_PARANTHESES | R_PARANTHESES | '.' | COMMA | '-' | '!' | '?' | COLON | '+' | WILDCARD | '/' | '%' | 'true' | 'false' | 'null' | '"';
+
+
 
 AND: 'and';
 OR: 'or';

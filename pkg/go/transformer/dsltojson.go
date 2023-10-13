@@ -34,10 +34,15 @@ type OpenFgaDslListener struct {
 	authorizationModel pb.AuthorizationModel
 	currentTypeDef     *pb.TypeDefinition
 	currentRelation    *relation
+	currentCondition   *pb.Condition
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
 	return new(OpenFgaDslListener)
+}
+
+func (l *OpenFgaDslListener) EnterMain(ctx *parser.MainContext) {
+	l.authorizationModel.Conditions = map[string]*pb.Condition{}
 }
 
 func (l *OpenFgaDslListener) ExitSchemaVersion(ctx *parser.SchemaVersionContext) {
@@ -55,6 +60,43 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 		Metadata: &pb.Metadata{
 			Relations: map[string]*pb.RelationMetadata{},
 		},
+	}
+}
+
+func (l *OpenFgaDslListener) EnterConditions(ctx *parser.ConditionsContext) {
+	l.authorizationModel.Conditions = map[string]*pb.Condition{}
+}
+
+func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
+	if ctx.ConditionName() == nil {
+		return
+	}
+
+	l.currentCondition = &pb.Condition{
+		Name:       ctx.ConditionName().GetText(),
+		Expression: "",
+		Parameters: map[string]*pb.ConditionParamTypeRef{},
+	}
+}
+
+func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParameterContext) {
+	typeNameString := ctx.ParameterType().GetText()
+	typeName := new(pb.ConditionParamTypeRef_TypeName)
+	*typeName = pb.ConditionParamTypeRef_TypeName(pb.ConditionParamTypeRef_TypeName_value[fmt.Sprintf("TYPE_NAME_%s", strings.ToUpper(typeNameString))])
+	l.currentCondition.Parameters[ctx.ParameterName().GetText()] = &pb.ConditionParamTypeRef{
+		TypeName: *typeName,
+	}
+}
+
+func (l *OpenFgaDslListener) ExitConditionExpression(ctx *parser.ConditionExpressionContext) {
+	l.currentCondition.Expression = ctx.GetText()
+}
+
+func (l *OpenFgaDslListener) ExitCondition(ctx *parser.ConditionContext) {
+	if l.currentCondition != nil {
+		l.authorizationModel.Conditions[l.currentCondition.Name] = l.currentCondition
+
+		l.currentCondition = nil
 	}
 }
 
@@ -155,6 +197,16 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 	_type := ctx.RelationDefTypeRestrictionType()
 	usersetRestriction := ctx.RelationDefTypeRestrictionUserset()
 	wildcardRestriction := ctx.RelationDefTypeRestrictionWildcard()
+	conditionalRestriction := ctx.RelationDefTypeRestrictionWithCondition()
+
+	if conditionalRestriction != nil {
+		_type = conditionalRestriction.RelationDefTypeRestrictionType()
+		usersetRestriction = conditionalRestriction.RelationDefTypeRestrictionUserset()
+		wildcardRestriction = conditionalRestriction.RelationDefTypeRestrictionWildcard()
+		if conditionalRestriction.ConditionName() != nil {
+			relationRef.Condition = conditionalRestriction.ConditionName().GetText()
+		}
+	}
 
 	if _type != nil {
 		relationRef.Type = _type.GetText()

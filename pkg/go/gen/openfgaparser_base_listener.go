@@ -70,36 +70,28 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefPartials(ctx *RelationDefPar
 func (s *BaseOpenFGAParserListener) ExitRelationDefPartials(ctx *RelationDefPartialsContext) {}
 
 // EnterRelationDefPartialAllOr is called when production relationDefPartialAllOr is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllOr(ctx *RelationDefPartialAllOrContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllOr(ctx *RelationDefPartialAllOrContext) {}
 
 // ExitRelationDefPartialAllOr is called when production relationDefPartialAllOr is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllOr(ctx *RelationDefPartialAllOrContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllOr(ctx *RelationDefPartialAllOrContext) {}
 
 // EnterRelationDefPartialAllAnd is called when production relationDefPartialAllAnd is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllAnd(ctx *RelationDefPartialAllAndContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllAnd(ctx *RelationDefPartialAllAndContext) {}
 
 // ExitRelationDefPartialAllAnd is called when production relationDefPartialAllAnd is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllAnd(ctx *RelationDefPartialAllAndContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllAnd(ctx *RelationDefPartialAllAndContext) {}
 
 // EnterRelationDefPartialAllButNot is called when production relationDefPartialAllButNot is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {}
 
 // ExitRelationDefPartialAllButNot is called when production relationDefPartialAllButNot is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefPartialAllButNot(ctx *RelationDefPartialAllButNotContext) {}
 
 // EnterRelationDefDirectAssignment is called when production relationDefDirectAssignment is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {}
 
 // ExitRelationDefDirectAssignment is called when production relationDefDirectAssignment is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {}
 
 // EnterRelationDefRewrite is called when production relationDefRewrite is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefRewrite(ctx *RelationDefRewriteContext) {}
@@ -108,20 +100,16 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefRewrite(ctx *RelationDefRewr
 func (s *BaseOpenFGAParserListener) ExitRelationDefRewrite(ctx *RelationDefRewriteContext) {}
 
 // EnterRelationDefRelationOnSameObject is called when production relationDefRelationOnSameObject is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {}
 
 // ExitRelationDefRelationOnSameObject is called when production relationDefRelationOnSameObject is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefRelationOnSameObject(ctx *RelationDefRelationOnSameObjectContext) {}
 
 // EnterRelationDefRelationOnRelatedObject is called when production relationDefRelationOnRelatedObject is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {}
 
 // ExitRelationDefRelationOnRelatedObject is called when production relationDefRelationOnRelatedObject is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefRelationOnRelatedObject(ctx *RelationDefRelationOnRelatedObjectContext) {}
 
 // EnterRelationDefOperator is called when production relationDefOperator is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefOperator(ctx *RelationDefOperatorContext) {}
@@ -142,12 +130,10 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefOperatorOr(ctx *RelationDefO
 func (s *BaseOpenFGAParserListener) ExitRelationDefOperatorOr(ctx *RelationDefOperatorOrContext) {}
 
 // EnterRelationDefOperatorButNot is called when production relationDefOperatorButNot is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefOperatorButNot(ctx *RelationDefOperatorButNotContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefOperatorButNot(ctx *RelationDefOperatorButNotContext) {}
 
 // ExitRelationDefOperatorButNot is called when production relationDefOperatorButNot is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefOperatorButNot(ctx *RelationDefOperatorButNotContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefOperatorButNot(ctx *RelationDefOperatorButNotContext) {}
 
 // EnterRelationDefKeywordFrom is called when production relationDefKeywordFrom is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefKeywordFrom(ctx *RelationDefKeywordFromContext) {}
@@ -156,44 +142,40 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefKeywordFrom(ctx *RelationDef
 func (s *BaseOpenFGAParserListener) ExitRelationDefKeywordFrom(ctx *RelationDefKeywordFromContext) {}
 
 // EnterRelationDefTypeRestriction is called when production relationDefTypeRestriction is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {}
 
 // ExitRelationDefTypeRestriction is called when production relationDefTypeRestriction is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestriction(ctx *RelationDefTypeRestrictionContext) {}
+
+// EnterRelationDefTypeRestrictionWithCondition is called when production relationDefTypeRestrictionWithCondition is entered.
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionWithCondition(ctx *RelationDefTypeRestrictionWithConditionContext) {}
+
+// ExitRelationDefTypeRestrictionWithCondition is called when production relationDefTypeRestrictionWithCondition is exited.
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionWithCondition(ctx *RelationDefTypeRestrictionWithConditionContext) {}
 
 // EnterRelationDefTypeRestrictionType is called when production relationDefTypeRestrictionType is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {}
 
 // ExitRelationDefTypeRestrictionType is called when production relationDefTypeRestrictionType is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionType(ctx *RelationDefTypeRestrictionTypeContext) {}
 
 // EnterRelationDefTypeRestrictionRelation is called when production relationDefTypeRestrictionRelation is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {}
 
 // ExitRelationDefTypeRestrictionRelation is called when production relationDefTypeRestrictionRelation is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionRelation(ctx *RelationDefTypeRestrictionRelationContext) {}
 
 // EnterRelationDefTypeRestrictionWildcard is called when production relationDefTypeRestrictionWildcard is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {}
 
 // ExitRelationDefTypeRestrictionWildcard is called when production relationDefTypeRestrictionWildcard is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionWildcard(ctx *RelationDefTypeRestrictionWildcardContext) {}
 
 // EnterRelationDefTypeRestrictionUserset is called when production relationDefTypeRestrictionUserset is entered.
-func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {}
 
 // ExitRelationDefTypeRestrictionUserset is called when production relationDefTypeRestrictionUserset is exited.
-func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRelationDefTypeRestrictionUserset(ctx *RelationDefTypeRestrictionUsersetContext) {}
 
 // EnterRelationDefGrouping is called when production relationDefGrouping is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefGrouping(ctx *RelationDefGroupingContext) {}
@@ -202,20 +184,16 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefGrouping(ctx *RelationDefGro
 func (s *BaseOpenFGAParserListener) ExitRelationDefGrouping(ctx *RelationDefGroupingContext) {}
 
 // EnterRewriteComputedusersetName is called when production rewriteComputedusersetName is entered.
-func (s *BaseOpenFGAParserListener) EnterRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {}
 
 // ExitRewriteComputedusersetName is called when production rewriteComputedusersetName is exited.
-func (s *BaseOpenFGAParserListener) ExitRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRewriteComputedusersetName(ctx *RewriteComputedusersetNameContext) {}
 
 // EnterRewriteTuplesetComputedusersetName is called when production rewriteTuplesetComputedusersetName is entered.
-func (s *BaseOpenFGAParserListener) EnterRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAParserListener) EnterRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {}
 
 // ExitRewriteTuplesetComputedusersetName is called when production rewriteTuplesetComputedusersetName is exited.
-func (s *BaseOpenFGAParserListener) ExitRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {
-}
+func (s *BaseOpenFGAParserListener) ExitRewriteTuplesetComputedusersetName(ctx *RewriteTuplesetComputedusersetNameContext) {}
 
 // EnterRewriteTuplesetName is called when production rewriteTuplesetName is entered.
 func (s *BaseOpenFGAParserListener) EnterRewriteTuplesetName(ctx *RewriteTuplesetNameContext) {}
@@ -234,6 +212,48 @@ func (s *BaseOpenFGAParserListener) EnterTypeName(ctx *TypeNameContext) {}
 
 // ExitTypeName is called when production typeName is exited.
 func (s *BaseOpenFGAParserListener) ExitTypeName(ctx *TypeNameContext) {}
+
+// EnterConditions is called when production conditions is entered.
+func (s *BaseOpenFGAParserListener) EnterConditions(ctx *ConditionsContext) {}
+
+// ExitConditions is called when production conditions is exited.
+func (s *BaseOpenFGAParserListener) ExitConditions(ctx *ConditionsContext) {}
+
+// EnterCondition is called when production condition is entered.
+func (s *BaseOpenFGAParserListener) EnterCondition(ctx *ConditionContext) {}
+
+// ExitCondition is called when production condition is exited.
+func (s *BaseOpenFGAParserListener) ExitCondition(ctx *ConditionContext) {}
+
+// EnterConditionParameter is called when production conditionParameter is entered.
+func (s *BaseOpenFGAParserListener) EnterConditionParameter(ctx *ConditionParameterContext) {}
+
+// ExitConditionParameter is called when production conditionParameter is exited.
+func (s *BaseOpenFGAParserListener) ExitConditionParameter(ctx *ConditionParameterContext) {}
+
+// EnterParameterName is called when production parameterName is entered.
+func (s *BaseOpenFGAParserListener) EnterParameterName(ctx *ParameterNameContext) {}
+
+// ExitParameterName is called when production parameterName is exited.
+func (s *BaseOpenFGAParserListener) ExitParameterName(ctx *ParameterNameContext) {}
+
+// EnterConditionName is called when production conditionName is entered.
+func (s *BaseOpenFGAParserListener) EnterConditionName(ctx *ConditionNameContext) {}
+
+// ExitConditionName is called when production conditionName is exited.
+func (s *BaseOpenFGAParserListener) ExitConditionName(ctx *ConditionNameContext) {}
+
+// EnterParameterType is called when production parameterType is entered.
+func (s *BaseOpenFGAParserListener) EnterParameterType(ctx *ParameterTypeContext) {}
+
+// ExitParameterType is called when production parameterType is exited.
+func (s *BaseOpenFGAParserListener) ExitParameterType(ctx *ParameterTypeContext) {}
+
+// EnterConditionExpression is called when production conditionExpression is entered.
+func (s *BaseOpenFGAParserListener) EnterConditionExpression(ctx *ConditionExpressionContext) {}
+
+// ExitConditionExpression is called when production conditionExpression is exited.
+func (s *BaseOpenFGAParserListener) ExitConditionExpression(ctx *ConditionExpressionContext) {}
 
 // EnterComment is called when production comment is entered.
 func (s *BaseOpenFGAParserListener) EnterComment(ctx *CommentContext) {}

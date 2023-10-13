@@ -4,6 +4,7 @@ package parser // OpenFGAParser
 
 import "github.com/antlr4-go/antlr/v4"
 
+
 // OpenFGAParserListener is a complete listener for a parse tree produced by OpenFGAParser.
 type OpenFGAParserListener interface {
 	antlr.ParseTreeListener
@@ -71,6 +72,9 @@ type OpenFGAParserListener interface {
 	// EnterRelationDefTypeRestriction is called when entering the relationDefTypeRestriction production.
 	EnterRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
+	// EnterRelationDefTypeRestrictionWithCondition is called when entering the relationDefTypeRestrictionWithCondition production.
+	EnterRelationDefTypeRestrictionWithCondition(c *RelationDefTypeRestrictionWithConditionContext)
+
 	// EnterRelationDefTypeRestrictionType is called when entering the relationDefTypeRestrictionType production.
 	EnterRelationDefTypeRestrictionType(c *RelationDefTypeRestrictionTypeContext)
 
@@ -100,6 +104,27 @@ type OpenFGAParserListener interface {
 
 	// EnterTypeName is called when entering the typeName production.
 	EnterTypeName(c *TypeNameContext)
+
+	// EnterConditions is called when entering the conditions production.
+	EnterConditions(c *ConditionsContext)
+
+	// EnterCondition is called when entering the condition production.
+	EnterCondition(c *ConditionContext)
+
+	// EnterConditionParameter is called when entering the conditionParameter production.
+	EnterConditionParameter(c *ConditionParameterContext)
+
+	// EnterParameterName is called when entering the parameterName production.
+	EnterParameterName(c *ParameterNameContext)
+
+	// EnterConditionName is called when entering the conditionName production.
+	EnterConditionName(c *ConditionNameContext)
+
+	// EnterParameterType is called when entering the parameterType production.
+	EnterParameterType(c *ParameterTypeContext)
+
+	// EnterConditionExpression is called when entering the conditionExpression production.
+	EnterConditionExpression(c *ConditionExpressionContext)
 
 	// EnterComment is called when entering the comment production.
 	EnterComment(c *CommentContext)
@@ -182,6 +207,9 @@ type OpenFGAParserListener interface {
 	// ExitRelationDefTypeRestriction is called when exiting the relationDefTypeRestriction production.
 	ExitRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
+	// ExitRelationDefTypeRestrictionWithCondition is called when exiting the relationDefTypeRestrictionWithCondition production.
+	ExitRelationDefTypeRestrictionWithCondition(c *RelationDefTypeRestrictionWithConditionContext)
+
 	// ExitRelationDefTypeRestrictionType is called when exiting the relationDefTypeRestrictionType production.
 	ExitRelationDefTypeRestrictionType(c *RelationDefTypeRestrictionTypeContext)
 
@@ -211,6 +239,27 @@ type OpenFGAParserListener interface {
 
 	// ExitTypeName is called when exiting the typeName production.
 	ExitTypeName(c *TypeNameContext)
+
+	// ExitConditions is called when exiting the conditions production.
+	ExitConditions(c *ConditionsContext)
+
+	// ExitCondition is called when exiting the condition production.
+	ExitCondition(c *ConditionContext)
+
+	// ExitConditionParameter is called when exiting the conditionParameter production.
+	ExitConditionParameter(c *ConditionParameterContext)
+
+	// ExitParameterName is called when exiting the parameterName production.
+	ExitParameterName(c *ParameterNameContext)
+
+	// ExitConditionName is called when exiting the conditionName production.
+	ExitConditionName(c *ConditionNameContext)
+
+	// ExitParameterType is called when exiting the parameterType production.
+	ExitParameterType(c *ParameterTypeContext)
+
+	// ExitConditionExpression is called when exiting the conditionExpression production.
+	ExitConditionExpression(c *ConditionExpressionContext)
 
 	// ExitComment is called when exiting the comment production.
 	ExitComment(c *CommentContext)

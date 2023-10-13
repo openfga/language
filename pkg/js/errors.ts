@@ -151,7 +151,21 @@ export class ConfigurationError extends Error {
 }
 
 export class UnsupportedDSLNestingError extends Error {
-  constructor(public typeName: string, public relationName: string) {
-    super(`the '${relationName}' relation under the '${typeName}' type has mixed operators which are not supported by the OpenFGA DSL syntax yet`);
+  constructor(
+    public typeName: string,
+    public relationName: string,
+  ) {
+    super(
+      `the '${relationName}' relation under the '${typeName}' type has mixed operators which are not supported by the OpenFGA DSL syntax yet`,
+    );
+  }
+}
+
+export class ConditionNameDoesntMatchError extends Error {
+  constructor(
+    public conditionName: string,
+    public conditionNestedName: string,
+  ) {
+    super(`the '${conditionName}' condition has a different nested condition name ('${conditionNestedName}')`);
   }
 }

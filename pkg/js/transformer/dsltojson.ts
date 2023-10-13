@@ -57,7 +57,7 @@ interface Condition {
   parameters: Record<string, ConditionParameterDefinition>;
 }
 
-type RelationReference = OriginalRelationReference & { condition: string };
+type RelationReference = OriginalRelationReference & { condition?: string };
 type AuthorizationModel = OriginalAuthorizationModel & { conditions?: Record<string, Condition> };
 
 /**

@@ -14,6 +14,7 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 	typeName := restriction.GetType()
 	relation := restriction.GetRelation()
 	wildcard := restriction.GetWildcard()
+	condition := restriction.GetCondition()
 
 	if wildcard != nil {
 		return fmt.Sprintf("%v:*", typeName)
@@ -21,6 +22,10 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 
 	if relation != "" {
 		return fmt.Sprintf("%v#%v", typeName, relation)
+	}
+
+	if condition != "" {
+		return fmt.Sprintf("%v with %v", typeName, condition)
 	}
 
 	return fmt.Sprintf("%v", typeName)
@@ -186,6 +191,78 @@ func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
 	return parsedTypeString, nil
 }
 
+func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) (string, error) {
+	parametersStringArray := []string{}
+
+	parameterNames := []string{}
+	for parameterType := range parameterMap {
+		parameterNames = append(parameterNames, parameterType)
+	}
+
+	// We are doing this in two loops (and sorting in between)
+	// to make sure we have a deterministic behaviour that matches the API
+	sort.Strings(parameterNames)
+
+	for _, parameterName := range parameterNames {
+		parameterType := parameterMap[parameterName]
+		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.TypeName.String(), "TYPE_NAME_", ""))
+		if parameterTypeString == "list" {
+			parameterTypeString = fmt.Sprintf("%s[]", parameterType.GetGenericTypes()[0])
+			//} else if parameterTypeString == "map" {
+			// // TODO: Support Map
+		}
+
+		parametersStringArray = append(parametersStringArray, fmt.Sprintf("%s: %s", parameterName, parameterTypeString))
+	}
+
+	return strings.Join(parametersStringArray, ", "), nil
+}
+
+func parseCondition(conditionName string, conditionDef *pb.Condition) (string, error) {
+	if conditionName != conditionDef.GetName() {
+		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
+	}
+
+	paramsString, err := parseConditionParams(conditionDef.GetParameters())
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("condition %s(%s) {%s}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
+}
+
+func parseConditions(model *pb.AuthorizationModel) (string, error) {
+	conditionsMap := model.GetConditions()
+	if len(conditionsMap) == 0 {
+		return "", nil
+	}
+
+	parsedConditionsString := ""
+
+	conditionNames := []string{}
+	for conditionName := range conditionsMap {
+		conditionNames = append(conditionNames, conditionName)
+	}
+
+	// We are doing this in two loops (and sorting in between)
+	// to make sure we have a deterministic behaviour that matches the API
+	sort.Strings(conditionNames)
+
+	for index := 0; index < len(conditionNames); index++ {
+		conditionName := conditionNames[index]
+		condition := conditionsMap[conditionName]
+
+		parsedConditionString, err := parseCondition(conditionName, condition)
+		if err != nil {
+			return "", err
+		}
+
+		parsedConditionsString += fmt.Sprintf("\n%v", parsedConditionString)
+	}
+
+	return parsedConditionsString, nil
+}
+
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL
 func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 	schemaVersion := model.SchemaVersion
@@ -209,9 +286,14 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 		typeDefsString += "\n"
 	}
 
+	parsedConditionsString, err := parseConditions(model)
+	if err != nil {
+		return "", err
+	}
+
 	return fmt.Sprintf(`model
   schema %v
-%v`, schemaVersion, typeDefsString), nil
+%v%v`, schemaVersion, typeDefsString, parsedConditionsString), nil
 }
 
 // LoadJSONStringToProto - Converts models authored in OpenFGA JSON syntax to the protobuf representation

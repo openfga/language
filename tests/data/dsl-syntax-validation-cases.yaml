@@ -80,13 +80,6 @@
     model
       schema1.1
   expected_errors:
-    - msg: "token recognition error at: '.'"
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 9
-        end: 9
     - msg: "mismatched input 'schema1' expecting 'schema'"
       line:
         start: 2
@@ -115,13 +108,6 @@
     model
       schema a.b
   expected_errors:
-    - msg: "token recognition error at: '.'"
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 10
-        end: 10
     - msg: "mismatched input 'a' expecting '1.1'"
       line:
         start: 2
@@ -285,13 +271,6 @@
       relations
         define member: [user]
   expected_errors:
-    - msg: "token recognition error at: '.'" # LexerError
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 10
-        end: 10
     - msg: "mismatched input '0' expecting '1.1'"
       line:
         start: 2
@@ -875,7 +854,7 @@
         end: 10
       metadata:
         symbol: "user"
-    - msg: "mismatched input '<EOF>' expecting 'type'"
+    - msg: "mismatched input '<EOF>' expecting 'condition'"
       line:
         start: 5
         end: 5

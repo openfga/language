@@ -188,10 +188,9 @@ const parseConditionParams = (parameterMap: Record<string, ConditionParameterDef
     .forEach((parameterName) => {
       const parameterType = parameterMap[parameterName];
       let parameterTypeString = parameterType.type_name.replace("TYPE_NAME_", "").toLowerCase();
-      if (parameterTypeString === "list") {
-        parameterTypeString = `${parameterType.generic_types?.[0]}[]}`;
-        // } else if (parameterType === "map") {
-        // 	// TODO: Support Map
+      if (parameterTypeString === "list" || parameterTypeString === "map") {
+        const genericTypeString = parameterType.generic_types?.[0].type_name.replace("TYPE_NAME_", "").toLowerCase();
+        parameterTypeString = `${parameterTypeString}<${genericTypeString}>`;
       }
       parametersStringArray.push(`${parameterName}: ${parameterTypeString}`);
     });

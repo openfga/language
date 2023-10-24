@@ -58,7 +58,7 @@ condition: (newline multiLineComment)? newline
 conditionParameter: parameterName spacing? COLON spacing? parameterType;
 parameterName: name;
 conditionName: name;
-parameterType: CONDITION_PARAM_TYPE;
+parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER L_ANGLE_BRACKET CONDITION_PARAM_TYPE R_ANGLE_BRACKET);
 conditionExpression: (CONDITION_SYMBOL|~(R_BRACES))*;
 
 // Base

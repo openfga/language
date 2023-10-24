@@ -206,10 +206,9 @@ func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) (st
 	for _, parameterName := range parameterNames {
 		parameterType := parameterMap[parameterName]
 		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.TypeName.String(), "TYPE_NAME_", ""))
-		if parameterTypeString == "list" {
-			parameterTypeString = fmt.Sprintf("%s[]", parameterType.GetGenericTypes()[0])
-			//} else if parameterTypeString == "map" {
-			// // TODO: Support Map
+		if parameterTypeString == "list" || parameterTypeString == "map" {
+			genericTypeString := strings.ToLower(strings.ReplaceAll(parameterType.GetGenericTypes()[0].TypeName.String(), "TYPE_NAME_", ""))
+			parameterTypeString = fmt.Sprintf("%s<%s>", parameterTypeString, genericTypeString)
 		}
 
 		parametersStringArray = append(parametersStringArray, fmt.Sprintf("%s: %s", parameterName, parameterTypeString))

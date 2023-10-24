@@ -25,11 +25,14 @@ L_PARANTHESES: '(';
 R_PARANTHESES: ')';
 L_BRACES: '{';
 R_BRACES: '}';
+L_ANGLE_BRACKET: '<';
+R_ANGLE_BRACKET: '>';
 COMMA: ',';
+CONDITION_PARAM_CONTAINER: 'map' | 'list';
 CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
-  'double' | 'duration' | 'timestamp' | 'map' | 'list' | 'ipaddress';
+  'double' | 'duration' | 'timestamp' | 'ipaddress';
 CONDITION_SYMBOL:
- '==' | '!=' | 'in' | '<' | '<=' | '>=' | '>' | '&&' | '||'
+ '==' | '!=' | 'in' | L_ANGLE_BRACKET | '<=' | '>=' | R_ANGLE_BRACKET | '&&' | '||'
  | L_SQUARE | R_SQUARE | L_BRACES | L_PARANTHESES | R_PARANTHESES | '.' | COMMA | '-' | '!' | '?' | COLON | '+' | WILDCARD | '/' | '%' | 'true' | 'false' | 'null' | '"';
 
 

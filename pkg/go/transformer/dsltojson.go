@@ -80,12 +80,30 @@ func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
 }
 
 func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParameterContext) {
+	paramContainer := ctx.ParameterType().CONDITION_PARAM_CONTAINER()
 	typeNameString := ctx.ParameterType().GetText()
+	var genericName *pb.ConditionParamTypeRef_TypeName
+	if paramContainer != nil {
+		typeNameString = paramContainer.GetText()
+		genericString := ctx.ParameterType().CONDITION_PARAM_TYPE().GetText()
+		genericName = new(pb.ConditionParamTypeRef_TypeName)
+		*genericName = pb.ConditionParamTypeRef_TypeName(pb.ConditionParamTypeRef_TypeName_value[fmt.Sprintf("TYPE_NAME_%s", strings.ToUpper(genericString))])
+	}
+
 	typeName := new(pb.ConditionParamTypeRef_TypeName)
 	*typeName = pb.ConditionParamTypeRef_TypeName(pb.ConditionParamTypeRef_TypeName_value[fmt.Sprintf("TYPE_NAME_%s", strings.ToUpper(typeNameString))])
-	l.currentCondition.Parameters[ctx.ParameterName().GetText()] = &pb.ConditionParamTypeRef{
-		TypeName: *typeName,
+	conditionParamTypeRef := &pb.ConditionParamTypeRef{
+		TypeName:     *typeName,
+		GenericTypes: []*pb.ConditionParamTypeRef{},
 	}
+
+	if genericName != nil {
+		conditionParamTypeRef.GenericTypes = append(conditionParamTypeRef.GenericTypes, &pb.ConditionParamTypeRef{
+			TypeName: *genericName,
+		})
+	}
+
+	l.currentCondition.Parameters[ctx.ParameterName().GetText()] = conditionParamTypeRef
 }
 
 func (l *OpenFgaDslListener) ExitConditionExpression(ctx *parser.ConditionExpressionContext) {

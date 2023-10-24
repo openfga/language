@@ -28,6 +28,10 @@
               {
                 "condition": "version_count_less_than_100",
                 "type": "user"
+              },
+              {
+                "condition": "doc_viewer_condition",
+                "type": "user"
               }
             ]
           }
@@ -72,6 +76,20 @@
           "parameters": {
             "version_count": {
               "type_name": "TYPE_NAME_INT"
+            }
+          }
+      },
+      "doc_viewer_condition": {
+          "name": "doc_viewer_condition",
+          "expression": "\n  document_attributes[\"state\"] in allowed_states\n",
+          "parameters": {
+            "tags": {
+              "type_name": "TYPE_NAME_MAP",
+              "generic_types": [{"type_name": "TYPE_NAME_STRING"}]
+            },
+            "allowed_states": {
+              "type_name": "TYPE_NAME_LIST",
+              "generic_types": [{"type_name": "TYPE_NAME_STRING"}]
             }
           }
       }

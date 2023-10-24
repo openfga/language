@@ -289,9 +289,19 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   exitConditionParameter = (ctx: ConditionParameterContext) => {
-    this.currentCondition!.parameters[ctx.parameterName().getText()] = {
-      type_name: `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}`,
-    };
+    const paramContainer = ctx.parameterType().CONDITION_PARAM_CONTAINER();
+    const conditionParamTypeRef: Partial<ConditionParameterDefinition> = {};
+    if (paramContainer) {
+      conditionParamTypeRef.type_name = `TYPE_NAME_${paramContainer.getText().toUpperCase()}`;
+      conditionParamTypeRef.generic_types = [
+        { type_name: `TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` },
+      ];
+    } else {
+      conditionParamTypeRef.type_name = `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}`;
+    }
+
+    this.currentCondition!.parameters[ctx.parameterName().getText()] =
+      conditionParamTypeRef as ConditionParameterDefinition;
   };
 
   exitConditionExpression = (ctx: ConditionExpressionContext) => {

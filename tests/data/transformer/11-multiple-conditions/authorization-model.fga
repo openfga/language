@@ -5,7 +5,11 @@ type user
 
 type document
   relations
-    define viewer: [user with non_expired_grant_and_valid_ip, user with name_starts_with_a, user with version_count_less_than_100]
+    define viewer: [user with non_expired_grant_and_valid_ip, user with name_starts_with_a, user with version_count_less_than_100, user with doc_viewer_condition]
+
+condition doc_viewer_condition(allowed_states: list<string>, tags: map<string>) {
+  document_attributes["state"] in allowed_states
+}
 
 condition name_starts_with_a(document_name: string) {
   document_name == "hello"

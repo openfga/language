@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/openfga/api/proto v0.0.0-20231013151311-0fc80192d14c
+	github.com/openfga/api/proto v0.0.0-20231013152440-fb9e0a84ee12
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1

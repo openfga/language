@@ -193,7 +193,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
 
   const paramsString = parseConditionParams(conditionDef.parameters || {});
 
-  return `condition ${conditionName}(${paramsString}) {${conditionDef.expression}}\n`;
+  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
 };
 
 const parseConditions = (model: AuthorizationModel): string => {

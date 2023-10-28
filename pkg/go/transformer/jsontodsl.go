@@ -227,7 +227,7 @@ func parseCondition(conditionName string, conditionDef *pb.Condition) (string, e
 		return "", err
 	}
 
-	return fmt.Sprintf("condition %s(%s) {%s}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
+	return fmt.Sprintf("condition %s(%s) {\n  %s\n}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
 }
 
 func parseConditions(model *pb.AuthorizationModel) (string, error) {

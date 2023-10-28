@@ -30,7 +30,6 @@
       "relations": {
         "can_create_file": {
           "computedUserset": {
-            "object": "",
             "relation": "owner"
           }
         },
@@ -48,18 +47,15 @@
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "owner"
                 }
               },
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "parent"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "viewer"
                   }
                 }
@@ -110,7 +106,6 @@
       "relations": {
         "can_change_owner": {
           "computedUserset": {
-            "object": "",
             "relation": "owner"
           }
         },
@@ -119,24 +114,20 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "viewer"
                 }
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "owner"
                 }
               },
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "parent"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "viewer"
                   }
                 }
@@ -149,18 +140,15 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "owner"
                 }
               },
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "parent"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "owner"
                   }
                 }
@@ -173,18 +161,15 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "owner"
                 }
               },
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "parent"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "owner"
                   }
                 }

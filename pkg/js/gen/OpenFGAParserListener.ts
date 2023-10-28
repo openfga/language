@@ -1,53 +1,29 @@
-// Generated from /app/OpenFGAParser.g4 by ANTLR 4.13.0
+// Generated from /app/OpenFGAParser.g4 by ANTLR 4.13.1
 
 import {ParseTreeListener} from "antlr4";
 
 
 import { MainContext } from "./OpenFGAParser";
-import { IndentationContext } from "./OpenFGAParser";
 import { ModelHeaderContext } from "./OpenFGAParser";
 import { TypeDefsContext } from "./OpenFGAParser";
 import { TypeDefContext } from "./OpenFGAParser";
 import { RelationDeclarationContext } from "./OpenFGAParser";
+import { RelationNameContext } from "./OpenFGAParser";
 import { RelationDefContext } from "./OpenFGAParser";
 import { RelationDefPartialsContext } from "./OpenFGAParser";
-import { RelationDefPartialAllOrContext } from "./OpenFGAParser";
-import { RelationDefPartialAllAndContext } from "./OpenFGAParser";
-import { RelationDefPartialAllButNotContext } from "./OpenFGAParser";
+import { RelationDefGroupingContext } from "./OpenFGAParser";
 import { RelationDefDirectAssignmentContext } from "./OpenFGAParser";
 import { RelationDefRewriteContext } from "./OpenFGAParser";
-import { RelationDefRelationOnSameObjectContext } from "./OpenFGAParser";
-import { RelationDefRelationOnRelatedObjectContext } from "./OpenFGAParser";
-import { RelationDefOperatorContext } from "./OpenFGAParser";
-import { RelationDefOperatorAndContext } from "./OpenFGAParser";
-import { RelationDefOperatorOrContext } from "./OpenFGAParser";
-import { RelationDefOperatorButNotContext } from "./OpenFGAParser";
-import { RelationDefKeywordFromContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionContext } from "./OpenFGAParser";
-import { RelationDefTypeRestrictionWithConditionContext } from "./OpenFGAParser";
-import { RelationDefTypeRestrictionTypeContext } from "./OpenFGAParser";
-import { RelationDefTypeRestrictionRelationContext } from "./OpenFGAParser";
-import { RelationDefTypeRestrictionWildcardContext } from "./OpenFGAParser";
-import { RelationDefTypeRestrictionUsersetContext } from "./OpenFGAParser";
-import { RelationDefGroupingContext } from "./OpenFGAParser";
-import { RewriteComputedusersetNameContext } from "./OpenFGAParser";
-import { RewriteTuplesetComputedusersetNameContext } from "./OpenFGAParser";
-import { RewriteTuplesetNameContext } from "./OpenFGAParser";
-import { RelationNameContext } from "./OpenFGAParser";
-import { TypeNameContext } from "./OpenFGAParser";
+import { RelationDefTypeRestrictionBaseContext } from "./OpenFGAParser";
 import { ConditionsContext } from "./OpenFGAParser";
 import { ConditionContext } from "./OpenFGAParser";
+import { ConditionNameContext } from "./OpenFGAParser";
 import { ConditionParameterContext } from "./OpenFGAParser";
 import { ParameterNameContext } from "./OpenFGAParser";
-import { ConditionNameContext } from "./OpenFGAParser";
 import { ParameterTypeContext } from "./OpenFGAParser";
-import { ConditionExpressionContext } from "./OpenFGAParser";
-import { CommentContext } from "./OpenFGAParser";
 import { MultiLineCommentContext } from "./OpenFGAParser";
-import { SpacingContext } from "./OpenFGAParser";
-import { NewlineContext } from "./OpenFGAParser";
-import { SchemaVersionContext } from "./OpenFGAParser";
-import { NameContext } from "./OpenFGAParser";
+import { ConditionExpressionContext } from "./OpenFGAParser";
 
 
 /**
@@ -65,16 +41,6 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitMain?: (ctx: MainContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.indentation`.
-	 * @param ctx the parse tree
-	 */
-	enterIndentation?: (ctx: IndentationContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.indentation`.
-	 * @param ctx the parse tree
-	 */
-	exitIndentation?: (ctx: IndentationContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.modelHeader`.
 	 * @param ctx the parse tree
@@ -116,6 +82,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitRelationDeclaration?: (ctx: RelationDeclarationContext) => void;
 	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationName`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationName?: (ctx: RelationNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationName`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationName?: (ctx: RelationNameContext) => void;
+	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDef`.
 	 * @param ctx the parse tree
 	 */
@@ -136,35 +112,15 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitRelationDefPartials?: (ctx: RelationDefPartialsContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefPartialAllOr`.
+	 * Enter a parse tree produced by `OpenFGAParser.relationDefGrouping`.
 	 * @param ctx the parse tree
 	 */
-	enterRelationDefPartialAllOr?: (ctx: RelationDefPartialAllOrContext) => void;
+	enterRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
 	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefPartialAllOr`.
+	 * Exit a parse tree produced by `OpenFGAParser.relationDefGrouping`.
 	 * @param ctx the parse tree
 	 */
-	exitRelationDefPartialAllOr?: (ctx: RelationDefPartialAllOrContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefPartialAllAnd`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefPartialAllAnd?: (ctx: RelationDefPartialAllAndContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefPartialAllAnd`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefPartialAllAnd?: (ctx: RelationDefPartialAllAndContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefPartialAllButNot`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefPartialAllButNot?: (ctx: RelationDefPartialAllButNotContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefPartialAllButNot`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefPartialAllButNot?: (ctx: RelationDefPartialAllButNotContext) => void;
+	exitRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDefDirectAssignment`.
 	 * @param ctx the parse tree
@@ -186,76 +142,6 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitRelationDefRewrite?: (ctx: RelationDefRewriteContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefRelationOnSameObject`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefRelationOnSameObject?: (ctx: RelationDefRelationOnSameObjectContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefRelationOnSameObject`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefRelationOnSameObject?: (ctx: RelationDefRelationOnSameObjectContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefRelationOnRelatedObject`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefRelationOnRelatedObject?: (ctx: RelationDefRelationOnRelatedObjectContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefRelationOnRelatedObject`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefRelationOnRelatedObject?: (ctx: RelationDefRelationOnRelatedObjectContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperator`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperator?: (ctx: RelationDefOperatorContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperator`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperator?: (ctx: RelationDefOperatorContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorAnd`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorAnd?: (ctx: RelationDefOperatorAndContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorAnd`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorAnd?: (ctx: RelationDefOperatorAndContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorOr`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorOr?: (ctx: RelationDefOperatorOrContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorOr`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorOr?: (ctx: RelationDefOperatorOrContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefOperatorButNot`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefOperatorButNot?: (ctx: RelationDefOperatorButNotContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefOperatorButNot`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefOperatorButNot?: (ctx: RelationDefOperatorButNotContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefKeywordFrom`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefKeywordFrom?: (ctx: RelationDefKeywordFromContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefKeywordFrom`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefKeywordFrom?: (ctx: RelationDefKeywordFromContext) => void;
-	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestriction`.
 	 * @param ctx the parse tree
 	 */
@@ -266,115 +152,15 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitRelationDefTypeRestriction?: (ctx: RelationDefTypeRestrictionContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionWithCondition`.
+	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionBase`.
 	 * @param ctx the parse tree
 	 */
-	enterRelationDefTypeRestrictionWithCondition?: (ctx: RelationDefTypeRestrictionWithConditionContext) => void;
+	enterRelationDefTypeRestrictionBase?: (ctx: RelationDefTypeRestrictionBaseContext) => void;
 	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionWithCondition`.
+	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionBase`.
 	 * @param ctx the parse tree
 	 */
-	exitRelationDefTypeRestrictionWithCondition?: (ctx: RelationDefTypeRestrictionWithConditionContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionType`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefTypeRestrictionType?: (ctx: RelationDefTypeRestrictionTypeContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionType`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefTypeRestrictionType?: (ctx: RelationDefTypeRestrictionTypeContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionRelation`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefTypeRestrictionRelation?: (ctx: RelationDefTypeRestrictionRelationContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionRelation`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefTypeRestrictionRelation?: (ctx: RelationDefTypeRestrictionRelationContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionWildcard`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefTypeRestrictionWildcard?: (ctx: RelationDefTypeRestrictionWildcardContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionWildcard`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefTypeRestrictionWildcard?: (ctx: RelationDefTypeRestrictionWildcardContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionUserset`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefTypeRestrictionUserset?: (ctx: RelationDefTypeRestrictionUsersetContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefTypeRestrictionUserset`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefTypeRestrictionUserset?: (ctx: RelationDefTypeRestrictionUsersetContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationDefGrouping`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationDefGrouping`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.rewriteComputedusersetName`.
-	 * @param ctx the parse tree
-	 */
-	enterRewriteComputedusersetName?: (ctx: RewriteComputedusersetNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.rewriteComputedusersetName`.
-	 * @param ctx the parse tree
-	 */
-	exitRewriteComputedusersetName?: (ctx: RewriteComputedusersetNameContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.rewriteTuplesetComputedusersetName`.
-	 * @param ctx the parse tree
-	 */
-	enterRewriteTuplesetComputedusersetName?: (ctx: RewriteTuplesetComputedusersetNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.rewriteTuplesetComputedusersetName`.
-	 * @param ctx the parse tree
-	 */
-	exitRewriteTuplesetComputedusersetName?: (ctx: RewriteTuplesetComputedusersetNameContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.rewriteTuplesetName`.
-	 * @param ctx the parse tree
-	 */
-	enterRewriteTuplesetName?: (ctx: RewriteTuplesetNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.rewriteTuplesetName`.
-	 * @param ctx the parse tree
-	 */
-	exitRewriteTuplesetName?: (ctx: RewriteTuplesetNameContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.relationName`.
-	 * @param ctx the parse tree
-	 */
-	enterRelationName?: (ctx: RelationNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.relationName`.
-	 * @param ctx the parse tree
-	 */
-	exitRelationName?: (ctx: RelationNameContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.typeName`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeName?: (ctx: TypeNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.typeName`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeName?: (ctx: TypeNameContext) => void;
+	exitRelationDefTypeRestrictionBase?: (ctx: RelationDefTypeRestrictionBaseContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.conditions`.
 	 * @param ctx the parse tree
@@ -396,6 +182,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitCondition?: (ctx: ConditionContext) => void;
 	/**
+	 * Enter a parse tree produced by `OpenFGAParser.conditionName`.
+	 * @param ctx the parse tree
+	 */
+	enterConditionName?: (ctx: ConditionNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.conditionName`.
+	 * @param ctx the parse tree
+	 */
+	exitConditionName?: (ctx: ConditionNameContext) => void;
+	/**
 	 * Enter a parse tree produced by `OpenFGAParser.conditionParameter`.
 	 * @param ctx the parse tree
 	 */
@@ -416,16 +212,6 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitParameterName?: (ctx: ParameterNameContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.conditionName`.
-	 * @param ctx the parse tree
-	 */
-	enterConditionName?: (ctx: ConditionNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.conditionName`.
-	 * @param ctx the parse tree
-	 */
-	exitConditionName?: (ctx: ConditionNameContext) => void;
-	/**
 	 * Enter a parse tree produced by `OpenFGAParser.parameterType`.
 	 * @param ctx the parse tree
 	 */
@@ -435,26 +221,6 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitParameterType?: (ctx: ParameterTypeContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.conditionExpression`.
-	 * @param ctx the parse tree
-	 */
-	enterConditionExpression?: (ctx: ConditionExpressionContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.conditionExpression`.
-	 * @param ctx the parse tree
-	 */
-	exitConditionExpression?: (ctx: ConditionExpressionContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.comment`.
-	 * @param ctx the parse tree
-	 */
-	enterComment?: (ctx: CommentContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.comment`.
-	 * @param ctx the parse tree
-	 */
-	exitComment?: (ctx: CommentContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.multiLineComment`.
 	 * @param ctx the parse tree
@@ -466,44 +232,14 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitMultiLineComment?: (ctx: MultiLineCommentContext) => void;
 	/**
-	 * Enter a parse tree produced by `OpenFGAParser.spacing`.
+	 * Enter a parse tree produced by `OpenFGAParser.conditionExpression`.
 	 * @param ctx the parse tree
 	 */
-	enterSpacing?: (ctx: SpacingContext) => void;
+	enterConditionExpression?: (ctx: ConditionExpressionContext) => void;
 	/**
-	 * Exit a parse tree produced by `OpenFGAParser.spacing`.
+	 * Exit a parse tree produced by `OpenFGAParser.conditionExpression`.
 	 * @param ctx the parse tree
 	 */
-	exitSpacing?: (ctx: SpacingContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.newline`.
-	 * @param ctx the parse tree
-	 */
-	enterNewline?: (ctx: NewlineContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.newline`.
-	 * @param ctx the parse tree
-	 */
-	exitNewline?: (ctx: NewlineContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.schemaVersion`.
-	 * @param ctx the parse tree
-	 */
-	enterSchemaVersion?: (ctx: SchemaVersionContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.schemaVersion`.
-	 * @param ctx the parse tree
-	 */
-	exitSchemaVersion?: (ctx: SchemaVersionContext) => void;
-	/**
-	 * Enter a parse tree produced by `OpenFGAParser.name`.
-	 * @param ctx the parse tree
-	 */
-	enterName?: (ctx: NameContext) => void;
-	/**
-	 * Exit a parse tree produced by `OpenFGAParser.name`.
-	 * @param ctx the parse tree
-	 */
-	exitName?: (ctx: NameContext) => void;
+	exitConditionExpression?: (ctx: ConditionExpressionContext) => void;
 }
 

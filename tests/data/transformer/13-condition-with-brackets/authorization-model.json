@@ -29,11 +29,11 @@
   ],
   "conditions": {
     "conditionX": {
-      "expression":"x<100",
+      "expression":"x==\"{}\"",
       "name":"conditionX",
       "parameters": {
         "x": {
-          "type_name":"TYPE_NAME_INT"
+          "type_name":"TYPE_NAME_STRING"
         }
       }
     }

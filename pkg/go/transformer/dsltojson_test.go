@@ -21,11 +21,8 @@ func TestDSLToJSONTransformerForValidCases(t *testing.T) {
 				t.Skip()
 			}
 
-			model, err := transformer.TransformDSLToJSON(testCase.DSL)
+			jsonString, err := transformer.TransformDSLToJSON(testCase.DSL)
 
-			require.NoError(t, err)
-
-			bytes, err := protojson.Marshal(model)
 			require.NoError(t, err)
 
 			expectedAuthModel := &pb.AuthorizationModel{}
@@ -35,7 +32,7 @@ func TestDSLToJSONTransformerForValidCases(t *testing.T) {
 			jsonBytes, err := protojson.Marshal(expectedAuthModel)
 			require.NoError(t, err)
 
-			require.JSONEq(t, string(jsonBytes), string(bytes))
+			require.JSONEq(t, string(jsonBytes), jsonString)
 		})
 	}
 }

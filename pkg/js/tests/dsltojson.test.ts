@@ -1,5 +1,5 @@
 import { loadDSLSyntaxErrorTestCases, loadValidTransformerTestCases } from "./_testcases";
-import { transformDSLToJSON } from "../transformer";
+import { transformDSLToJSON, transformDSLToJSONObject } from "../transformer";
 
 describe("dslToJSON", () => {
   const validTestCases = loadValidTransformerTestCases();
@@ -8,7 +8,7 @@ describe("dslToJSON", () => {
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`should transform ${testCase.name} from DSL to JSON`, () => {
-      const jsonSyntax = transformDSLToJSON(testCase.dsl);
+      const jsonSyntax = transformDSLToJSONObject(testCase.dsl);
       expect(jsonSyntax).toEqual(JSON.parse(testCase.json));
     });
   });

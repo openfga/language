@@ -141,7 +141,7 @@ class OpenFgaDslListener extends OpenFGAListener {
         ctx.parser?.notifyErrorListeners(
           `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
           ctx.relationName().start,
-          undefined
+          undefined,
         );
       }
 
@@ -296,11 +296,11 @@ export function parseDSL(data: string): {
 }
 
 /**
- * transformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
+ * transformDSLToJSONObject - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
  * @param {string} data
  * @returns {AuthorizationModel}
  */
-export function transformDSLToJSON(data: string): AuthorizationModel {
+export function transformDSLToJSONObject(data: string): AuthorizationModel {
   const { listener, errorListener } = parseDSL(data);
 
   if (errorListener.errors.length) {
@@ -308,4 +308,13 @@ export function transformDSLToJSON(data: string): AuthorizationModel {
   }
 
   return listener.authorizationModel as AuthorizationModel;
+}
+
+/**
+ * transformDSLToJSONObject - Converts models authored in FGA DSL syntax to a stringified json representation
+ * @param {string} data
+ * @returns {string}
+ */
+export function transformDSLToJSON(data: string): string {
+  return JSON.stringify(transformDSLToJSONObject(data));
 }

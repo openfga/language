@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	pb "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/gen"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type RelationDefinitionOperator string
@@ -378,8 +379,8 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	return listener, errorListener
 }
 
-// TransformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
-func TransformDSLToJSON(data string) (*pb.AuthorizationModel, error) {
+// TransformDSLToProto - Converts models authored in FGA DSL syntax to the OpenFGA Authorization Model Protobuf format
+func TransformDSLToProto(data string) (*pb.AuthorizationModel, error) {
 	listener, errorListener := ParseDSL(data)
 
 	if errorListener.Errors != nil {
@@ -387,4 +388,40 @@ func TransformDSLToJSON(data string) (*pb.AuthorizationModel, error) {
 	}
 
 	return &listener.authorizationModel, nil
+}
+
+// MustTransformDSLToProto - Calls TransformDSLToProto - panics if the error fails
+func MustTransformDSLToProto(data string) *pb.AuthorizationModel {
+	model, err := TransformDSLToProto(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return model
+}
+
+// TransformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
+func TransformDSLToJSON(data string) (string, error) {
+	model, err := TransformDSLToProto(data)
+
+	if err != nil {
+		return "", err
+	}
+
+	bytes, err := protojson.Marshal(model)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal due to %w", err)
+	}
+
+	return string(bytes), nil
+}
+
+// MustTransformDSLToJSON - Calls TransformDSLToJSON - panics if the error fails
+func MustTransformDSLToJSON(data string) string {
+	jsonString, err := TransformDSLToJSON(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return jsonString
 }

@@ -2,7 +2,7 @@
 
 ANTLR Grammar for the OpenFGA DSL and parser from and to the OpenFGA JSON Syntax
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/openfga/language.svg)](https://pkg.go.dev/github.com/openfga/language)
+[![Go Reference](https://pkg.go.dev/badge/github.com/openfga/language.svg)](https://pkg.go.dev/github.com/openfga/language/pkg/go)
 [![Release](https://img.shields.io/github/v/release/openfga/language?sort=semver&color=green)](https://github.com/openfga/language/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenfga%2Flanguage.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenfga%2Flanguage?ref=badge_shield)

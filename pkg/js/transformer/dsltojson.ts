@@ -1,6 +1,7 @@
-import OpenFGAListener from "../gen/OpenFGAParserListener";
-import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
 import * as antlr from "antlr4";
+import { ErrorListener, RecognitionException, Recognizer } from "antlr4";
+import OpenFGAListener from "../gen/OpenFGAParserListener";
 import OpenFGALexer from "../gen/OpenFGALexer";
 import OpenFGAParser, {
   RelationDeclarationContext,
@@ -15,7 +16,6 @@ import OpenFGAParser, {
   TypeDefContext,
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
-import { ErrorListener, RecognitionException, Recognizer } from "antlr4";
 import { DSLSyntaxError, DSLSyntaxSingleError } from "../errors";
 
 enum RelationDefinitionOperator {
@@ -74,7 +74,7 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  exitTypeDef = (ctx: TypeDefContext) => {
+  exitTypeDef = (_ctx: TypeDefContext) => {
     if (!this.currentTypeDef?.type) {
       return;
     }
@@ -233,7 +233,7 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
   errors: DSLSyntaxSingleError[] = [];
 
   syntaxError(
-    recognizer: Recognizer<T>,
+    _recognizer: Recognizer<T>,
     offendingSymbol: T,
     line: number,
     column: number,

@@ -1,4 +1,4 @@
-import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
 import { UnsupportedDSLNestingError } from "../errors";
 
 function parseTypeRestriction(restriction: RelationReference): string {

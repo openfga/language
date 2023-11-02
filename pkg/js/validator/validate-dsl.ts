@@ -1,4 +1,4 @@
-import { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
 import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";

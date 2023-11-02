@@ -1,4 +1,4 @@
-import {
+import type {
   AuthorizationModel as OriginalAuthorizationModel,
   RelationMetadata,
   RelationReference as OriginalRelationReference,

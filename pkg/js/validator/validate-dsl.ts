@@ -1,8 +1,9 @@
-import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import type { RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
 import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { exceptionCollector } from "../util/exceptions";
+import type { AuthorizationModel, RelationReference } from "../util/interface-overrides";
 
 // eslint-disable-next-line no-useless-escape
 export const defaultTypeRule = "^[^:#@\\s]{1,254}$";
@@ -65,6 +66,10 @@ const getTypeRestrictionString = (typeRestriction: RelationReference): string =>
     typeRestrictionString += ":*";
   } else if (typeRestriction.relation) {
     typeRestrictionString += `#${typeRestriction.relation}`;
+  }
+
+  if ((typeRestriction as RelationReference).condition) {
+    typeRestrictionString += ` with ${(typeRestriction as RelationReference).condition}`;
   }
 
   return typeRestrictionString;
@@ -560,7 +565,7 @@ function mode1Validation(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   errors: ModelValidationSingleError[],
-  parserResults: AuthorizationModel,
+  authorizationModel: AuthorizationModel,
   //relationsPerType: Record<string, TransformedType>
 ) {
   if (errors.length) {
@@ -570,13 +575,13 @@ function mode1Validation(
   }
 
   const typeMap: Record<string, TypeDefinition> = {};
-  parserResults.type_definitions?.forEach((typeDef) => {
+  authorizationModel.type_definitions?.forEach((typeDef) => {
     const typeName = typeDef.type;
     typeMap[typeName] = typeDef;
   });
 
   // first, validate to ensure all the relation are defined
-  parserResults.type_definitions?.forEach((typeDef) => {
+  authorizationModel.type_definitions?.forEach((typeDef) => {
     const typeName = typeDef.type;
 
     // parse through each of the relations to do validation
@@ -588,7 +593,7 @@ function mode1Validation(
   // Check for duplicates
   if (errors.length === 0) {
     const typeSet = new Set();
-    parserResults.type_definitions?.forEach((typeDef) => {
+    authorizationModel.type_definitions?.forEach((typeDef) => {
       const typeName = typeDef.type;
       if (typeSet.has(typeName)) {
         const typeIndex = getTypeLineNumber(typeName, lines);
@@ -597,7 +602,7 @@ function mode1Validation(
       typeSet.add(typeDef.type);
     });
 
-    parserResults.type_definitions?.forEach((typeDef) => {
+    authorizationModel.type_definitions?.forEach((typeDef) => {
       for (const relationDefKey in typeDef.metadata?.relations) {
         checkForDuplicatesTypeNamesInRelation(
           lines,
@@ -608,7 +613,7 @@ function mode1Validation(
       }
     });
 
-    parserResults.type_definitions?.forEach((typeDef) => {
+    authorizationModel.type_definitions?.forEach((typeDef) => {
       for (const relationDefKey in typeDef.relations) {
         checkForDuplicatesInRelation(lines, collector, typeDef, relationDefKey);
       }
@@ -618,7 +623,7 @@ function mode1Validation(
   // next, ensure all relation have entry point
   // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
   if (errors.length === 0) {
-    parserResults.type_definitions?.forEach((typeDef) => {
+    authorizationModel.type_definitions?.forEach((typeDef) => {
       const typeName = typeDef.type;
       // parse through each of the relations to do validation
       for (const relationName in typeDef.relations) {
@@ -636,12 +641,12 @@ function populateRelations(
   lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
-  parserResults: AuthorizationModel,
+  authorizationModel: AuthorizationModel,
   typeRegex: ValidationRegex,
   relationRegex: ValidationRegex,
 ) {
   // Looking at the types
-  parserResults.type_definitions?.forEach((typeDef) => {
+  authorizationModel.type_definitions?.forEach((typeDef) => {
     const typeName = typeDef.type;
 
     if (typeName === Keyword.SELF || typeName === ReservedKeywords.THIS) {
@@ -684,12 +689,12 @@ function populateRelations(
 /**
  * validateJSON - Given a JSON string, validates that it is a valid OpenFGA model
  * @param {string} jsonString
- * @param {AuthorizationModel} parserResults
+ * @param {AuthorizationModel} authorizationModel
  * @param {ValidationOptions} options
  */
 export function validateJSON(
   jsonString: string,
-  parserResults: AuthorizationModel,
+  authorizationModel: AuthorizationModel,
   options: ValidationOptions = {},
 ): void {
   const lines = jsonString.split("\n");
@@ -727,9 +732,9 @@ export function validateJSON(
     throw new ConfigurationError(`Incorrect relation regex specification for ${relationValidation}`, e);
   }
 
-  populateRelations(lines, collector, parserResults, typeRegex, relationRegex);
+  populateRelations(lines, collector, authorizationModel, typeRegex, relationRegex);
 
-  const schemaVersion = parserResults.schema_version;
+  const schemaVersion = authorizationModel.schema_version;
 
   if (!schemaVersion) {
     collector.raiseSchemaVersionRequired(0, "");
@@ -737,7 +742,7 @@ export function validateJSON(
 
   switch (schemaVersion) {
     case "1.1":
-      mode1Validation(lines, collector, errors, parserResults);
+      mode1Validation(lines, collector, errors, authorizationModel);
       break;
     default: {
       const lineIndex = getSchemaLineNumber(schemaVersion, lines);

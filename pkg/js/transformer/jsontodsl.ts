@@ -1,25 +1,11 @@
-import type {
-  AuthorizationModel as OriginalAuthorizationModel,
-  RelationMetadata,
-  RelationReference as OriginalRelationReference,
-  TypeDefinition,
-  Userset,
-} from "@openfga/sdk";
+import type { RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
-
-interface ConditionParameterDefinition {
-  type_name: string;
-  generic_types?: ConditionParameterDefinition[];
-}
-
-interface Condition {
-  name: string;
-  expression: string;
-  parameters: Record<string, ConditionParameterDefinition>;
-}
-
-type RelationReference = OriginalRelationReference & { condition?: string };
-type AuthorizationModel = OriginalAuthorizationModel & { conditions?: Record<string, Condition> };
+import type {
+  AuthorizationModel,
+  Condition,
+  ConditionParameterDefinition,
+  RelationReference,
+} from "../util/interface-overrides";
 
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;

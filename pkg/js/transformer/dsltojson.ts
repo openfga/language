@@ -1,4 +1,12 @@
-import type { RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
+import type {
+  AuthorizationModel,
+  Condition,
+  ConditionParamTypeRef,
+  RelationMetadata,
+  RelationReference,
+  TypeDefinition,
+  Userset,
+} from "@openfga/sdk";
 import * as antlr from "antlr4";
 import { ErrorListener, RecognitionException, Recognizer } from "antlr4";
 import OpenFGAListener from "../gen/OpenFGAParserListener";
@@ -23,12 +31,7 @@ import OpenFGAParser, {
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
 import { DSLSyntaxError, DSLSyntaxSingleError } from "../errors";
-import type {
-  AuthorizationModel,
-  Condition,
-  ConditionParameterDefinition,
-  RelationReference,
-} from "../util/interface-overrides";
+import { TypeName } from "@openfga/sdk";
 
 enum RelationDefinitionOperator {
   RELATION_DEFINITION_OPERATOR_NONE = "",
@@ -276,18 +279,17 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   exitConditionParameter = (ctx: ConditionParameterContext) => {
     const paramContainer = ctx.parameterType().CONDITION_PARAM_CONTAINER();
-    const conditionParamTypeRef: Partial<ConditionParameterDefinition> = {};
+    const conditionParamTypeRef: Partial<ConditionParamTypeRef> = {};
     if (paramContainer) {
-      conditionParamTypeRef.type_name = `TYPE_NAME_${paramContainer.getText().toUpperCase()}`;
+      conditionParamTypeRef.type_name = `TYPE_NAME_${paramContainer.getText().toUpperCase()}` as TypeName;
       conditionParamTypeRef.generic_types = [
-        { type_name: `TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` },
+        { type_name: `TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` as TypeName },
       ];
     } else {
-      conditionParamTypeRef.type_name = `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}`;
+      conditionParamTypeRef.type_name = `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}` as TypeName;
     }
 
-    this.currentCondition!.parameters[ctx.parameterName().getText()] =
-      conditionParamTypeRef as ConditionParameterDefinition;
+    this.currentCondition!.parameters![ctx.parameterName().getText()] = conditionParamTypeRef as ConditionParamTypeRef;
   };
 
   exitConditionExpression = (ctx: ConditionExpressionContext) => {

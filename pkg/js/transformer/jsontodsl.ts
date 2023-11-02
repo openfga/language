@@ -1,11 +1,13 @@
-import type { RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
-import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 import type {
   AuthorizationModel,
   Condition,
-  ConditionParameterDefinition,
+  ConditionParamTypeRef,
+  RelationMetadata,
   RelationReference,
-} from "../util/interface-overrides";
+  TypeDefinition,
+  Userset,
+} from "@openfga/sdk";
+import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;
@@ -166,7 +168,7 @@ const parseType = (typeDef: TypeDefinition): string => {
   return parsedTypeString;
 };
 
-const parseConditionParams = (parameterMap: Record<string, ConditionParameterDefinition>): string => {
+const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef>): string => {
   const parametersStringArray: string[] = [];
 
   Object.keys(parameterMap)
@@ -189,7 +191,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
     throw new ConditionNameDoesntMatchError(conditionName, conditionDef.name);
   }
 
-  const paramsString = parseConditionParams(conditionDef.parameters);
+  const paramsString = parseConditionParams(conditionDef.parameters || {});
 
   return `condition ${conditionName}(${paramsString}) {${conditionDef.expression}}\n`;
 };

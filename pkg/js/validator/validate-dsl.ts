@@ -1,9 +1,8 @@
-import type { RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
+import type { AuthorizationModel, RelationReference, RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
 import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { exceptionCollector } from "../util/exceptions";
-import type { AuthorizationModel, RelationReference } from "../util/interface-overrides";
 
 // eslint-disable-next-line no-useless-escape
 export const defaultTypeRule = "^[^:#@\\s]{1,254}$";

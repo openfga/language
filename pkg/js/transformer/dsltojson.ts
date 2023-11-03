@@ -270,26 +270,51 @@ class OpenFgaDslListener extends OpenFGAListener {
       this.authorizationModel.conditions = {};
     }
 
+    const conditionName = ctx.conditionName().getText();
+    if (this.authorizationModel.conditions![conditionName]) {
+      ctx.parser?.notifyErrorListeners(
+        `'${conditionName}' is already defined in the model`,
+        ctx.conditionName().start,
+        undefined,
+      );
+    }
+
     this.currentCondition = {
-      name: ctx.conditionName().getText(),
+      name: conditionName,
       expression: "",
       parameters: {},
     };
   };
 
   exitConditionParameter = (ctx: ConditionParameterContext) => {
+    if (!ctx.parameterName() || !ctx.parameterType()) {
+      return;
+    }
+
+    const parameterName = ctx.parameterName().getText();
+    if (this.currentCondition?.parameters?.[parameterName]) {
+      ctx.parser?.notifyErrorListeners(
+        `parameter '${parameterName}' is already defined in the condition ${this.currentCondition?.name}`,
+        ctx.parameterName().start,
+        undefined,
+      );
+    }
+
     const paramContainer = ctx.parameterType().CONDITION_PARAM_CONTAINER();
     const conditionParamTypeRef: Partial<ConditionParamTypeRef> = {};
     if (paramContainer) {
       conditionParamTypeRef.type_name = `TYPE_NAME_${paramContainer.getText().toUpperCase()}` as TypeName;
-      conditionParamTypeRef.generic_types = [
-        { type_name: `TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` as TypeName },
-      ];
+      const genericTypeName =
+        ctx.parameterType().CONDITION_PARAM_TYPE() &&
+        (`TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` as TypeName);
+      if (genericTypeName) {
+        conditionParamTypeRef.generic_types = [{ type_name: genericTypeName }];
+      }
     } else {
       conditionParamTypeRef.type_name = `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}` as TypeName;
     }
 
-    this.currentCondition!.parameters![ctx.parameterName().getText()] = conditionParamTypeRef as ConditionParamTypeRef;
+    this.currentCondition!.parameters![parameterName] = conditionParamTypeRef as ConditionParamTypeRef;
   };
 
   exitConditionExpression = (ctx: ConditionExpressionContext) => {

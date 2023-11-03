@@ -19,6 +19,8 @@ export enum ValidationError {
   InvalidSchema = "invalid-schema",
   InvalidSyntax = "invalid-syntax",
   TypeRestrictionCannotHaveWildcardAndRelation = "type-wildcard-relation",
+  ConditionNotDefined = "condition-not-defined",
+  ConditionNotUsed = "condition-not-used",
 }
 
 export interface ErrorProperties {

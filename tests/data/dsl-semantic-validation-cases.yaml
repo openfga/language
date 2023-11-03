@@ -1087,3 +1087,108 @@
       metadata:
         symbol: "account"
         errorType: duplicated-error
+## Conditions
+- name: condition not defined
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with allowed_ip]
+  expected_errors:
+    - msg: "`allowed_ip` is not a defined condition in the model."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 31
+        end: 41
+      metadata:
+        symbol: "allowed_ip"
+        errorType: condition-not-defined
+- name: condition not defined x2
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [user with allowed_ip]
+        define viewer: [user with allowed_ipaddress]
+    condition allowed_ipaddress(current_ip: ipaddress) {
+      current_ip.in_cidr("192.168.0.0/24)
+    }
+  expected_errors:
+    - msg: "`allowed_ip` is not a defined condition in the model."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 31
+        end: 41
+      metadata:
+        symbol: "allowed_ip"
+        errorType: condition-not-defined
+- name: extraneous condition
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user]
+    condition allowed_ip(current_ip: ipaddress) {
+      current_ip.in_cidr("192.168.0.0/24)
+    }
+  expected_errors:
+    - msg: "`allowed_ip` condition is not used in the model."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 21
+      metadata:
+        symbol: "allowed_ip"
+        errorType: condition-not-used
+
+#- name: invalid cel expression
+#  dsl: |
+#    model
+#      schema 1.1
+#    type user
+#    type document
+#      relations
+#        define viewer: [user]
+#    condition allowed_ip(current_ip: ipaddress) {
+#      current_ip("192.168.0.0/24)
+#    }
+#  expected_errors:
+#    - msg: some error
+#- name: params used in cel not present in the declaration
+#  dsl: |
+#    model
+#      schema 1.1
+#    type user
+#    type document
+#      relations
+#        define viewer: [user]
+#    condition allowed_ip(current_ip: ipaddress) {
+#      current_ip.in_cidr("192.168.0.0/24) && count < 3
+#    }
+#  expected_errors:
+#    - msg: some error
+#- name: params declared not used in cel expression
+#  dsl: |
+#    model
+#      schema 1.1
+#    type user
+#    type document
+#      relations
+#        define viewer: [user]
+#    condition allowed_ip(current_ip: ipaddress, count: int) {
+#      current_ip.in_cidr("192.168.0.0/24)
+#    }
+#  expected_errors:
+#    - msg: some error

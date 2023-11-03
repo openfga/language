@@ -863,3 +863,196 @@
         end: 5
       metadata:
         symbol: "<EOF>"
+# Conditions
+- name: unsupported parameter type map<map>
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: map<map>) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input 'map' expecting CONDITION_PARAM_TYPE"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 37
+        end: 40
+      metadata:
+        symbol: "map"
+- name: unsupported parameter type list<map>
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: list<map>) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input 'map' expecting CONDITION_PARAM_TYPE"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 38
+        end: 41
+      metadata:
+        symbol: "map"
+- name: unsupported parameter type map<list>
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: map<list>) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input 'list' expecting CONDITION_PARAM_TYPE"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 37
+        end: 41
+      metadata:
+        symbol: "list"
+- name: unsupported parameter type list<list>
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: list<list>) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input 'list' expecting CONDITION_PARAM_TYPE"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 38
+        end: 42
+      metadata:
+        symbol: "list"
+- name: parameter type list needs generic type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: list) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input ')' expecting '<'"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 37
+        end: 38
+      metadata:
+        symbol: ")"
+- name: parameter type map needs generic type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: map) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input ')' expecting '<'"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 36
+        end: 37
+      metadata:
+        symbol: ")"
+- name: having no parameter name should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(string) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "mismatched input 'string' expecting ALPHA_NUMERIC"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 25
+        end: 31
+      metadata:
+        symbol: "string"
+- name: condition names cannot be duplicated
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: string) {
+      status != "deleted"
+    }
+    condition is_not_deleted(status: string) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "'is_not_deleted' is already defined in the model"
+      line:
+        start: 10
+        end: 10
+      column:
+        start: 10
+        end: 24
+      metadata:
+        symbol: "is_not_deleted"
+- name: parameter names cannot be duplicated
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_not_deleted]
+    condition is_not_deleted(status: string, status: string) {
+      status != "deleted"
+    }
+  expected_errors:
+    - msg: "parameter 'status' is already defined in the condition is_not_deleted"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 41
+        end: 47
+      metadata:
+        symbol: "status"

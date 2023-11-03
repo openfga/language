@@ -73,14 +73,34 @@ func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
 		return
 	}
 
+	conditionName := ctx.ConditionName().GetText()
+	if l.authorizationModel.Conditions[conditionName] != nil {
+		ctx.GetParser().NotifyErrorListeners(
+			fmt.Sprintf("condition '%s' is already defined in the model", conditionName),
+			ctx.ConditionName().GetStart(),
+			nil)
+	}
+
 	l.currentCondition = &pb.Condition{
-		Name:       ctx.ConditionName().GetText(),
+		Name:       conditionName,
 		Expression: "",
 		Parameters: map[string]*pb.ConditionParamTypeRef{},
 	}
 }
 
 func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParameterContext) {
+	if ctx.ParameterName() == nil || ctx.ParameterType() == nil {
+		return
+	}
+
+	parameterName := ctx.ParameterName().GetText()
+	if l.currentCondition.GetParameters()[parameterName] != nil {
+		ctx.GetParser().NotifyErrorListeners(
+			fmt.Sprintf("parameter '%s' is already defined in condition '%s'", parameterName, l.currentCondition.GetName()),
+			ctx.ParameterName().GetStart(),
+			nil)
+	}
+
 	paramContainer := ctx.ParameterType().CONDITION_PARAM_CONTAINER()
 	typeNameString := ctx.ParameterType().GetText()
 	var genericName *pb.ConditionParamTypeRef_TypeName
@@ -104,7 +124,7 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 		})
 	}
 
-	l.currentCondition.Parameters[ctx.ParameterName().GetText()] = conditionParamTypeRef
+	l.currentCondition.Parameters[parameterName] = conditionParamTypeRef
 }
 
 func (l *OpenFgaDslListener) ExitConditionExpression(ctx *parser.ConditionExpressionContext) {
@@ -403,7 +423,6 @@ func MustTransformDSLToProto(data string) *pb.AuthorizationModel {
 // TransformDSLToJSON - Converts models authored in FGA DSL syntax to the json syntax accepted by the OpenFGA API
 func TransformDSLToJSON(data string) (string, error) {
 	model, err := TransformDSLToProto(data)
-
 	if err != nil {
 		return "", err
 	}

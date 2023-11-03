@@ -96,7 +96,7 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 	parameterName := ctx.ParameterName().GetText()
 	if l.currentCondition.GetParameters()[parameterName] != nil {
 		ctx.GetParser().NotifyErrorListeners(
-			fmt.Sprintf("parameter '%s' is already defined in condition '%s'", parameterName, l.currentCondition.GetName()),
+			fmt.Sprintf("parameter '%s' is already defined in the condition '%s'", parameterName, l.currentCondition.GetName()),
 			ctx.ParameterName().GetStart(),
 			nil)
 	}
@@ -106,9 +106,12 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 	var genericName *pb.ConditionParamTypeRef_TypeName
 	if paramContainer != nil {
 		typeNameString = paramContainer.GetText()
-		genericString := ctx.ParameterType().CONDITION_PARAM_TYPE().GetText()
-		genericName = new(pb.ConditionParamTypeRef_TypeName)
-		*genericName = pb.ConditionParamTypeRef_TypeName(pb.ConditionParamTypeRef_TypeName_value[fmt.Sprintf("TYPE_NAME_%s", strings.ToUpper(genericString))])
+		genericType := ctx.ParameterType().CONDITION_PARAM_TYPE()
+		if genericType != nil {
+			genericString := ctx.ParameterType().CONDITION_PARAM_TYPE().GetText()
+			genericName = new(pb.ConditionParamTypeRef_TypeName)
+			*genericName = pb.ConditionParamTypeRef_TypeName(pb.ConditionParamTypeRef_TypeName_value[fmt.Sprintf("TYPE_NAME_%s", strings.ToUpper(genericString))])
+		}
 	}
 
 	typeName := new(pb.ConditionParamTypeRef_TypeName)

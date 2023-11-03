@@ -1026,7 +1026,7 @@
       status != "deleted"
     }
   expected_errors:
-    - msg: "'is_not_deleted' is already defined in the model"
+    - msg: "condition 'is_not_deleted' is already defined in the model"
       line:
         start: 10
         end: 10
@@ -1047,7 +1047,7 @@
       status != "deleted"
     }
   expected_errors:
-    - msg: "parameter 'status' is already defined in the condition is_not_deleted"
+    - msg: "parameter 'status' is already defined in the condition 'is_not_deleted'"
       line:
         start: 7
         end: 7
@@ -1056,3 +1056,14 @@
         end: 47
       metadata:
         symbol: "status"
+
+- name: a model with a valid condition and type restrictions
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations      
+        define follower: [user, user:*, user#follower, user with is_not_hidden, user:* with is_not_hidden, user#follower with is_not_hidden]  
+    condition is_not_hidden(status: string) {
+      status != "hidden"
+    }

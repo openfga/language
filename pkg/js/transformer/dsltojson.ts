@@ -273,7 +273,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     const conditionName = ctx.conditionName().getText();
     if (this.authorizationModel.conditions![conditionName]) {
       ctx.parser?.notifyErrorListeners(
-        `'${conditionName}' is already defined in the model`,
+        `condition '${conditionName}' is already defined in the model`,
         ctx.conditionName().start,
         undefined,
       );
@@ -294,7 +294,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     const parameterName = ctx.parameterName().getText();
     if (this.currentCondition?.parameters?.[parameterName]) {
       ctx.parser?.notifyErrorListeners(
-        `parameter '${parameterName}' is already defined in the condition ${this.currentCondition?.name}`,
+        `parameter '${parameterName}' is already defined in the condition '${this.currentCondition?.name}'`,
         ctx.parameterName().start,
         undefined,
       );

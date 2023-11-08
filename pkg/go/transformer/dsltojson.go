@@ -270,7 +270,7 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefRewrite(ctx *parser.RelationDefRewriteContext) {
-	partialRewrite := &pb.Userset{}
+	var partialRewrite *pb.Userset
 	computedUserset := &pb.ObjectRelation{
 		Relation: ctx.GetRewriteComputedusersetName().GetText(),
 	}

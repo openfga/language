@@ -57,7 +57,7 @@ func TestDSLToJSONTransformerForSyntaxErrorCases(t *testing.T) {
 				//  we care that it errors for syntax errors more than we care about the error messages matching,
 				//  esp. in Go as we are not building a language server on top of the returned errors yet
 				//  actual matching error strings is safe to ignore for now
-				//require.EqualErrorf(t, err, testCase.GetErrorString(), "")
+				// require.EqualErrorf(t, err, testCase.GetErrorString(), "")
 			}
 		})
 	}

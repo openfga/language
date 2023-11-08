@@ -2,6 +2,7 @@ import type {
   AuthorizationModel,
   Condition,
   ConditionParamTypeRef,
+  ObjectRelation,
   RelationMetadata,
   RelationReference,
   TypeDefinition,
@@ -15,18 +16,12 @@ import OpenFGAParser, {
   ConditionContext,
   ConditionExpressionContext,
   ConditionParameterContext,
+  ModelHeaderContext,
   RelationDeclarationContext,
   RelationDefDirectAssignmentContext,
-  RelationDefPartialAllAndContext,
-  RelationDefPartialAllButNotContext,
-  RelationDefPartialAllOrContext,
-  RelationDefRelationOnRelatedObjectContext,
-  RelationDefRelationOnSameObjectContext,
+  RelationDefPartialsContext,
+  RelationDefRewriteContext,
   RelationDefTypeRestrictionContext,
-  RelationDefTypeRestrictionTypeContext,
-  RelationDefTypeRestrictionUsersetContext,
-  RelationDefTypeRestrictionWildcardContext,
-  SchemaVersionContext,
   TypeDefContext,
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
@@ -60,8 +55,10 @@ class OpenFgaDslListener extends OpenFGAListener {
   private currentRelation: Partial<Relation> | undefined;
   private currentCondition: Condition | undefined;
 
-  exitSchemaVersion = (ctx: SchemaVersionContext) => {
-    this.authorizationModel.schema_version = ctx.getText();
+  exitModelHeader = (ctx: ModelHeaderContext) => {
+    if (ctx.SCHEMA_VERSION()) {
+      this.authorizationModel.schema_version = ctx.SCHEMA_VERSION().getText();
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -78,12 +75,12 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enterTypeDef = (ctx: TypeDefContext) => {
-    if (!ctx.typeName()) {
+    if (!ctx._typeName) {
       return;
     }
 
     this.currentTypeDef = {
-      type: ctx.typeName().getText(),
+      type: ctx._typeName.text,
       relations: {},
       metadata: { relations: {} },
     };
@@ -185,81 +182,59 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
   exitRelationDefTypeRestriction = (ctx: RelationDefTypeRestrictionContext) => {
     const relationRef: Partial<RelationReference> = {};
-    const conditionalRestriction = ctx.relationDefTypeRestrictionWithCondition();
-
-    let type: RelationDefTypeRestrictionTypeContext;
-    let usersetRestriction: RelationDefTypeRestrictionUsersetContext;
-    let wildcardRestriction: RelationDefTypeRestrictionWildcardContext;
-
-    if (conditionalRestriction != null) {
-      type = conditionalRestriction.relationDefTypeRestrictionType();
-      usersetRestriction = conditionalRestriction.relationDefTypeRestrictionUserset();
-      wildcardRestriction = conditionalRestriction.relationDefTypeRestrictionWildcard();
-      if (conditionalRestriction.conditionName() != null) {
-        relationRef.condition = conditionalRestriction.conditionName().getText();
-      }
-    } else {
-      type = ctx.relationDefTypeRestrictionType();
-      usersetRestriction = ctx.relationDefTypeRestrictionUserset();
-      wildcardRestriction = ctx.relationDefTypeRestrictionWildcard();
+    const baseRestriction = ctx.relationDefTypeRestrictionBase();
+    if (!baseRestriction) {
+      return;
     }
 
-    if (type) {
-      relationRef.type = type.getText();
+    relationRef.type = baseRestriction._relationDefTypeRestrictionType?.text;
+    const usersetRestriction = baseRestriction._relationDefTypeRestrictionRelation;
+    const wildcardRestriction = baseRestriction._relationDefTypeRestrictionWildcard;
+
+    if (ctx.conditionName()) {
+      relationRef.condition = ctx.conditionName().getText();
     }
 
     if (usersetRestriction) {
-      relationRef.type = usersetRestriction.relationDefTypeRestrictionType().getText();
-      relationRef.relation = usersetRestriction.relationDefTypeRestrictionRelation().getText();
+      relationRef.relation = usersetRestriction.text;
     }
 
     if (wildcardRestriction) {
-      relationRef.type = wildcardRestriction.relationDefTypeRestrictionType().getText();
       relationRef.wildcard = {};
     }
 
     this.currentRelation!.typeInfo!.directly_related_user_types!.push(relationRef as RelationReference);
   };
 
-  exitRelationDefRelationOnSameObject = (ctx: RelationDefRelationOnSameObjectContext) => {
-    const partialRewrite: Userset = {
+  exitRelationDefRewrite = (ctx: RelationDefRewriteContext) => {
+    let partialRewrite: Userset = {
       computedUserset: {
-        object: "",
-        relation: ctx.rewriteComputedusersetName().getText(),
+        relation: ctx._rewriteComputedusersetName.text,
       },
     };
+
+    if (ctx._rewriteTuplesetName) {
+      partialRewrite = {
+        tupleToUserset: {
+          ...(partialRewrite as { computedUserset: ObjectRelation }),
+          tupleset: {
+            relation: ctx._rewriteTuplesetName.text,
+          },
+        },
+      };
+    }
+
     this.currentRelation?.rewrites?.push(partialRewrite);
   };
 
-  exitRelationDefRelationOnRelatedObject = (ctx: RelationDefRelationOnRelatedObjectContext) => {
-    const partialRewrite: Userset = {
-      tupleToUserset: {
-        computedUserset: {
-          object: "",
-          relation: ctx.rewriteTuplesetComputedusersetName().getText(),
-        },
-        tupleset: {
-          object: "",
-          relation: ctx.rewriteTuplesetName().getText(),
-        },
-      },
-    };
-    this.currentRelation?.rewrites?.push(partialRewrite);
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllOr = (_ctx: RelationDefPartialAllOrContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR;
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllAnd = (_ctx: RelationDefPartialAllAndContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND;
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllButNot = (_ctx: RelationDefPartialAllButNotContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT;
+  enterRelationDefPartials = (ctx: RelationDefPartialsContext) => {
+    if (ctx.OR_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR;
+    } else if (ctx.AND_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND;
+    } else if (ctx.BUT_NOT_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT;
+    }
   };
 
   enterCondition = (ctx: ConditionContext) => {
@@ -318,7 +293,7 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   exitConditionExpression = (ctx: ConditionExpressionContext) => {
-    this.currentCondition!.expression = ctx.getText();
+    this.currentCondition!.expression = ctx.getText().trim();
   };
 
   exitCondition = (_ctx: ConditionContext) => {

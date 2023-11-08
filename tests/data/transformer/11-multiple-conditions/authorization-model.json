@@ -42,7 +42,7 @@
   "conditions": {
       "non_expired_grant_and_valid_ip": {
           "name": "non_expired_grant_and_valid_ip",
-          "expression": "\n  (current_timestamp < grant_timestamp + grant_duration) && user_ip.in_cidr(cidr)\n",
+          "expression": "(current_timestamp < grant_timestamp + grant_duration) && user_ip.in_cidr(cidr)",
           "parameters": {
               "cidr": {
                   "type_name": "TYPE_NAME_STRING"
@@ -63,7 +63,7 @@
       },
       "name_starts_with_a": {
           "name": "name_starts_with_a",
-          "expression": "\n  document_name == \"hello\"\n",
+          "expression": "document_name == \"hello\"",
           "parameters": {
             "document_name": {
               "type_name": "TYPE_NAME_STRING"
@@ -72,7 +72,7 @@
       },
       "version_count_less_than_100": {
           "name": "version_count_less_than_100",
-          "expression": "\n  version_count < 100\n",
+          "expression": "version_count < 100",
           "parameters": {
             "version_count": {
               "type_name": "TYPE_NAME_INT"
@@ -81,7 +81,7 @@
       },
       "doc_viewer_condition": {
           "name": "doc_viewer_condition",
-          "expression": "\n  document_attributes[\"state\"] in allowed_states\n",
+          "expression": "document_attributes[\"state\"] in allowed_states",
           "parameters": {
             "tags": {
               "type_name": "TYPE_NAME_MAP",

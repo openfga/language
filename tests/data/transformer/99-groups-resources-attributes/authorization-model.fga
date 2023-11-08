@@ -1,0 +1,23 @@
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define can_access_docs: [group#member with doc_viewer_condition]
+    define member: [user]
+
+type group
+  relations
+    define member: [user]
+    define organization: [organization]
+
+type document
+  relations
+    define can_access: can_access_docs from organization
+    define organization: [organization]
+
+condition doc_viewer_condition(allowed_statuses: list<string>, document_attributes: map<string>) {
+  document_attributes["status"] in allowed_statuses
+}

@@ -308,7 +308,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
 
   const rawLine = lines[lineIndex];
   const re = new RegExp("\\b" + metadata.symbol + "\\b");
-  let wordIdx = rawLine.search(re) + 1;
+  let wordIdx = rawLine?.search(re) + 1;
 
   if (typeof customResolver === "function") {
     wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);

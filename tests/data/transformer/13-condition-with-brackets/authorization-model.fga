@@ -7,6 +7,6 @@ type document
   relations
     define viewer: [user with conditionX]
 
-condition conditionX(x: int) {
-  x<100
+condition conditionX(x: string) {
+  x=="{}"
 }

@@ -1,10 +1,16 @@
 lexer grammar OpenFGALexer;
 
-fragment SINGLE_INDENT: ('  ' | '	');
-fragment DOUBLE_INDENT:  ('    ' | '		');
-fragment BOL : [\r\n\f]+;
+HASH: '#';
+COLON: ':';
+COMMA: ',';
+CONDITION_PARAM_CONTAINER: 'map' | 'list';
+CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
+  'double' | 'duration' | 'timestamp' | 'ipaddress';
 
-INDENT: BOL (DOUBLE_INDENT | SINGLE_INDENT);
+AND: 'and';
+OR: 'or';
+BUT_NOT: 'but not';
+FROM: 'from';
 
 MODEL: 'model';
 SCHEMA: 'schema';
@@ -14,35 +20,105 @@ CONDITION: 'condition';
 
 RELATIONS: 'relations';
 DEFINE: 'define';
-WTH: 'with';
+KEYWORD_WITH: 'with';
 
-HASH: '#';
-COLON: ':';
-WILDCARD: '*';
-L_SQUARE: '[';
-R_SQUARE: ']';
-L_PARANTHESES: '(';
-R_PARANTHESES: ')';
-L_BRACES: '{';
-R_BRACES: '}';
-L_ANGLE_BRACKET: '<';
-R_ANGLE_BRACKET: '>';
-COMMA: ',';
-CONDITION_PARAM_CONTAINER: 'map' | 'list';
-CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
-  'double' | 'duration' | 'timestamp' | 'ipaddress';
-CONDITION_SYMBOL:
- '==' | '!=' | 'in' | L_ANGLE_BRACKET | '<=' | '>=' | R_ANGLE_BRACKET | '&&' | '||'
- | L_SQUARE | R_SQUARE | L_BRACES | L_PARANTHESES | R_PARANTHESES | '.' | COMMA | '-' | '!' | '?' | COLON | '+' | WILDCARD | '/' | '%' | 'true' | 'false' | 'null' | '"';
+// CEL Lexer tokens, slightly modified
+// source: https://github.com/google/cel-go/blob/32ac6133c6b8eca8bb76e17e6ad50a1eb757778a/parser/gen/CEL.g4
 
+EQUALS : '==';
+NOT_EQUALS : '!=';
+IN: 'in';
+LESS : '<';
+LESS_EQUALS : '<=';
+GREATER_EQUALS : '>=';
+GREATER : '>';
+LOGICAL_AND : '&&';
+LOGICAL_OR : '||';
 
+LBRACKET : '[';
+RPRACKET : ']';
+LBRACE : '{';
+RBRACE : '}';
+LPAREN : '(';
+RPAREN : ')';
+DOT : '.';
+MINUS : '-';
+EXCLAM : '!';
+QUESTIONMARK : '?';
+PLUS : '+';
+STAR : '*';
+SLASH : '/';
+PERCENT : '%';
+CEL_TRUE : 'true';
+CEL_FALSE : 'false';
+NUL : 'null';
 
-AND: 'and';
-OR: 'or';
-BUT_NOT: 'but not';
-FROM: 'from';
+fragment BACKSLASH : '\\';
+fragment LETTER : 'A'..'Z' | 'a'..'z' ;
+fragment DIGIT  : '0'..'9' ;
+fragment EXPONENT : ('e' | 'E') ( '+' | '-' )? DIGIT+ ;
+fragment HEXDIGIT : ('0'..'9'|'a'..'f'|'A'..'F') ;
+fragment RAW : 'r' | 'R';
 
-ALPHA_NUMERIC: [a-zA-Z0-9_-]+;
+fragment ESC_SEQ
+    : ESC_CHAR_SEQ
+    | ESC_BYTE_SEQ
+    | ESC_UNI_SEQ
+    | ESC_OCT_SEQ
+    ;
 
-NEWLINE: [\r\n];
-WS: [ \t];
+fragment ESC_CHAR_SEQ
+    : BACKSLASH ('a'|'b'|'f'|'n'|'r'|'t'|'v'|'"'|'\''|'\\'|'?'|'`')
+    ;
+
+fragment ESC_OCT_SEQ
+    : BACKSLASH ('0'..'3') ('0'..'7') ('0'..'7')
+    ;
+
+fragment ESC_BYTE_SEQ
+    : BACKSLASH ( 'x' | 'X' ) HEXDIGIT HEXDIGIT
+    ;
+
+fragment ESC_UNI_SEQ
+    : BACKSLASH 'u' HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT
+    | BACKSLASH 'U' HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT
+    ;
+
+WHITESPACE : ( '\t' | ' ' | '\u000C' )+;
+CEL_COMMENT : '//' (~'\n')* -> channel(HIDDEN) ;
+
+NUM_FLOAT
+  : ( DIGIT+ ('.' DIGIT+) EXPONENT?
+    | DIGIT+ EXPONENT
+    | '.' DIGIT+ EXPONENT?
+    )
+  ;
+
+NUM_INT
+  : ( DIGIT+ | '0x' HEXDIGIT+ );
+
+NUM_UINT
+   : DIGIT+ ( 'u' | 'U' )
+   | '0x' HEXDIGIT+ ( 'u' | 'U' )
+   ;
+
+STRING
+  : '"' (ESC_SEQ | ~('\\'|'"'|'\n'|'\r'))* '"'
+  | '\'' (ESC_SEQ | ~('\\'|'\''|'\n'|'\r'))* '\''
+  | '"""' (ESC_SEQ | ~('\\'))*? '"""'
+  | '\'\'\'' (ESC_SEQ | ~('\\'))*? '\'\'\''
+  | RAW '"' ~('"'|'\n'|'\r')* '"'
+  | RAW '\'' ~('\''|'\n'|'\r')* '\''
+  | RAW '"""' .*? '"""'
+  | RAW '\'\'\'' .*? '\'\'\''
+  ;
+
+BYTES : ('b' | 'B') STRING;
+
+IDENTIFIER : (LETTER | '_') ( LETTER | DIGIT | '_' | MINUS)*; // NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
+
+// END CEL GRAMMAR
+
+NEWLINE
+ : WHITESPACE? ( '\r'? '\n' | '\r' | '\f' ) WHITESPACE? NEWLINE?
+ ;

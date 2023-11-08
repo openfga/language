@@ -15,19 +15,20 @@ function parseTypeRestriction(restriction: RelationReference): string {
   const wildcard = restriction.wildcard;
   const condition = restriction.condition;
 
+  let typeRestriction = typeName;
   if (wildcard) {
-    return `${typeName}:*`;
+    typeRestriction = `${typeRestriction}:*`;
   }
 
   if (relation) {
-    return `${typeName}#${relation}`;
+    typeRestriction = `${typeRestriction}#${relation}`;
   }
 
   if (condition) {
-    return `${typeName} with ${condition}`;
+    typeRestriction = `${typeRestriction} with ${condition}`;
   }
 
-  return typeName;
+  return typeRestriction;
 }
 
 function parseTypeRestrictions(restrictions: RelationReference[]): string[] {
@@ -193,7 +194,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
 
   const paramsString = parseConditionParams(conditionDef.parameters || {});
 
-  return `condition ${conditionName}(${paramsString}) {${conditionDef.expression}}\n`;
+  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
 };
 
 const parseConditions = (model: AuthorizationModel): string => {

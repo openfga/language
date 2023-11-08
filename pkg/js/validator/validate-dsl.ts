@@ -263,7 +263,7 @@ function hasEntryPoint(
 
   const relationMetadata = typeMap[type].metadata?.relations;
 
-  const allowedTypes = getTypeRestrictions(relationMetadata![relation].directly_related_user_types || []);
+  const allowedTypes = getTypeRestrictions(relationMetadata?.[relation]?.directly_related_user_types || []);
 
   if (Object.prototype.hasOwnProperty.call(currentRelation[relation], RelationDefOperator.Union)) {
     for (const childDef of currentRelation[relation].union?.child || []) {

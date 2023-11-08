@@ -16,7 +16,7 @@ describe("validateDSL", () => {
         return;
       }
 
-      expect(() => validateDSL(testCase.dsl)).toThrowError(DSLSyntaxError);
+      expect(() => validateDSL(testCase.dsl)).toThrow(DSLSyntaxError);
       try {
         validateDSL(testCase.dsl);
       } catch (thrownError) {
@@ -49,7 +49,7 @@ describe("validateDSL", () => {
         return;
       }
 
-      expect(() => validateDSL(testCase.dsl)).toThrowError(ModelValidationError);
+      expect(() => validateDSL(testCase.dsl)).toThrow(ModelValidationError);
       try {
         validateDSL(testCase.dsl);
       } catch (thrownError) {

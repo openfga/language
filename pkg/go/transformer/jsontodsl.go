@@ -16,19 +16,20 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 	wildcard := restriction.GetWildcard()
 	condition := restriction.GetCondition()
 
+	typeRestriction := fmt.Sprintf("%v", typeName)
 	if wildcard != nil {
-		return fmt.Sprintf("%v:*", typeName)
+		typeRestriction += ":*"
 	}
 
 	if relation != "" {
-		return fmt.Sprintf("%v#%v", typeName, relation)
+		typeRestriction += fmt.Sprintf("#%v", relation)
 	}
 
 	if condition != "" {
-		return fmt.Sprintf("%v with %v", typeName, condition)
+		typeRestriction += fmt.Sprintf(" with %v", condition)
 	}
 
-	return fmt.Sprintf("%v", typeName)
+	return typeRestriction
 }
 
 func parseTypeRestrictions(restrictions []*pb.RelationReference) []string {
@@ -227,7 +228,7 @@ func parseCondition(conditionName string, conditionDef *pb.Condition) (string, e
 		return "", err
 	}
 
-	return fmt.Sprintf("condition %s(%s) {%s}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
+	return fmt.Sprintf("condition %s(%s) {\n  %s\n}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
 }
 
 func parseConditions(model *pb.AuthorizationModel) (string, error) {

@@ -12,7 +12,6 @@
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "legacy_admin"
                 }
               }
@@ -33,13 +32,11 @@
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "legacy_admin"
                 }
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "channels_admin"
                 }
               }
@@ -96,7 +93,6 @@
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "writer"
                 }
               }

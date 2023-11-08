@@ -9,7 +9,6 @@
         },
         "viewer": {
           "computedUserset": {
-            "object": "",
             "relation": "follower"
           }
         }

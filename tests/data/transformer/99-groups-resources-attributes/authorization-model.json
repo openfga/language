@@ -1,0 +1,126 @@
+{
+    "schema_version": "1.1",
+    "type_definitions": [
+        {
+            "type": "user",
+            "metadata": null,
+            "relations": {}
+        },
+        {
+            "metadata": {
+                "relations": {
+                    "can_access_docs": {
+                        "directly_related_user_types": [
+                            {
+                                "condition": "doc_viewer_condition",
+                                "relation": "member",
+                                "type": "group"
+                            }
+                        ]
+                    },
+                    "member": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    }
+                }
+            },
+            "relations": {
+                "can_access_docs": {
+                    "this": {}
+                },
+                "member": {
+                    "this": {}
+                }
+            },
+            "type": "organization"
+        },
+        {
+            "metadata": {
+                "relations": {
+                    "member": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    },
+                    "organization": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "organization"
+                            }
+                        ]
+                    }
+                }
+            },
+            "relations": {
+                "member": {
+                    "this": {}
+                },
+                "organization": {
+                    "this": {}
+                }
+            },
+            "type": "group"
+        },
+        {
+            "metadata": {
+                "relations": {
+                    "can_access": {
+                        "directly_related_user_types": []
+                    },
+                    "organization": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "organization"
+                            }
+                        ]
+                    }
+                }
+            },
+            "relations": {
+                "can_access": {
+                    "tupleToUserset": {
+                        "computedUserset": {
+                            "relation": "can_access_docs"
+                        },
+                        "tupleset": {
+                            "relation": "organization"
+                        }
+                    }
+                },
+                "organization": {
+                    "this": {}
+                }
+            },
+            "type": "document"
+        }
+    ],
+    "conditions": {
+        "doc_viewer_condition": {
+            "expression": "document_attributes[\"status\"] in allowed_statuses",
+            "name": "doc_viewer_condition",
+            "parameters": {
+                "allowed_statuses": {
+                    "generic_types": [
+                        {
+                            "type_name": "TYPE_NAME_STRING"
+                        }
+                    ],
+                    "type_name": "TYPE_NAME_LIST"
+                },
+                "document_attributes": {
+                    "generic_types": [
+                        {
+                            "type_name": "TYPE_NAME_STRING"
+                        }
+                    ],
+                    "type_name": "TYPE_NAME_MAP"
+                }
+            }
+        }
+    }
+}

@@ -42,21 +42,23 @@ func newOpenFgaDslListener() *OpenFgaDslListener {
 	return new(OpenFgaDslListener)
 }
 
-func (l *OpenFgaDslListener) EnterMain(ctx *parser.MainContext) {
+func (l *OpenFgaDslListener) EnterMain(_ctx *parser.MainContext) {
 	l.authorizationModel.Conditions = map[string]*pb.Condition{}
 }
 
-func (l *OpenFgaDslListener) ExitSchemaVersion(ctx *parser.SchemaVersionContext) {
-	l.authorizationModel.SchemaVersion = ctx.GetText()
+func (l *OpenFgaDslListener) ExitModelHeader(ctx *parser.ModelHeaderContext) {
+	if ctx.GetSchemaVersion() != nil {
+		l.authorizationModel.SchemaVersion = ctx.GetSchemaVersion().GetText()
+	}
 }
 
 func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
-	if ctx.TypeName() == nil {
+	if ctx.GetTypeName() == nil {
 		return
 	}
 
 	l.currentTypeDef = &pb.TypeDefinition{
-		Type:      ctx.TypeName().GetText(),
+		Type:      ctx.GetTypeName().GetText(),
 		Relations: map[string]*pb.Userset{},
 		Metadata: &pb.Metadata{
 			Relations: map[string]*pb.RelationMetadata{},
@@ -131,7 +133,7 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 }
 
 func (l *OpenFgaDslListener) ExitConditionExpression(ctx *parser.ConditionExpressionContext) {
-	l.currentCondition.Expression = ctx.GetText()
+	l.currentCondition.Expression = strings.TrimRight(ctx.GetText(), "\n")
 }
 
 func (l *OpenFgaDslListener) ExitCondition(ctx *parser.ConditionContext) {
@@ -235,77 +237,70 @@ func (l *OpenFgaDslListener) ExitRelationDefDirectAssignment(_ctx *parser.Relati
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.RelationDefTypeRestrictionContext) {
-	relationRef := &pb.RelationReference{}
-	_type := ctx.RelationDefTypeRestrictionType()
-	usersetRestriction := ctx.RelationDefTypeRestrictionUserset()
-	wildcardRestriction := ctx.RelationDefTypeRestrictionWildcard()
-	conditionalRestriction := ctx.RelationDefTypeRestrictionWithCondition()
-
-	if conditionalRestriction != nil {
-		_type = conditionalRestriction.RelationDefTypeRestrictionType()
-		usersetRestriction = conditionalRestriction.RelationDefTypeRestrictionUserset()
-		wildcardRestriction = conditionalRestriction.RelationDefTypeRestrictionWildcard()
-		if conditionalRestriction.ConditionName() != nil {
-			relationRef.Condition = conditionalRestriction.ConditionName().GetText()
-		}
+	baseRestriction := ctx.RelationDefTypeRestrictionBase()
+	if baseRestriction == nil {
+		return
 	}
 
+	_type := baseRestriction.GetRelationDefTypeRestrictionType()
+	usersetRestriction := baseRestriction.GetRelationDefTypeRestrictionRelation()
+	wildcardRestriction := baseRestriction.GetRelationDefTypeRestrictionWildcard()
+	conditionName := ctx.ConditionName()
+
+	relationRef := &pb.RelationReference{}
 	if _type != nil {
 		relationRef.Type = _type.GetText()
 	}
 
+	if conditionName != nil {
+		relationRef.Condition = conditionName.GetText()
+	}
+
 	if usersetRestriction != nil {
-		relationRef.Type = usersetRestriction.RelationDefTypeRestrictionType().GetText()
 		relationRef.RelationOrWildcard = &pb.RelationReference_Relation{
-			Relation: usersetRestriction.RelationDefTypeRestrictionRelation().GetText(),
+			Relation: usersetRestriction.GetText(),
 		}
 	}
 
 	if wildcardRestriction != nil {
-		relationRef.Type = wildcardRestriction.RelationDefTypeRestrictionType().GetText()
 		relationRef.RelationOrWildcard = &pb.RelationReference_Wildcard{Wildcard: &pb.Wildcard{}}
 	}
 
 	l.currentRelation.TypeInfo.DirectlyRelatedUserTypes = append(l.currentRelation.TypeInfo.DirectlyRelatedUserTypes, relationRef)
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefRelationOnSameObject(ctx *parser.RelationDefRelationOnSameObjectContext) {
-	partialRewrite := &pb.Userset{Userset: &pb.Userset_ComputedUserset{
-		ComputedUserset: &pb.ObjectRelation{
-			Object:   "",
-			Relation: ctx.RewriteComputedusersetName().GetText(),
-		},
-	}}
+func (l *OpenFgaDslListener) ExitRelationDefRewrite(ctx *parser.RelationDefRewriteContext) {
+	var partialRewrite *pb.Userset
+	computedUserset := &pb.ObjectRelation{
+		Relation: ctx.GetRewriteComputedusersetName().GetText(),
+	}
+
+	if ctx.GetRewriteTuplesetName() == nil {
+		partialRewrite = &pb.Userset{Userset: &pb.Userset_ComputedUserset{
+			ComputedUserset: computedUserset,
+		}}
+	} else {
+		partialRewrite = &pb.Userset{Userset: &pb.Userset_TupleToUserset{
+			TupleToUserset: &pb.TupleToUserset{
+				ComputedUserset: computedUserset,
+				Tupleset: &pb.ObjectRelation{
+					Relation: ctx.GetRewriteTuplesetName().GetText(),
+				},
+			},
+		}}
+	}
+
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
 
-func (l *OpenFgaDslListener) ExitRelationDefRelationOnRelatedObject(
-	ctx *parser.RelationDefRelationOnRelatedObjectContext,
-) {
-	partialRewrite := &pb.Userset{Userset: &pb.Userset_TupleToUserset{
-		TupleToUserset: &pb.TupleToUserset{
-			ComputedUserset: &pb.ObjectRelation{
-				Object:   "",
-				Relation: ctx.RewriteTuplesetComputedusersetName().GetText(),
-			},
-			Tupleset: &pb.ObjectRelation{
-				Relation: ctx.RewriteTuplesetName().GetText(),
-			},
-		},
-	}}
-	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
-}
-
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllOr(_ctx *parser.RelationDefPartialAllOrContext) {
-	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR
-}
-
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllAnd(_ctx *parser.RelationDefPartialAllAndContext) {
-	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND
-}
-
-func (l *OpenFgaDslListener) EnterRelationDefPartialAllButNot(_ctx *parser.RelationDefPartialAllButNotContext) {
-	l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT
+func (l *OpenFgaDslListener) EnterRelationDefPartials(ctx *parser.RelationDefPartialsContext) {
+	if len(ctx.AllOR()) > 0 {
+		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR
+	} else if len(ctx.AllAND()) > 0 {
+		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND
+	} else if len(ctx.AllBUT_NOT()) > 0 {
+		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT
+	}
 }
 
 //// Error Handling
@@ -379,7 +374,7 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	for _, line := range strings.Split(data, "\n") {
 		cleanedLines = append(cleanedLines, strings.TrimRight(line, " "))
 	}
-	cleanedData := strings.Join(cleanedLines, "\n")
+	cleanedData := strings.TrimRight(strings.Join(cleanedLines, "\n"), "\n")
 
 	inputStream := antlr.NewInputStream(cleanedData)
 

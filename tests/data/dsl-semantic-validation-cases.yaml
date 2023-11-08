@@ -1117,7 +1117,7 @@
         define editor: [user with allowed_ip]
         define viewer: [user with allowed_ipaddress]
     condition allowed_ipaddress(current_ip: ipaddress) {
-      current_ip.in_cidr("192.168.0.0/24)
+      current_ip.in_cidr("192.168.0.0/24")
     }
   expected_errors:
     - msg: "`allowed_ip` is not a defined condition in the model."
@@ -1139,7 +1139,7 @@
       relations
         define viewer: [user]
     condition allowed_ip(current_ip: ipaddress) {
-      current_ip.in_cidr("192.168.0.0/24)
+      current_ip.in_cidr("192.168.0.0/24")
     }
   expected_errors:
     - msg: "`allowed_ip` condition is not used in the model."
@@ -1162,7 +1162,7 @@
 #      relations
 #        define viewer: [user]
 #    condition allowed_ip(current_ip: ipaddress) {
-#      current_ip("192.168.0.0/24)
+#      current_ip("192.168.0.0/24")
 #    }
 #  expected_errors:
 #    - msg: some error
@@ -1175,7 +1175,7 @@
 #      relations
 #        define viewer: [user]
 #    condition allowed_ip(current_ip: ipaddress) {
-#      current_ip.in_cidr("192.168.0.0/24) && count < 3
+#      current_ip.in_cidr("192.168.0.0/24") && count < 3
 #    }
 #  expected_errors:
 #    - msg: some error
@@ -1188,7 +1188,7 @@
 #      relations
 #        define viewer: [user]
 #    condition allowed_ip(current_ip: ipaddress, count: int) {
-#      current_ip.in_cidr("192.168.0.0/24)
+#      current_ip.in_cidr("192.168.0.0/24")
 #    }
 #  expected_errors:
 #    - msg: some error

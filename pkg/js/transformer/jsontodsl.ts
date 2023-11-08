@@ -15,19 +15,20 @@ function parseTypeRestriction(restriction: RelationReference): string {
   const wildcard = restriction.wildcard;
   const condition = restriction.condition;
 
+  let typeRestriction = typeName;
   if (wildcard) {
-    return `${typeName}:*`;
+    typeRestriction = `${typeRestriction}:*`;
   }
 
   if (relation) {
-    return `${typeName}#${relation}`;
+    typeRestriction = `${typeRestriction}#${relation}`;
   }
 
   if (condition) {
-    return `${typeName} with ${condition}`;
+    typeRestriction = `${typeRestriction} with ${condition}`;
   }
 
-  return typeName;
+  return typeRestriction;
 }
 
 function parseTypeRestrictions(restrictions: RelationReference[]): string[] {

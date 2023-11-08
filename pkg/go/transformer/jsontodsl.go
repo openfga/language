@@ -16,19 +16,20 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 	wildcard := restriction.GetWildcard()
 	condition := restriction.GetCondition()
 
+	typeRestriction := fmt.Sprintf("%v", typeName)
 	if wildcard != nil {
-		return fmt.Sprintf("%v:*", typeName)
+		typeRestriction += ":*"
 	}
 
 	if relation != "" {
-		return fmt.Sprintf("%v#%v", typeName, relation)
+		typeRestriction += fmt.Sprintf("#%v", relation)
 	}
 
 	if condition != "" {
-		return fmt.Sprintf("%v with %v", typeName, condition)
+		typeRestriction += fmt.Sprintf(" with %v", condition)
 	}
 
-	return fmt.Sprintf("%v", typeName)
+	return typeRestriction
 }
 
 func parseTypeRestrictions(restrictions []*pb.RelationReference) []string {

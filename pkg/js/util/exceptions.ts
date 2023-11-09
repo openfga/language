@@ -10,6 +10,7 @@ interface ValidationErrorProps {
     errorType: ValidationError;
     relation?: string;
     typeName?: string;
+    conditionName?: string;
   };
   customResolver?: (wordIndex: number, rawLine: string, symbol: string) => number;
 }
@@ -98,6 +99,48 @@ const createInvalidTypeRelationError = (props: BaseProps, typeName: string, rela
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.InvalidRelationType, relation: relationName, typeName },
+    }),
+  );
+};
+
+const createInvalidConditionNameInParameterError = (
+  props: BaseProps,
+  typeName: string,
+  relationName: string,
+  conditionName: string,
+) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  // const rawLine = lines[lineIndex];
+  // const actualValue = rawLine.includes("[")
+  //   ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]") + 1)
+  //   : "self";
+  errors.push(
+    constructValidationError({
+      message: `\`${conditionName}\` is not a defined condition in the model.`,
+      lines,
+      lineIndex,
+      customResolver: (wordIdx, rawLine, symbol) => {
+        wordIdx = rawLine.indexOf(symbol.substring(1));
+        return wordIdx;
+      },
+      metadata: {
+        symbol,
+        errorType: ValidationError.ConditionNotDefined,
+        relation: relationName,
+        typeName,
+      },
+    }),
+  );
+};
+
+const createUnusedConditionError = (props: BaseProps) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  errors.push(
+    constructValidationError({
+      message: `\`${symbol}\` condition is not used in the model.`,
+      lines,
+      lineIndex,
+      metadata: { symbol, errorType: ValidationError.ConditionNotUsed, conditionName: symbol },
     }),
   );
 };
@@ -265,7 +308,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
 
   const rawLine = lines[lineIndex];
   const re = new RegExp("\\b" + metadata.symbol + "\\b");
-  let wordIdx = rawLine.search(re) + 1;
+  let wordIdx = rawLine?.search(re) + 1;
 
   if (typeof customResolver === "function") {
     wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
@@ -333,6 +376,23 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines: 
     },
     raiseMaximumOneDirectRelationship(lineIndex: number, symbol: string) {
       createMaximumOneDirectRelationship({ errors, lines, lineIndex, symbol });
+    },
+    raiseInvalidConditionNameInParameter(
+      lineIndex: number,
+      symbol: string,
+      typeName: string,
+      relationName: string,
+      conditionName: string,
+    ) {
+      createInvalidConditionNameInParameterError(
+        { errors, lines, lineIndex, symbol },
+        typeName,
+        relationName,
+        conditionName,
+      );
+    },
+    raiseUnusedCondition(lineIndex: number, symbol: string) {
+      createUnusedConditionError({ errors, lines, lineIndex, symbol });
     },
   };
 };

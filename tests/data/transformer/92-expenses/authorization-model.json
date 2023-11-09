@@ -7,11 +7,9 @@
         "approver": {
           "tupleToUserset": {
             "tupleset": {
-              "object": "",
               "relation": "submitter"
             },
             "computedUserset": {
-              "object": "",
               "relation": "can_manage"
             }
           }
@@ -43,18 +41,15 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "manager"
                 }
               },
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "manager"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "can_manage"
                   }
                 }

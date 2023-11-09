@@ -16,7 +16,7 @@ describe("validateDSL", () => {
         return;
       }
 
-      expect(() => validateDSL(testCase.dsl)).toThrowError(DSLSyntaxError);
+      expect(() => validateDSL(testCase.dsl)).toThrow(DSLSyntaxError);
       try {
         validateDSL(testCase.dsl);
       } catch (thrownError) {
@@ -25,7 +25,7 @@ describe("validateDSL", () => {
           expect(exception.message).toEqual(
             `${errorsCount} error${errorsCount === 1 ? "" : "s"} occurred:\n\t* ${testCase.expected_errors
               .map((err: DSLSyntaxSingleError) => {
-                return `syntax error at line=${err.line.start}, column=${err.column.start}: ${err.msg}`;
+                return `syntax error at line=${err.line?.start}, column=${err.column?.start}: ${err.msg}`;
               })
               .join("\n\t* ")}\n\n`,
           );
@@ -49,7 +49,7 @@ describe("validateDSL", () => {
         return;
       }
 
-      expect(() => validateDSL(testCase.dsl)).toThrowError(ModelValidationError);
+      expect(() => validateDSL(testCase.dsl)).toThrow(ModelValidationError);
       try {
         validateDSL(testCase.dsl);
       } catch (thrownError) {
@@ -59,7 +59,7 @@ describe("validateDSL", () => {
             `${errorsCount} error${errorsCount === 1 ? "" : "s"} occurred:\n\t* ${testCase.expected_errors
               .map((err: ModelValidationSingleError) => {
                 const errorType = err.metadata?.errorType || "validation";
-                return `${errorType} error at line=${err.line.start}, column=${err.column.start}: ${err.msg}`;
+                return `${errorType} error at line=${err.line?.start}, column=${err.column?.start}: ${err.msg}`;
               })
               .join("\n\t* ")}\n\n`,
           );

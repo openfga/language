@@ -7,6 +7,9 @@ ANTLR_CMD=${DOCKER_BINARY} run -t --rm -v ${PWD}:/app ${ANTLR_DOCKER_IMAGE}
 .PHONY: all
 all: build
 
+.PHONY: antlr-gen
+antlr-gen: antlr-gen-go antlr-gen-js
+
 .PHONY: build
 build: build-go build-js
 

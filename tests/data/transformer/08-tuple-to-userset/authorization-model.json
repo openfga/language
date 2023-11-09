@@ -18,11 +18,9 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                    "object": "",
                     "relation": "parent"
                   },
                   "computedUserset": {
-                    "object": "",
                     "relation": "owner"
                   }
                 }

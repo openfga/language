@@ -40,7 +40,6 @@
       "relations": {
         "can_rename_device": {
           "computedUserset": {
-            "object": "",
             "relation": "it_admin"
           }
         },
@@ -49,13 +48,11 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "it_admin"
                 }
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "security_guard"
                 }
               }
@@ -67,13 +64,11 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "it_admin"
                 }
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "security_guard"
                 }
               }

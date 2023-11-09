@@ -15,11 +15,9 @@
         "subscriber_member": {
           "tupleToUserset": {
             "tupleset": {
-              "object": "",
               "relation": "subscriber"
             },
             "computedUserset": {
-              "object": "",
               "relation": "member"
             }
           }
@@ -68,11 +66,9 @@
         "can_access": {
           "tupleToUserset": {
             "tupleset": {
-              "object": "",
               "relation": "associated_plan"
             },
             "computedUserset": {
-              "object": "",
               "relation": "subscriber_member"
             }
           }

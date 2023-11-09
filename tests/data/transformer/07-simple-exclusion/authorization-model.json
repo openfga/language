@@ -14,13 +14,11 @@
           "difference": {
             "base": {
               "computedUserset": {
-                "object": "",
                 "relation": "follower"
               }
             },
             "subtract": {
               "computedUserset": {
-                "object": "",
                 "relation": "blocked"
               }
             }

@@ -24,7 +24,6 @@
                 "child": [
                   {
                     "computedUserset": {
-                      "object": "",
                       "relation": "admin"
                     }
                   },
@@ -32,13 +31,11 @@
                     "difference": {
                       "base": {
                         "computedUserset": {
-                          "object": "",
                           "relation": "viewer"
                         }
                       },
                       "subtract": {
                         "computedUserset": {
-                          "object": "",
                           "relation": "blocked"
                         }
                       }

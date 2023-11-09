@@ -1,8 +1,9 @@
-// Code generated from /app/OpenFGAParser.g4 by ANTLR 4.13.0. DO NOT EDIT.
+// Code generated from /app/OpenFGAParser.g4 by ANTLR 4.13.1. DO NOT EDIT.
 
 package parser // OpenFGAParser
 
 import "github.com/antlr4-go/antlr/v4"
+
 
 // OpenFGAParserListener is a complete listener for a parse tree produced by OpenFGAParser.
 type OpenFGAParserListener interface {
@@ -10,9 +11,6 @@ type OpenFGAParserListener interface {
 
 	// EnterMain is called when entering the main production.
 	EnterMain(c *MainContext)
-
-	// EnterIndentation is called when entering the indentation production.
-	EnterIndentation(c *IndentationContext)
 
 	// EnterModelHeader is called when entering the modelHeader production.
 	EnterModelHeader(c *ModelHeaderContext)
@@ -26,20 +24,17 @@ type OpenFGAParserListener interface {
 	// EnterRelationDeclaration is called when entering the relationDeclaration production.
 	EnterRelationDeclaration(c *RelationDeclarationContext)
 
+	// EnterRelationName is called when entering the relationName production.
+	EnterRelationName(c *RelationNameContext)
+
 	// EnterRelationDef is called when entering the relationDef production.
 	EnterRelationDef(c *RelationDefContext)
 
 	// EnterRelationDefPartials is called when entering the relationDefPartials production.
 	EnterRelationDefPartials(c *RelationDefPartialsContext)
 
-	// EnterRelationDefPartialAllOr is called when entering the relationDefPartialAllOr production.
-	EnterRelationDefPartialAllOr(c *RelationDefPartialAllOrContext)
-
-	// EnterRelationDefPartialAllAnd is called when entering the relationDefPartialAllAnd production.
-	EnterRelationDefPartialAllAnd(c *RelationDefPartialAllAndContext)
-
-	// EnterRelationDefPartialAllButNot is called when entering the relationDefPartialAllButNot production.
-	EnterRelationDefPartialAllButNot(c *RelationDefPartialAllButNotContext)
+	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
+	EnterRelationDefGrouping(c *RelationDefGroupingContext)
 
 	// EnterRelationDefDirectAssignment is called when entering the relationDefDirectAssignment production.
 	EnterRelationDefDirectAssignment(c *RelationDefDirectAssignmentContext)
@@ -47,83 +42,38 @@ type OpenFGAParserListener interface {
 	// EnterRelationDefRewrite is called when entering the relationDefRewrite production.
 	EnterRelationDefRewrite(c *RelationDefRewriteContext)
 
-	// EnterRelationDefRelationOnSameObject is called when entering the relationDefRelationOnSameObject production.
-	EnterRelationDefRelationOnSameObject(c *RelationDefRelationOnSameObjectContext)
-
-	// EnterRelationDefRelationOnRelatedObject is called when entering the relationDefRelationOnRelatedObject production.
-	EnterRelationDefRelationOnRelatedObject(c *RelationDefRelationOnRelatedObjectContext)
-
-	// EnterRelationDefOperator is called when entering the relationDefOperator production.
-	EnterRelationDefOperator(c *RelationDefOperatorContext)
-
-	// EnterRelationDefOperatorAnd is called when entering the relationDefOperatorAnd production.
-	EnterRelationDefOperatorAnd(c *RelationDefOperatorAndContext)
-
-	// EnterRelationDefOperatorOr is called when entering the relationDefOperatorOr production.
-	EnterRelationDefOperatorOr(c *RelationDefOperatorOrContext)
-
-	// EnterRelationDefOperatorButNot is called when entering the relationDefOperatorButNot production.
-	EnterRelationDefOperatorButNot(c *RelationDefOperatorButNotContext)
-
-	// EnterRelationDefKeywordFrom is called when entering the relationDefKeywordFrom production.
-	EnterRelationDefKeywordFrom(c *RelationDefKeywordFromContext)
-
 	// EnterRelationDefTypeRestriction is called when entering the relationDefTypeRestriction production.
 	EnterRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
-	// EnterRelationDefTypeRestrictionType is called when entering the relationDefTypeRestrictionType production.
-	EnterRelationDefTypeRestrictionType(c *RelationDefTypeRestrictionTypeContext)
+	// EnterRelationDefTypeRestrictionBase is called when entering the relationDefTypeRestrictionBase production.
+	EnterRelationDefTypeRestrictionBase(c *RelationDefTypeRestrictionBaseContext)
 
-	// EnterRelationDefTypeRestrictionRelation is called when entering the relationDefTypeRestrictionRelation production.
-	EnterRelationDefTypeRestrictionRelation(c *RelationDefTypeRestrictionRelationContext)
+	// EnterConditions is called when entering the conditions production.
+	EnterConditions(c *ConditionsContext)
 
-	// EnterRelationDefTypeRestrictionWildcard is called when entering the relationDefTypeRestrictionWildcard production.
-	EnterRelationDefTypeRestrictionWildcard(c *RelationDefTypeRestrictionWildcardContext)
+	// EnterCondition is called when entering the condition production.
+	EnterCondition(c *ConditionContext)
 
-	// EnterRelationDefTypeRestrictionUserset is called when entering the relationDefTypeRestrictionUserset production.
-	EnterRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
+	// EnterConditionName is called when entering the conditionName production.
+	EnterConditionName(c *ConditionNameContext)
 
-	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
-	EnterRelationDefGrouping(c *RelationDefGroupingContext)
+	// EnterConditionParameter is called when entering the conditionParameter production.
+	EnterConditionParameter(c *ConditionParameterContext)
 
-	// EnterRewriteComputedusersetName is called when entering the rewriteComputedusersetName production.
-	EnterRewriteComputedusersetName(c *RewriteComputedusersetNameContext)
+	// EnterParameterName is called when entering the parameterName production.
+	EnterParameterName(c *ParameterNameContext)
 
-	// EnterRewriteTuplesetComputedusersetName is called when entering the rewriteTuplesetComputedusersetName production.
-	EnterRewriteTuplesetComputedusersetName(c *RewriteTuplesetComputedusersetNameContext)
-
-	// EnterRewriteTuplesetName is called when entering the rewriteTuplesetName production.
-	EnterRewriteTuplesetName(c *RewriteTuplesetNameContext)
-
-	// EnterRelationName is called when entering the relationName production.
-	EnterRelationName(c *RelationNameContext)
-
-	// EnterTypeName is called when entering the typeName production.
-	EnterTypeName(c *TypeNameContext)
-
-	// EnterComment is called when entering the comment production.
-	EnterComment(c *CommentContext)
+	// EnterParameterType is called when entering the parameterType production.
+	EnterParameterType(c *ParameterTypeContext)
 
 	// EnterMultiLineComment is called when entering the multiLineComment production.
 	EnterMultiLineComment(c *MultiLineCommentContext)
 
-	// EnterSpacing is called when entering the spacing production.
-	EnterSpacing(c *SpacingContext)
-
-	// EnterNewline is called when entering the newline production.
-	EnterNewline(c *NewlineContext)
-
-	// EnterSchemaVersion is called when entering the schemaVersion production.
-	EnterSchemaVersion(c *SchemaVersionContext)
-
-	// EnterName is called when entering the name production.
-	EnterName(c *NameContext)
+	// EnterConditionExpression is called when entering the conditionExpression production.
+	EnterConditionExpression(c *ConditionExpressionContext)
 
 	// ExitMain is called when exiting the main production.
 	ExitMain(c *MainContext)
-
-	// ExitIndentation is called when exiting the indentation production.
-	ExitIndentation(c *IndentationContext)
 
 	// ExitModelHeader is called when exiting the modelHeader production.
 	ExitModelHeader(c *ModelHeaderContext)
@@ -137,20 +87,17 @@ type OpenFGAParserListener interface {
 	// ExitRelationDeclaration is called when exiting the relationDeclaration production.
 	ExitRelationDeclaration(c *RelationDeclarationContext)
 
+	// ExitRelationName is called when exiting the relationName production.
+	ExitRelationName(c *RelationNameContext)
+
 	// ExitRelationDef is called when exiting the relationDef production.
 	ExitRelationDef(c *RelationDefContext)
 
 	// ExitRelationDefPartials is called when exiting the relationDefPartials production.
 	ExitRelationDefPartials(c *RelationDefPartialsContext)
 
-	// ExitRelationDefPartialAllOr is called when exiting the relationDefPartialAllOr production.
-	ExitRelationDefPartialAllOr(c *RelationDefPartialAllOrContext)
-
-	// ExitRelationDefPartialAllAnd is called when exiting the relationDefPartialAllAnd production.
-	ExitRelationDefPartialAllAnd(c *RelationDefPartialAllAndContext)
-
-	// ExitRelationDefPartialAllButNot is called when exiting the relationDefPartialAllButNot production.
-	ExitRelationDefPartialAllButNot(c *RelationDefPartialAllButNotContext)
+	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
+	ExitRelationDefGrouping(c *RelationDefGroupingContext)
 
 	// ExitRelationDefDirectAssignment is called when exiting the relationDefDirectAssignment production.
 	ExitRelationDefDirectAssignment(c *RelationDefDirectAssignmentContext)
@@ -158,75 +105,33 @@ type OpenFGAParserListener interface {
 	// ExitRelationDefRewrite is called when exiting the relationDefRewrite production.
 	ExitRelationDefRewrite(c *RelationDefRewriteContext)
 
-	// ExitRelationDefRelationOnSameObject is called when exiting the relationDefRelationOnSameObject production.
-	ExitRelationDefRelationOnSameObject(c *RelationDefRelationOnSameObjectContext)
-
-	// ExitRelationDefRelationOnRelatedObject is called when exiting the relationDefRelationOnRelatedObject production.
-	ExitRelationDefRelationOnRelatedObject(c *RelationDefRelationOnRelatedObjectContext)
-
-	// ExitRelationDefOperator is called when exiting the relationDefOperator production.
-	ExitRelationDefOperator(c *RelationDefOperatorContext)
-
-	// ExitRelationDefOperatorAnd is called when exiting the relationDefOperatorAnd production.
-	ExitRelationDefOperatorAnd(c *RelationDefOperatorAndContext)
-
-	// ExitRelationDefOperatorOr is called when exiting the relationDefOperatorOr production.
-	ExitRelationDefOperatorOr(c *RelationDefOperatorOrContext)
-
-	// ExitRelationDefOperatorButNot is called when exiting the relationDefOperatorButNot production.
-	ExitRelationDefOperatorButNot(c *RelationDefOperatorButNotContext)
-
-	// ExitRelationDefKeywordFrom is called when exiting the relationDefKeywordFrom production.
-	ExitRelationDefKeywordFrom(c *RelationDefKeywordFromContext)
-
 	// ExitRelationDefTypeRestriction is called when exiting the relationDefTypeRestriction production.
 	ExitRelationDefTypeRestriction(c *RelationDefTypeRestrictionContext)
 
-	// ExitRelationDefTypeRestrictionType is called when exiting the relationDefTypeRestrictionType production.
-	ExitRelationDefTypeRestrictionType(c *RelationDefTypeRestrictionTypeContext)
+	// ExitRelationDefTypeRestrictionBase is called when exiting the relationDefTypeRestrictionBase production.
+	ExitRelationDefTypeRestrictionBase(c *RelationDefTypeRestrictionBaseContext)
 
-	// ExitRelationDefTypeRestrictionRelation is called when exiting the relationDefTypeRestrictionRelation production.
-	ExitRelationDefTypeRestrictionRelation(c *RelationDefTypeRestrictionRelationContext)
+	// ExitConditions is called when exiting the conditions production.
+	ExitConditions(c *ConditionsContext)
 
-	// ExitRelationDefTypeRestrictionWildcard is called when exiting the relationDefTypeRestrictionWildcard production.
-	ExitRelationDefTypeRestrictionWildcard(c *RelationDefTypeRestrictionWildcardContext)
+	// ExitCondition is called when exiting the condition production.
+	ExitCondition(c *ConditionContext)
 
-	// ExitRelationDefTypeRestrictionUserset is called when exiting the relationDefTypeRestrictionUserset production.
-	ExitRelationDefTypeRestrictionUserset(c *RelationDefTypeRestrictionUsersetContext)
+	// ExitConditionName is called when exiting the conditionName production.
+	ExitConditionName(c *ConditionNameContext)
 
-	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
-	ExitRelationDefGrouping(c *RelationDefGroupingContext)
+	// ExitConditionParameter is called when exiting the conditionParameter production.
+	ExitConditionParameter(c *ConditionParameterContext)
 
-	// ExitRewriteComputedusersetName is called when exiting the rewriteComputedusersetName production.
-	ExitRewriteComputedusersetName(c *RewriteComputedusersetNameContext)
+	// ExitParameterName is called when exiting the parameterName production.
+	ExitParameterName(c *ParameterNameContext)
 
-	// ExitRewriteTuplesetComputedusersetName is called when exiting the rewriteTuplesetComputedusersetName production.
-	ExitRewriteTuplesetComputedusersetName(c *RewriteTuplesetComputedusersetNameContext)
-
-	// ExitRewriteTuplesetName is called when exiting the rewriteTuplesetName production.
-	ExitRewriteTuplesetName(c *RewriteTuplesetNameContext)
-
-	// ExitRelationName is called when exiting the relationName production.
-	ExitRelationName(c *RelationNameContext)
-
-	// ExitTypeName is called when exiting the typeName production.
-	ExitTypeName(c *TypeNameContext)
-
-	// ExitComment is called when exiting the comment production.
-	ExitComment(c *CommentContext)
+	// ExitParameterType is called when exiting the parameterType production.
+	ExitParameterType(c *ParameterTypeContext)
 
 	// ExitMultiLineComment is called when exiting the multiLineComment production.
 	ExitMultiLineComment(c *MultiLineCommentContext)
 
-	// ExitSpacing is called when exiting the spacing production.
-	ExitSpacing(c *SpacingContext)
-
-	// ExitNewline is called when exiting the newline production.
-	ExitNewline(c *NewlineContext)
-
-	// ExitSchemaVersion is called when exiting the schemaVersion production.
-	ExitSchemaVersion(c *SchemaVersionContext)
-
-	// ExitName is called when exiting the name production.
-	ExitName(c *NameContext)
+	// ExitConditionExpression is called when exiting the conditionExpression production.
+	ExitConditionExpression(c *ConditionExpressionContext)
 }

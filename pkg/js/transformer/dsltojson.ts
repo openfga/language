@@ -1,22 +1,32 @@
-import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
+import type {
+  AuthorizationModel,
+  Condition,
+  ConditionParamTypeRef,
+  ObjectRelation,
+  RelationMetadata,
+  RelationReference,
+  TypeDefinition,
+  Userset,
+} from "@openfga/sdk";
 import * as antlr from "antlr4";
 import { ErrorListener, RecognitionException, Recognizer } from "antlr4";
 import OpenFGAListener from "../gen/OpenFGAParserListener";
 import OpenFGALexer from "../gen/OpenFGALexer";
 import OpenFGAParser, {
+  ConditionContext,
+  ConditionExpressionContext,
+  ConditionParameterContext,
+  ModelHeaderContext,
   RelationDeclarationContext,
   RelationDefDirectAssignmentContext,
-  RelationDefPartialAllAndContext,
-  RelationDefPartialAllButNotContext,
-  RelationDefPartialAllOrContext,
-  RelationDefRelationOnRelatedObjectContext,
-  RelationDefRelationOnSameObjectContext,
+  RelationDefPartialsContext,
+  RelationDefRewriteContext,
   RelationDefTypeRestrictionContext,
-  SchemaVersionContext,
   TypeDefContext,
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
 import { DSLSyntaxError, DSLSyntaxSingleError } from "../errors";
+import { TypeName } from "@openfga/sdk";
 
 enum RelationDefinitionOperator {
   RELATION_DEFINITION_OPERATOR_NONE = "",
@@ -43,9 +53,12 @@ class OpenFgaDslListener extends OpenFGAListener {
   public authorizationModel: Partial<AuthorizationModel> = {};
   private currentTypeDef: Partial<TypeDefinition> | undefined;
   private currentRelation: Partial<Relation> | undefined;
+  private currentCondition: Condition | undefined;
 
-  exitSchemaVersion = (ctx: SchemaVersionContext) => {
-    this.authorizationModel.schema_version = ctx.getText();
+  exitModelHeader = (ctx: ModelHeaderContext) => {
+    if (ctx.SCHEMA_VERSION()) {
+      this.authorizationModel.schema_version = ctx.SCHEMA_VERSION().getText();
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -62,12 +75,12 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enterTypeDef = (ctx: TypeDefContext) => {
-    if (!ctx.typeName()) {
+    if (!ctx._typeName) {
       return;
     }
 
     this.currentTypeDef = {
-      type: ctx.typeName().getText(),
+      type: ctx._typeName.text,
       relations: {},
       metadata: { relations: {} },
     };
@@ -169,63 +182,126 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
   exitRelationDefTypeRestriction = (ctx: RelationDefTypeRestrictionContext) => {
     const relationRef: Partial<RelationReference> = {};
-    const type = ctx.relationDefTypeRestrictionType();
+    const baseRestriction = ctx.relationDefTypeRestrictionBase();
+    if (!baseRestriction) {
+      return;
+    }
 
-    const usersetRestriction = ctx.relationDefTypeRestrictionUserset();
-    const wildcardRestriction = ctx.relationDefTypeRestrictionWildcard();
-    if (type) {
-      relationRef.type = type.getText();
+    relationRef.type = baseRestriction._relationDefTypeRestrictionType?.text;
+    const usersetRestriction = baseRestriction._relationDefTypeRestrictionRelation;
+    const wildcardRestriction = baseRestriction._relationDefTypeRestrictionWildcard;
+
+    if (ctx.conditionName()) {
+      relationRef.condition = ctx.conditionName().getText();
     }
+
     if (usersetRestriction) {
-      relationRef.type = usersetRestriction.relationDefTypeRestrictionType().getText();
-      relationRef.relation = usersetRestriction.relationDefTypeRestrictionRelation().getText();
+      relationRef.relation = usersetRestriction.text;
     }
+
     if (wildcardRestriction) {
-      relationRef.type = wildcardRestriction.relationDefTypeRestrictionType().getText();
       relationRef.wildcard = {};
     }
+
     this.currentRelation!.typeInfo!.directly_related_user_types!.push(relationRef as RelationReference);
   };
 
-  exitRelationDefRelationOnSameObject = (ctx: RelationDefRelationOnSameObjectContext) => {
-    const partialRewrite: Userset = {
+  exitRelationDefRewrite = (ctx: RelationDefRewriteContext) => {
+    let partialRewrite: Userset = {
       computedUserset: {
-        object: "",
-        relation: ctx.rewriteComputedusersetName().getText(),
+        relation: ctx._rewriteComputedusersetName.text,
       },
     };
+
+    if (ctx._rewriteTuplesetName) {
+      partialRewrite = {
+        tupleToUserset: {
+          ...(partialRewrite as { computedUserset: ObjectRelation }),
+          tupleset: {
+            relation: ctx._rewriteTuplesetName.text,
+          },
+        },
+      };
+    }
+
     this.currentRelation?.rewrites?.push(partialRewrite);
   };
 
-  exitRelationDefRelationOnRelatedObject = (ctx: RelationDefRelationOnRelatedObjectContext) => {
-    const partialRewrite: Userset = {
-      tupleToUserset: {
-        computedUserset: {
-          object: "",
-          relation: ctx.rewriteTuplesetComputedusersetName().getText(),
-        },
-        tupleset: {
-          object: "",
-          relation: ctx.rewriteTuplesetName().getText(),
-        },
-      },
+  enterRelationDefPartials = (ctx: RelationDefPartialsContext) => {
+    if (ctx.OR_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR;
+    } else if (ctx.AND_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND;
+    } else if (ctx.BUT_NOT_list().length) {
+      this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT;
+    }
+  };
+
+  enterCondition = (ctx: ConditionContext) => {
+    if (ctx.conditionName() === null) {
+      return;
+    }
+    if (!this.authorizationModel.conditions) {
+      this.authorizationModel.conditions = {};
+    }
+
+    const conditionName = ctx.conditionName().getText();
+    if (this.authorizationModel.conditions![conditionName]) {
+      ctx.parser?.notifyErrorListeners(
+        `condition '${conditionName}' is already defined in the model`,
+        ctx.conditionName().start,
+        undefined,
+      );
+    }
+
+    this.currentCondition = {
+      name: conditionName,
+      expression: "",
+      parameters: {},
     };
-    this.currentRelation?.rewrites?.push(partialRewrite);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllOr = (_ctx: RelationDefPartialAllOrContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_OR;
+  exitConditionParameter = (ctx: ConditionParameterContext) => {
+    if (!ctx.parameterName() || !ctx.parameterType()) {
+      return;
+    }
+
+    const parameterName = ctx.parameterName().getText();
+    if (this.currentCondition?.parameters?.[parameterName]) {
+      ctx.parser?.notifyErrorListeners(
+        `parameter '${parameterName}' is already defined in the condition '${this.currentCondition?.name}'`,
+        ctx.parameterName().start,
+        undefined,
+      );
+    }
+
+    const paramContainer = ctx.parameterType().CONDITION_PARAM_CONTAINER();
+    const conditionParamTypeRef: Partial<ConditionParamTypeRef> = {};
+    if (paramContainer) {
+      conditionParamTypeRef.type_name = `TYPE_NAME_${paramContainer.getText().toUpperCase()}` as TypeName;
+      const genericTypeName =
+        ctx.parameterType().CONDITION_PARAM_TYPE() &&
+        (`TYPE_NAME_${ctx.parameterType().CONDITION_PARAM_TYPE().getText().toUpperCase()}` as TypeName);
+      if (genericTypeName) {
+        conditionParamTypeRef.generic_types = [{ type_name: genericTypeName }];
+      }
+    } else {
+      conditionParamTypeRef.type_name = `TYPE_NAME_${ctx.parameterType().getText().toUpperCase()}` as TypeName;
+    }
+
+    this.currentCondition!.parameters![parameterName] = conditionParamTypeRef as ConditionParamTypeRef;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllAnd = (_ctx: RelationDefPartialAllAndContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_AND;
+  exitConditionExpression = (ctx: ConditionExpressionContext) => {
+    this.currentCondition!.expression = ctx.getText().trim();
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  enterRelationDefPartialAllButNot = (_ctx: RelationDefPartialAllButNotContext) => {
-    this.currentRelation!.operator = RelationDefinitionOperator.RELATION_DEFINITION_OPERATOR_BUT_NOT;
+  exitCondition = (_ctx: ConditionContext) => {
+    if (this.currentCondition) {
+      this.authorizationModel.conditions![this.currentCondition.name!] = this.currentCondition!;
+
+      this.currentCondition = undefined;
+    }
   };
 }
 

@@ -15,13 +15,11 @@
             "child": [
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "follower"
                 }
               },
               {
                 "computedUserset": {
-                  "object": "",
                   "relation": "owner"
                 }
               }

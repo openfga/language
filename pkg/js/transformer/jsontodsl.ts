@@ -1,20 +1,34 @@
-import type { AuthorizationModel, RelationMetadata, RelationReference, TypeDefinition, Userset } from "@openfga/sdk";
-import { UnsupportedDSLNestingError } from "../errors";
+import type {
+  AuthorizationModel,
+  Condition,
+  ConditionParamTypeRef,
+  RelationMetadata,
+  RelationReference,
+  TypeDefinition,
+  Userset,
+} from "@openfga/sdk";
+import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;
   const relation = restriction.relation;
   const wildcard = restriction.wildcard;
+  const condition = restriction.condition;
 
-  if (wildcard != null) {
-    return `${typeName}:*`;
+  let typeRestriction = typeName;
+  if (wildcard) {
+    typeRestriction = `${typeRestriction}:*`;
   }
 
-  if (relation != null) {
-    return `${typeName}#${relation}`;
+  if (relation) {
+    typeRestriction = `${typeRestriction}#${relation}`;
   }
 
-  return typeName;
+  if (condition) {
+    typeRestriction = `${typeRestriction} with ${condition}`;
+  }
+
+  return typeRestriction;
 }
 
 function parseTypeRestrictions(restrictions: RelationReference[]): string[] {
@@ -117,7 +131,7 @@ function parseRelation(
   relationMetadata: RelationMetadata = {},
 ) {
   let parsedRelationString = `    define ${relationName}: `;
-  const typeRestrictions = relationMetadata.directly_related_user_types || [];
+  const typeRestrictions: RelationReference[] = relationMetadata.directly_related_user_types || [];
 
   if (relationDefinition.difference != null) {
     parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions);
@@ -155,13 +169,61 @@ const parseType = (typeDef: TypeDefinition): string => {
   return parsedTypeString;
 };
 
+const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef>): string => {
+  const parametersStringArray: string[] = [];
+
+  Object.keys(parameterMap)
+    .sort()
+    .forEach((parameterName) => {
+      const parameterType = parameterMap[parameterName];
+      let parameterTypeString = parameterType.type_name.replace("TYPE_NAME_", "").toLowerCase();
+      if (parameterTypeString === "list" || parameterTypeString === "map") {
+        const genericTypeString = parameterType.generic_types?.[0].type_name.replace("TYPE_NAME_", "").toLowerCase();
+        parameterTypeString = `${parameterTypeString}<${genericTypeString}>`;
+      }
+      parametersStringArray.push(`${parameterName}: ${parameterTypeString}`);
+    });
+
+  return parametersStringArray.join(", ");
+};
+
+const parseCondition = (conditionName: string, conditionDef: Condition): string => {
+  if (conditionName != conditionDef.name) {
+    throw new ConditionNameDoesntMatchError(conditionName, conditionDef.name);
+  }
+
+  const paramsString = parseConditionParams(conditionDef.parameters || {});
+
+  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
+};
+
+const parseConditions = (model: AuthorizationModel): string => {
+  const conditionsMap = model.conditions || {};
+  if (!Object.keys(conditionsMap).length) {
+    return "";
+  }
+
+  let parsedConditionsString = "";
+  Object.keys(conditionsMap)
+    .sort()
+    .forEach((conditionName) => {
+      const condition = conditionsMap[conditionName];
+      const parsedConditionString = parseCondition(conditionName, condition);
+
+      parsedConditionsString += `\n${parsedConditionString}`;
+    });
+
+  return parsedConditionsString;
+};
+
 export const transformJSONToDSL = (model: AuthorizationModel): string => {
   const schemaVersion = model?.schema_version || "1.1";
   const typeDefinitions = model?.type_definitions?.map((typeDef) => parseType(typeDef));
+  const parsedConditionsString = parseConditions(model);
 
   return `model
   schema ${schemaVersion}
-${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}`;
+${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;
 };
 
 export const transformJSONStringToDSL = (modelString: string): string => {

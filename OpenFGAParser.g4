@@ -1,52 +1,81 @@
 parser grammar OpenFGAParser;
 options { tokenVocab=OpenFGALexer; }
 
-main: modelHeader typeDefs newline? EOF;
+main: WHITESPACE? NEWLINE? modelHeader NEWLINE? typeDefs NEWLINE? conditions NEWLINE? EOF;
 
-indentation: INDENT;
+// Model Header
+modelHeader: (multiLineComment NEWLINE)? MODEL NEWLINE SCHEMA WHITESPACE schemaVersion=SCHEMA_VERSION WHITESPACE?;
 
-modelHeader: (multiLineComment newline)? MODEL spacing? (newline multiLineComment)? indentation SCHEMA spacing schemaVersion spacing?;
+// Type Definitions
 typeDefs: typeDef*;
-typeDef:  (newline multiLineComment)? newline TYPE spacing typeName spacing? (indentation RELATIONS spacing? relationDeclaration+)?;
-relationDeclaration: (newline multiLineComment)? indentation DEFINE spacing relationName spacing? COLON spacing? relationDef spacing?;
+typeDef:  (NEWLINE multiLineComment)? NEWLINE TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
 
-relationDef: (relationDefDirectAssignment | relationDefGrouping) relationDefPartials?;
-
-relationDefPartials: relationDefPartialAllOr | relationDefPartialAllAnd | relationDefPartialAllButNot;
-relationDefPartialAllOr: (spacing relationDefOperatorOr spacing relationDefGrouping)+;
-relationDefPartialAllAnd: (spacing relationDefOperatorAnd spacing relationDefGrouping)+;
-relationDefPartialAllButNot: (spacing relationDefOperatorButNot spacing relationDefGrouping)+;
-
-relationDefDirectAssignment: L_SQUARE spacing? relationDefTypeRestriction spacing? (COMMA spacing? relationDefTypeRestriction)* spacing? R_SQUARE;
-relationDefRewrite: relationDefRelationOnSameObject | relationDefRelationOnRelatedObject;
-relationDefRelationOnSameObject: rewriteComputedusersetName;
-relationDefRelationOnRelatedObject: rewriteTuplesetComputedusersetName spacing relationDefKeywordFrom spacing rewriteTuplesetName;
-
-relationDefOperator: relationDefOperatorOr | relationDefOperatorAnd | relationDefOperatorButNot;
-relationDefOperatorAnd: AND;
-relationDefOperatorOr: OR;
-relationDefOperatorButNot: BUT_NOT;
-relationDefKeywordFrom: FROM;
-
-relationDefTypeRestriction: relationDefTypeRestrictionType | relationDefTypeRestrictionWildcard | relationDefTypeRestrictionUserset;
-relationDefTypeRestrictionType: name;
-relationDefTypeRestrictionRelation: name;
-relationDefTypeRestrictionWildcard: relationDefTypeRestrictionType COLON WILDCARD spacing?;
-relationDefTypeRestrictionUserset: relationDefTypeRestrictionType HASH relationDefTypeRestrictionRelation;
-
+relationDeclaration: NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? relationDef;
+relationName: IDENTIFIER;
+relationDef: (relationDefDirectAssignment | relationDefGrouping) (relationDefPartials)?;
+relationDefPartials: (WHITESPACE OR WHITESPACE relationDefGrouping)+ | (WHITESPACE AND WHITESPACE relationDefGrouping)+ | (WHITESPACE BUT_NOT WHITESPACE relationDefGrouping)+;
 relationDefGrouping: relationDefRewrite;
 
-rewriteComputedusersetName: name;
-rewriteTuplesetComputedusersetName: name;
-rewriteTuplesetName: name;
-relationName: name;
-typeName: name;
+relationDefDirectAssignment: LBRACKET WHITESPACE? relationDefTypeRestriction WHITESPACE? (COMMA WHITESPACE? relationDefTypeRestriction WHITESPACE?)* RPRACKET;
+relationDefRewrite: rewriteComputedusersetName=IDENTIFIER (WHITESPACE FROM WHITESPACE rewriteTuplesetName=IDENTIFIER)?;
 
-comment: WS* HASH ~(NEWLINE)*;
-multiLineComment: comment (newline comment)*;
-spacing: WS+;
-newline: NEWLINE+;
-schemaVersion: SCHEMA_VERSION;
+relationDefTypeRestriction: NEWLINE? (
+    relationDefTypeRestrictionBase
+    | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE conditionName)
+    ) NEWLINE?;
+relationDefTypeRestrictionBase: relationDefTypeRestrictionType=IDENTIFIER
+    ((COLON relationDefTypeRestrictionWildcard=STAR)
+     | (HASH relationDefTypeRestrictionRelation=IDENTIFIER))?;
 
-name: ALPHA_NUMERIC+;
+// Conditions
+conditions: condition*;
+condition: (NEWLINE multiLineComment)? NEWLINE
+    CONDITION WHITESPACE conditionName WHITESPACE?
+    LPAREN WHITESPACE? conditionParameter WHITESPACE? (COMMA WHITESPACE? conditionParameter WHITESPACE?)* NEWLINE? RPAREN WHITESPACE?
+    LBRACE NEWLINE? WHITESPACE?
+    conditionExpression
+    NEWLINE? RBRACE;
+conditionName: IDENTIFIER;
+conditionParameter: NEWLINE? parameterName WHITESPACE? COLON WHITESPACE? parameterType;
+parameterName: IDENTIFIER;
+parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_PARAM_TYPE GREATER);
 
+multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
+
+conditionExpression: ((
+IDENTIFIER |
+EQUALS |
+NOT_EQUALS |
+IN |
+LESS |
+LESS_EQUALS |
+GREATER_EQUALS |
+GREATER |
+LOGICAL_AND |
+LOGICAL_OR |
+LBRACKET |
+RPRACKET |
+LBRACE |
+LPAREN |
+RPAREN |
+DOT |
+MINUS |
+EXCLAM |
+QUESTIONMARK |
+PLUS |
+STAR |
+SLASH |
+PERCENT |
+CEL_TRUE |
+CEL_FALSE |
+NUL |
+WHITESPACE |
+CEL_COMMENT |
+NUM_FLOAT |
+NUM_INT |
+NUM_UINT |
+STRING |
+BYTES |
+NEWLINE |
+WHITESPACE
+)|~(RBRACE))*;

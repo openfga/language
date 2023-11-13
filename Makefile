@@ -1,6 +1,7 @@
-DOCKER_BINARY=docker
+docker_binary=docker
+
 ANTLR_DOCKER_IMAGE=docker.io/openfga_utils/antlr
-ANTLR_CMD=${DOCKER_BINARY} run -t --rm -v ${PWD}:/app ${ANTLR_DOCKER_IMAGE}
+ANTLR_CMD=${docker_binary} run -t --rm -v ${PWD}:/app:Z ${ANTLR_DOCKER_IMAGE}
 
 #### Global #####
 
@@ -22,7 +23,7 @@ lint: lint-go lint-js
 #### Go #####
 
 .PHONY: antlr-gen-go
-antlr-gen-go: build-antlr-container
+antlr-gen-go:
 	$(MAKE) antlr-gen-base language=Go packageName=go
 
 .PHONY: build-go
@@ -60,7 +61,7 @@ all-tests-go: antlr-gen-go
 #### TypeScript #####
 
 .PHONY: antlr-gen-js
-antlr-gen-js: build-antlr-container
+antlr-gen-js:
 	$(MAKE) antlr-gen-base language=TypeScript packageName=js
 
 .PHONY: build-js
@@ -99,7 +100,7 @@ all-tests-js: antlr-gen-js
 
 .PHONY: build-antlr-container
 build-antlr-container:
-	docker build -f antlr.Containerfile -t ${ANTLR_DOCKER_IMAGE} .
+	${docker_binary} build -f antlr.Containerfile -t ${ANTLR_DOCKER_IMAGE} .
 
 .PHONY: antlr-gen-base
 antlr-gen-base: build-antlr-container

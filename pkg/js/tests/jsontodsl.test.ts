@@ -18,7 +18,11 @@ describe("jsonToDSL", () => {
     const testFn = testCase.skip ? it.skip : it;
 
     testFn(`should throw an error when transforming ${testCase.name} from JSON to DSL`, () => {
-      expect(() => transformJSONStringToDSL(testCase.json)).toThrow(testCase.error_message);
+      if (testCase.error_message) {
+        expect(() => transformJSONStringToDSL(testCase.json)).toThrow(testCase.error_message);
+      } else {
+        expect(() => transformJSONStringToDSL(testCase.json)).not.toThrow();
+      }
     });
   });
 });

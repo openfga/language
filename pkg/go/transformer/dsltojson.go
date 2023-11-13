@@ -298,7 +298,7 @@ func (l *OpenFgaDslListener) EnterRelationDefPartials(ctx *parser.RelationDefPar
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR
 	} else if len(ctx.AllAND()) > 0 {
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND
-	} else if len(ctx.AllBUT_NOT()) > 0 {
+	} else if ctx.BUT_NOT() != nil {
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT
 	}
 }

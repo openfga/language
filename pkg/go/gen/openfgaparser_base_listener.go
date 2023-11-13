@@ -63,6 +63,12 @@ func (s *BaseOpenFGAParserListener) EnterRelationDef(ctx *RelationDefContext) {}
 // ExitRelationDef is called when production relationDef is exited.
 func (s *BaseOpenFGAParserListener) ExitRelationDef(ctx *RelationDefContext) {}
 
+// EnterRelationDefNoDirect is called when production relationDefNoDirect is entered.
+func (s *BaseOpenFGAParserListener) EnterRelationDefNoDirect(ctx *RelationDefNoDirectContext) {}
+
+// ExitRelationDefNoDirect is called when production relationDefNoDirect is exited.
+func (s *BaseOpenFGAParserListener) ExitRelationDefNoDirect(ctx *RelationDefNoDirectContext) {}
+
 // EnterRelationDefPartials is called when production relationDefPartials is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefPartials(ctx *RelationDefPartialsContext) {}
 
@@ -74,6 +80,18 @@ func (s *BaseOpenFGAParserListener) EnterRelationDefGrouping(ctx *RelationDefGro
 
 // ExitRelationDefGrouping is called when production relationDefGrouping is exited.
 func (s *BaseOpenFGAParserListener) ExitRelationDefGrouping(ctx *RelationDefGroupingContext) {}
+
+// EnterRelationRecurse is called when production relationRecurse is entered.
+func (s *BaseOpenFGAParserListener) EnterRelationRecurse(ctx *RelationRecurseContext) {}
+
+// ExitRelationRecurse is called when production relationRecurse is exited.
+func (s *BaseOpenFGAParserListener) ExitRelationRecurse(ctx *RelationRecurseContext) {}
+
+// EnterRelationRecurseNoDirect is called when production relationRecurseNoDirect is entered.
+func (s *BaseOpenFGAParserListener) EnterRelationRecurseNoDirect(ctx *RelationRecurseNoDirectContext) {}
+
+// ExitRelationRecurseNoDirect is called when production relationRecurseNoDirect is exited.
+func (s *BaseOpenFGAParserListener) ExitRelationRecurseNoDirect(ctx *RelationRecurseNoDirectContext) {}
 
 // EnterRelationDefDirectAssignment is called when production relationDefDirectAssignment is entered.
 func (s *BaseOpenFGAParserListener) EnterRelationDefDirectAssignment(ctx *RelationDefDirectAssignmentContext) {}

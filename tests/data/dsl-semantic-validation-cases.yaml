@@ -360,7 +360,7 @@
         define reader: writer
         define writer: reader
   expected_errors:
-    - msg: '`reader` is an impossible relation for `document` (no entrypoint).'
+    - msg: '`reader` is an impossible relation for `document` (potential loop).'
       line:
         start: 5
         end: 5
@@ -369,7 +369,7 @@
         end: 18
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`writer` is an impossible relation for `document` (no entrypoint).'
+    - msg: '`writer` is an impossible relation for `document` (potential loop).'
       line:
         start: 6
         end: 6
@@ -542,7 +542,7 @@
         define action2: admin and action3 and action1
         define action3: admin and action1 and action2
   expected_errors:
-    - msg: '`action1` is an impossible relation for `doc` (no entrypoint).'
+    - msg: '`action1` is an impossible relation for `doc` (potential loop).'
       line:
         start: 7
         end: 7
@@ -551,7 +551,7 @@
         end: 19
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`action2` is an impossible relation for `doc` (no entrypoint).'
+    - msg: '`action2` is an impossible relation for `doc` (potential loop).'
       line:
         start: 8
         end: 8
@@ -560,7 +560,7 @@
         end: 19
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`action3` is an impossible relation for `doc` (no entrypoint).'
+    - msg: '`action3` is an impossible relation for `doc` (potential loop).'
       line:
         start: 9
         end: 9
@@ -581,7 +581,7 @@
         define action2: admin but not action3
         define action3: admin but not action1
   expected_errors:
-  - msg: '`action1` is an impossible relation for `doc` (no entrypoint).'
+  - msg: '`action1` is an impossible relation for `doc` (potential loop).'
     line:
       start: 7
       end: 7
@@ -590,7 +590,7 @@
       end: 19
     metadata:
       errorType: relation-no-entry-point
-  - msg: '`action2` is an impossible relation for `doc` (no entrypoint).'
+  - msg: '`action2` is an impossible relation for `doc` (potential loop).'
     line:
       start: 8
       end: 8
@@ -599,7 +599,7 @@
       end: 19
     metadata:
       errorType: relation-no-entry-point
-  - msg: '`action3` is an impossible relation for `doc` (no entrypoint).'
+  - msg: '`action3` is an impossible relation for `doc` (potential loop).'
     line:
       start: 9
       end: 9

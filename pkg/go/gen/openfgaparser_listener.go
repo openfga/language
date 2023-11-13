@@ -30,11 +30,20 @@ type OpenFGAParserListener interface {
 	// EnterRelationDef is called when entering the relationDef production.
 	EnterRelationDef(c *RelationDefContext)
 
+	// EnterRelationDefNoDirect is called when entering the relationDefNoDirect production.
+	EnterRelationDefNoDirect(c *RelationDefNoDirectContext)
+
 	// EnterRelationDefPartials is called when entering the relationDefPartials production.
 	EnterRelationDefPartials(c *RelationDefPartialsContext)
 
 	// EnterRelationDefGrouping is called when entering the relationDefGrouping production.
 	EnterRelationDefGrouping(c *RelationDefGroupingContext)
+
+	// EnterRelationRecurse is called when entering the relationRecurse production.
+	EnterRelationRecurse(c *RelationRecurseContext)
+
+	// EnterRelationRecurseNoDirect is called when entering the relationRecurseNoDirect production.
+	EnterRelationRecurseNoDirect(c *RelationRecurseNoDirectContext)
 
 	// EnterRelationDefDirectAssignment is called when entering the relationDefDirectAssignment production.
 	EnterRelationDefDirectAssignment(c *RelationDefDirectAssignmentContext)
@@ -93,11 +102,20 @@ type OpenFGAParserListener interface {
 	// ExitRelationDef is called when exiting the relationDef production.
 	ExitRelationDef(c *RelationDefContext)
 
+	// ExitRelationDefNoDirect is called when exiting the relationDefNoDirect production.
+	ExitRelationDefNoDirect(c *RelationDefNoDirectContext)
+
 	// ExitRelationDefPartials is called when exiting the relationDefPartials production.
 	ExitRelationDefPartials(c *RelationDefPartialsContext)
 
 	// ExitRelationDefGrouping is called when exiting the relationDefGrouping production.
 	ExitRelationDefGrouping(c *RelationDefGroupingContext)
+
+	// ExitRelationRecurse is called when exiting the relationRecurse production.
+	ExitRelationRecurse(c *RelationRecurseContext)
+
+	// ExitRelationRecurseNoDirect is called when exiting the relationRecurseNoDirect production.
+	ExitRelationRecurseNoDirect(c *RelationRecurseNoDirectContext)
 
 	// ExitRelationDefDirectAssignment is called when exiting the relationDefDirectAssignment production.
 	ExitRelationDefDirectAssignment(c *RelationDefDirectAssignmentContext)

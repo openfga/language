@@ -32,9 +32,9 @@ conditions: condition*;
 condition: (NEWLINE multiLineComment)? NEWLINE
     CONDITION WHITESPACE conditionName WHITESPACE?
     LPAREN WHITESPACE? conditionParameter WHITESPACE? (COMMA WHITESPACE? conditionParameter WHITESPACE?)* NEWLINE? RPAREN WHITESPACE?
-    LBRACE NEWLINE? WHITESPACE?
+    OPEN_CEL
     conditionExpression
-    NEWLINE? RBRACE;
+    CLOSE_CEL;
 conditionName: IDENTIFIER;
 conditionParameter: NEWLINE? parameterName WHITESPACE? COLON WHITESPACE? parameterType;
 parameterName: IDENTIFIER;
@@ -42,40 +42,4 @@ parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_
 
 multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
 
-conditionExpression: ((
-IDENTIFIER |
-EQUALS |
-NOT_EQUALS |
-IN |
-LESS |
-LESS_EQUALS |
-GREATER_EQUALS |
-GREATER |
-LOGICAL_AND |
-LOGICAL_OR |
-LBRACKET |
-RPRACKET |
-LBRACE |
-LPAREN |
-RPAREN |
-DOT |
-MINUS |
-EXCLAM |
-QUESTIONMARK |
-PLUS |
-STAR |
-SLASH |
-PERCENT |
-CEL_TRUE |
-CEL_FALSE |
-NUL |
-WHITESPACE |
-CEL_COMMENT |
-NUM_FLOAT |
-NUM_INT |
-NUM_UINT |
-STRING |
-BYTES |
-NEWLINE |
-WHITESPACE
-)|~(RBRACE))*;
+conditionExpression: (~(CLOSE_CEL))*;

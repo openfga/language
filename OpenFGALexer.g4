@@ -1,12 +1,5 @@
 lexer grammar OpenFGALexer;
 
-HASH: '#';
-COLON: ':';
-COMMA: ',';
-CONDITION_PARAM_CONTAINER: 'map' | 'list';
-CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
-  'double' | 'duration' | 'timestamp' | 'ipaddress';
-
 AND: 'and';
 OR: 'or';
 BUT_NOT: 'but not';
@@ -18,35 +11,67 @@ SCHEMA_VERSION: '1.1';
 TYPE: 'type';
 CONDITION: 'condition';
 
+CONDITION_PARAM_CONTAINER: 'map' | 'list';
+CONDITION_PARAM_TYPE: 'bool' | 'string' | 'int' | 'uint' |
+  'double' | 'duration' | 'timestamp' | 'ipaddress';
+
 RELATIONS: 'relations';
 DEFINE: 'define';
 KEYWORD_WITH: 'with';
 
+IDENTIFIER : (LETTER | '_') ( LETTER | DIGIT | '_' | MINUS)*; // NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
+
+WHITESPACE : ( '\t' | ' ' | '\u000C' )+;
+
+NEWLINE
+ : WHITESPACE? ( '\r'? '\n' | '\r' | '\f' ) WHITESPACE? NEWLINE?
+ ;
+
+DOT : '.';
+STAR : '*';
+HASH: '#';
+COLON: ':';
+COMMA: ',';
+LPAREN : '(';
+RPAREN : ')';
+LESS : '<';
+GREATER : '>';
+LBRACKET : '[';
+RPRACKET : ']';
+
 // CEL Lexer tokens, slightly modified
 // source: https://github.com/google/cel-go/blob/32ac6133c6b8eca8bb76e17e6ad50a1eb757778a/parser/gen/CEL.g4
+
+
+OPEN_CEL: '{' -> pushMode(CEL);
+
+mode CEL;
+CEL_HASH: '#';
+CEL_COLON: ':';
+CEL_COMMA: ',';
 
 EQUALS : '==';
 NOT_EQUALS : '!=';
 IN: 'in';
-LESS : '<';
+CEL_LESS : '<';
 LESS_EQUALS : '<=';
 GREATER_EQUALS : '>=';
-GREATER : '>';
+CEL_GREATER : '>';
 LOGICAL_AND : '&&';
 LOGICAL_OR : '||';
 
-LBRACKET : '[';
-RPRACKET : ']';
-LBRACE : '{';
-RBRACE : '}';
-LPAREN : '(';
-RPAREN : ')';
-DOT : '.';
+CEL_LBRACKET : '[';
+CEL_RPRACKET : ']';
+
+
+CEL_LPAREN : '(';
+CEL_RPAREN : ')';
+CEL_DOT : '.';
 MINUS : '-';
 EXCLAM : '!';
 QUESTIONMARK : '?';
 PLUS : '+';
-STAR : '*';
+CEL_STAR : '*';
 SLASH : '/';
 PERCENT : '%';
 CEL_TRUE : 'true';
@@ -84,7 +109,7 @@ fragment ESC_UNI_SEQ
     | BACKSLASH 'U' HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT HEXDIGIT
     ;
 
-WHITESPACE : ( '\t' | ' ' | '\u000C' )+;
+
 CEL_COMMENT : '//' (~'\n')* -> channel(HIDDEN) ;
 
 NUM_FLOAT
@@ -115,10 +140,15 @@ STRING
 
 BYTES : ('b' | 'B') STRING;
 
-IDENTIFIER : (LETTER | '_') ( LETTER | DIGIT | '_' | MINUS)*; // NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
+CEL_IDENTIFIER : (LETTER | '_') ( LETTER | DIGIT | '_' | MINUS)*; // NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
+
+CEL_WHITESPACE : ( '\t' | ' ' | '\u000C' )+;
+
+CEL_NEWLINE
+ : CEL_WHITESPACE? ( '\r'? '\n' | '\r' | '\f' ) CEL_WHITESPACE? CEL_NEWLINE?
+ ;
+
+CLOSE_CEL: '}' -> popMode;
 
 // END CEL GRAMMAR
 
-NEWLINE
- : WHITESPACE? ( '\r'? '\n' | '\r' | '\f' ) WHITESPACE? NEWLINE?
- ;

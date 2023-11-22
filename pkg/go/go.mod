@@ -1,6 +1,6 @@
 module github.com/openfga/language/pkg/go
 
-go 1.21.3
+go 1.21.4
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0

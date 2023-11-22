@@ -5,7 +5,7 @@ go 1.21.3
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/openfga/api/proto v0.0.0-20231109013103-c85ea6315317
+	github.com/openfga/api/proto v0.0.0-20231122155148-7161d708e963
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1

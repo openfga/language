@@ -79,6 +79,18 @@ const createTupleUsersetRequireDirectError = (props: BaseProps) => {
   );
 };
 
+const createNoEntryPointLoopError = (props: BaseProps, typeName: string) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  errors.push(
+    constructValidationError({
+      message: `\`${symbol}\` is an impossible relation for \`${typeName}\` (potential loop).`,
+      lines,
+      lineIndex,
+      metadata: { symbol, errorType: ValidationError.RelationNoEntrypoint, relation: symbol },
+    }),
+  );
+};
+
 const createNoEntryPointError = (props: BaseProps, typeName: string) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
@@ -349,6 +361,9 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines: 
     },
     raiseDuplicateRelationshipDefinition(lineIndex: number, symbol: string) {
       createDuplicateRelationshipDefinitionError({ errors, lines, lineIndex, symbol });
+    },
+    raiseNoEntryPointLoop(lineIndex: number, symbol: string, typeName: string) {
+      createNoEntryPointLoopError({ errors, lines, lineIndex, symbol }, typeName);
     },
     raiseNoEntryPoint(lineIndex: number, symbol: string, typeName: string) {
       createNoEntryPointError({ errors, lines, lineIndex, symbol }, typeName);

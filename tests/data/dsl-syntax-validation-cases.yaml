@@ -136,15 +136,134 @@
         define blocked: [user]
         define viewer: [user] and follower or own but not blocked
   expected_errors:
-    - msg: "mismatched input 'or' expecting 'and'"
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 8
         end: 8
       column:
-        start: 39
-        end: 41
+        start: 38
+        end: 39
       metadata:
-        symbol: "or"
+        symbol: " "
+- name: mixed operators with parens
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define own: [user]
+        define follower: [user]
+        define blocked: [user]
+        define viewer: [user] and (follower but not blocked) or own
+  expected_errors:
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 56
+        end: 57
+      metadata:
+        symbol: " "
+- name: mixed operators with mulitple paren sets
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define own: [user]
+        define follower: [user]
+        define blocked: [user]
+        define viewer: [user] and (follower but not blocked) or (foo and bar) and (baz or foobar)
+  expected_errors:
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 56
+        end: 57
+      metadata:
+        symbol: " "
+- name: mixed operators with mulitple operations and paren sets
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define allowed: [user]
+        define follower: [user]
+        define blocked: [user]
+        define restricted: [user]
+        define viewer: [user] or allowed or follower or (blocked or restricted or (foo and bar but not baz))
+  expected_errors:
+    - msg: "extraneous input 'but not' expecting {')', WHITESPACE}"
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 91
+        end: 98
+      metadata:
+        symbol: "but not" 
+    - msg: "extraneous input 'baz' expecting {')', WHITESPACE}"
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 99
+        end: 102
+      metadata:
+        symbol: "baz"
+- name: mixed operators with mixed operations and paren sets
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define follower: [user]
+        define blocked: [user]
+        define restricted: [user]
+        define viewer: [user] and follower or (restricted but not blocked)
+  expected_errors:
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 38
+        end: 39
+      metadata:
+        symbol: " "
+- name: mixed operators with mixed operations and paren sets
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define follower: [user]
+        define blocked: [user]
+        define restricted: [user]
+        define viewer: [user] and (follower but not blocked but not restricted)
+  expected_errors:
+    - msg: "extraneous input 'but not' expecting {')', WHITESPACE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 56
+        end: 63
+      metadata:
+        symbol: "but not"
+    - msg: "extraneous input 'restricted' expecting {')', WHITESPACE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 64
+        end: 74
+      metadata:
+        symbol: "restricted"
 - name: misspelled define
   dsl: |
     model
@@ -206,33 +325,15 @@
         end: 20
       metadata:
         symbol: 'as'
-    - msg: "no viable alternative at input ' self'"
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 9
         end: 9
       column:
-        start: 21
-        end: 25
+        start: 20
+        end: 21
       metadata:
-        symbol: 'self'
-    - msg: "missing ':' at 'as'"
-      line:
-        start: 10
-        end: 10
-      column:
-        start: 18
-        end: 20
-      metadata:
-        symbol: 'as'
-    - msg: "no viable alternative at input ' viewer'"
-      line:
-        start: 10
-        end: 10
-      column:
-        start: 21
-        end: 27
-      metadata:
-        symbol: 'viewer'
+        symbol: ' '
 - name: empty directly assignable relations with spaces should yield error
   dsl: |
     model
@@ -344,15 +445,15 @@
         end: 20
       metadata:
         symbol: 'as'
-    - msg: "no viable alternative at input ' self'"
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
         end: 7
       column:
-        start: 21
-        end: 25
+        start: 20
+        end: 21
       metadata:
-        symbol: 'self'
+        symbol: ' '
 - name: >-
     mixing 1.0 and 1.1 should not be allowed as non assignable self is not
     allowed
@@ -374,16 +475,15 @@
         end: 20
       metadata:
         symbol: 'as'
-    - msg: "no viable alternative at input ' self'"
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
         end: 7
       column:
-        start: 21
-        end: 25
+        start: 20
+        end: 21
       metadata:
-        symbol: 'self'
-
+        symbol: ' '
 - name: should not allow no model schema
   dsl: |
     type user
@@ -446,7 +546,7 @@
         define editor: [user]
         define viewer: editor but not [document#viewer]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 7
         end: 7
@@ -473,7 +573,7 @@
         define viewer: [document#viewer] or [document#editor]
         define editor: [document#viewer] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 5
         end: 5
@@ -501,7 +601,7 @@
         define editor: [user]
         define viewer: [user] and [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 7
         end: 7
@@ -529,7 +629,7 @@
         define editor: [user]
         define viewer: [document#editor] but not [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 7
         end: 7
@@ -557,7 +657,7 @@
         define editor: [user]
         define viewer: [user] but not [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 7
         end: 7
@@ -585,7 +685,7 @@
         define editor: [user]
         define viewer: [user] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting IDENTIFIER"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
       line:
         start: 7
         end: 7
@@ -1076,3 +1176,219 @@
     condition is_not_hidden(status: string) {
       status != "hidden"
     }
+
+- name: a valid model with multiple operators
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: [user]
+        define rel3: [user]
+        define rel4: [user]
+        define rel5: [user]
+        define rel6: [user]
+        define rel7: [user]
+        define rel8: [user]
+        define rel9: (rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8)) 
+
+- name: a valid model with multiple operators x2
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: [user]
+        define rel3: [user]
+        define rel4: [user]
+        define rel5: [user]
+        define rel6: [user]
+        define rel7: [user]
+        define rel8: [user]
+        define rel9: ((rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8))) 
+
+- name: an invalid model with multiple type restriction instances in a relation definition
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define viewer: [user] or [user]
+  expected_errors:
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 29
+        end: 30
+      metadata:
+        symbol: "["
+    - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 34
+        end: 35
+      metadata:
+        symbol: "]"
+
+- name: an invalid model with confusing but not references
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: [user]
+        define rel3: [user]
+        define rel4: rel1 but not rel2 but not rel3
+  expected_errors:
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 34
+        end: 35
+      metadata:
+        symbol: " "
+
+- name: an invalid model with mixed operators
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: [user]
+        define rel3: [user]
+        define rel4: rel1 and rel2 or rel3
+  expected_errors:
+    - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 30
+        end: 31
+      metadata:
+        symbol: " "
+
+- name: an invalid model x1
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: but not rel1
+  expected_errors:
+    - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 17
+        end: 24
+      metadata:
+        symbol: "but not"
+
+- name: an invalid model x2
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: or rel1
+  expected_errors:
+    - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 17
+        end: 19
+      metadata:
+        symbol: "or"
+
+- name: an invalid model x3
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: and rel1
+  expected_errors:
+    - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 17
+        end: 20
+      metadata:
+        symbol: "and"
+
+- name: an invalid model with the type definition not in the first place x1
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: rel1 and [user]
+  expected_errors:
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 26
+        end: 27
+      metadata:
+        symbol: "["
+    - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 31
+        end: 32
+      metadata:
+        symbol: "]"
+
+- name: an invalid model with the type definition not in the first place x2
+  dsl: |
+    model
+      schema 1.1
+    type user
+      relations
+        define rel1: [user]
+        define rel2: [user]
+        define rel3: [user]
+        define relation: rel3 or ((rel1 and rel2) but not [user])
+  expected_errors:
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 54
+        end: 55
+      metadata:
+        symbol: "["
+    - msg: "extraneous input ']' expecting {')', WHITESPACE}"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 59
+        end: 60
+      metadata:
+        symbol: "]"

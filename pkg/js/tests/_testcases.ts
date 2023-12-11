@@ -81,12 +81,10 @@ export function loadDSLValidationErrorTestCases(): MultipleInvalidTestCase[] {
 }
 
 export function loadInvalidJSONSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
-  const docs = yaml.parseAllDocuments(
+  return yaml.parse(
     fs.readFileSync(
       path.join(__dirname, "../../../tests", "data", "json-syntax-transformer-validation-cases.yaml"),
       "utf-8",
     ),
-  );
-
-  return docs.map((d) => d.toJSON()) as InvalidJSONSyntaxTestCase[];
+  ) as InvalidJSONSyntaxTestCase[];
 }

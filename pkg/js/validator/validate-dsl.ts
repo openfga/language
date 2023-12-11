@@ -38,6 +38,10 @@ interface RelationTargetParserResult {
   rewrite: RewriteType;
 }
 
+const deepCopy = (object: any): any => {
+  return JSON.parse(JSON.stringify(object));
+};
+
 const geConditionLineNumber = (conditionName: string, lines: string[], skipIndex?: number) => {
   if (!skipIndex) {
     skipIndex = 0;
@@ -168,166 +172,160 @@ function allowableTypes(typeName: Record<string, TypeDefinition>, type: string, 
   return [allowedTypes, isValid];
 }
 
-// helper function to parse through a child relation to see if there are unique entry points.
-// Entry point describes ways that tuples can be assigned to the relation
-// For example,
-// type user
-// type org
-//   relations
-//     define member: [user]
-// we can assign a user with (type user) to org's member
-// However, in the following example
-// type doc
-//   relations
-//     define reader as writer
-//     define writer as reader
-// It is impossible to have any tuples that assign to doc's reader and writer
-function childHasEntryPoint(
-  transformedTypes: Record<string, TypeDefinition>,
-  visitedRecords: Record<string, Record<string, boolean>>,
-  type: string,
-  childDef: RelationTargetParserResult | undefined,
-  allowedTypes: string[],
-): boolean {
-  if (!childDef) {
-    return false;
-  }
-
-  if (childDef.rewrite === RewriteType.Direct) {
-    // we can safely assume that direct rewrite (i.e., it is a self/this), there are direct entry point
-    for (const item of allowedTypes) {
-      const { decodedType, decodedRelation } = destructTupleToUserset(item);
-      if (!decodedRelation) {
-        // this is not a tuple set and is a straight type, we can return true right away
-        return true;
-      }
-      // it is only true if it has unique entry point
-      if (hasEntryPoint(transformedTypes, visitedRecords, decodedType, decodedRelation)) {
-        return true;
-      }
-    }
-  }
-  // otherwise, we will need to follow the child
-  if (!childDef.from) {
-    // this is a simpler case - we only need to check the child type itself
-    if (hasEntryPoint(transformedTypes, visitedRecords, type, childDef.target)) {
-      return true;
-    }
-  } else {
-    // there is a from.  We need to parse thru all the from's possible type
-    // to see if there are unique entry point
-    const fromPossibleTypes = getTypeRestrictions(
-      transformedTypes[type].metadata?.relations![childDef.from].directly_related_user_types || [],
-    );
-
-    for (const fromType of fromPossibleTypes) {
-      const { decodedType } = destructTupleToUserset(fromType);
-
-      // For now, we just look at the type without seeing whether the user set
-      // of the type is reachable too in the case of tuple to user set.
-      // TODO: We may have to investigate whether we need to dive into relation (if present) of the userset
-      if (hasEntryPoint(transformedTypes, visitedRecords, decodedType, childDef.target)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// for the type/relation, whether there are any unique entry points
+// for the type/relation, whether there are any unique entry points, and if a loop is found
 // if there are unique entry points (i.e., direct relations) then it will return true
 // otherwise, it will follow its children to see if there are unique entry points
-function hasEntryPoint(
+// if there is a loop durig traversal, the function will return a boolean indicating so
+function hasEntryPointOrLoop(
   typeMap: Record<string, TypeDefinition>,
+  typeName: string,
+  relationName: string | undefined,
+  rewrite: Userset,
   visitedRecords: Record<string, Record<string, boolean>>,
-  type: string,
-  relation: string | undefined,
-): boolean {
-  if (!relation) {
+): [boolean, boolean] {
+  // Deep copy
+  const visited = deepCopy(visitedRecords);
+
+  if (!relationName) {
     // nothing to do if relation is undefined
-    return false;
-  }
-  // check to see if we already visited this relation to avoid infinite loop
-  if (visitedRecords[type] && visitedRecords[type][relation]) {
-    return false;
-  }
-  if (!visitedRecords[type]) {
-    visitedRecords[type] = {};
-  }
-  visitedRecords[type][relation] = true;
-
-  const currentRelation = typeMap[type].relations;
-  if (!currentRelation || !currentRelation[relation]) {
-    return false;
+    return [false, false];
   }
 
-  const relationMetadata = typeMap[type].metadata?.relations;
+  if (!visited[typeName]) {
+    visited[typeName] = {};
+  }
+  visited[typeName][relationName] = true;
 
-  const allowedTypes = getTypeRestrictions(relationMetadata?.[relation]?.directly_related_user_types || []);
+  const currentRelation = typeMap[typeName].relations;
+  if (!currentRelation || !currentRelation[relationName]) {
+    return [false, false];
+  }
 
-  if (Object.prototype.hasOwnProperty.call(currentRelation[relation], RelationDefOperator.Union)) {
-    for (const childDef of currentRelation[relation].union?.child || []) {
-      if (
-        childHasEntryPoint(
-          typeMap,
-          // create deep copy
-          JSON.parse(JSON.stringify(visitedRecords)),
-          type,
-          getRelationalParserResult(childDef),
-          allowedTypes,
-        )
-      ) {
-        return true;
+  const relationMetadata = typeMap[typeName].metadata?.relations;
+
+  if (!typeMap[typeName].relations || !typeMap[typeName].relations![relationName]) {
+    return [false, false];
+  }
+
+  if (rewrite.this) {
+    for (const assignableType of getTypeRestrictions(
+      relationMetadata?.[relationName]?.directly_related_user_types || [],
+    )) {
+      const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(assignableType);
+      if (!decodedRelation || isWildcard) {
+        return [true, false];
+      }
+
+      const assignableRelation = typeMap[decodedType].relations![decodedRelation];
+      if (!assignableRelation) {
+        return [false, false];
+      }
+
+      if (visited[decodedType][decodedRelation]) {
+        continue;
+      }
+
+      const [hasEntry, _] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+      if (hasEntry) {
+        return [true, false];
       }
     }
-    return false;
-  } else if (Object.prototype.hasOwnProperty.call(currentRelation[relation], RelationDefOperator.Intersection)) {
-    // this requires all child to have entry point
-    for (const childDef of currentRelation[relation].intersection?.child || []) {
-      if (
-        !childHasEntryPoint(
-          typeMap,
-          // create deep copy
-          JSON.parse(JSON.stringify(visitedRecords)),
-          type,
-          getRelationalParserResult(childDef),
-          allowedTypes,
-        )
-      ) {
-        return false;
-      }
-    }
-    return true;
-  } else if (Object.prototype.hasOwnProperty.call(currentRelation[relation], RelationDefOperator.Difference)) {
-    // difference requires both base and subtract to have entry
-    if (
-      !childHasEntryPoint(
-        typeMap,
-        JSON.parse(JSON.stringify(visitedRecords)),
-        type,
-        getRelationalParserResult(currentRelation[relation].difference!.base),
-        allowedTypes,
-      ) ||
-      !childHasEntryPoint(
-        typeMap,
-        JSON.parse(JSON.stringify(visitedRecords)),
-        type,
-        getRelationalParserResult(currentRelation[relation].difference!.subtract),
-        allowedTypes,
-      )
-    ) {
-      return false;
-    }
-    return true;
-  } else {
-    // Single
-    const values = getRelationalParserResult(currentRelation[relation]);
-    if (childHasEntryPoint(typeMap, JSON.parse(JSON.stringify(visitedRecords)), type, values, allowedTypes)) {
-      return true;
+
+    return [false, false];
+  } else if (rewrite.computedUserset) {
+    const computedRelationName = rewrite.computedUserset.relation;
+    if (!computedRelationName) {
+      return [false, false];
     }
 
-    return false;
+    if (!typeMap[typeName].relations![computedRelationName]) {
+      return [false, false];
+    }
+
+    const computedRelation = typeMap[typeName].relations![computedRelationName];
+    if (!computedRelation) {
+      return [false, false];
+    }
+
+    // Loop detected
+    if (visited[typeName][computedRelationName]) {
+      return [false, true];
+    }
+
+    const [hasEntry, loop] = hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
+    return [hasEntry, loop];
+  } else if (rewrite.tupleToUserset) {
+    const tuplesetRelationName = rewrite.tupleToUserset.tupleset.relation;
+    const computedRelationName = rewrite.tupleToUserset.computedUserset.relation;
+
+    if (!tuplesetRelationName || !computedRelationName) {
+      return [false, false];
+    }
+
+    const tuplesetRelation = typeMap[typeName].relations![tuplesetRelationName];
+    if (!tuplesetRelation) {
+      return [false, false];
+    }
+
+    for (const assignableType of getTypeRestrictions(
+      relationMetadata?.[tuplesetRelationName]?.directly_related_user_types || [],
+    )) {
+      const assignableRelation = typeMap[assignableType].relations![computedRelationName];
+      if (assignableRelation) {
+        if (visited[assignableType] && visited[assignableType][computedRelationName]) {
+          continue;
+        }
+
+        const [hasEntry, _] = hasEntryPointOrLoop(typeMap, assignableType, computedRelationName, assignableRelation, visited);
+        if (hasEntry) {
+          return [true, false];
+        }
+      }
+    }
+    return [false, false];
+  } else if (rewrite.union) {
+    let loop = false;
+
+    for (const child of rewrite.union.child) {
+      const [entryPoint, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      if (entryPoint) {
+        return [true, false];
+      }
+      loop = loop || childLoop;
+    }
+    return [false, loop];
+  } else if (rewrite.intersection) {
+    for (const child of rewrite.intersection.child) {
+      const [hasEntry, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      if (!hasEntry) {
+        return [false, childLoop];
+      }
+    }
+
+    return [true, false];
+  } else if (rewrite.difference) {
+    const visited = deepCopy(visitedRecords);
+
+    const [hasEntryBase, loopBase] = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.base, visited);
+    if (!hasEntryBase) {
+      return [false, loopBase];
+    }
+
+    const [hasEntrySubtract, loopSubtract] = hasEntryPointOrLoop(
+      typeMap,
+      typeName,
+      relationName,
+      rewrite.difference.subtract,
+      visited,
+    );
+    if (!hasEntrySubtract) {
+      return [false, loopSubtract];
+    }
+
+    return [true, false];
   }
+
+  return [false, false];
 }
 
 function checkForDuplicatesTypeNamesInRelation(
@@ -553,40 +551,21 @@ function relationDefined(
     return;
   }
 
-  const currentRelation = relations[relation];
-  if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union)) {
-    for (const childDef of currentRelation.union?.child || []) {
-      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(childDef), conditions);
+  const currentRelation = { ...relations[relation] };
+  const children: Userset[] = [currentRelation];
+
+  while (children.length) {
+    const child = children.shift();
+
+    if (child?.union?.child.length) {
+      children.push(...child.union.child);
+    } else if (child?.intersection?.child.length) {
+      children.push(...child.intersection.child);
+    } else if (child?.difference?.base && child.difference.subtract) {
+      children.push(child?.difference?.base, child.difference.subtract);
+    } else if (child) {
+      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(child), conditions);
     }
-  } else if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Intersection)) {
-    for (const childDef of currentRelation.intersection?.child || []) {
-      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(childDef), conditions);
-    }
-  } else if (Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference)) {
-    if (currentRelation.difference?.base) {
-      childDefDefined(
-        lines,
-        collector,
-        typeMap,
-        type,
-        relation,
-        getRelationalParserResult(currentRelation.difference.base),
-        conditions,
-      );
-    }
-    if (currentRelation.difference?.subtract) {
-      childDefDefined(
-        lines,
-        collector,
-        typeMap,
-        type,
-        relation,
-        getRelationalParserResult(currentRelation.difference.subtract),
-        conditions,
-      );
-    }
-  } else {
-    childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(currentRelation), conditions);
   }
 }
 
@@ -660,10 +639,16 @@ function modelValidation(
       const typeName = typeDef.type;
       // parse through each of the relations to do validation
       for (const relationName in typeDef.relations) {
-        if (!hasEntryPoint(typeMap, {}, typeName, relationName)) {
+        const currentRelation = typeMap[typeName].relations;
+        const [hasEntry, loop] = hasEntryPointOrLoop(typeMap, typeName, relationName, currentRelation![relationName], {});
+        if (!hasEntry) {
           const typeIndex = getTypeLineNumber(typeName, lines);
           const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-          collector.raiseNoEntryPoint(lineIndex, relationName, typeName);
+          if (loop) {
+            collector.raiseNoEntryPointLoop(lineIndex, relationName, typeName);
+          } else {
+            collector.raiseNoEntryPoint(lineIndex, relationName, typeName);
+          }
         }
       }
     });

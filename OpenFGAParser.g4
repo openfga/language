@@ -10,11 +10,31 @@ modelHeader: (multiLineComment NEWLINE)? MODEL NEWLINE SCHEMA WHITESPACE schemaV
 typeDefs: typeDef*;
 typeDef:  (NEWLINE multiLineComment)? NEWLINE TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
 
-relationDeclaration: NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? relationDef;
+// Relation definitions
+relationDeclaration: NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
 relationName: IDENTIFIER;
-relationDef: (relationDefDirectAssignment | relationDefGrouping) (relationDefPartials)?;
-relationDefPartials: (WHITESPACE OR WHITESPACE relationDefGrouping)+ | (WHITESPACE AND WHITESPACE relationDefGrouping)+ | (WHITESPACE BUT_NOT WHITESPACE relationDefGrouping)+;
+
+relationDef: (relationDefDirectAssignment | relationDefGrouping | relationRecurse) (relationDefPartials)?;
+relationDefNoDirect: (relationDefGrouping | relationRecurseNoDirect) (relationDefPartials)?;
+
+relationDefPartials:
+    (WHITESPACE OR WHITESPACE (relationDefGrouping | relationRecurseNoDirect))+
+    | (WHITESPACE AND WHITESPACE (relationDefGrouping | relationRecurseNoDirect))+
+    | (WHITESPACE BUT_NOT WHITESPACE (relationDefGrouping | relationRecurseNoDirect));
+    
 relationDefGrouping: relationDefRewrite;
+
+relationRecurse:
+    LPAREN WHITESPACE* (
+    relationDef |
+    relationRecurseNoDirect
+    ) WHITESPACE* RPAREN;
+
+relationRecurseNoDirect:
+    LPAREN WHITESPACE* (
+    relationDefNoDirect |
+    relationRecurseNoDirect
+    ) WHITESPACE* RPAREN;
 
 relationDefDirectAssignment: LBRACKET WHITESPACE? relationDefTypeRestriction WHITESPACE? (COMMA WHITESPACE? relationDefTypeRestriction WHITESPACE?)* RPRACKET;
 relationDefRewrite: rewriteComputedusersetName=IDENTIFIER (WHITESPACE FROM WHITESPACE rewriteTuplesetName=IDENTIFIER)?;

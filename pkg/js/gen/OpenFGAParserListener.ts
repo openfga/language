@@ -10,8 +10,11 @@ import { TypeDefContext } from "./OpenFGAParser";
 import { RelationDeclarationContext } from "./OpenFGAParser";
 import { RelationNameContext } from "./OpenFGAParser";
 import { RelationDefContext } from "./OpenFGAParser";
+import { RelationDefNoDirectContext } from "./OpenFGAParser";
 import { RelationDefPartialsContext } from "./OpenFGAParser";
 import { RelationDefGroupingContext } from "./OpenFGAParser";
+import { RelationRecurseContext } from "./OpenFGAParser";
+import { RelationRecurseNoDirectContext } from "./OpenFGAParser";
 import { RelationDefDirectAssignmentContext } from "./OpenFGAParser";
 import { RelationDefRewriteContext } from "./OpenFGAParser";
 import { RelationDefTypeRestrictionContext } from "./OpenFGAParser";
@@ -102,6 +105,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 */
 	exitRelationDef?: (ctx: RelationDefContext) => void;
 	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationDefNoDirect`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationDefNoDirect?: (ctx: RelationDefNoDirectContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationDefNoDirect`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationDefNoDirect?: (ctx: RelationDefNoDirectContext) => void;
+	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDefPartials`.
 	 * @param ctx the parse tree
 	 */
@@ -121,6 +134,26 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRelationDefGrouping?: (ctx: RelationDefGroupingContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationRecurse`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationRecurse?: (ctx: RelationRecurseContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationRecurse`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationRecurse?: (ctx: RelationRecurseContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.relationRecurseNoDirect`.
+	 * @param ctx the parse tree
+	 */
+	enterRelationRecurseNoDirect?: (ctx: RelationRecurseNoDirectContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.relationRecurseNoDirect`.
+	 * @param ctx the parse tree
+	 */
+	exitRelationRecurseNoDirect?: (ctx: RelationRecurseNoDirectContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDefDirectAssignment`.
 	 * @param ctx the parse tree

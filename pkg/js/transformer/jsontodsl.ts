@@ -9,6 +9,47 @@ import type {
 } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 
+class DirectAssignmentValidator {
+  occured: number = 0;
+  stateStack: Userset[] = [];
+
+  isFirstPosition = (userset: Userset): boolean => {
+    // Throw error is direct assignemnt is present, and not the first element.
+    if (userset.this) {
+      return true;
+    }
+
+    if (userset.difference?.base) {
+      if (userset.difference.base.this) {
+        return true;
+      } else {
+        return this.isFirstPosition(userset.difference.base);
+      }
+    } else if (userset.intersection?.child.length) {
+      if (userset.intersection.child[0].this) {
+        return true;
+      } else {
+        return this.isFirstPosition(userset.intersection.child[0]);
+      }
+    } else if (userset.union?.child.length) {
+      if (userset.union.child[0].this) {
+        return true;
+      } else {
+        return this.isFirstPosition(userset.union.child[0]);
+      }
+    }
+
+    return false;
+  };
+
+  reset = () => {
+    this.occured = 0;
+    this.stateStack = [];
+  };
+}
+
+const validator = new DirectAssignmentValidator();
+
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;
   const relation = restriction.relation;
@@ -110,6 +151,8 @@ function parseSubRelation(
   typeRestrictions: RelationReference[],
 ): string {
   if (relationDefinition.this != null) {
+    // Make sure we no more than 1 reference for direct assignment in a given relation
+    validator.occured++;
     return parseThis(typeRestrictions);
   }
 
@@ -121,6 +164,18 @@ function parseSubRelation(
     return parseTupleToUserset(relationDefinition);
   }
 
+  if (relationDefinition.union != null) {
+    return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions)})`;
+  }
+
+  if (relationDefinition.intersection != null) {
+    return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)})`;
+  }
+
+  if (relationDefinition.difference != null) {
+    return `(${parseDifference(typeName, relationName, relationDefinition, typeRestrictions)})`;
+  }
+
   throw new UnsupportedDSLNestingError(typeName, relationName);
 }
 
@@ -130,6 +185,8 @@ function parseRelation(
   relationDefinition: Userset = {},
   relationMetadata: RelationMetadata = {},
 ) {
+  validator.reset();
+
   let parsedRelationString = `    define ${relationName}: `;
   const typeRestrictions: RelationReference[] = relationMetadata.directly_related_user_types || [];
 
@@ -143,7 +200,12 @@ function parseRelation(
     parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions);
   }
 
-  return parsedRelationString;
+  // Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
+  if (!validator.occured || (validator.occured === 1 && validator.isFirstPosition(relationDefinition))) {
+    return parsedRelationString; 
+  }
+
+  throw new Error(`the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`);
 }
 
 const parseType = (typeDef: TypeDefinition): string => {
@@ -217,6 +279,8 @@ const parseConditions = (model: AuthorizationModel): string => {
 };
 
 export const transformJSONToDSL = (model: AuthorizationModel): string => {
+  validator.reset();
+
   const schemaVersion = model?.schema_version || "1.1";
   const typeDefinitions = model?.type_definitions?.map((typeDef) => parseType(typeDef));
   const parsedConditionsString = parseConditions(model);

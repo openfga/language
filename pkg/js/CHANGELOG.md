@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.0-beta.6
+
+### [v0.2.0-beta.6](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.3...v0.2.0-beta.4) (2023-12-11)
+
+last commit: 8b692a44e937beae8693cc155b205ffc5b732fbe
+
+Added:
+- Initial limited support for mixing operators [#107](https://github.com/openfga/language/pull/107)
+
 ## v0.2.0-beta.4
 
 ### [v0.2.0-beta.4](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.3...v0.2.0-beta.4) (2023-10-04)

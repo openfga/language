@@ -1392,3 +1392,15 @@
         end: 60
       metadata:
         symbol: "]"
+
+- name: a valid model should not error
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define editor: [team#member]
+    type team
+      relations
+        define member: [user]

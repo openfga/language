@@ -12,11 +12,13 @@ on:
       - 'pkg/js/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
+      - 'tests'
   pull_request:
     paths:
       - 'pkg/js/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
+      - 'tests'
 
 permissions:
   contents: read

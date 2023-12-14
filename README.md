@@ -37,11 +37,11 @@ OpenFGA is designed to make it easy for application builders to model their perm
 ## About This Repo
 This repo contains everything needed to interact with the OpenFGA Authorization Models schema versions 1.1+, in multiple languages (currently, Go and JS are supported).
 
-| Feature    | Implemented in ANTLR        |
-|------------|-----------------------------|
-| Basic DSL  | ✅  |
-| Nesting    | ❌ (planned)                 |
-| Conditions | ❌ (planned)                 |
+| Feature    | Implemented in ANTLR |
+|------------|----------------------|
+| Basic DSL  | ✅                    |
+| Nesting    | ✅ (partial, see #113 |
+| Conditions | ✅                    |
 
 | Feature                                               | Go          | JS          |
 |-------------------------------------------------------|-------------|-------------|

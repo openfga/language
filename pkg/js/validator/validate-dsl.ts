@@ -175,7 +175,7 @@ function allowableTypes(typeName: Record<string, TypeDefinition>, type: string, 
 // for the type/relation, whether there are any unique entry points, and if a loop is found
 // if there are unique entry points (i.e., direct relations) then it will return true
 // otherwise, it will follow its children to see if there are unique entry points
-// if there is a loop durig traversal, the function will return a boolean indicating so
+// if there is a loop during traversal, the function will return a boolean indicating so
 function hasEntryPointOrLoop(
   typeMap: Record<string, TypeDefinition>,
   typeName: string,
@@ -221,7 +221,7 @@ function hasEntryPointOrLoop(
         return [false, false];
       }
 
-      if (visited[decodedType][decodedRelation]) {
+      if (visited[decodedType]?.[decodedRelation]) {
         continue;
       }
 
@@ -276,7 +276,13 @@ function hasEntryPointOrLoop(
           continue;
         }
 
-        const [hasEntry, _] = hasEntryPointOrLoop(typeMap, assignableType, computedRelationName, assignableRelation, visited);
+        const [hasEntry, _] = hasEntryPointOrLoop(
+          typeMap,
+          assignableType,
+          computedRelationName,
+          assignableRelation,
+          visited,
+        );
         if (hasEntry) {
           return [true, false];
         }
@@ -306,7 +312,13 @@ function hasEntryPointOrLoop(
   } else if (rewrite.difference) {
     const visited = deepCopy(visitedRecords);
 
-    const [hasEntryBase, loopBase] = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.base, visited);
+    const [hasEntryBase, loopBase] = hasEntryPointOrLoop(
+      typeMap,
+      typeName,
+      relationName,
+      rewrite.difference.base,
+      visited,
+    );
     if (!hasEntryBase) {
       return [false, loopBase];
     }
@@ -640,7 +652,13 @@ function modelValidation(
       // parse through each of the relations to do validation
       for (const relationName in typeDef.relations) {
         const currentRelation = typeMap[typeName].relations;
-        const [hasEntry, loop] = hasEntryPointOrLoop(typeMap, typeName, relationName, currentRelation![relationName], {});
+        const [hasEntry, loop] = hasEntryPointOrLoop(
+          typeMap,
+          typeName,
+          relationName,
+          currentRelation![relationName],
+          {},
+        );
         if (!hasEntry) {
           const typeIndex = getTypeLineNumber(typeName, lines);
           const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);

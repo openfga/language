@@ -1,13 +1,27 @@
 # Changelog
 
+## v0.2.0-beta.7
+
+### [v0.2.0-beta.7](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.6...v0.2.0-beta.7) (2023-12-13)
+
+Fixed:
+- Issue in validating entrypoint or loop with some models (#120)
+
 ## v0.2.0-beta.6
 
-### [v0.2.0-beta.6](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.3...v0.2.0-beta.4) (2023-12-11)
+### [v0.2.0-beta.6](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.5...v0.2.0-beta.6) (2023-12-11)
 
 last commit: 8b692a44e937beae8693cc155b205ffc5b732fbe
 
 Added:
 - Initial limited support for mixing operators [#107](https://github.com/openfga/language/pull/107)
+
+## v0.2.0-beta.5
+
+### [v0.2.0-beta.5](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.4...v0.2.0-beta.5) (2023-10-04)
+
+Added:
+- Initial support for Conditions when transforming from DSL to JSON (https://github.com/openfga/language/pull/75)
 
 ## v0.2.0-beta.4
 

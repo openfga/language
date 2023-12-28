@@ -273,7 +273,7 @@
       relations
         defne viewer: [user]
   expected_errors:
-    - msg: "mismatched input 'defne' expecting 'define'"
+    - msg: "no viable alternative at input '\\n    defne'"
       line:
         start: 6
         end: 6
@@ -282,6 +282,17 @@
         end: 9
       metadata:
         symbol: "defne"
+- name: comments inbetween relationships
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        # This is a comment 1
+        define viewer: [user]
+        # This is a comment 2
+        define owner: [user]
   # Needs to be thrown in parsing
 - name: duplicate relations
   dsl: |

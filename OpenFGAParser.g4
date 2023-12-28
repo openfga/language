@@ -11,7 +11,7 @@ typeDefs: typeDef*;
 typeDef:  (NEWLINE multiLineComment)? NEWLINE TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
 
 // Relation definitions
-relationDeclaration: NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
+relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
 relationName: IDENTIFIER;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping | relationRecurse) (relationDefPartials)?;

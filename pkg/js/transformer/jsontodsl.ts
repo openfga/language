@@ -202,10 +202,12 @@ function parseRelation(
 
   // Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
   if (!validator.occured || (validator.occured === 1 && validator.isFirstPosition(relationDefinition))) {
-    return parsedRelationString; 
+    return parsedRelationString;
   }
 
-  throw new Error(`the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`);
+  throw new Error(
+    `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
+  );
 }
 
 const parseType = (typeDef: TypeDefinition): string => {
@@ -259,7 +261,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
   return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
 };
 
-const parseConditions = (model: AuthorizationModel): string => {
+const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
   const conditionsMap = model.conditions || {};
   if (!Object.keys(conditionsMap).length) {
     return "";
@@ -278,7 +280,7 @@ const parseConditions = (model: AuthorizationModel): string => {
   return parsedConditionsString;
 };
 
-export const transformJSONToDSL = (model: AuthorizationModel): string => {
+export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {
   validator.reset();
 
   const schemaVersion = model?.schema_version || "1.1";

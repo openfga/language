@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.8
+
+### [v0.2.0-beta.8](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.7...v0.2.0-beta.8) (2024-01-03)
+
+Fixed:
+- Fixed exported types (#129)
+
 ## v0.2.0-beta.7
 
 ### [v0.2.0-beta.7](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.6...v0.2.0-beta.7) (2023-12-13)

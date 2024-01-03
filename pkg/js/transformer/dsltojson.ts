@@ -431,14 +431,14 @@ export function parseDSL(data: string): {
  * @param {string} data
  * @returns {AuthorizationModel}
  */
-export function transformDSLToJSONObject(data: string): AuthorizationModel {
+export function transformDSLToJSONObject(data: string): Omit<AuthorizationModel, "id"> {
   const { listener, errorListener } = parseDSL(data);
 
   if (errorListener.errors.length) {
     throw new DSLSyntaxError(errorListener.errors);
   }
 
-  return listener.authorizationModel as AuthorizationModel;
+  return listener.authorizationModel as Omit<AuthorizationModel, "id">;
 }
 
 /**

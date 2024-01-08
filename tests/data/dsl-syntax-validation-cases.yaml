@@ -1415,3 +1415,29 @@
     type team
       relations
         define member: [user]
+
+- name: a valid model with comments should not have errors
+  dsl: |
+    # comment 1
+    model
+      # comment 2
+      schema 1.1
+         # comment 3
+    type user
+    
+    # comment 4
+    type document
+      # comment 5
+      relations
+      # comment 6
+        define editor: [team#member] # a comment
+    
+      # comment 7
+        define viewer: [user] or editor # another comment
+    
+      # comment 8
+      # comment 9
+    
+    type team
+      relations
+        define member: [user]

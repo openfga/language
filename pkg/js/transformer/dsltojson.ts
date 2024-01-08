@@ -401,7 +401,13 @@ export function parseDSL(data: string): {
 } {
   const cleanedData = data
     .split("\n")
-    .map((line) => line.trimEnd())
+    .map((line) => {
+      if (line.trimStart()[0] === "#") {
+        return "";
+      }
+
+      return line.split(" #")[0].trimEnd();
+    })
     .join("\n");
 
   const is = new antlr.InputStream(cleanedData);

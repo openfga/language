@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.9
+
+### [v0.2.0-beta.9](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.8...v0.2.0-beta.9) (2024-01-08)
+
+Fixed:
+- Support models with comments (#131)
+
 ## v0.2.0-beta.8
 
 ### [v0.2.0-beta.8](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.7...v0.2.0-beta.8) (2024-01-03)

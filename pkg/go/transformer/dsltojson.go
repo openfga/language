@@ -372,7 +372,17 @@ func (c *OpenFgaDslErrorListener) SyntaxError(recognizer antlr.Recognizer, offen
 func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	cleanedLines := []string{}
 	for _, line := range strings.Split(data, "\n") {
-		cleanedLines = append(cleanedLines, strings.TrimRight(line, " "))
+		cleanedLine := ""
+
+		if len(strings.TrimLeft(line, " ")) == 0 {
+			// do nothing, it's an empty line
+		} else if strings.TrimLeft(line, " ")[0:1] == "#" {
+			cleanedLine = ""
+		} else {
+			cleanedLine = strings.TrimRight(strings.Split(line, " #")[0], " ")
+		}
+
+		cleanedLines = append(cleanedLines, cleanedLine)
 	}
 	cleanedData := strings.TrimRight(strings.Join(cleanedLines, "\n"), "\n")
 

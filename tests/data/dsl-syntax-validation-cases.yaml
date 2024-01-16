@@ -25,7 +25,7 @@
   dsl: |
     type user
   expected_errors:
-    - msg: "extraneous input 'type' expecting {'#', 'model', WHITESPACE, NEWLINE}"
+    - msg: "extraneous input 'type' expecting {'#', 'model', NEWLINE, WHITESPACE}"
       line:
         start: 1
         end: 1
@@ -355,7 +355,7 @@
         define member: [ ]
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {IDENTIFIER, NEWLINE}"
+    - msg: "extraneous input ']' expecting {NEWLINE, IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -392,7 +392,7 @@
         define member: []
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, NEWLINE}"
+    - msg: "extraneous input ']' expecting {NEWLINE, WHITESPACE, IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -502,7 +502,7 @@
       relations
         define group: [user] as self
   expected_errors:
-    - msg: "extraneous input 'type' expecting {'#', 'model', WHITESPACE, NEWLINE}"
+    - msg: "extraneous input 'type' expecting {'#', 'model', NEWLINE, WHITESPACE}"
       line:
         start: 1
         end: 1
@@ -1113,7 +1113,7 @@
       status != "deleted"
     }
   expected_errors:
-    - msg: "mismatched input 'string' expecting {WHITESPACE, IDENTIFIER, NEWLINE}"
+    - msg: "mismatched input 'string' expecting {NEWLINE, WHITESPACE, IDENTIFIER}"
       line:
         start: 7
         end: 7

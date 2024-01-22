@@ -274,11 +274,11 @@ class OpenFgaDslListener extends OpenFGAListener {
 
     let relationDef = parseExpression(rewrites, this.currentRelation?.operator);
 
-    const stack = this.rewriteStack.pop();
+    const popped = this.rewriteStack.pop();
 
     if (relationDef) {
-      this.currentRelation!.operator = stack?.operator;
-      this.currentRelation!.rewrites = [...stack!.rewrites, relationDef];
+      this.currentRelation!.operator = popped?.operator;
+      this.currentRelation!.rewrites = [...popped!.rewrites, relationDef];
     }
   };
 

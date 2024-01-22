@@ -10,6 +10,58 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+type DirectAssignmentValidator struct {
+	occurred   int
+	stateStack []pb.Userset
+}
+
+func (v *DirectAssignmentValidator) incr() {
+	v.occurred++
+}
+
+func (v *DirectAssignmentValidator) occurrences() int {
+	return v.occurred
+}
+
+func (v *DirectAssignmentValidator) reset() {
+	v.stateStack = []pb.Userset{}
+	v.occurred = 0
+}
+
+var validator = DirectAssignmentValidator{
+	occurred:   0,
+	stateStack: make([]pb.Userset, 0),
+}
+
+func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
+	if userset.GetThis() != nil {
+		return true
+	}
+
+	// TODO nil handling
+	if userset.GetDifference().GetBase() != nil {
+		if userset.GetDifference().GetBase().GetThis() != nil {
+			return true
+		} else {
+			return v.isFirstPosition(userset.GetDifference().GetBase())
+		}
+	} else if len(userset.GetIntersection().GetChild()) > 0 {
+		if userset.GetIntersection().GetChild()[0].GetThis() != nil {
+			return true
+		} else {
+			return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+		}
+	} else if len(userset.GetUnion().GetChild()) > 0 {
+		if userset.GetUnion().GetChild()[0].GetThis() != nil {
+			return true
+		} else {
+			return v.isFirstPosition(userset.GetUnion().GetChild()[0])
+		}
+	}
+
+	return false
+}
+
 func parseTypeRestriction(restriction *pb.RelationReference) string {
 	typeName := restriction.GetType()
 	relation := restriction.GetRelation()
@@ -117,6 +169,8 @@ func parseIntersection(typeName string, relationName string, relationDefinition 
 
 func parseSubRelation(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference) (string, error) {
 	if relationDefinition.GetThis() != nil {
+		// Make sure we have no more than 1 reference for direct assignment in a given relation
+		validator.incr()
 		return parseThis(typeRestrictions), nil
 	}
 
@@ -128,6 +182,21 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 		return parseTupleToUserset(relationDefinition), nil
 	}
 
+	if relationDefinition.GetUnion() != nil {
+		parsedUnion, _ := parseUnion(typeName, relationName, relationDefinition, typeRestrictions)
+		return fmt.Sprintf("(%s)", parsedUnion), nil
+	}
+
+	if relationDefinition.GetIntersection() != nil {
+		parsedIntersection, _ := parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+		return fmt.Sprintf("(%s)", parsedIntersection), nil
+	}
+
+	if relationDefinition.GetDifference() != nil {
+		parsedDiff, _ := parseDifference(typeName, relationName, relationDefinition, typeRestrictions)
+		return fmt.Sprintf("(%s)", parsedDiff), nil
+	}
+
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
 }
 
@@ -137,6 +206,8 @@ func parseRelation(
 	relationDefinition *pb.Userset,
 	relationMetadata *pb.RelationMetadata,
 ) (string, error) {
+	validator.reset()
+
 	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
 
 	parseFn := parseSubRelation
@@ -154,7 +225,12 @@ func parseRelation(
 		return "", err
 	}
 
-	return fmt.Sprintf(`    define %v: %v`, relationName, parsedRelationString), nil
+	// Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
+	if validator.occurrences() == 0 || (validator.occurrences() == 1 && validator.isFirstPosition(relationDefinition)) {
+		return fmt.Sprintf(`    define %v: %v`, relationName, parsedRelationString), nil
+	}
+
+	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
 }
 
 func parseType(typeDefinition *pb.TypeDefinition) (string, error) {

@@ -25,7 +25,7 @@
   dsl: |
     type user
   expected_errors:
-    - msg: "extraneous input 'type' expecting {'#', 'model', WHITESPACE, NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -205,7 +205,7 @@
         start: 91
         end: 98
       metadata:
-        symbol: "but not" 
+        symbol: "but not"
     - msg: "extraneous input 'baz' expecting {')', WHITESPACE}"
       line:
         start: 9
@@ -335,7 +335,7 @@
         start: 18
         end: 20
       metadata:
-        symbol: 'as'
+        symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 9
@@ -344,7 +344,7 @@
         start: 20
         end: 21
       metadata:
-        symbol: ' '
+        symbol: " "
 - name: empty directly assignable relations with spaces should yield error
   dsl: |
     model
@@ -363,7 +363,7 @@
         start: 21
         end: 22
       metadata:
-        symbol: ']'
+        symbol: "]"
     - msg: "mismatched input 'define' expecting IDENTIFIER"
       line:
         start: 7
@@ -372,7 +372,7 @@
         start: 4
         end: 10
       metadata:
-        symbol: 'define'
+        symbol: "define"
     - msg: "mismatched input 'reader' expecting {',', ']'}"
       line:
         start: 7
@@ -381,7 +381,7 @@
         start: 11
         end: 17
       metadata:
-        symbol: 'reader'
+        symbol: "reader"
 - name: empty directly assignable relations without spaces should yield error
   dsl: |
     model
@@ -400,7 +400,7 @@
         start: 20
         end: 21
       metadata:
-        symbol: ']'
+        symbol: "]"
     - msg: "mismatched input 'define' expecting IDENTIFIER"
       line:
         start: 7
@@ -409,7 +409,7 @@
         start: 4
         end: 10
       metadata:
-        symbol: 'define'
+        symbol: "define"
     - msg: "mismatched input 'reader' expecting {',', ']'}"
       line:
         start: 7
@@ -418,7 +418,7 @@
         start: 11
         end: 17
       metadata:
-        symbol: 'reader'
+        symbol: "reader"
 - name: unsupported schema version should yield error
   dsl: |
     model
@@ -436,7 +436,7 @@
         start: 9
         end: 12
       metadata:
-        symbol: '0.9'
+        symbol: "0.9"
 - name: model 1.1 has no directly allowed types in viewer
   dsl: |
     model
@@ -455,7 +455,7 @@
         start: 18
         end: 20
       metadata:
-        symbol: 'as'
+        symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -464,7 +464,7 @@
         start: 20
         end: 21
       metadata:
-        symbol: ' '
+        symbol: " "
 - name: >-
     mixing 1.0 and 1.1 should not be allowed as non assignable self is not
     allowed
@@ -485,7 +485,7 @@
         start: 18
         end: 20
       metadata:
-        symbol: 'as'
+        symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -494,7 +494,7 @@
         start: 20
         end: 21
       metadata:
-        symbol: ' '
+        symbol: " "
 - name: should not allow no model schema
   dsl: |
     type user
@@ -502,7 +502,7 @@
       relations
         define group: [user] as self
   expected_errors:
-    - msg: "extraneous input 'type' expecting {'#', 'model', WHITESPACE, NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -510,7 +510,7 @@
         start: 0
         end: 4
       metadata:
-        symbol: 'type'
+        symbol: "type"
     - msg: "extraneous input 'user' expecting {'#', 'model', NEWLINE}"
       line:
         start: 1
@@ -519,7 +519,7 @@
         start: 5
         end: 9
       metadata:
-        symbol: 'user'
+        symbol: "user"
     - msg: "mismatched input 'type' expecting {'#', 'model'}"
       line:
         start: 2
@@ -528,7 +528,7 @@
         start: 0
         end: 4
       metadata:
-        symbol: 'type'
+        symbol: "type"
 - name: incorrect wildcard restriction should be raised
   dsl: |
     model
@@ -538,7 +538,7 @@
       relations
         define member: [user, user:*:*]
   expected_errors:
-    - msg: "mismatched input ':' expecting {',', ']', WHITESPACE}"
+    - msg: "mismatched input ':' expecting {',', WHITESPACE, ']'}"
       line:
         start: 6
         end: 6
@@ -546,7 +546,7 @@
         start: 32
         end: 33
       metadata:
-        symbol: ':'
+        symbol: ":"
 - name: exclusion target not allow to reference itself in TTU
   dsl: |
     model
@@ -565,7 +565,7 @@
         start: 34
         end: 35
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -574,7 +574,7 @@
         start: 43
         end: 44
       metadata:
-        symbol: '#'
+        symbol: "#"
 - name: detect if every child in union are related
   dsl: |
     model
@@ -592,7 +592,7 @@
         start: 40
         end: 41
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
         start: 5
@@ -601,7 +601,7 @@
         start: 49
         end: 50
       metadata:
-        symbol: '#'
+        symbol: "#"
 - name: intersection child to reference other relations for same type
   dsl: |
     model
@@ -620,7 +620,7 @@
         start: 30
         end: 31
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -629,7 +629,7 @@
         start: 39
         end: 40
       metadata:
-        symbol: '#'
+        symbol: "#"
 - name: exclusion base to reference other relations for same type
   dsl: |
     model
@@ -648,7 +648,7 @@
         start: 45
         end: 46
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -657,7 +657,7 @@
         start: 50
         end: 51
       metadata:
-        symbol: ']'
+        symbol: "]"
 - name: exclusion target to reference other relations for same type
   dsl: |
     model
@@ -676,7 +676,7 @@
         start: 34
         end: 35
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -685,7 +685,7 @@
         start: 43
         end: 44
       metadata:
-        symbol: '#'
+        symbol: "#"
 - name: union child to reference other relations for same type
   dsl: |
     model
@@ -704,7 +704,7 @@
         start: 29
         end: 30
       metadata:
-        symbol: '['
+        symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
         start: 7
@@ -713,7 +713,7 @@
         start: 38
         end: 39
       metadata:
-        symbol: '#'
+        symbol: "#"
 - name: type restriction cannot contains both wildcard and relation
   dsl: |
     model
@@ -726,7 +726,7 @@
       relations
         define reader: [department, department#member:*]
   expected_errors:
-    - msg: "mismatched input ':' expecting {',', ']', WHITESPACE}"
+    - msg: "mismatched input ':' expecting {',', WHITESPACE, ']'}"
       line:
         start: 9
         end: 9
@@ -734,7 +734,7 @@
         start: 49
         end: 50
       metadata:
-        symbol: ':'
+        symbol: ":"
 - name: simple group reference to itself
   dsl: |
     model
@@ -830,10 +830,10 @@
       schema 1.1
     type user
     type org
-  
+
       relations
         define member: [user]    
-  
+
     type group
       relations
         define parent: [group]
@@ -847,7 +847,7 @@
     type folder
       relations
         define viewer: [user]
-  
+
     type document
       relations
         define parent: [folder]
@@ -879,7 +879,7 @@
     type folder
       relations
         define viewer: [user, user:*]
-  
+
     type user
   expected_errors: []
 - name: model 1.1 wildcard restricted type in the middle
@@ -889,7 +889,7 @@
     type folder
       relations
         define viewer: [user, user:*, group]
-  
+
     type user
     type group
   expected_errors: []
@@ -900,7 +900,7 @@
     type folder
       relations
         define viewer: [  user  , user:*  , group  ]
-  
+
     type user
     type group
   expected_errors: []
@@ -957,7 +957,7 @@
     model
       schema 1.1
     type user
-  
+
     type document
       relations
         define restricted: [user]
@@ -968,7 +968,7 @@
   expected_errors: []
 - name: extraneous spaces and newlines should still work
   dsl: |
-  
+
     model
        schema 1.1
      type user
@@ -1202,7 +1202,7 @@
         define rel6: [user]
         define rel7: [user]
         define rel8: [user]
-        define rel9: (rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8)) 
+        define rel9: (rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8))
 
 - name: a valid model with multiple operators x2
   dsl: |
@@ -1218,7 +1218,7 @@
         define rel6: [user]
         define rel7: [user]
         define rel8: [user]
-        define rel9: ((rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8))) 
+        define rel9: ((rel1 or rel2 or rel3) but not ((rel4 and rel5 and rel6) but not (rel7 but not rel8)))
 
 - name: an invalid model with multiple type restriction instances in a relation definition
   dsl: |
@@ -1424,20 +1424,27 @@
       schema 1.1
          # comment 3
     type user
-    
+
     # comment 4
     type document
       # comment 5
       relations
       # comment 6
         define editor: [team#member] # a comment
-    
+
       # comment 7
         define viewer: [user] or editor # another comment
-    
+
       # comment 8
       # comment 9
-    
+
     type team
       relations
         define member: [user]
+
+- name: a valid model with type names doesnt conflict with condition parameter types
+  dsl: |
+    model
+      schema 1.1
+    type list
+    type map

@@ -184,17 +184,26 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 	}
 
 	if relationDefinition.GetUnion() != nil {
-		parsedUnion, _ := parseUnion(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedUnion, err := parseUnion(typeName, relationName, relationDefinition, typeRestrictions)
+		if err != nil {
+			return "", err
+		}
 		return fmt.Sprintf("(%s)", parsedUnion), nil
 	}
 
 	if relationDefinition.GetIntersection() != nil {
-		parsedIntersection, _ := parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedIntersection, err := parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+		if err != nil {
+			return "", err
+		}
 		return fmt.Sprintf("(%s)", parsedIntersection), nil
 	}
 
 	if relationDefinition.GetDifference() != nil {
-		parsedDiff, _ := parseDifference(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedDiff, err := parseDifference(typeName, relationName, relationDefinition, typeRestrictions)
+		if err != nil {
+			return "", err
+		}
 		return fmt.Sprintf("(%s)", parsedDiff), nil
 	}
 

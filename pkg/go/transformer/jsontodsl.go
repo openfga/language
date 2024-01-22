@@ -30,7 +30,7 @@ func (v *DirectAssignmentValidator) reset() {
 
 var validator = DirectAssignmentValidator{
 	occurred:   0,
-	stateStack: make([]pb.Userset, 0),
+	stateStack: []pb.Userset{},
 }
 
 func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
@@ -38,20 +38,21 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
 		return true
 	}
 
-	// TODO nil handling
-	if userset.GetDifference().GetBase() != nil {
+	if userset.GetDifference() != nil && userset.GetDifference().GetBase() != nil {
 		if userset.GetDifference().GetBase().GetThis() != nil {
 			return true
 		} else {
 			return v.isFirstPosition(userset.GetDifference().GetBase())
 		}
-	} else if len(userset.GetIntersection().GetChild()) > 0 {
-		if userset.GetIntersection().GetChild()[0].GetThis() != nil {
-			return true
-		} else {
-			return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+	} else if userset.GetIntersection() != nil && userset.GetIntersection().GetChild() != nil {
+		if len(userset.GetIntersection().GetChild()) > 0 {
+			if userset.GetIntersection().GetChild()[0].GetThis() != nil {
+				return true
+			} else {
+				return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+			}
 		}
-	} else if len(userset.GetUnion().GetChild()) > 0 {
+	} else if userset.GetUnion() != nil && len(userset.GetUnion().GetChild()) > 0 {
 		if userset.GetUnion().GetChild()[0].GetThis() != nil {
 			return true
 		} else {

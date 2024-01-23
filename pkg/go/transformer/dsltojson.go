@@ -29,6 +29,11 @@ type relation struct {
 	TypeInfo pb.RelationTypeInfo
 }
 
+type stackRelation struct {
+	Rewrites []*pb.Userset
+	Operator RelationDefinitionOperator
+}
+
 type OpenFgaDslListener struct {
 	*parser.BaseOpenFGAParserListener
 
@@ -36,10 +41,51 @@ type OpenFgaDslListener struct {
 	currentTypeDef     *pb.TypeDefinition
 	currentRelation    *relation
 	currentCondition   *pb.Condition
+	rewriteStack       []*stackRelation
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
 	return new(OpenFgaDslListener)
+}
+
+func ParseExpression(rewrites []*pb.Userset, operator RelationDefinitionOperator) *pb.Userset {
+	var relationDef *pb.Userset
+
+	if len(rewrites) == 0 {
+		return nil
+	}
+	if len(rewrites) == 1 {
+		relationDef = rewrites[0]
+	} else {
+		switch operator {
+		case RELATION_DEFINITION_OPERATOR_OR:
+			relationDef = &pb.Userset{
+				Userset: &pb.Userset_Union{
+					Union: &pb.Usersets{
+						Child: rewrites,
+					},
+				},
+			}
+		case RELATION_DEFINITION_OPERATOR_AND:
+			relationDef = &pb.Userset{
+				Userset: &pb.Userset_Intersection{
+					Intersection: &pb.Usersets{
+						Child: rewrites,
+					},
+				},
+			}
+		case RELATION_DEFINITION_OPERATOR_BUT_NOT:
+			relationDef = &pb.Userset{
+				Userset: &pb.Userset_Difference{
+					Difference: &pb.Difference{
+						Base:     rewrites[0],
+						Subtract: rewrites[1],
+					},
+				},
+			}
+		}
+	}
+	return relationDef
 }
 
 func (l *OpenFgaDslListener) EnterMain(_ctx *parser.MainContext) {
@@ -163,6 +209,8 @@ func (l *OpenFgaDslListener) EnterRelationDeclaration(_ctx *parser.RelationDecla
 		Rewrites: []*pb.Userset{},
 		TypeInfo: pb.RelationTypeInfo{DirectlyRelatedUserTypes: []*pb.RelationReference{}},
 	}
+
+	l.rewriteStack = []*stackRelation{}
 }
 
 func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclarationContext) {
@@ -171,44 +219,7 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 	}
 
 	relationName := ctx.RelationName().GetText()
-
-	if l.currentRelation.Rewrites == nil || len(l.currentRelation.Rewrites) == 0 {
-		return
-	}
-
-	var relationDef *pb.Userset
-
-	if len(l.currentRelation.Rewrites) == 1 {
-		relationDef = l.currentRelation.Rewrites[0]
-	} else {
-		switch l.currentRelation.Operator {
-		case RELATION_DEFINITION_OPERATOR_OR:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Union{
-					Union: &pb.Usersets{
-						Child: l.currentRelation.Rewrites,
-					},
-				},
-			}
-		case RELATION_DEFINITION_OPERATOR_AND:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Intersection{
-					Intersection: &pb.Usersets{
-						Child: l.currentRelation.Rewrites,
-					},
-				},
-			}
-		case RELATION_DEFINITION_OPERATOR_BUT_NOT:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Difference{
-					Difference: &pb.Difference{
-						Base:     l.currentRelation.Rewrites[0],
-						Subtract: l.currentRelation.Rewrites[1],
-					},
-				},
-			}
-		}
-	}
+	relationDef := ParseExpression(l.currentRelation.Rewrites, l.currentRelation.Operator)
 
 	if relationDef != nil {
 		if l.currentTypeDef.Relations[relationName] != nil {
@@ -291,6 +302,45 @@ func (l *OpenFgaDslListener) ExitRelationDefRewrite(ctx *parser.RelationDefRewri
 	}
 
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
+}
+
+func (l *OpenFgaDslListener) ExitRelationRecurse(ctx *parser.RelationRecurseContext) {
+	if l.currentRelation == nil {
+		return
+	}
+
+	relationDef := ParseExpression(l.currentRelation.Rewrites, l.currentRelation.Operator)
+
+	if relationDef != nil {
+		l.currentRelation.Rewrites = []*pb.Userset{relationDef}
+	}
+}
+
+func (l *OpenFgaDslListener) EnterRelationRecurseNoDirect(ctx *parser.RelationRecurseNoDirectContext) {
+	if l.rewriteStack != nil {
+		l.rewriteStack = append(l.rewriteStack, &stackRelation{
+			Rewrites: l.currentRelation.Rewrites,
+			Operator: l.currentRelation.Operator,
+		})
+	}
+
+	l.currentRelation.Rewrites = []*pb.Userset{}
+}
+
+func (l *OpenFgaDslListener) ExitRelationRecurseNoDirect(ctx *parser.RelationRecurseNoDirectContext) {
+	if l.currentRelation == nil {
+		return
+	}
+
+	relationDef := ParseExpression(l.currentRelation.Rewrites, l.currentRelation.Operator)
+
+	popped, stack := l.rewriteStack[len(l.rewriteStack)-1], l.rewriteStack[:len(l.rewriteStack)-1]
+	l.rewriteStack = stack
+
+	if relationDef != nil {
+		l.currentRelation.Operator = popped.Operator
+		l.currentRelation.Rewrites = append(popped.Rewrites, relationDef)
+	}
 }
 
 func (l *OpenFgaDslListener) EnterRelationDefPartials(ctx *parser.RelationDefPartialsContext) {

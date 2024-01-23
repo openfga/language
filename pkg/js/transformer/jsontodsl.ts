@@ -14,7 +14,7 @@ class DirectAssignmentValidator {
   stateStack: Userset[] = [];
 
   isFirstPosition = (userset: Userset): boolean => {
-    // Throw error is direct assignemnt is present, and not the first element.
+    // Throw error if direct assignment is present, and not the first element.
     if (userset.this) {
       return true;
     }
@@ -151,7 +151,7 @@ function parseSubRelation(
   typeRestrictions: RelationReference[],
 ): string {
   if (relationDefinition.this != null) {
-    // Make sure we no more than 1 reference for direct assignment in a given relation
+    // Make sure we have no more than 1 reference for direct assignment in a given relation
     validator.occured++;
     return parseThis(typeRestrictions);
   }

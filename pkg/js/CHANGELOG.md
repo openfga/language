@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.10
+
+### [v0.2.0-beta.10](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.9...v0.2.0-beta.10) (2024-01-23)
+
+Fixed:
+- Re-allow `list` and `map` to be accepted as identifiers and relation names (#134)
+
 ## v0.2.0-beta.9
 
 ### [v0.2.0-beta.9](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.8...v0.2.0-beta.9) (2024-01-08)

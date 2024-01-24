@@ -118,7 +118,7 @@
         }
       ]
     }
-  valid: false,
+  valid: false
   error_message: the 'rel2' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: mixed operators with direct assignment 2
@@ -196,7 +196,7 @@
         }
       ]
     }
-  valid: false,
+  valid: false
   error_message: the 'rel1' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: mixed operators with direct assignment 3
@@ -286,7 +286,7 @@
         }
       ]
     }
-  valid: false,
+  valid: false
   error_message: the 'rel4' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: relation def where this is not in first place (union)

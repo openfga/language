@@ -10,6 +10,9 @@ plugins {
     id 'idea'
     id 'eclipse'
 
+    // Lombok
+    id 'io.freefair.lombok' version '8.4'
+
     // Publishing
     id 'maven-publish'
     id 'signing'
@@ -52,6 +55,7 @@ javadoc {
 }
 
 test {
+    useJUnitPlatform()
     // JaCoCo coverage report is always generated after tests run.
     finalizedBy jacocoTestReport
 }
@@ -67,4 +71,9 @@ ext {
 
 dependencies {
     implementation 'org.antlr:antlr4:4.13.1'
+    implementation 'dev.openfga:openfga-sdk:0.3.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
 }

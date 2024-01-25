@@ -1,6 +1,5 @@
 package dev.openfga.language.errors;
 
-import dev.openfga.sdk.api.model.Metadata;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

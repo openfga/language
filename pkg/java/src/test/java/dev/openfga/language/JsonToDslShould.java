@@ -30,7 +30,12 @@ public class JsonToDslShould {
         Assumptions.assumeFalse(skip);
 
         var thrown = catchThrowable(() -> new JsonToDslTransformer().transform(json));
-        assertThat(thrown).hasMessage(errorMessage);
+
+        if(errorMessage == null) {
+            assertThat(thrown).isNull();
+        } else {
+            assertThat(thrown).hasMessage(errorMessage);
+        }
     }
 
     private static Stream<Arguments> transformerTestCases() {

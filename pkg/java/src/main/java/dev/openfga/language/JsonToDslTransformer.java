@@ -71,20 +71,31 @@ public class JsonToDslTransformer {
         return formatedTypeBuilder.toString();
     }
 
+    private interface RelationFormatter {
+        CharSequence format(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions);
+    }
+
     private String formatRelation(String typeName, String relationName, Userset relationDefinition, RelationMetadata relationMetadata) {
-        var formattedRelationBuilder = new StringBuilder("    define ").append(relationName).append(": ");
+        validator.reset();
+
         var typeRestrictions = requireNonNullElseGet(relationMetadata.getDirectlyRelatedUserTypes(), ArrayList<RelationReference>::new);
+
+        RelationFormatter formatter = this::formatSubRelation;
+
         if (relationDefinition.getDifference() != null) {
-            formattedRelationBuilder.append(formatDifference(typeName, relationName, relationDefinition, typeRestrictions));
+            formatter = this::formatDifference;
         } else if (relationDefinition.getUnion() != null) {
-            formattedRelationBuilder.append(formatUnion(typeName, relationName, relationDefinition, typeRestrictions));
+            formatter = this::formatUnion;
         } else if (relationDefinition.getIntersection() != null) {
-            formattedRelationBuilder.append(formatIntersection(typeName, relationName, relationDefinition, typeRestrictions));
-        } else {
-            formattedRelationBuilder.append(formatSubRelation(typeName, relationName, relationDefinition, typeRestrictions));
+            formatter = this::formatIntersection;
         }
 
-        return formattedRelationBuilder.toString();
+        var formattedRelation = formatter.format(typeName, relationName, relationDefinition, typeRestrictions);
+        if (validator.occurences() == 0 || (validator.occurences() == 1 && validator.isFirstPosition(relationDefinition))) {
+            return "    define " + relationName + ": " + formattedRelation;
+        }
+
+        throw new UnsupportedDSLNestingException(typeName, relationName);
     }
 
     private StringBuilder formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
@@ -138,6 +149,35 @@ public class JsonToDslTransformer {
         void reset() {
             occured = 0;
             stateStack = new ArrayDeque<>();
+        }
+
+        public boolean isFirstPosition(Userset userset) {
+            if(userset.getThis() != null) {
+                return true;
+            }
+
+            if(userset.getDifference() != null && userset.getDifference().getBase() != null) {
+                if(userset.getDifference().getBase().getThis() != null) {
+                    return true;
+                } else {
+                    return isFirstPosition(userset.getDifference().getBase());
+                }
+            } else if (userset.getIntersection() != null
+                    && userset.getIntersection().getChild() != null
+                    && !userset.getIntersection().getChild().isEmpty()) {
+                if(userset.getIntersection().getChild().get(0).getThis() != null) {
+                    return true;
+                } else {
+                    return isFirstPosition(userset.getIntersection().getChild().get(0));
+                }
+            } else if (userset.getUnion() != null && !userset.getUnion().getChild().isEmpty()) {
+                if(userset.getUnion().getChild().get(0).getThis() != null) {
+                    return true;
+                } else {
+                    return isFirstPosition(userset.getUnion().getChild().get(0));
+                }
+            }
+            return false;
         }
     }
 

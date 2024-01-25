@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.openfga.language.errors.UnsupportedDSLNestingException;
 import dev.openfga.sdk.api.model.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -89,22 +87,22 @@ public class JsonToDslTransformer {
         return formattedRelationBuilder.toString();
     }
 
-    private CharSequence formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private StringBuilder formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
         var base = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getBase(), typeRestrictions);
         var difference = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getSubtract(), typeRestrictions);
 
         return new StringBuilder(base).append(" but not ").append(difference);
     }
 
-    private CharSequence formatUnion(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private StringBuilder formatUnion(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
         return joinChildren(Userset::getUnion, "or", typeName, relationName, relationDefinition, typeRestrictions);
     }
 
-    private CharSequence formatIntersection(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private StringBuilder formatIntersection(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
         return joinChildren(Userset::getIntersection, "and", typeName, relationName, relationDefinition, typeRestrictions);
     }
 
-    private CharSequence joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private StringBuilder joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
         List<Userset> children = null;
         if (relationDefinition != null && childrenAccessor.apply(relationDefinition) != null) {
             children = childrenAccessor.apply(relationDefinition).getChild();
@@ -125,8 +123,30 @@ public class JsonToDslTransformer {
         return formattedUnion;
     }
 
+    private static class DirectAssignmentValidator {
+        private int occured = 0;
+        private Deque<Userset> stateStack = new ArrayDeque<>();
+
+        void incr() {
+            occured++;
+        }
+
+        int occurences() {
+            return occured;
+        }
+
+        void reset() {
+            occured = 0;
+            stateStack = new ArrayDeque<>();
+        }
+    }
+
+    private final DirectAssignmentValidator validator = new DirectAssignmentValidator();
+
+
     private CharSequence formatSubRelation(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
         if (relationDefinition.getThis() != null) {
+            validator.incr();
             return formatThis(typeRestrictions);
         }
 
@@ -136,6 +156,24 @@ public class JsonToDslTransformer {
 
         if (relationDefinition.getTupleToUserset() != null) {
             return formatTupleToUserset(relationDefinition);
+        }
+
+        if (relationDefinition.getUnion() != null) {
+            return formatUnion(typeName, relationName, relationDefinition, typeRestrictions)
+                    .insert(0, '(')
+                    .append(')');
+        }
+
+        if (relationDefinition.getIntersection() != null) {
+            return formatIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+                    .insert(0, '(')
+                    .append(')');
+        }
+
+        if (relationDefinition.getDifference() != null) {
+            return formatDifference(typeName, relationName, relationDefinition, typeRestrictions)
+                    .insert(0, '(')
+                    .append(')');
         }
 
         throw new UnsupportedDSLNestingException(typeName, relationName);
@@ -150,23 +188,24 @@ public class JsonToDslTransformer {
 
     private CharSequence formatTypeRestriction(RelationReference restriction) {
         var typeName = restriction.getType();
-
-        Object condition = null; // not supported yet
-        if (condition != null) {
-            return new StringBuilder(typeName).append(" with ").append(condition);
-        }
-
         var relation = restriction.getRelation();
-        if (relation != null) {
-            return new StringBuilder(typeName).append("#").append(relation);
-        }
-
         var wildcard = restriction.getWildcard();
+        var condition = restriction.getCondition();
+
+        var formattedTypeRestriction = new StringBuilder(typeName);
+
         if (wildcard != null) {
-            return new StringBuilder(typeName).append(":*");
+            formattedTypeRestriction.append(":*");
         }
 
-        return typeName;
+        if (relation != null && !relation.isEmpty()) {
+            formattedTypeRestriction.append('#').append(relation);
+        }
+
+        if (condition != null && !condition.isEmpty()) {
+            formattedTypeRestriction.append(" with ").append(condition);
+        }
+        return formattedTypeRestriction;
     }
 
     private CharSequence formatComputedUserset(Userset relationDefinition) {
@@ -187,8 +226,66 @@ public class JsonToDslTransformer {
         return new StringBuilder(computedUserset).append(" from ").append(tupleset);
     }
 
-    private String formatConditions(AuthorizationModel model) {
-        return "";
+    private CharSequence formatConditions(AuthorizationModel model) {
+        var conditions = model.getConditions();
+        if (conditions == null || conditions.isEmpty()) {
+            return "";
+        }
+
+        var formattedConditions = new StringBuilder();
+        var sortedCondition = new TreeMap<>(conditions);
+
+        for (var conditionEntry : sortedCondition.entrySet()) {
+            var conditionName = conditionEntry.getKey();
+            var conditionDef = conditionEntry.getValue();
+
+            var formattedCondition = formatCondition(conditionName, conditionDef);
+            formattedConditions.append(EOL).append(formattedCondition);
+        }
+
+        return formattedConditions;
+    }
+
+    private CharSequence formatCondition(String conditionName, Condition conditionDef) {
+        if (!conditionName.equals(conditionDef.getName())) {
+            throw new IllegalArgumentException("conditionName must match condition.getName()");
+        }
+
+        var formattedParameters = formatConditionParameters(conditionDef.getParameters());
+        return new StringBuilder("condition ")
+                .append(conditionDef.getName())
+                .append('(')
+                .append(formattedParameters)
+                .append(") {")
+                .append(EOL)
+                .append("  ")
+                .append(conditionDef.getExpression())
+                .append(EOL)
+                .append('}')
+                .append(EOL);
+    }
+
+    private CharSequence formatConditionParameters(Map<String, ConditionParamTypeRef> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return "";
+        }
+
+        return new TreeMap<>(parameters).entrySet().stream()
+                .map(entry -> {
+                    var parameterName = entry.getKey();
+                    var parameterType = entry.getValue();
+                    var formattedParameterType = parameterType.getTypeName().getValue()
+                            .replace("TYPE_NAME_", "")
+                            .toLowerCase();
+                    if (formattedParameterType.equals("list") || formattedParameterType.equals("map")) {
+                        var genericTypeString = parameterType.getGenericTypes().get(0).getTypeName().getValue()
+                                .replace("TYPE_NAME_", "")
+                                .toLowerCase();
+                        formattedParameterType = formattedParameterType + "<" + genericTypeString + ">";
+                    }
+                    return new StringBuilder(parameterName).append(": ").append(formattedParameterType);
+                })
+                .collect(joining(", "));
     }
 
 }

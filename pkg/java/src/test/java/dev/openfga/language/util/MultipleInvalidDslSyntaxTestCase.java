@@ -6,6 +6,7 @@ import dev.openfga.language.errors.ModelValidationSingleError;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -14,5 +15,5 @@ public class MultipleInvalidDslSyntaxTestCase extends InvalidDslSyntaxTestCase {
 
     @JsonProperty("expected_errors")
     @JsonInclude(JsonInclude.Include.USE_DEFAULTS)
-    private List<ModelValidationSingleError> expectedErrors;
+    private List<ModelValidationSingleError> expectedErrors = new ArrayList<>();
 }

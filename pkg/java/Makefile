@@ -10,7 +10,7 @@ clean:
 	gradlew clean
 
 test:
-	gradlew test
+	gradlew check
 
 lint:
 	echo "java lint Not implemented"

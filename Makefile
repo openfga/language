@@ -100,7 +100,7 @@ all-tests-js: antlr-gen-js
 
 .PHONY: antlr-gen-java
 antlr-gen-java:
-	${ANTLR_CMD} -Dlanguage=Java -o pkg/java/src/main/generated/dev/openfga/language -package dev.openfga.language /app/OpenFGALexer.g4 /app/OpenFGAParser.g4
+	${ANTLR_CMD} -Dlanguage=Java -o pkg/java/src/main/gen/dev/openfga/language/antlr -package dev.openfga.language.antlr /app/OpenFGALexer.g4 /app/OpenFGAParser.g4
 
 .PHONY: build-java
 build-java: antlr-gen-java

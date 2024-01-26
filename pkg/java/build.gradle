@@ -39,7 +39,10 @@ java {
 sourceSets {
     main {
         java {
-            srcDirs = ['src/main/generated', 'src/main/java']
+            srcDirs = [
+                    'src/main/java',
+                    'src/main/gen',
+            ]
         }
     }
     test {
@@ -50,6 +53,8 @@ sourceSets {
 }
 
 javadoc {
+    exclude("dev/openfga/language/antlr/**")
+
     // Ignore warnings.
     options.addStringOption('Xdoclint:none', '-quiet')
 }

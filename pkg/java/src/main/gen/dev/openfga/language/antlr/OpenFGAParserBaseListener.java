@@ -1,5 +1,5 @@
 // Generated from /app/OpenFGAParser.g4 by ANTLR 4.13.1
-package dev.openfga.language;
+package dev.openfga.language.antlr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;

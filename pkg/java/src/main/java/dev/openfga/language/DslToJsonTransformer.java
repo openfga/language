@@ -1,5 +1,7 @@
 package dev.openfga.language;
 
+import dev.openfga.language.antlr.OpenFGALexer;
+import dev.openfga.language.antlr.OpenFGAParser;
 import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.language.errors.SyntaxError;
 import dev.openfga.sdk.api.model.AuthorizationModel;

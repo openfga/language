@@ -1,5 +1,6 @@
 package dev.openfga.language;
 
+import dev.openfga.language.antlr.*;
 import dev.openfga.sdk.api.model.*;
 import lombok.Getter;
 

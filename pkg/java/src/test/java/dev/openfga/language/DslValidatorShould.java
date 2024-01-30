@@ -1,13 +1,14 @@
 package dev.openfga.language;
 
+import dev.openfga.language.errors.DslErrorsException;
+import dev.openfga.language.errors.ModelValidationSingleError;
+import dev.openfga.language.errors.ParsingError;
+import dev.openfga.language.util.TestsData;
+import dev.openfga.language.validation.DslValidator;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import dev.openfga.language.errors.DslErrorsException;
-import dev.openfga.language.errors.ModelValidationSingleError;
-import dev.openfga.language.errors.SyntaxError;
-import dev.openfga.language.util.TestsData;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -21,10 +22,10 @@ public class DslValidatorShould {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("dslSyntaxTestCases")
-    public void verifyDslSyntax(String name, String dsl, List<SyntaxError> expectedErrors, boolean skip) {
+    public void verifyDslSyntax(String name, String dsl, List<ParsingError> expectedErrors, boolean skip) {
         Assumptions.assumeFalse(skip);
 
-        var thrown = catchThrowable(() -> new DslValidator().validate(dsl));
+        var thrown = catchThrowable(() -> DslValidator.validate(dsl));
 
         if (expectedErrors.isEmpty()) {
             assertThat(thrown).isNull();
@@ -51,7 +52,7 @@ public class DslValidatorShould {
             var expectedError = expectedErrors.get(i);
             var actualError = actualErrors.get(i);
 
-            assertMatch(expectedError, (SyntaxError) actualError);
+            assertMatch(expectedError, actualError);
         }
     }
 
@@ -61,7 +62,7 @@ public class DslValidatorShould {
     public void verifyDslValidation(String name, String dsl, List<ModelValidationSingleError> expectedErrors, boolean skip) {
         Assumptions.assumeFalse(skip);
 
-        var thrown = catchThrowable(() -> new DslValidator().validate(dsl));
+        var thrown = catchThrowable(() -> DslValidator.validate(dsl));
 
         if (expectedErrors.isEmpty()) {
             assertThat(thrown).isNull();
@@ -92,11 +93,10 @@ public class DslValidatorShould {
         }
     }
 
-    private void assertMatch(SyntaxError expectedError, SyntaxError actualError) {
+    private void assertMatch(ParsingError expectedError, ParsingError actualError) {
         assertThat(actualError.getMessage()).isEqualTo(expectedError.getMessage());
         assertThat(actualError.getLine()).isEqualTo(expectedError.getLine());
         assertThat(actualError.getColumn()).isEqualTo(expectedError.getColumn());
-        assertThat(actualError.getMetadata()).isEqualTo(expectedError.getMetadata());
     }
 
     private void assertMatch(ModelValidationSingleError expectedError, ModelValidationSingleError actualError) {

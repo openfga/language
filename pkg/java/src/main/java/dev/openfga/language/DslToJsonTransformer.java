@@ -30,7 +30,7 @@ public class DslToJsonTransformer {
         return result.getAuthorizationModel();
     }
 
-    Result parseDsl(String dsl) {
+    public Result parseDsl(String dsl) {
         var cleanedDsl = Arrays.stream(dsl.split("\n"))
                 .map(String::stripTrailing)
                 .collect(joining("\n"));

@@ -11,7 +11,6 @@ import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../er
 
 class DirectAssignmentValidator {
   occured: number = 0;
-  stateStack: Userset[] = [];
 
   isFirstPosition = (userset: Userset): boolean => {
     // Throw error if direct assignment is present, and not the first element.
@@ -41,14 +40,7 @@ class DirectAssignmentValidator {
 
     return false;
   };
-
-  reset = () => {
-    this.occured = 0;
-    this.stateStack = [];
-  };
 }
-
-const validator = new DirectAssignmentValidator();
 
 function parseTypeRestriction(restriction: RelationReference): string {
   const typeName = restriction.type;
@@ -101,13 +93,15 @@ function parseDifference(
   relationName: string,
   relationDefinition: Userset,
   typeRestrictions: RelationReference[],
+  validator: DirectAssignmentValidator,
 ): string {
-  const base = parseSubRelation(typeName, relationName, relationDefinition!.difference!.base!, typeRestrictions);
+  const base = parseSubRelation(typeName, relationName, relationDefinition!.difference!.base!, typeRestrictions, validator);
   const difference = parseSubRelation(
     typeName,
     relationName,
     relationDefinition!.difference!.subtract!,
     typeRestrictions,
+    validator,
   );
   return `${base} but not ${difference}`;
 }
@@ -117,12 +111,13 @@ function parseUnion(
   relationName: string,
   relationDefinition: Userset,
   typeRestrictions: RelationReference[],
+  validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
   const children = relationDefinition?.union?.child;
 
   for (const child of children || []) {
-    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions));
+    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
   }
 
   return parsedString.join(" or ");
@@ -133,12 +128,13 @@ function parseIntersection(
   relationName: string,
   relationDefinition: Userset,
   typeRestrictions: RelationReference[],
+  validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
   const children = relationDefinition?.intersection?.child;
 
   for (const child of children || []) {
-    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions));
+    parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
   }
 
   return parsedString.join(" and ");
@@ -149,6 +145,7 @@ function parseSubRelation(
   relationName: string,
   relationDefinition: Userset,
   typeRestrictions: RelationReference[],
+  validator: DirectAssignmentValidator,
 ): string {
   if (relationDefinition.this != null) {
     // Make sure we have no more than 1 reference for direct assignment in a given relation
@@ -165,15 +162,15 @@ function parseSubRelation(
   }
 
   if (relationDefinition.union != null) {
-    return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions)})`;
+    return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
   if (relationDefinition.intersection != null) {
-    return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)})`;
+    return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
   if (relationDefinition.difference != null) {
-    return `(${parseDifference(typeName, relationName, relationDefinition, typeRestrictions)})`;
+    return `(${parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
   throw new UnsupportedDSLNestingError(typeName, relationName);
@@ -185,19 +182,19 @@ function parseRelation(
   relationDefinition: Userset = {},
   relationMetadata: RelationMetadata = {},
 ) {
-  validator.reset();
+  const validator = new DirectAssignmentValidator();
 
   let parsedRelationString = `    define ${relationName}: `;
   const typeRestrictions: RelationReference[] = relationMetadata.directly_related_user_types || [];
 
   if (relationDefinition.difference != null) {
-    parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions);
+    parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.union != null) {
-    parsedRelationString += parseUnion(typeName, relationName, relationDefinition, typeRestrictions);
+    parsedRelationString += parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.intersection != null) {
-    parsedRelationString += parseIntersection(typeName, relationName, relationDefinition, typeRestrictions);
+    parsedRelationString += parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else {
-    parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions);
+    parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions, validator);
   }
 
   // Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
@@ -281,8 +278,6 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
 };
 
 export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {
-  validator.reset();
-
   const schemaVersion = model?.schema_version || "1.1";
   const typeDefinitions = model?.type_definitions?.map((typeDef) => parseType(typeDef));
   const parsedConditionsString = parseConditions(model);

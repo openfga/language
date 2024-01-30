@@ -11,8 +11,7 @@ import (
 )
 
 type DirectAssignmentValidator struct {
-	occurred   int
-	stateStack []pb.Userset
+	occurred int
 }
 
 func (v *DirectAssignmentValidator) incr() {
@@ -21,16 +20,6 @@ func (v *DirectAssignmentValidator) incr() {
 
 func (v *DirectAssignmentValidator) occurrences() int {
 	return v.occurred
-}
-
-func (v *DirectAssignmentValidator) reset() {
-	v.stateStack = []pb.Userset{}
-	v.occurred = 0
-}
-
-var validator = DirectAssignmentValidator{
-	occurred:   0,
-	stateStack: []pb.Userset{},
 }
 
 func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
@@ -112,13 +101,13 @@ func parseComputedUserset(relationDefinition *pb.Userset) string {
 	return fmt.Sprintf("%v", relationDefinition.GetComputedUserset().GetRelation())
 }
 
-func parseDifference(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference) (string, error) {
-	parsedSubStringBase, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetBase(), typeRestrictions)
+func parseDifference(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
+	parsedSubStringBase, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetBase(), typeRestrictions, validator)
 	if err != nil {
 		return "", err
 	}
 
-	parsedSubStringSubtract, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetSubtract(), typeRestrictions)
+	parsedSubStringSubtract, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetSubtract(), typeRestrictions, validator)
 	if err != nil {
 		return "", err
 	}
@@ -130,12 +119,12 @@ func parseDifference(typeName string, relationName string, relationDefinition *p
 	), nil
 }
 
-func parseUnion(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference) (string, error) {
+func parseUnion(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
 	parsedString := []string{}
 	children := relationDefinition.GetUnion().GetChild()
 
 	for index := 0; index < len(children); index++ {
-		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions)
+		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions, validator)
 		if err != nil {
 			return "", err
 		}
@@ -149,12 +138,12 @@ func parseUnion(typeName string, relationName string, relationDefinition *pb.Use
 	), nil
 }
 
-func parseIntersection(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference) (string, error) {
+func parseIntersection(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
 	parsedString := []string{}
 	children := relationDefinition.GetIntersection().GetChild()
 
 	for index := 0; index < len(children); index++ {
-		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions)
+		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions, validator)
 		if err != nil {
 			return "", err
 		}
@@ -168,7 +157,7 @@ func parseIntersection(typeName string, relationName string, relationDefinition 
 	), nil
 }
 
-func parseSubRelation(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference) (string, error) {
+func parseSubRelation(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
 	if relationDefinition.GetThis() != nil {
 		// Make sure we have no more than 1 reference for direct assignment in a given relation
 		validator.incr()
@@ -184,7 +173,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 	}
 
 	if relationDefinition.GetUnion() != nil {
-		parsedUnion, err := parseUnion(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedUnion, err := parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)
 		if err != nil {
 			return "", err
 		}
@@ -192,7 +181,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 	}
 
 	if relationDefinition.GetIntersection() != nil {
-		parsedIntersection, err := parseIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedIntersection, err := parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)
 		if err != nil {
 			return "", err
 		}
@@ -200,7 +189,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 	}
 
 	if relationDefinition.GetDifference() != nil {
-		parsedDiff, err := parseDifference(typeName, relationName, relationDefinition, typeRestrictions)
+		parsedDiff, err := parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator)
 		if err != nil {
 			return "", err
 		}
@@ -216,7 +205,9 @@ func parseRelation(
 	relationDefinition *pb.Userset,
 	relationMetadata *pb.RelationMetadata,
 ) (string, error) {
-	validator.reset()
+	validator := DirectAssignmentValidator{
+		occurred: 0,
+	}
 
 	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
 
@@ -230,7 +221,7 @@ func parseRelation(
 		parseFn = parseIntersection
 	}
 
-	parsedRelationString, err := parseFn(typeName, relationName, relationDefinition, typeRestrictions)
+	parsedRelationString, err := parseFn(typeName, relationName, relationDefinition, typeRestrictions, &validator)
 	if err != nil {
 		return "", err
 	}

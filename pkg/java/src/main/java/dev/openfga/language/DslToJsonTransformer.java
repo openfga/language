@@ -13,6 +13,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.joining;
 
@@ -30,9 +31,20 @@ public class DslToJsonTransformer {
         return result.getAuthorizationModel();
     }
 
+    private static final Pattern SPACES_LINE_PATTERN = Pattern.compile("^\\s*$");
+    private static final Pattern COMMENTED_LINE_PATTERN = Pattern.compile("^\\s*#.*$");
+    private String cleanLine(String line) {
+        if(SPACES_LINE_PATTERN.matcher(line).matches()
+                || COMMENTED_LINE_PATTERN.matcher(line).matches()) {
+            return "";
+        }
+        var cleanedLine = line.split(Pattern.quote(" #"))[0];
+        return cleanedLine.stripTrailing();
+    }
+
     public Result parseDsl(String dsl) {
         var cleanedDsl = Arrays.stream(dsl.split("\n"))
-                .map(String::stripTrailing)
+                .map(this::cleanLine)
                 .collect(joining("\n"));
 
 

@@ -76,13 +76,15 @@ public class DslValidator {
             var typeName = typeDef.getType();
             typeMap.put(typeName, typeDef);
 
-            typeDef.getMetadata().getRelations().forEach((relationName, relationMetadata) -> {
-                relationMetadata.getDirectlyRelatedUserTypes().forEach(typeRestriction -> {
-                    if (typeRestriction.getCondition() != null) {
-                        usedConditionNamesSet.add(typeRestriction.getCondition());
-                    }
+            if(typeDef.getMetadata() != null) {
+                typeDef.getMetadata().getRelations().forEach((relationName, relationMetadata) -> {
+                    relationMetadata.getDirectlyRelatedUserTypes().forEach(typeRestriction -> {
+                        if (typeRestriction.getCondition() != null) {
+                            usedConditionNamesSet.add(typeRestriction.getCondition());
+                        }
+                    });
                 });
-            });
+            }
         });
 
         authorizationModel.getTypeDefinitions().forEach(typeDef -> {
@@ -284,7 +286,7 @@ public class DslValidator {
         var wordIdx = 0;
         var matcher = regex.matcher(rawLine);
         if (matcher.find()) {
-            wordIdx = matcher.start();
+            wordIdx = matcher.start() + 1;
         }
 
         if(wordResolver != null) {
@@ -310,6 +312,9 @@ public class DslValidator {
     }
 
     private void raiseReservedTypeName(int lineIndex, String symbol) {
+        var errorProperties = buildErrorProperties("a type cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.ReservedTypeKeywords);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
     private void raiseInvalidName(int lineIndex, String symbol, String clause) {
@@ -317,6 +322,13 @@ public class DslValidator {
     }
 
     private void raiseInvalidName(int lineIndex, String symbol, String clause, String typeName) {
+        var messageStart = typeName != null
+                ? "relation '" + symbol + "' of type '" + typeName + "'"
+                : "type '" + symbol + "'";
+        var message = messageStart + " does not match naming rule: '" + clause + "'.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidName);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
     private void raiseReservedRelationName(int lineIndex, String symbol) {

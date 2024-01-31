@@ -71,12 +71,8 @@ public class JsonToDslTransformer {
         return formatedTypeBuilder.toString();
     }
 
-    private interface RelationFormatter {
-        CharSequence format(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions);
-    }
-
     private String formatRelation(String typeName, String relationName, Userset relationDefinition, RelationMetadata relationMetadata) {
-        validator.reset();
+        var validator = new DirectAssignmentValidator();
 
         var typeRestrictions = requireNonNullElseGet(relationMetadata.getDirectlyRelatedUserTypes(), ArrayList<RelationReference>::new);
 
@@ -90,7 +86,7 @@ public class JsonToDslTransformer {
             formatter = this::formatIntersection;
         }
 
-        var formattedRelation = formatter.format(typeName, relationName, relationDefinition, typeRestrictions);
+        var formattedRelation = formatter.format(typeName, relationName, relationDefinition, typeRestrictions, validator);
         if (validator.occurences() == 0 || (validator.occurences() == 1 && validator.isFirstPosition(relationDefinition))) {
             return "    define " + relationName + ": " + formattedRelation;
         }
@@ -98,22 +94,21 @@ public class JsonToDslTransformer {
         throw new UnsupportedDSLNestingException(typeName, relationName);
     }
 
-    private StringBuilder formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
-        var base = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getBase(), typeRestrictions);
-        var difference = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getSubtract(), typeRestrictions);
-
+    private StringBuilder formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
+        var base = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getBase(), typeRestrictions, validator);
+        var difference = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getSubtract(), typeRestrictions, validator);
         return new StringBuilder(base).append(" but not ").append(difference);
     }
 
-    private StringBuilder formatUnion(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
-        return joinChildren(Userset::getUnion, "or", typeName, relationName, relationDefinition, typeRestrictions);
+    private StringBuilder formatUnion(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
+        return joinChildren(Userset::getUnion, "or", typeName, relationName, relationDefinition, typeRestrictions, validator);
     }
 
-    private StringBuilder formatIntersection(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
-        return joinChildren(Userset::getIntersection, "and", typeName, relationName, relationDefinition, typeRestrictions);
+    private StringBuilder formatIntersection(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
+        return joinChildren(Userset::getIntersection, "and", typeName, relationName, relationDefinition, typeRestrictions, validator);
     }
 
-    private StringBuilder joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private StringBuilder joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
         List<Userset> children = null;
         if (relationDefinition != null && childrenAccessor.apply(relationDefinition) != null) {
             children = childrenAccessor.apply(relationDefinition).getChild();
@@ -128,7 +123,7 @@ public class JsonToDslTransformer {
             } else {
                 notFirst = true;
             }
-            formattedUnion.append(formatSubRelation(typeName, relationName, child, typeRestrictions));
+            formattedUnion.append(formatSubRelation(typeName, relationName, child, typeRestrictions, validator));
         }
 
         return formattedUnion;
@@ -136,7 +131,6 @@ public class JsonToDslTransformer {
 
     private static class DirectAssignmentValidator {
         private int occured = 0;
-        private Deque<Userset> stateStack = new ArrayDeque<>();
 
         void incr() {
             occured++;
@@ -144,11 +138,6 @@ public class JsonToDslTransformer {
 
         int occurences() {
             return occured;
-        }
-
-        void reset() {
-            occured = 0;
-            stateStack = new ArrayDeque<>();
         }
 
         public boolean isFirstPosition(Userset userset) {
@@ -181,10 +170,7 @@ public class JsonToDslTransformer {
         }
     }
 
-    private final DirectAssignmentValidator validator = new DirectAssignmentValidator();
-
-
-    private CharSequence formatSubRelation(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions) {
+    private CharSequence formatSubRelation(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
         if (relationDefinition.getThis() != null) {
             validator.incr();
             return formatThis(typeRestrictions);
@@ -199,19 +185,19 @@ public class JsonToDslTransformer {
         }
 
         if (relationDefinition.getUnion() != null) {
-            return formatUnion(typeName, relationName, relationDefinition, typeRestrictions)
+            return formatUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)
                     .insert(0, '(')
                     .append(')');
         }
 
         if (relationDefinition.getIntersection() != null) {
-            return formatIntersection(typeName, relationName, relationDefinition, typeRestrictions)
+            return formatIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)
                     .insert(0, '(')
                     .append(')');
         }
 
         if (relationDefinition.getDifference() != null) {
-            return formatDifference(typeName, relationName, relationDefinition, typeRestrictions)
+            return formatDifference(typeName, relationName, relationDefinition, typeRestrictions, validator)
                     .insert(0, '(')
                     .append(')');
         }
@@ -326,6 +312,10 @@ public class JsonToDslTransformer {
                     return new StringBuilder(parameterName).append(": ").append(formattedParameterType);
                 })
                 .collect(joining(", "));
+    }
+
+    private interface RelationFormatter {
+        CharSequence format(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator);
     }
 
 }

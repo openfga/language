@@ -90,7 +90,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
         var conditionName = ctx.conditionName().getText();
         if (authorizationModel.getConditions().containsKey(conditionName)) {
-            var message = String.format("condition '%s' is already defined", conditionName);
+            var message = String.format("condition '%s' is already defined in the model", conditionName);
             parser.notifyErrorListeners(ctx.conditionName().start, message, null);
         }
 

@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 @RequiredArgsConstructor
@@ -213,10 +214,109 @@ public class DslValidator {
                 break;
             }
             case TupleToUserset: {
+                if (childDef.getFrom() != null && childDef.getTarget() != null) {
+                    if (!relations.containsKey(childDef.getFrom())) {
+                        var typeIndex = getTypeLineNumber(typeName);
+                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                        raiseInvalidTypeRelation(
+                                lineIndex,
+                                childDef.getTarget() + " from " + childDef.getFrom(),
+                                typeName,
+                                childDef.getFrom()
+                        );
+                    } else {
+                        var allowableTypesResult = allowableTypes(typeMap, typeName, childDef.getFrom());
+                        if (allowableTypesResult.isValid()) {
+                            var childRelationNotValid = new ArrayList<InvalidChildRelationMetadata>();
+                            var fromTypes = allowableTypesResult.getAllowableTypes();
+                            for (var item : fromTypes) {
+                                var type = destructTupleToUserset(item);
+                                var decodedType = type.getDecodedType();
+                                var decodedRelation = type.getDecodedRelation();
+                                var isWilcard = type.isWildcard();
+                                if (isWilcard) {
+                                    var typeIndex = getTypeLineNumber(typeName);
+                                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                                    raiseAssignableTypeWildcardRelation(lineIndex, item);
+                                } else if (decodedRelation != null) {
+                                    var typeIndex = getTypeLineNumber(typeName);
+                                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                                    raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
+                                } else {
+                                    if (typeMap.get(decodedType) != null && !typeMap.get(decodedType).getRelations().containsKey(childDef.getTarget())) {
+                                        var typeIndex = getTypeLineNumber(typeName);
+                                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                                        childRelationNotValid.add(new InvalidChildRelationMetadata(
+                                                lineIndex,
+                                                childDef.getTarget() + " from " + childDef.getFrom(),
+                                                decodedType,
+                                                childDef.getTarget()));
+                                    }
+                                }
+                            }
+
+                            if (childRelationNotValid.size() == fromTypes.size()) {
+                                for (var item : childRelationNotValid) {
+                                    raiseInvalidTypeRelation(
+                                            item.getLineIndex(),
+                                            item.getSymbol(),
+                                            item.getTypeName(),
+                                            item.getRelationName());
+                                }
+                            }
+                        } else {
+                            var typeIndex = getTypeLineNumber(typeName);
+                            var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                            raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
+                        }
+                    }
+                }
                 break;
             }
         }
 
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class InvalidChildRelationMetadata {
+        private final int lineIndex;
+        private final String symbol;
+        private final String typeName;
+        private final String relationName;
+
+    }
+
+    @AllArgsConstructor
+    @Getter
+    private static class AllowableTypesResult {
+        private final boolean valid;
+        private final List<String> allowableTypes;
+
+    }
+    private AllowableTypesResult allowableTypes(Map<String, TypeDefinition> typeMap, String typeName, String relation) {
+        var allowedTypes = new ArrayList<String>();
+        var typeDefinition = typeMap.get(typeName);
+        var currentRelation = typeDefinition.getRelations().get(relation);
+        var metadata = typeDefinition.getMetadata();
+        Collection<RelationReference> relatedTypes = metadata != null
+                ? metadata.getRelations().get(relation).getDirectlyRelatedUserTypes()
+                : emptyList();
+        var currentRelationMetadata = getTypeRestrictions(relatedTypes);
+        var isValid = relationIsSingle(currentRelation);
+        if (isValid) {
+            var childDef = getRelationalParserResult(currentRelation);
+            if(childDef.getRewrite() == RewriteType.Direct) {
+                allowedTypes.addAll(currentRelationMetadata);
+            }
+        }
+        return new AllowableTypesResult(isValid, allowedTypes);
+    }
+
+    private boolean relationIsSingle(Userset currentRelation) {
+        return currentRelation.getUnion() == null
+                && currentRelation.getIntersection() == null
+                && currentRelation.getDifference() == null;
     }
 
     private List<String> getTypeRestrictions(Collection<RelationReference> relatedTypes) {
@@ -447,6 +547,17 @@ public class DslValidator {
         var message = "`" + relationName + "` is not a valid relation for `" + typeName + "`.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
+        var message = "`" + symbol + "` relation used inside from allows only direct relation.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {
+            var clauseStartsAt = rawLine.indexOf("from") + "from".length() + 1;
+            wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value) + 1;
+            return wordIndex;
+        });
+        var metadata = new ValidationMetadata(symbol, ValidationError.TuplesetNotDirect);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

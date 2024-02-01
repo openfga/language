@@ -332,6 +332,9 @@ public class DslValidator {
     }
 
     private void raiseReservedRelationName(int lineIndex, String symbol) {
+        var errorProperties = buildErrorProperties("a relation cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
     private void raiseDuplicateRelationName(int lineIndex, String symbol) {

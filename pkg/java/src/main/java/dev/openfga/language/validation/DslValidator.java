@@ -78,7 +78,7 @@ public class DslValidator {
             var typeName = typeDef.getType();
             typeMap.put(typeName, typeDef);
 
-            if(typeDef.getMetadata() != null) {
+            if (typeDef.getMetadata() != null) {
                 typeDef.getMetadata().getRelations().forEach((relationName, relationMetadata) -> {
                     relationMetadata.getDirectlyRelatedUserTypes().forEach(typeRestriction -> {
                         if (typeRestriction.getCondition() != null) {
@@ -105,14 +105,16 @@ public class DslValidator {
         }
 
         var currentRelation = relations.get(relationName);
-        var children = new ArrayList<Userset>(){{add(currentRelation);}};
+        var children = new ArrayList<Userset>() {{
+            add(currentRelation);
+        }};
         while (!children.isEmpty()) {
             var child = children.remove(0);
-            if(child.getUnion() != null) {
+            if (child.getUnion() != null) {
                 children.addAll(child.getUnion().getChild());
-            } else if(child.getIntersection() != null) {
+            } else if (child.getIntersection() != null) {
                 children.addAll(child.getIntersection().getChild());
-            } else if(child.getDifference() != null && child.getDifference().getBase() != null && child.getDifference().getSubtract() != null) {
+            } else if (child.getDifference() != null && child.getDifference().getBase() != null && child.getDifference().getSubtract() != null) {
                 children.add(child.getDifference().getBase());
                 children.add(child.getDifference().getSubtract());
             } else {
@@ -130,6 +132,7 @@ public class DslValidator {
         private final String decodedConditionName;
 
     }
+
     private DestructuredTupleToUserset destructTupleToUserset(String allowableType) {
         var tupleAndCondition = allowableType.split(" with ");
         var tupleString = tupleAndCondition[0];
@@ -169,9 +172,9 @@ public class DslValidator {
                     var type = destructTupleToUserset(item);
                     var decodedType = type.getDecodedType();
                     if (!typeMap.containsKey(decodedType)) {
-                      var typeIndex = getTypeLineNumber(typeName);
-                      var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                      raiseInvalidType(lineIndex, decodedType, decodedType);
+                        var typeIndex = getTypeLineNumber(typeName);
+                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                        raiseInvalidType(lineIndex, decodedType, decodedType);
                     }
 
                     var decodedConditionName = type.getDecodedConditionName();
@@ -180,11 +183,28 @@ public class DslValidator {
                         var lineIndex = getRelationLineNumber(relationName, typeIndex);
                         raiseInvalidConditionNameInParameter(lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
                     }
+
+                    var decodedRelation = type.getDecodedRelation();
+                    if (type.isWildcard() && decodedRelation != null) {
+                        var typeIndex = getTypeLineNumber(typeName);
+                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                        raiseAssignableTypeWildcardRelation(lineIndex, item);
+                    } else if (decodedRelation != null) {
+                        if (typeMap.get(decodedType) == null || !typeMap.get(decodedType).getRelations().containsKey(decodedRelation)) {
+                            var typeIndex = getTypeLineNumber(typeName);
+                            var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                            raiseInvalidTypeRelation(
+                                    lineIndex,
+                                    decodedType + "#" + decodedRelation,
+                                    decodedType,
+                                    decodedRelation);
+                        }
+                    }
                 }
                 break;
             }
             case ComputedUserset: {
-                if(childDef.getTarget() != null && relations.get(childDef.getTarget()) == null) {
+                if (childDef.getTarget() != null && relations.get(childDef.getTarget()) == null) {
                     var typeIndex = getTypeLineNumber(typeName);
                     var lineIndex = getRelationLineNumber(relationName, typeIndex);
                     var value = childDef.getTarget();
@@ -218,7 +238,9 @@ public class DslValidator {
         }
 
         return typeRestrictionString;
-    };
+    }
+
+    ;
 
     private RelationTargetParserResult getRelationalParserResult(Userset userset) {
         String target = null, from = null;
@@ -259,15 +281,15 @@ public class DslValidator {
                 raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
             }
 
-            var encounteredRelationsInType = new HashSet<String>(){{
+            var encounteredRelationsInType = new HashSet<String>() {{
                 add(Keyword.SELF);
             }};
             typeDef.getRelations().forEach((relationName, relation) -> {
-                if(relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
+                if (relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
                     var typeIndex = getTypeLineNumber(typeName);
                     var lineIndex = getRelationLineNumber(relationName, typeIndex);
                     raiseReservedRelationName(lineIndex, relationName);
-                } else if(!relationRegex.matches(relationName)) {
+                } else if (!relationRegex.matches(relationName)) {
                     var typeIndex = getTypeLineNumber(typeName);
                     var lineIndex = getRelationLineNumber(relationName, typeIndex);
                     raiseInvalidName(lineIndex, relationName, relationRegex.getRule(), typeName);
@@ -318,6 +340,7 @@ public class DslValidator {
     private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol) {
         return buildErrorProperties(message, lineIndex, symbol, null);
     }
+
     private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol, WordResolver wordResolver) {
 
         var rawLine = lines[lineIndex];
@@ -328,7 +351,7 @@ public class DslValidator {
             wordIdx = matcher.start() + 1;
         }
 
-        if(wordResolver != null) {
+        if (wordResolver != null) {
             wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
         }
 
@@ -380,7 +403,7 @@ public class DslValidator {
 
     private void raiseInvalidRelationError(int lineIndex, String symbol, Collection<String> validRelations) {
         var invalid = !validRelations.contains(symbol);
-        if(invalid) {
+        if (invalid) {
             var message = "the relation `" + symbol + "` does not exist.";
             var errorProperties = buildErrorProperties(message, lineIndex, symbol);
             var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
@@ -410,6 +433,20 @@ public class DslValidator {
         var message = "`" + conditionName + "` is not a defined condition in the model.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotDefined, relationName, typeName, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseAssignableTypeWildcardRelation(int lineIndex, String symbol) {
+        var message = "type restriction `" + symbol + "` cannot contain both wildcard and relation";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.TypeRestrictionCannotHaveWildcardAndRelation);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseInvalidTypeRelation(int lineIndex, String symbol, String typeName, String relationName) {
+        var message = "`" + relationName + "` is not a valid relation for `" + typeName + "`.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

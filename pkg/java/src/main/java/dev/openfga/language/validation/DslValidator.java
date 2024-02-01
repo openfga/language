@@ -3,6 +3,8 @@ package dev.openfga.language.validation;
 import dev.openfga.language.DslToJsonTransformer;
 import dev.openfga.language.errors.*;
 import dev.openfga.sdk.api.model.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
@@ -119,6 +121,28 @@ public class DslValidator {
         }
     }
 
+    @AllArgsConstructor
+    @Getter
+    private static class DestructuredTupleToUserset {
+        private final String decodedType;
+        private final String decodedRelation;
+        private final boolean wildcard;
+        private final String decodedConditionName;
+
+    }
+    private DestructuredTupleToUserset destructTupleToUserset(String allowableType) {
+        var tupleAndCondition = allowableType.split(" with ");
+        var tupleString = tupleAndCondition[0];
+        var decodedConditionName = tupleAndCondition.length > 1 ? tupleAndCondition[1] : null;
+        var isWildcard = tupleString.contains(":*");
+        var splittedWords = tupleString.replace(":*", "").split("#");
+        return new DestructuredTupleToUserset(
+                splittedWords[0],
+                splittedWords.length > 1 ? splittedWords[1] : null,
+                isWildcard,
+                decodedConditionName);
+    }
+
     private void childDefDefined(Map<String, TypeDefinition> typeMap, String typeName, String relationName, RelationTargetParserResult childDef) {
         var relations = typeMap.get(typeName).getRelations();
         if (relations == null || relations.isEmpty() || !relations.containsKey(relationName)) {
@@ -141,7 +165,22 @@ public class DslValidator {
                     var lineIndex = getRelationLineNumber(relationName, typeIndex);
                     raiseAssignableRelationMustHaveTypes(lineIndex, relationName);
                 }
+                for (var item : fromPossibleTypes) {
+                    var type = destructTupleToUserset(item);
+                    var decodedType = type.getDecodedType();
+                    if (!typeMap.containsKey(decodedType)) {
+                      var typeIndex = getTypeLineNumber(typeName);
+                      var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                      raiseInvalidType(lineIndex, decodedType, decodedType);
+                    }
 
+                    var decodedConditionName = type.getDecodedConditionName();
+                    if (decodedConditionName != null && !authorizationModel.getConditions().containsKey(decodedConditionName)) {
+                        var typeIndex = getTypeLineNumber(typeName);
+                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                        raiseInvalidConditionNameInParameter(lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
+                    }
+                }
                 break;
             }
             case ComputedUserset: {
@@ -296,7 +335,6 @@ public class DslValidator {
         var line = new StartEnd(lineIndex + 1, lineIndex + 1);
         var column = new StartEnd(wordIdx, wordIdx + symbol.length());
         return new ErrorProperties(line, column, message);
-
     }
 
     public void raiseSchemaVersionRequired(int lineIndex, String symbol) {
@@ -341,8 +379,38 @@ public class DslValidator {
     }
 
     private void raiseInvalidRelationError(int lineIndex, String symbol, Collection<String> validRelations) {
+        var invalid = !validRelations.contains(symbol);
+        if(invalid) {
+            var message = "the relation `" + symbol + "` does not exist.";
+            var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+            var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
+            errors.add(new ModelValidationSingleError(errorProperties, metadata));
+        }
     }
 
     private void raiseAssignableRelationMustHaveTypes(int lineIndex, String symbol) {
+        var rawLine = lines[lineIndex];
+        var actualValue = rawLine.contains("[")
+                ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1)
+                : "self";
+        var message = "assignable relation '" + actualValue + "' must have types";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.AssignableRelationsMustHaveType);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
+
+    private void raiseInvalidType(int lineIndex, String symbol, String typeName) {
+        var message = "`" + typeName + "` is not a valid type.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidType);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseInvalidConditionNameInParameter(int lineIndex, String symbol, String typeName, String relationName, String conditionName) {
+        var message = "`" + conditionName + "` is not a defined condition in the model.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotDefined, relationName, typeName, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
 }

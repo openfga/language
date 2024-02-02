@@ -3,6 +3,7 @@ package dev.openfga.language.validation;
 import dev.openfga.language.DslToJsonTransformer;
 import dev.openfga.language.errors.*;
 import dev.openfga.sdk.api.model.*;
+import dev.openfga.sdk.api.model.Metadata;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import static dev.openfga.language.Utils.getNullSafe;
+import static dev.openfga.language.Utils.getNullSafeList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -90,6 +93,7 @@ public class DslValidator {
             }
         });
 
+        // first, validate to ensure all the relation are defined
         authorizationModel.getTypeDefinitions().forEach(typeDef -> {
             var typeName = typeDef.getType();
             typeDef.getRelations().forEach((relationName, relationDef) -> {
@@ -97,6 +101,276 @@ public class DslValidator {
             });
         });
 
+        if (errors.isEmpty()) {
+            var typeSet = new HashSet<String>();
+            authorizationModel.getTypeDefinitions().forEach(typeDef -> {
+                var typeName = typeDef.getType();
+                if (typeSet.contains(typeName)) {
+                    var typeIndex = getTypeLineNumber(typeName);
+                    raiseDuplicateTypeName(typeIndex, typeName);
+                }
+                typeSet.add(typeName);
+
+                if (typeDef.getMetadata() != null) {
+                    for (var relationDefKey : typeDef.getMetadata().getRelations().keySet()) {
+                        checkForDuplicatesTypeNamesInRelation(typeDef.getMetadata().getRelations().get(relationDefKey), relationDefKey);
+                        checkForDuplicatesInRelation(typeDef, relationDefKey);
+                    }
+                }
+            });
+        }
+
+        // next, ensure all relation have entry point
+        // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
+        if (errors.isEmpty()) {
+            authorizationModel.getTypeDefinitions().forEach(typeDef -> {
+                var typeName = typeDef.getType();
+                for (var relationName : typeDef.getRelations().keySet()) {
+                    var currentRelations = typeMap.get(typeName).getRelations();
+                    var result = hasEntryPointOrLoop(typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
+                    if(!result.isHasEntry()) {
+                        var typeIndex = getTypeLineNumber(typeName);
+                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                        if (result.isLoop()) {
+                            raiseNoEntryPointLoop(lineIndex, relationName, typeName);
+                        } else {
+                            raiseNoEntryPoint(lineIndex, relationName, typeName);
+                        }
+                    }
+                }
+            });
+        }
+
+        authorizationModel.getConditions().forEach((conditionName, condition) -> {
+            if (!usedConditionNamesSet.contains(conditionName)) {
+                var conditionIndex = getConditionLineNumber(conditionName);
+                raiseUnusedCondition(conditionIndex, conditionName);
+            }
+        });
+    }
+
+    private int getConditionLineNumber(String conditionName) {
+        return getConditionLineNumber(conditionName, 0);
+    }
+    private int getConditionLineNumber(String conditionName, int skipIndex) {
+        return findLine(
+                line -> line.trim().startsWith("condition " + conditionName),
+                skipIndex);
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class EntryPointOrLoopResult {
+        private final boolean hasEntry;
+        private final boolean loop;
+
+        public static final EntryPointOrLoopResult BOTH_FALSE = new EntryPointOrLoopResult(false, false);
+        public static final EntryPointOrLoopResult HAS_ENTRY_BUT_NO_LOOP = new EntryPointOrLoopResult(true, false);
+        public static final EntryPointOrLoopResult NO_ENTRY_WITH_LOOP = new EntryPointOrLoopResult(false, true);
+    }
+
+    // for the type/relation, whether there are any unique entry points, and if a loop is found
+    // if there are unique entry points (i.e., direct relations) then it will return true
+    // otherwise, it will follow its children to see if there are unique entry points
+    // if there is a loop during traversal, the function will return a boolean indicating so
+    private EntryPointOrLoopResult hasEntryPointOrLoop(Map<String, TypeDefinition> typeMap, String typeName, String relationName, Userset rewrite, Map<String, Map<String, Boolean>> visitedRecords) {
+        var visited = deepCopy(visitedRecords);
+
+        if (relationName == null) {
+            return EntryPointOrLoopResult.BOTH_FALSE;
+        }
+
+        if (!visited.containsKey(typeName)) {
+            visited.put(typeName, new HashMap<>());
+        }
+        visited.get(typeName).put(relationName, true);
+
+        var currentRelations = typeMap.get(typeName).getRelations();
+        if (currentRelations == null || !currentRelations.containsKey(relationName)) {
+            return EntryPointOrLoopResult.BOTH_FALSE;
+        }
+
+        if(typeMap.get(typeName).getRelations() == null || !typeMap.get(typeName).getRelations().containsKey(relationName)) {
+            return EntryPointOrLoopResult.BOTH_FALSE;
+        }
+
+        var relationsMetada = getNullSafe(typeMap.get(typeName).getMetadata(), Metadata::getRelations);
+        if (rewrite.getThis() != null) {
+            if (relationsMetada != null) {
+                var relationMetadata = relationsMetada.get(relationName);
+                var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
+                for(var assignableType :  getTypeRestrictions(relatedTypes)) {
+                    var destructuredType = destructTupleToUserset(assignableType);
+                    var decodedRelation = destructuredType.getDecodedRelation();
+                    if (decodedRelation == null || destructuredType.isWildcard()) {
+                        return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+                    }
+
+                    var decodedType = destructuredType.getDecodedType();
+                    var assignableRelation = typeMap.get(decodedType).getRelations().get(decodedRelation);
+                    if (assignableRelation == null) {
+                        return EntryPointOrLoopResult.BOTH_FALSE;
+                    }
+
+                    if (getNullSafe(visited.get(decodedType), m -> m.get(decodedRelation)) != null) {
+                        continue;
+                    }
+
+                    var entryPointOrLoop = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+                    if(entryPointOrLoop.isHasEntry()) {
+                        return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+                    }
+                }
+            }
+            return EntryPointOrLoopResult.BOTH_FALSE;
+        } else if (rewrite.getComputedUserset() != null) {
+            var computedRelationName = rewrite.getComputedUserset().getRelation();
+            if(computedRelationName == null) {
+                return EntryPointOrLoopResult.BOTH_FALSE;
+            }
+
+            var computedRelation = typeMap.get(typeName).getRelations().get(computedRelationName);
+            if(computedRelation == null) {
+                return EntryPointOrLoopResult.BOTH_FALSE;
+            }
+
+            // Loop detected
+            if (visited.get(typeName).containsKey(computedRelationName)) {
+                return EntryPointOrLoopResult.NO_ENTRY_WITH_LOOP;
+            }
+
+            return hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
+        } else if (rewrite.getTupleToUserset() != null) {
+            var tuplesetRelationName = rewrite.getTupleToUserset().getTupleset().getRelation();
+            var computedRelationName = rewrite.getTupleToUserset().getComputedUserset().getRelation();
+            if (tuplesetRelationName == null || computedRelationName == null) {
+                return EntryPointOrLoopResult.BOTH_FALSE;
+            }
+
+            if (!typeMap.get(typeName).getRelations().containsKey(tuplesetRelationName)) {
+                return EntryPointOrLoopResult.BOTH_FALSE;
+            }
+//            var tuplesetRelation = typeMap.get(typeName).getRelations().get(tuplesetRelationName);
+
+
+            if (relationsMetada != null) {
+                var relationMetadata = relationsMetada.get(tuplesetRelationName);
+                var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
+                for(var assignableType :  getTypeRestrictions(relatedTypes)) {
+                    var assignableRelation = typeMap.get(assignableType).getRelations().get(computedRelationName);
+                    if (assignableRelation != null) {
+                        if(visited.containsKey(assignableType) && visited.get(assignableType).containsKey(computedRelationName)) {
+                            continue;
+                        }
+
+                        var entryOrLoop = hasEntryPointOrLoop(typeMap, assignableType, computedRelationName, assignableRelation, visited);
+                        if(entryOrLoop.isHasEntry()) {
+                            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+                        }
+                    }
+                }
+            }
+            return EntryPointOrLoopResult.BOTH_FALSE;
+        } else if (rewrite.getUnion() != null) {
+            var loop = false;
+
+            for (var child : rewrite.getUnion().getChild()) {
+                var childEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, child, visited);
+                if (childEntryOrLoop.isHasEntry()) {
+                    return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+                }
+                loop = loop || childEntryOrLoop.isLoop();
+            }
+            return new EntryPointOrLoopResult(false, loop);
+        } else if (rewrite.getIntersection() != null) {
+            for (var child : rewrite.getIntersection().getChild()) {
+                var childEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, child, visited);
+                if (!childEntryOrLoop.isHasEntry()) {
+                    return childEntryOrLoop;
+                }
+            }
+            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+        } else if (rewrite.getDifference() != null) {
+            var baseEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getBase(), visited);
+            if(!baseEntryOrLoop.isHasEntry()) {
+                return baseEntryOrLoop;
+            }
+            var substractEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getSubtract(), visited);
+            if(!substractEntryOrLoop.isHasEntry()) {
+                return substractEntryOrLoop;
+            }
+            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
+        }
+        return EntryPointOrLoopResult.BOTH_FALSE;
+    }
+
+    private Map<String, Map<String, Boolean>> deepCopy(Map<String, Map<String, Boolean>> records) {
+        Map<String, Map<String, Boolean>> copy = new HashMap<>();
+        records.forEach((key, value) -> copy.put(key, new HashMap<>(value)));
+        return copy;
+    }
+
+    private void checkForDuplicatesInRelation(TypeDefinition typeDef, String relationName) {
+        var relationDef = typeDef.getRelations().get(relationName);
+
+        // Union
+        var relationUnionNameSet = new HashSet<String>();
+        getNullSafeList(relationDef.getUnion(), Usersets::getChild).forEach(userset -> {
+            var relationDefName = getRelationDefName(userset);
+            if(relationDefName != null && relationUnionNameSet.contains(relationDefName)) {
+                var typeIndex = getTypeLineNumber(typeDef.getType());
+                var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                raiseDuplicateType(lineIndex, relationDefName, relationName);
+            }
+            relationUnionNameSet.add(relationDefName);
+        });
+
+        // Intersection
+        var relationIntersectionNameSet = new HashSet<String>();
+        getNullSafeList(relationDef.getIntersection(), Usersets::getChild).forEach(userset -> {
+            var relationDefName = getRelationDefName(userset);
+            if(relationDefName != null && relationIntersectionNameSet.contains(relationDefName)) {
+                var typeIndex = getTypeLineNumber(typeDef.getType());
+                var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                raiseDuplicateType(lineIndex, relationDefName, relationName);
+            }
+            relationIntersectionNameSet.add(relationDefName);
+        });
+
+        // Difference
+        if (relationDef.getDifference() != null) {
+            var baseName = getRelationDefName(relationDef.getDifference().getBase());
+            var substractName = getRelationDefName(relationDef.getDifference().getSubtract());
+            if (baseName != null && baseName.equals(substractName)) {
+                var typeIndex = getTypeLineNumber(typeDef.getType());
+                var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                raiseDuplicateType(lineIndex, baseName, relationName);
+            }
+        }
+    }
+
+    private String getRelationDefName(Userset userset) {
+        var relationDefName = getNullSafe(userset.getComputedUserset(), ObjectRelation::getRelation);
+        var parserResult = getRelationalParserResult(userset);
+        if (parserResult.getRewrite() == RewriteType.ComputedUserset) {
+            relationDefName = parserResult.getTarget();
+        } else if (parserResult.getRewrite() == RewriteType.TupleToUserset) {
+            relationDefName = parserResult.getTarget() + " from " + parserResult.getFrom();
+        }
+        return relationDefName;
+    }
+
+    private void checkForDuplicatesTypeNamesInRelation(RelationMetadata relationDef, String relationName) {
+        var typeNameSet = new HashSet<String>();
+        relationDef.getDirectlyRelatedUserTypes().forEach(typeDef -> {
+            var typeDefName = getTypeRestrictionString(typeDef);
+            if (typeNameSet.contains(typeDefName)) {
+                var typeIndex = getTypeLineNumber(typeDef.getType());
+                var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                raiseDuplicateTypeRestriction(lineIndex, typeDefName, relationName);
+            }
+            typeNameSet.add(typeDefName);
+        });
     }
 
     private void relationDefined(Map<String, TypeDefinition> typeMap, String typeName, String relationName) {
@@ -294,6 +568,7 @@ public class DslValidator {
         private final List<String> allowableTypes;
 
     }
+
     private AllowableTypesResult allowableTypes(Map<String, TypeDefinition> typeMap, String typeName, String relation) {
         var allowedTypes = new ArrayList<String>();
         var typeDefinition = typeMap.get(typeName);
@@ -306,7 +581,7 @@ public class DslValidator {
         var isValid = relationIsSingle(currentRelation);
         if (isValid) {
             var childDef = getRelationalParserResult(currentRelation);
-            if(childDef.getRewrite() == RewriteType.Direct) {
+            if (childDef.getRewrite() == RewriteType.Direct) {
                 allowedTypes.addAll(currentRelationMetadata);
             }
         }
@@ -412,7 +687,7 @@ public class DslValidator {
     private int getRelationLineNumber(String relationName, int skipIndex) {
         return findLine(
                 line -> line.trim().replaceAll(" {2,}", " ").startsWith("define " + relationName),
-                0);
+                skipIndex);
     }
 
     private int getSchemaLineNumber(String schemaVersion) {
@@ -558,6 +833,48 @@ public class DslValidator {
             return wordIndex;
         });
         var metadata = new ValidationMetadata(symbol, ValidationError.TuplesetNotDirect);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseDuplicateTypeName(int lineIndex, String symbol) {
+        var message = "the type `" + symbol + "` is a duplicate.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseDuplicateTypeRestriction(int lineIndex, String symbol, String relationName) {
+        var message = "the type restriction `" + symbol + "` is a duplicate in the relation `" + relationName + "`.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseDuplicateType(int lineIndex, String symbol, String relationName) {
+        var message = "the partial relation definition `" + symbol + "` is a duplicate in the relation `" + relationName + "`.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseNoEntryPointLoop(int lineIndex, String symbol, String typeName) {
+        var message = "`" + symbol + "` is an impossible relation for `" + typeName + "` (potential loop).";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.RelationNoEntrypoint, symbol, null, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseNoEntryPoint(int lineIndex, String symbol, String typeName) {
+        var message = "`" + symbol + "` is an impossible relation for `" + typeName + "` (no entrypoint).";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.RelationNoEntrypoint, symbol, null, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    private void raiseUnusedCondition(int lineIndex, String symbol) {
+        var message = "`" + symbol + "` condition is not used in the model.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotUsed, null, null, symbol);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

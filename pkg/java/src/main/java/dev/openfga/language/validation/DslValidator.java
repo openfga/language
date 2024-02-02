@@ -1,54 +1,53 @@
 package dev.openfga.language.validation;
 
 import dev.openfga.language.DslToJsonTransformer;
-import dev.openfga.language.errors.*;
+import dev.openfga.language.Utils;
+import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.sdk.api.model.*;
-import dev.openfga.sdk.api.model.Metadata;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import static dev.openfga.language.Utils.getNullSafe;
 import static dev.openfga.language.Utils.getNullSafeList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-@RequiredArgsConstructor
 public class DslValidator {
 
     private final ValidationOptions options;
-    private final String dsl;
-    private String[] lines;
-
-    private AuthorizationModel authorizationModel;
-    private final List<ModelValidationSingleError> errors = new ArrayList<>();
+    private final AuthorizationModel authorizationModel;
+    private final DslWrapper dsl;
+    private final ValidationErrorsBuilder errors;
     private ValidationRegex typeRegex;
     private ValidationRegex relationRegex;
+
+    public DslValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
+        this.options = options;
+        this.authorizationModel = authorizationModel;
+        dsl = new DslWrapper(lines);
+        errors = new ValidationErrorsBuilder(lines);
+    }
 
     public static void validate(String dsl) throws DslErrorsException, IOException {
         validate(dsl, new ValidationOptions());
     }
 
-    public static void validate(String dsl, ValidationOptions options) throws DslErrorsException, IOException {
-        new DslValidator(options, dsl).validate();
-    }
-
-    public void validate() throws DslErrorsException, IOException {
+    public static void validate(String dsl, ValidationOptions options) throws DslErrorsException {
         var transformer = new DslToJsonTransformer();
         var result = transformer.parseDsl(dsl);
         if (result.IsFailure()) {
             throw new DslErrorsException(result.getErrors());
         }
-        authorizationModel = result.getAuthorizationModel();
+        var authorizationModel = result.getAuthorizationModel();
+        var lines = dsl.split("\n");
 
-        lines = dsl.split("\n");
+        new DslValidator(options, authorizationModel, lines).validate();
+    }
 
+    private void validate() throws DslErrorsException {
         typeRegex = ValidationRegex.build("type", options.getTypePattern());
         relationRegex = ValidationRegex.build("relation", options.getRelationPattern());
 
@@ -56,19 +55,17 @@ public class DslValidator {
 
         var schemaVersion = authorizationModel.getSchemaVersion();
         if (schemaVersion == null) {
-            raiseSchemaVersionRequired(0, "");
+            errors.raiseSchemaVersionRequired(0, "");
         }
 
         if (schemaVersion.equals("1.1")) {
             modelValidation();
         } else {
-            var lineIndex = getSchemaLineNumber(schemaVersion);
-            raiseInvalidSchemaVersion(lineIndex, schemaVersion);
+            var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
+            errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);
         }
 
-        if (!errors.isEmpty()) {
-            throw new DslErrorsException(errors);
-        }
+        errors.throwIfNotEmpty();
     }
 
     private void modelValidation() {
@@ -106,8 +103,8 @@ public class DslValidator {
             authorizationModel.getTypeDefinitions().forEach(typeDef -> {
                 var typeName = typeDef.getType();
                 if (typeSet.contains(typeName)) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    raiseDuplicateTypeName(typeIndex, typeName);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    errors.raiseDuplicateTypeName(typeIndex, typeName);
                 }
                 typeSet.add(typeName);
 
@@ -128,13 +125,13 @@ public class DslValidator {
                 for (var relationName : typeDef.getRelations().keySet()) {
                     var currentRelations = typeMap.get(typeName).getRelations();
                     var result = hasEntryPointOrLoop(typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
-                    if(!result.isHasEntry()) {
-                        var typeIndex = getTypeLineNumber(typeName);
-                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                    if (!result.isHasEntry()) {
+                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                         if (result.isLoop()) {
-                            raiseNoEntryPointLoop(lineIndex, relationName, typeName);
+                            errors.raiseNoEntryPointLoop(lineIndex, relationName, typeName);
                         } else {
-                            raiseNoEntryPoint(lineIndex, relationName, typeName);
+                            errors.raiseNoEntryPoint(lineIndex, relationName, typeName);
                         }
                     }
                 }
@@ -143,19 +140,10 @@ public class DslValidator {
 
         authorizationModel.getConditions().forEach((conditionName, condition) -> {
             if (!usedConditionNamesSet.contains(conditionName)) {
-                var conditionIndex = getConditionLineNumber(conditionName);
-                raiseUnusedCondition(conditionIndex, conditionName);
+                var conditionIndex = dsl.getConditionLineNumber(conditionName);
+                errors.raiseUnusedCondition(conditionIndex, conditionName);
             }
         });
-    }
-
-    private int getConditionLineNumber(String conditionName) {
-        return getConditionLineNumber(conditionName, 0);
-    }
-    private int getConditionLineNumber(String conditionName, int skipIndex) {
-        return findLine(
-                line -> line.trim().startsWith("condition " + conditionName),
-                skipIndex);
     }
 
     @Getter
@@ -174,7 +162,7 @@ public class DslValidator {
     // otherwise, it will follow its children to see if there are unique entry points
     // if there is a loop during traversal, the function will return a boolean indicating so
     private EntryPointOrLoopResult hasEntryPointOrLoop(Map<String, TypeDefinition> typeMap, String typeName, String relationName, Userset rewrite, Map<String, Map<String, Boolean>> visitedRecords) {
-        var visited = deepCopy(visitedRecords);
+        var visited = Utils.deepCopy(visitedRecords);
 
         if (relationName == null) {
             return EntryPointOrLoopResult.BOTH_FALSE;
@@ -190,7 +178,7 @@ public class DslValidator {
             return EntryPointOrLoopResult.BOTH_FALSE;
         }
 
-        if(typeMap.get(typeName).getRelations() == null || !typeMap.get(typeName).getRelations().containsKey(relationName)) {
+        if (typeMap.get(typeName).getRelations() == null || !typeMap.get(typeName).getRelations().containsKey(relationName)) {
             return EntryPointOrLoopResult.BOTH_FALSE;
         }
 
@@ -199,7 +187,7 @@ public class DslValidator {
             if (relationsMetada != null) {
                 var relationMetadata = relationsMetada.get(relationName);
                 var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
-                for(var assignableType :  getTypeRestrictions(relatedTypes)) {
+                for (var assignableType : getTypeRestrictions(relatedTypes)) {
                     var destructuredType = destructTupleToUserset(assignableType);
                     var decodedRelation = destructuredType.getDecodedRelation();
                     if (decodedRelation == null || destructuredType.isWildcard()) {
@@ -217,7 +205,7 @@ public class DslValidator {
                     }
 
                     var entryPointOrLoop = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
-                    if(entryPointOrLoop.isHasEntry()) {
+                    if (entryPointOrLoop.isHasEntry()) {
                         return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
                     }
                 }
@@ -225,12 +213,12 @@ public class DslValidator {
             return EntryPointOrLoopResult.BOTH_FALSE;
         } else if (rewrite.getComputedUserset() != null) {
             var computedRelationName = rewrite.getComputedUserset().getRelation();
-            if(computedRelationName == null) {
+            if (computedRelationName == null) {
                 return EntryPointOrLoopResult.BOTH_FALSE;
             }
 
             var computedRelation = typeMap.get(typeName).getRelations().get(computedRelationName);
-            if(computedRelation == null) {
+            if (computedRelation == null) {
                 return EntryPointOrLoopResult.BOTH_FALSE;
             }
 
@@ -256,15 +244,15 @@ public class DslValidator {
             if (relationsMetada != null) {
                 var relationMetadata = relationsMetada.get(tuplesetRelationName);
                 var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
-                for(var assignableType :  getTypeRestrictions(relatedTypes)) {
+                for (var assignableType : getTypeRestrictions(relatedTypes)) {
                     var assignableRelation = typeMap.get(assignableType).getRelations().get(computedRelationName);
                     if (assignableRelation != null) {
-                        if(visited.containsKey(assignableType) && visited.get(assignableType).containsKey(computedRelationName)) {
+                        if (visited.containsKey(assignableType) && visited.get(assignableType).containsKey(computedRelationName)) {
                             continue;
                         }
 
                         var entryOrLoop = hasEntryPointOrLoop(typeMap, assignableType, computedRelationName, assignableRelation, visited);
-                        if(entryOrLoop.isHasEntry()) {
+                        if (entryOrLoop.isHasEntry()) {
                             return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
                         }
                     }
@@ -292,22 +280,16 @@ public class DslValidator {
             return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
         } else if (rewrite.getDifference() != null) {
             var baseEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getBase(), visited);
-            if(!baseEntryOrLoop.isHasEntry()) {
+            if (!baseEntryOrLoop.isHasEntry()) {
                 return baseEntryOrLoop;
             }
             var substractEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getSubtract(), visited);
-            if(!substractEntryOrLoop.isHasEntry()) {
+            if (!substractEntryOrLoop.isHasEntry()) {
                 return substractEntryOrLoop;
             }
             return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
         }
         return EntryPointOrLoopResult.BOTH_FALSE;
-    }
-
-    private Map<String, Map<String, Boolean>> deepCopy(Map<String, Map<String, Boolean>> records) {
-        Map<String, Map<String, Boolean>> copy = new HashMap<>();
-        records.forEach((key, value) -> copy.put(key, new HashMap<>(value)));
-        return copy;
     }
 
     private void checkForDuplicatesInRelation(TypeDefinition typeDef, String relationName) {
@@ -317,10 +299,10 @@ public class DslValidator {
         var relationUnionNameSet = new HashSet<String>();
         getNullSafeList(relationDef.getUnion(), Usersets::getChild).forEach(userset -> {
             var relationDefName = getRelationDefName(userset);
-            if(relationDefName != null && relationUnionNameSet.contains(relationDefName)) {
-                var typeIndex = getTypeLineNumber(typeDef.getType());
-                var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                raiseDuplicateType(lineIndex, relationDefName, relationName);
+            if (relationDefName != null && relationUnionNameSet.contains(relationDefName)) {
+                var typeIndex = dsl.getTypeLineNumber(typeDef.getType());
+                var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                errors.raiseDuplicateType(lineIndex, relationDefName, relationName);
             }
             relationUnionNameSet.add(relationDefName);
         });
@@ -329,10 +311,10 @@ public class DslValidator {
         var relationIntersectionNameSet = new HashSet<String>();
         getNullSafeList(relationDef.getIntersection(), Usersets::getChild).forEach(userset -> {
             var relationDefName = getRelationDefName(userset);
-            if(relationDefName != null && relationIntersectionNameSet.contains(relationDefName)) {
-                var typeIndex = getTypeLineNumber(typeDef.getType());
-                var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                raiseDuplicateType(lineIndex, relationDefName, relationName);
+            if (relationDefName != null && relationIntersectionNameSet.contains(relationDefName)) {
+                var typeIndex = dsl.getTypeLineNumber(typeDef.getType());
+                var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                errors.raiseDuplicateType(lineIndex, relationDefName, relationName);
             }
             relationIntersectionNameSet.add(relationDefName);
         });
@@ -342,9 +324,9 @@ public class DslValidator {
             var baseName = getRelationDefName(relationDef.getDifference().getBase());
             var substractName = getRelationDefName(relationDef.getDifference().getSubtract());
             if (baseName != null && baseName.equals(substractName)) {
-                var typeIndex = getTypeLineNumber(typeDef.getType());
-                var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                raiseDuplicateType(lineIndex, baseName, relationName);
+                var typeIndex = dsl.getTypeLineNumber(typeDef.getType());
+                var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                errors.raiseDuplicateType(lineIndex, baseName, relationName);
             }
         }
     }
@@ -365,9 +347,9 @@ public class DslValidator {
         relationDef.getDirectlyRelatedUserTypes().forEach(typeDef -> {
             var typeDefName = getTypeRestrictionString(typeDef);
             if (typeNameSet.contains(typeDefName)) {
-                var typeIndex = getTypeLineNumber(typeDef.getType());
-                var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                raiseDuplicateTypeRestriction(lineIndex, typeDefName, relationName);
+                var typeIndex = dsl.getTypeLineNumber(typeDef.getType());
+                var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                errors.raiseDuplicateTypeRestriction(lineIndex, typeDefName, relationName);
             }
             typeNameSet.add(typeDefName);
         });
@@ -439,36 +421,36 @@ public class DslValidator {
                         : new ArrayList<RelationReference>();
                 var fromPossibleTypes = getTypeRestrictions(relatedTypes);
                 if (fromPossibleTypes.isEmpty()) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                    raiseAssignableRelationMustHaveTypes(lineIndex, relationName);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                    errors.raiseAssignableRelationMustHaveTypes(lineIndex, relationName);
                 }
                 for (var item : fromPossibleTypes) {
                     var type = destructTupleToUserset(item);
                     var decodedType = type.getDecodedType();
                     if (!typeMap.containsKey(decodedType)) {
-                        var typeIndex = getTypeLineNumber(typeName);
-                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                        raiseInvalidType(lineIndex, decodedType, decodedType);
+                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                        errors.raiseInvalidType(lineIndex, decodedType, decodedType);
                     }
 
                     var decodedConditionName = type.getDecodedConditionName();
                     if (decodedConditionName != null && !authorizationModel.getConditions().containsKey(decodedConditionName)) {
-                        var typeIndex = getTypeLineNumber(typeName);
-                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                        raiseInvalidConditionNameInParameter(lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
+                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                        errors.raiseInvalidConditionNameInParameter(lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
                     }
 
                     var decodedRelation = type.getDecodedRelation();
                     if (type.isWildcard() && decodedRelation != null) {
-                        var typeIndex = getTypeLineNumber(typeName);
-                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                        raiseAssignableTypeWildcardRelation(lineIndex, item);
+                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                        errors.raiseAssignableTypeWildcardRelation(lineIndex, item);
                     } else if (decodedRelation != null) {
                         if (typeMap.get(decodedType) == null || !typeMap.get(decodedType).getRelations().containsKey(decodedRelation)) {
-                            var typeIndex = getTypeLineNumber(typeName);
-                            var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                            raiseInvalidTypeRelation(
+                            var typeIndex = dsl.getTypeLineNumber(typeName);
+                            var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                            errors.raiseInvalidTypeRelation(
                                     lineIndex,
                                     decodedType + "#" + decodedRelation,
                                     decodedType,
@@ -480,19 +462,19 @@ public class DslValidator {
             }
             case ComputedUserset: {
                 if (childDef.getTarget() != null && relations.get(childDef.getTarget()) == null) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                     var value = childDef.getTarget();
-                    raiseInvalidRelationError(lineIndex, value, relations.keySet());
+                    errors.raiseInvalidRelationError(lineIndex, value, relations.keySet());
                 }
                 break;
             }
             case TupleToUserset: {
                 if (childDef.getFrom() != null && childDef.getTarget() != null) {
                     if (!relations.containsKey(childDef.getFrom())) {
-                        var typeIndex = getTypeLineNumber(typeName);
-                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                        raiseInvalidTypeRelation(
+                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                        errors.raiseInvalidTypeRelation(
                                 lineIndex,
                                 childDef.getTarget() + " from " + childDef.getFrom(),
                                 typeName,
@@ -509,17 +491,17 @@ public class DslValidator {
                                 var decodedRelation = type.getDecodedRelation();
                                 var isWilcard = type.isWildcard();
                                 if (isWilcard) {
-                                    var typeIndex = getTypeLineNumber(typeName);
-                                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                                    raiseAssignableTypeWildcardRelation(lineIndex, item);
+                                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                                    errors.raiseAssignableTypeWildcardRelation(lineIndex, item);
                                 } else if (decodedRelation != null) {
-                                    var typeIndex = getTypeLineNumber(typeName);
-                                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                                    raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
+                                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                                    errors.raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
                                 } else {
                                     if (typeMap.get(decodedType) != null && !typeMap.get(decodedType).getRelations().containsKey(childDef.getTarget())) {
-                                        var typeIndex = getTypeLineNumber(typeName);
-                                        var lineIndex = getRelationLineNumber(relationName, typeIndex);
+                                        var typeIndex = dsl.getTypeLineNumber(typeName);
+                                        var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                                         childRelationNotValid.add(new InvalidChildRelationMetadata(
                                                 lineIndex,
                                                 childDef.getTarget() + " from " + childDef.getFrom(),
@@ -531,7 +513,7 @@ public class DslValidator {
 
                             if (childRelationNotValid.size() == fromTypes.size()) {
                                 for (var item : childRelationNotValid) {
-                                    raiseInvalidTypeRelation(
+                                    errors.raiseInvalidTypeRelation(
                                             item.getLineIndex(),
                                             item.getSymbol(),
                                             item.getTypeName(),
@@ -539,9 +521,9 @@ public class DslValidator {
                                 }
                             }
                         } else {
-                            var typeIndex = getTypeLineNumber(typeName);
-                            var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                            raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
+                            var typeIndex = dsl.getTypeLineNumber(typeName);
+                            var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                            errors.raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
                         }
                     }
                 }
@@ -647,13 +629,13 @@ public class DslValidator {
             var typeName = typeDef.getType();
 
             if (typeName.equals(Keyword.SELF) || typeName.equals(Keyword.THIS)) {
-                var lineIndex = getTypeLineNumber(typeName);
-                raiseReservedTypeName(lineIndex, typeName);
+                var lineIndex = dsl.getTypeLineNumber(typeName);
+                errors.raiseReservedTypeName(lineIndex, typeName);
             }
 
             if (!typeRegex.matches(typeName)) {
-                var lineIndex = getTypeLineNumber(typeName);
-                raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
+                var lineIndex = dsl.getTypeLineNumber(typeName);
+                errors.raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
             }
 
             var encounteredRelationsInType = new HashSet<String>() {{
@@ -661,18 +643,18 @@ public class DslValidator {
             }};
             typeDef.getRelations().forEach((relationName, relation) -> {
                 if (relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                    raiseReservedRelationName(lineIndex, relationName);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                    errors.raiseReservedRelationName(lineIndex, relationName);
                 } else if (!relationRegex.matches(relationName)) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    var lineIndex = getRelationLineNumber(relationName, typeIndex);
-                    raiseInvalidName(lineIndex, relationName, relationRegex.getRule(), typeName);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                    errors.raiseInvalidName(lineIndex, relationName, relationRegex.getRule(), typeName);
                 } else if (encounteredRelationsInType.contains(relationName)) {
-                    var typeIndex = getTypeLineNumber(typeName);
-                    var initialLineIdx = getRelationLineNumber(relationName, typeIndex);
-                    var duplicateLineIdx = getRelationLineNumber(relationName, initialLineIdx + 1);
-                    raiseDuplicateRelationName(duplicateLineIdx, relationName);
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var initialLineIdx = dsl.getRelationLineNumber(relationName, typeIndex);
+                    var duplicateLineIdx = dsl.getRelationLineNumber(relationName, initialLineIdx + 1);
+                    errors.raiseDuplicateRelationName(duplicateLineIdx, relationName);
                 }
                 encounteredRelationsInType.add(relationName);
             });
@@ -680,202 +662,5 @@ public class DslValidator {
 
     }
 
-    private int getRelationLineNumber(String relationName) {
-        return getRelationLineNumber(relationName, 0);
-    }
-
-    private int getRelationLineNumber(String relationName, int skipIndex) {
-        return findLine(
-                line -> line.trim().replaceAll(" {2,}", " ").startsWith("define " + relationName),
-                skipIndex);
-    }
-
-    private int getSchemaLineNumber(String schemaVersion) {
-        return findLine(
-                line -> line.trim().replaceAll(" {2,}", " ").startsWith("schema " + schemaVersion),
-                0);
-    }
-
-    private int getTypeLineNumber(String typeName) {
-        return getTypeLineNumber(typeName, 0);
-    }
-
-    private int getTypeLineNumber(String typeName, int skipIndex) {
-        return findLine(
-                line -> line.trim().startsWith("type " + typeName),
-                skipIndex);
-    }
-
-    private int findLine(Predicate<String> predicate, int skipIndex) {
-        return IntStream.range(skipIndex, lines.length)
-                .filter(index -> predicate.test(lines[index]))
-                .findFirst().orElse(-1);
-    }
-
-    private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol) {
-        return buildErrorProperties(message, lineIndex, symbol, null);
-    }
-
-    private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol, WordResolver wordResolver) {
-
-        var rawLine = lines[lineIndex];
-        var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 0;
-        var matcher = regex.matcher(rawLine);
-        if (matcher.find()) {
-            wordIdx = matcher.start() + 1;
-        }
-
-        if (wordResolver != null) {
-            wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
-        }
-
-        var line = new StartEnd(lineIndex + 1, lineIndex + 1);
-        var column = new StartEnd(wordIdx, wordIdx + symbol.length());
-        return new ErrorProperties(line, column, message);
-    }
-
-    public void raiseSchemaVersionRequired(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("schema version required", lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.SchemaVersionRequired);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    public void raiseInvalidSchemaVersion(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("invalid schema " + symbol, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidSchema);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseReservedTypeName(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("a type cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.ReservedTypeKeywords);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseInvalidName(int lineIndex, String symbol, String clause) {
-        raiseInvalidName(lineIndex, symbol, clause, null);
-    }
-
-    private void raiseInvalidName(int lineIndex, String symbol, String clause, String typeName) {
-        var messageStart = typeName != null
-                ? "relation '" + symbol + "' of type '" + typeName + "'"
-                : "type '" + symbol + "'";
-        var message = messageStart + " does not match naming rule: '" + clause + "'.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidName);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseReservedRelationName(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("a relation cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseDuplicateRelationName(int lineIndex, String symbol) {
-    }
-
-    private void raiseInvalidRelationError(int lineIndex, String symbol, Collection<String> validRelations) {
-        var invalid = !validRelations.contains(symbol);
-        if (invalid) {
-            var message = "the relation `" + symbol + "` does not exist.";
-            var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-            var metadata = new ValidationMetadata(symbol, ValidationError.MissingDefinition);
-            errors.add(new ModelValidationSingleError(errorProperties, metadata));
-        }
-    }
-
-    private void raiseAssignableRelationMustHaveTypes(int lineIndex, String symbol) {
-        var rawLine = lines[lineIndex];
-        var actualValue = rawLine.contains("[")
-                ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1)
-                : "self";
-        var message = "assignable relation '" + actualValue + "' must have types";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.AssignableRelationsMustHaveType);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseInvalidType(int lineIndex, String symbol, String typeName) {
-        var message = "`" + typeName + "` is not a valid type.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidType);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseInvalidConditionNameInParameter(int lineIndex, String symbol, String typeName, String relationName, String conditionName) {
-        var message = "`" + conditionName + "` is not a defined condition in the model.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotDefined, relationName, typeName, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseAssignableTypeWildcardRelation(int lineIndex, String symbol) {
-        var message = "type restriction `" + symbol + "` cannot contain both wildcard and relation";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.TypeRestrictionCannotHaveWildcardAndRelation);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseInvalidTypeRelation(int lineIndex, String symbol, String typeName, String relationName) {
-        var message = "`" + relationName + "` is not a valid relation for `" + typeName + "`.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
-        var message = "`" + symbol + "` relation used inside from allows only direct relation.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {
-            var clauseStartsAt = rawLine.indexOf("from") + "from".length() + 1;
-            wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value) + 1;
-            return wordIndex;
-        });
-        var metadata = new ValidationMetadata(symbol, ValidationError.TuplesetNotDirect);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseDuplicateTypeName(int lineIndex, String symbol) {
-        var message = "the type `" + symbol + "` is a duplicate.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseDuplicateTypeRestriction(int lineIndex, String symbol, String relationName) {
-        var message = "the type restriction `" + symbol + "` is a duplicate in the relation `" + relationName + "`.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseDuplicateType(int lineIndex, String symbol, String relationName) {
-        var message = "the partial relation definition `" + symbol + "` is a duplicate in the relation `" + relationName + "`.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseNoEntryPointLoop(int lineIndex, String symbol, String typeName) {
-        var message = "`" + symbol + "` is an impossible relation for `" + typeName + "` (potential loop).";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.RelationNoEntrypoint, symbol, null, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseNoEntryPoint(int lineIndex, String symbol, String typeName) {
-        var message = "`" + symbol + "` is an impossible relation for `" + typeName + "` (no entrypoint).";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.RelationNoEntrypoint, symbol, null, null);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
-
-    private void raiseUnusedCondition(int lineIndex, String symbol) {
-        var message = "`" + symbol + "` condition is not used in the model.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotUsed, null, null, symbol);
-        errors.add(new ModelValidationSingleError(errorProperties, metadata));
-    }
 
 }

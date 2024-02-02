@@ -6,7 +6,7 @@ import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.language.errors.SyntaxError;
 import dev.openfga.sdk.api.model.AuthorizationModel;
 import lombok.Getter;
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
@@ -48,7 +48,7 @@ public class DslToJsonTransformer {
                 .collect(joining("\n"));
 
 
-        var antlrStream = new ANTLRInputStream(cleanedDsl);
+        var antlrStream = CharStreams.fromString(cleanedDsl);
         var errorListener = new OpenFgaDslErrorListener();
 
         var lexer = new OpenFGALexer(antlrStream);
@@ -56,12 +56,11 @@ public class DslToJsonTransformer {
         lexer.addErrorListener(errorListener);
         var tokenStream = new CommonTokenStream(lexer);
 
-        OpenFGAParser parser = new OpenFGAParser(tokenStream);
+        var parser = new OpenFGAParser(tokenStream);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
         var listener = new OpenFgaDslListener(parser);
-
         new ParseTreeWalker().walk(listener, parser.main());
 
         return new Result(listener.getAuthorizationModel(), errorListener.getErrors());

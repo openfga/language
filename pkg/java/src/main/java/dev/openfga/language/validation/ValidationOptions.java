@@ -1,10 +1,5 @@
 package dev.openfga.language.validation;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 public class ValidationOptions {
 
     private static final String DEFAULT_TYPE_PATTERN = "^[^:#@\\s]{1,254}$";
@@ -12,4 +7,20 @@ public class ValidationOptions {
 
     private String typePattern = DEFAULT_TYPE_PATTERN;
     private String relationPattern = DEFAULT_RELATION_PATTERN;
+
+    public String getTypePattern() {
+        return typePattern;
+    }
+
+    public void setTypePattern(String typePattern) {
+        this.typePattern = typePattern;
+    }
+
+    public String getRelationPattern() {
+        return relationPattern;
+    }
+
+    public void setRelationPattern(String relationPattern) {
+        this.relationPattern = relationPattern;
+    }
 }

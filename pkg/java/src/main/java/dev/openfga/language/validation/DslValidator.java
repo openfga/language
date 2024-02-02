@@ -1,25 +1,21 @@
 package dev.openfga.language.validation;
 
 import dev.openfga.language.DslToJsonTransformer;
-import dev.openfga.language.Utils;
 import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.sdk.api.model.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.io.IOException;
 import java.util.*;
 
-import static dev.openfga.language.Utils.getNullSafe;
 import static dev.openfga.language.Utils.getNullSafeList;
+import static dev.openfga.language.validation.Dsl.*;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 public class DslValidator {
 
     private final ValidationOptions options;
     private final AuthorizationModel authorizationModel;
-    private final DslWrapper dsl;
+    private final Dsl dsl;
     private final ValidationErrorsBuilder errors;
     private ValidationRegex typeRegex;
     private ValidationRegex relationRegex;
@@ -27,7 +23,7 @@ public class DslValidator {
     public DslValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
         this.options = options;
         this.authorizationModel = authorizationModel;
-        dsl = new DslWrapper(lines);
+        dsl = new Dsl(lines);
         errors = new ValidationErrorsBuilder(lines);
     }
 
@@ -66,6 +62,43 @@ public class DslValidator {
         }
 
         errors.throwIfNotEmpty();
+    }
+
+    private void populateRelations() {
+        authorizationModel.getTypeDefinitions().forEach(typeDef -> {
+            var typeName = typeDef.getType();
+
+            if (typeName.equals(Keyword.SELF) || typeName.equals(Keyword.THIS)) {
+                var lineIndex = dsl.getTypeLineNumber(typeName);
+                errors.raiseReservedTypeName(lineIndex, typeName);
+            }
+
+            if (!typeRegex.matches(typeName)) {
+                var lineIndex = dsl.getTypeLineNumber(typeName);
+                errors.raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
+            }
+
+            var encounteredRelationsInType = new HashSet<String>() {{
+                add(Keyword.SELF);
+            }};
+            typeDef.getRelations().forEach((relationName, relation) -> {
+                if (relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                    errors.raiseReservedRelationName(lineIndex, relationName);
+                } else if (!relationRegex.matches(relationName)) {
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
+                    errors.raiseInvalidName(lineIndex, relationName, relationRegex.getRule(), typeName);
+                } else if (encounteredRelationsInType.contains(relationName)) {
+                    var typeIndex = dsl.getTypeLineNumber(typeName);
+                    var initialLineIdx = dsl.getRelationLineNumber(relationName, typeIndex);
+                    var duplicateLineIdx = dsl.getRelationLineNumber(relationName, initialLineIdx + 1);
+                    errors.raiseDuplicateRelationName(duplicateLineIdx, relationName);
+                }
+                encounteredRelationsInType.add(relationName);
+            });
+        });
     }
 
     private void modelValidation() {
@@ -124,8 +157,8 @@ public class DslValidator {
                 var typeName = typeDef.getType();
                 for (var relationName : typeDef.getRelations().keySet()) {
                     var currentRelations = typeMap.get(typeName).getRelations();
-                    var result = hasEntryPointOrLoop(typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
-                    if (!result.isHasEntry()) {
+                    var result = EntryPointOrLoop.compute(typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
+                    if (!result.hasEntry()) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                         if (result.isLoop()) {
@@ -144,152 +177,6 @@ public class DslValidator {
                 errors.raiseUnusedCondition(conditionIndex, conditionName);
             }
         });
-    }
-
-    @Getter
-    @AllArgsConstructor
-    private static class EntryPointOrLoopResult {
-        private final boolean hasEntry;
-        private final boolean loop;
-
-        public static final EntryPointOrLoopResult BOTH_FALSE = new EntryPointOrLoopResult(false, false);
-        public static final EntryPointOrLoopResult HAS_ENTRY_BUT_NO_LOOP = new EntryPointOrLoopResult(true, false);
-        public static final EntryPointOrLoopResult NO_ENTRY_WITH_LOOP = new EntryPointOrLoopResult(false, true);
-    }
-
-    // for the type/relation, whether there are any unique entry points, and if a loop is found
-    // if there are unique entry points (i.e., direct relations) then it will return true
-    // otherwise, it will follow its children to see if there are unique entry points
-    // if there is a loop during traversal, the function will return a boolean indicating so
-    private EntryPointOrLoopResult hasEntryPointOrLoop(Map<String, TypeDefinition> typeMap, String typeName, String relationName, Userset rewrite, Map<String, Map<String, Boolean>> visitedRecords) {
-        var visited = Utils.deepCopy(visitedRecords);
-
-        if (relationName == null) {
-            return EntryPointOrLoopResult.BOTH_FALSE;
-        }
-
-        if (!visited.containsKey(typeName)) {
-            visited.put(typeName, new HashMap<>());
-        }
-        visited.get(typeName).put(relationName, true);
-
-        var currentRelations = typeMap.get(typeName).getRelations();
-        if (currentRelations == null || !currentRelations.containsKey(relationName)) {
-            return EntryPointOrLoopResult.BOTH_FALSE;
-        }
-
-        if (typeMap.get(typeName).getRelations() == null || !typeMap.get(typeName).getRelations().containsKey(relationName)) {
-            return EntryPointOrLoopResult.BOTH_FALSE;
-        }
-
-        var relationsMetada = getNullSafe(typeMap.get(typeName).getMetadata(), Metadata::getRelations);
-        if (rewrite.getThis() != null) {
-            if (relationsMetada != null) {
-                var relationMetadata = relationsMetada.get(relationName);
-                var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
-                for (var assignableType : getTypeRestrictions(relatedTypes)) {
-                    var destructuredType = destructTupleToUserset(assignableType);
-                    var decodedRelation = destructuredType.getDecodedRelation();
-                    if (decodedRelation == null || destructuredType.isWildcard()) {
-                        return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-                    }
-
-                    var decodedType = destructuredType.getDecodedType();
-                    var assignableRelation = typeMap.get(decodedType).getRelations().get(decodedRelation);
-                    if (assignableRelation == null) {
-                        return EntryPointOrLoopResult.BOTH_FALSE;
-                    }
-
-                    if (getNullSafe(visited.get(decodedType), m -> m.get(decodedRelation)) != null) {
-                        continue;
-                    }
-
-                    var entryPointOrLoop = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
-                    if (entryPointOrLoop.isHasEntry()) {
-                        return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-                    }
-                }
-            }
-            return EntryPointOrLoopResult.BOTH_FALSE;
-        } else if (rewrite.getComputedUserset() != null) {
-            var computedRelationName = rewrite.getComputedUserset().getRelation();
-            if (computedRelationName == null) {
-                return EntryPointOrLoopResult.BOTH_FALSE;
-            }
-
-            var computedRelation = typeMap.get(typeName).getRelations().get(computedRelationName);
-            if (computedRelation == null) {
-                return EntryPointOrLoopResult.BOTH_FALSE;
-            }
-
-            // Loop detected
-            if (visited.get(typeName).containsKey(computedRelationName)) {
-                return EntryPointOrLoopResult.NO_ENTRY_WITH_LOOP;
-            }
-
-            return hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
-        } else if (rewrite.getTupleToUserset() != null) {
-            var tuplesetRelationName = rewrite.getTupleToUserset().getTupleset().getRelation();
-            var computedRelationName = rewrite.getTupleToUserset().getComputedUserset().getRelation();
-            if (tuplesetRelationName == null || computedRelationName == null) {
-                return EntryPointOrLoopResult.BOTH_FALSE;
-            }
-
-            if (!typeMap.get(typeName).getRelations().containsKey(tuplesetRelationName)) {
-                return EntryPointOrLoopResult.BOTH_FALSE;
-            }
-//            var tuplesetRelation = typeMap.get(typeName).getRelations().get(tuplesetRelationName);
-
-
-            if (relationsMetada != null) {
-                var relationMetadata = relationsMetada.get(tuplesetRelationName);
-                var relatedTypes = getNullSafeList(relationMetadata, RelationMetadata::getDirectlyRelatedUserTypes);
-                for (var assignableType : getTypeRestrictions(relatedTypes)) {
-                    var assignableRelation = typeMap.get(assignableType).getRelations().get(computedRelationName);
-                    if (assignableRelation != null) {
-                        if (visited.containsKey(assignableType) && visited.get(assignableType).containsKey(computedRelationName)) {
-                            continue;
-                        }
-
-                        var entryOrLoop = hasEntryPointOrLoop(typeMap, assignableType, computedRelationName, assignableRelation, visited);
-                        if (entryOrLoop.isHasEntry()) {
-                            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-                        }
-                    }
-                }
-            }
-            return EntryPointOrLoopResult.BOTH_FALSE;
-        } else if (rewrite.getUnion() != null) {
-            var loop = false;
-
-            for (var child : rewrite.getUnion().getChild()) {
-                var childEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, child, visited);
-                if (childEntryOrLoop.isHasEntry()) {
-                    return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-                }
-                loop = loop || childEntryOrLoop.isLoop();
-            }
-            return new EntryPointOrLoopResult(false, loop);
-        } else if (rewrite.getIntersection() != null) {
-            for (var child : rewrite.getIntersection().getChild()) {
-                var childEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, child, visited);
-                if (!childEntryOrLoop.isHasEntry()) {
-                    return childEntryOrLoop;
-                }
-            }
-            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-        } else if (rewrite.getDifference() != null) {
-            var baseEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getBase(), visited);
-            if (!baseEntryOrLoop.isHasEntry()) {
-                return baseEntryOrLoop;
-            }
-            var substractEntryOrLoop = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.getDifference().getSubtract(), visited);
-            if (!substractEntryOrLoop.isHasEntry()) {
-                return substractEntryOrLoop;
-            }
-            return EntryPointOrLoopResult.HAS_ENTRY_BUT_NO_LOOP;
-        }
-        return EntryPointOrLoopResult.BOTH_FALSE;
     }
 
     private void checkForDuplicatesInRelation(TypeDefinition typeDef, String relationName) {
@@ -331,17 +218,6 @@ public class DslValidator {
         }
     }
 
-    private String getRelationDefName(Userset userset) {
-        var relationDefName = getNullSafe(userset.getComputedUserset(), ObjectRelation::getRelation);
-        var parserResult = getRelationalParserResult(userset);
-        if (parserResult.getRewrite() == RewriteType.ComputedUserset) {
-            relationDefName = parserResult.getTarget();
-        } else if (parserResult.getRewrite() == RewriteType.TupleToUserset) {
-            relationDefName = parserResult.getTarget() + " from " + parserResult.getFrom();
-        }
-        return relationDefName;
-    }
-
     private void checkForDuplicatesTypeNamesInRelation(RelationMetadata relationDef, String relationName) {
         var typeNameSet = new HashSet<String>();
         relationDef.getDirectlyRelatedUserTypes().forEach(typeDef -> {
@@ -380,29 +256,6 @@ public class DslValidator {
         }
     }
 
-    @AllArgsConstructor
-    @Getter
-    private static class DestructuredTupleToUserset {
-        private final String decodedType;
-        private final String decodedRelation;
-        private final boolean wildcard;
-        private final String decodedConditionName;
-
-    }
-
-    private DestructuredTupleToUserset destructTupleToUserset(String allowableType) {
-        var tupleAndCondition = allowableType.split(" with ");
-        var tupleString = tupleAndCondition[0];
-        var decodedConditionName = tupleAndCondition.length > 1 ? tupleAndCondition[1] : null;
-        var isWildcard = tupleString.contains(":*");
-        var splittedWords = tupleString.replace(":*", "").split("#");
-        return new DestructuredTupleToUserset(
-                splittedWords[0],
-                splittedWords.length > 1 ? splittedWords[1] : null,
-                isWildcard,
-                decodedConditionName);
-    }
-
     private void childDefDefined(Map<String, TypeDefinition> typeMap, String typeName, String relationName, RelationTargetParserResult childDef) {
         var relations = typeMap.get(typeName).getRelations();
         if (relations == null || relations.isEmpty() || !relations.containsKey(relationName)) {
@@ -426,7 +279,7 @@ public class DslValidator {
                     errors.raiseAssignableRelationMustHaveTypes(lineIndex, relationName);
                 }
                 for (var item : fromPossibleTypes) {
-                    var type = destructTupleToUserset(item);
+                    var type = DestructuredTupleToUserset.from(item);
                     var decodedType = type.getDecodedType();
                     if (!typeMap.containsKey(decodedType)) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
@@ -486,7 +339,7 @@ public class DslValidator {
                             var childRelationNotValid = new ArrayList<InvalidChildRelationMetadata>();
                             var fromTypes = allowableTypesResult.getAllowableTypes();
                             for (var item : fromTypes) {
-                                var type = destructTupleToUserset(item);
+                                var type = DestructuredTupleToUserset.from(item);
                                 var decodedType = type.getDecodedType();
                                 var decodedRelation = type.getDecodedRelation();
                                 var isWilcard = type.isWildcard();
@@ -533,25 +386,7 @@ public class DslValidator {
 
     }
 
-    @Getter
-    @AllArgsConstructor
-    private static class InvalidChildRelationMetadata {
-        private final int lineIndex;
-        private final String symbol;
-        private final String typeName;
-        private final String relationName;
-
-    }
-
-    @AllArgsConstructor
-    @Getter
-    private static class AllowableTypesResult {
-        private final boolean valid;
-        private final List<String> allowableTypes;
-
-    }
-
-    private AllowableTypesResult allowableTypes(Map<String, TypeDefinition> typeMap, String typeName, String relation) {
+    private static AllowableTypesResult allowableTypes(Map<String, TypeDefinition> typeMap, String typeName, String relation) {
         var allowedTypes = new ArrayList<String>();
         var typeDefinition = typeMap.get(typeName);
         var currentRelation = typeDefinition.getRelations().get(relation);
@@ -560,7 +395,7 @@ public class DslValidator {
                 ? metadata.getRelations().get(relation).getDirectlyRelatedUserTypes()
                 : emptyList();
         var currentRelationMetadata = getTypeRestrictions(relatedTypes);
-        var isValid = relationIsSingle(currentRelation);
+        var isValid = isRelationSingle(currentRelation);
         if (isValid) {
             var childDef = getRelationalParserResult(currentRelation);
             if (childDef.getRewrite() == RewriteType.Direct) {
@@ -570,97 +405,10 @@ public class DslValidator {
         return new AllowableTypesResult(isValid, allowedTypes);
     }
 
-    private boolean relationIsSingle(Userset currentRelation) {
+    private static boolean isRelationSingle(Userset currentRelation) {
         return currentRelation.getUnion() == null
                 && currentRelation.getIntersection() == null
                 && currentRelation.getDifference() == null;
     }
-
-    private List<String> getTypeRestrictions(Collection<RelationReference> relatedTypes) {
-        return relatedTypes.stream()
-                .map(this::getTypeRestrictionString)
-                .collect(toList());
-    }
-
-    private String getTypeRestrictionString(RelationReference typeRestriction) {
-        var typeRestrictionString = typeRestriction.getType();
-        if (typeRestriction.getWildcard() != null) {
-            typeRestrictionString += ":*";
-        } else if (typeRestriction.getRelation() != null) {
-            typeRestrictionString += "#" + typeRestriction.getRelation();
-        }
-
-        if (typeRestriction.getCondition() != null) {
-            typeRestrictionString += " with " + typeRestriction.getCondition();
-        }
-
-        return typeRestrictionString;
-    }
-
-    ;
-
-    private RelationTargetParserResult getRelationalParserResult(Userset userset) {
-        String target = null, from = null;
-
-        if (userset.getComputedUserset() != null) {
-            target = userset.getComputedUserset().getRelation();
-        } else {
-            if (userset.getTupleToUserset() != null && userset.getTupleToUserset().getComputedUserset() != null) {
-                target = userset.getTupleToUserset().getComputedUserset().getRelation();
-            }
-            if (userset.getTupleToUserset() != null && userset.getTupleToUserset().getTupleset() != null) {
-                from = userset.getTupleToUserset().getTupleset().getRelation();
-            }
-        }
-
-        var rewrite = RewriteType.Direct;
-        if (target != null) {
-            rewrite = RewriteType.ComputedUserset;
-        }
-
-        if (from != null) {
-            rewrite = RewriteType.TupleToUserset;
-        }
-        return new RelationTargetParserResult(target, from, rewrite);
-    }
-
-    private void populateRelations() {
-        authorizationModel.getTypeDefinitions().forEach(typeDef -> {
-            var typeName = typeDef.getType();
-
-            if (typeName.equals(Keyword.SELF) || typeName.equals(Keyword.THIS)) {
-                var lineIndex = dsl.getTypeLineNumber(typeName);
-                errors.raiseReservedTypeName(lineIndex, typeName);
-            }
-
-            if (!typeRegex.matches(typeName)) {
-                var lineIndex = dsl.getTypeLineNumber(typeName);
-                errors.raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
-            }
-
-            var encounteredRelationsInType = new HashSet<String>() {{
-                add(Keyword.SELF);
-            }};
-            typeDef.getRelations().forEach((relationName, relation) -> {
-                if (relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
-                    var typeIndex = dsl.getTypeLineNumber(typeName);
-                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
-                    errors.raiseReservedRelationName(lineIndex, relationName);
-                } else if (!relationRegex.matches(relationName)) {
-                    var typeIndex = dsl.getTypeLineNumber(typeName);
-                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
-                    errors.raiseInvalidName(lineIndex, relationName, relationRegex.getRule(), typeName);
-                } else if (encounteredRelationsInType.contains(relationName)) {
-                    var typeIndex = dsl.getTypeLineNumber(typeName);
-                    var initialLineIdx = dsl.getRelationLineNumber(relationName, typeIndex);
-                    var duplicateLineIdx = dsl.getRelationLineNumber(relationName, initialLineIdx + 1);
-                    errors.raiseDuplicateRelationName(duplicateLineIdx, relationName);
-                }
-                encounteredRelationsInType.add(relationName);
-            });
-        });
-
-    }
-
 
 }

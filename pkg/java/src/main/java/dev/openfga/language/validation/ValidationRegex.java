@@ -1,17 +1,25 @@
 package dev.openfga.language.validation;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-@Getter
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 class ValidationRegex {
 
     private final String rule;
     private final Pattern regex;
+
+    private ValidationRegex(String rule, Pattern regex) {
+        this.rule = rule;
+        this.regex = regex;
+    }
+
+    public String getRule() {
+        return rule;
+    }
+
+    public Pattern getRegex() {
+        return regex;
+    }
 
     public static ValidationRegex build(String name, String rule) {
         Pattern regex = null;

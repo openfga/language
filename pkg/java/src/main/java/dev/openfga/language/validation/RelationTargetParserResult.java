@@ -1,13 +1,26 @@
 package dev.openfga.language.validation;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
 public class RelationTargetParserResult {
 
-    private String target;
-    private String from;
-    private RewriteType rewrite;
+    private final String target;
+    private final String from;
+    private final RewriteType rewrite;
+
+    public RelationTargetParserResult(String target, String from, RewriteType rewrite) {
+        this.target = target;
+        this.from = from;
+        this.rewrite = rewrite;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public RewriteType getRewrite() {
+        return rewrite;
+    }
 }

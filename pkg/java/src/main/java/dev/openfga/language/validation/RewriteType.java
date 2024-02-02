@@ -1,8 +1,5 @@
 package dev.openfga.language.validation;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 public enum RewriteType {
 
     Direct("direct"),
@@ -10,4 +7,8 @@ public enum RewriteType {
     TupleToUserset("tuple_to_userset");
 
     private final String value;
+
+    RewriteType(String value) {
+        this.value = value;
+    }
 }

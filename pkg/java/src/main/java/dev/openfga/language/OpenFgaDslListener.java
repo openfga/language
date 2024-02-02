@@ -1,8 +1,8 @@
 package dev.openfga.language;
 
-import dev.openfga.language.antlr.*;
+import dev.openfga.language.antlr.OpenFGAParser;
+import dev.openfga.language.antlr.OpenFGAParserBaseListener;
 import dev.openfga.sdk.api.model.*;
-import lombok.Getter;
 
 import java.util.*;
 
@@ -11,7 +11,6 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     private static final String RELATION_DEFINITION_OPERATOR_AND = "and";
     private static final String RELATION_DEFINITION_OPERATOR_BUT_NOT = "but not";
 
-    @Getter
     private final AuthorizationModel authorizationModel = new AuthorizationModel();
     private final OpenFGAParser parser;
     private TypeDefinition currentTypeDef = null;
@@ -22,6 +21,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
     public OpenFgaDslListener(OpenFGAParser parser) {
         this.parser = parser;
+    }
+
+    public AuthorizationModel getAuthorizationModel() {
+        return authorizationModel;
     }
 
     private Userset parseExpression(List<Userset> rewrites, String operator) {

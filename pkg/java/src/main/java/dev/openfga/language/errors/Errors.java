@@ -1,13 +1,10 @@
 package dev.openfga.language.errors;
 
-import lombok.Getter;
-
 import java.util.Collection;
 import java.util.List;
 
 import static java.util.stream.Collectors.joining;
 
-@Getter
 public abstract class Errors<T> extends SimpleError {
 
     private final List<T> errors;
@@ -17,6 +14,9 @@ public abstract class Errors<T> extends SimpleError {
         this.errors = errors;
     }
 
+    public List<T> getErrors() {
+        return errors;
+    }
 
     static String messagesFromErrors(Collection<?> errors) {
         var delimiter = "\n\t* ";

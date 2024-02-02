@@ -7,9 +7,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 class JSON {
 
-    private JSON() {
-    }
-
     public static <T> T parse(String json, Class<T> type) throws JsonProcessingException {
         return new ObjectMapper().readValue(json, type);
     }
@@ -21,5 +18,8 @@ class JSON {
                 .with(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS));
 
         return mapper.writeValueAsString(object);
+    }
+
+    private JSON() {
     }
 }

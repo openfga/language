@@ -1,9 +1,7 @@
 package dev.openfga.language.errors;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public enum ValidationError {
     AllowedTypesNotValidOnSchema1_0("allowed-type-not-valid-on-schema-1_0"),
     AssignableRelationsMustHaveType("assignable-relation-must-have-type"),
@@ -27,6 +25,10 @@ public enum ValidationError {
     TypeRestrictionCannotHaveWildcardAndRelation("type-wildcard-relation");
 
     private final String value;
+
+    ValidationError(String value) {
+        this.value = value;
+    }
 
     @JsonValue
     public String getValue() {

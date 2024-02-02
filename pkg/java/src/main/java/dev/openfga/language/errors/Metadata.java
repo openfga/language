@@ -1,10 +1,20 @@
 package dev.openfga.language.errors;
 
-import lombok.*;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class Metadata {
     private String symbol;
+
+    public Metadata() {
+    }
+
+    public Metadata(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
 }

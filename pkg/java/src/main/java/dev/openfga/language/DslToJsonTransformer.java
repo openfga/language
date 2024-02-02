@@ -5,7 +5,6 @@ import dev.openfga.language.antlr.OpenFGAParser;
 import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.language.errors.SyntaxError;
 import dev.openfga.sdk.api.model.AuthorizationModel;
-import lombok.Getter;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -66,7 +65,6 @@ public class DslToJsonTransformer {
         return new Result(listener.getAuthorizationModel(), errorListener.getErrors());
     }
 
-    @Getter
     public static final class Result {
         private final AuthorizationModel authorizationModel;
         private final List<SyntaxError> errors;
@@ -74,6 +72,14 @@ public class DslToJsonTransformer {
         public Result(AuthorizationModel authorizationModel, List<SyntaxError> errors) {
             this.authorizationModel = authorizationModel;
             this.errors = errors;
+        }
+
+        public AuthorizationModel getAuthorizationModel() {
+            return authorizationModel;
+        }
+
+        public List<SyntaxError> getErrors() {
+            return errors;
         }
 
         public boolean IsSuccess() {

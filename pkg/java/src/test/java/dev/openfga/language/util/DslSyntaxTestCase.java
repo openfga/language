@@ -3,14 +3,10 @@ package dev.openfga.language.util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.openfga.language.errors.ModelValidationSingleError;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
 public class DslSyntaxTestCase {
 
     @JsonProperty("name")
@@ -32,4 +28,44 @@ public class DslSyntaxTestCase {
     @JsonProperty("expected_errors")
     @JsonInclude(JsonInclude.Include.USE_DEFAULTS)
     private List<ModelValidationSingleError> expectedErrors = new ArrayList<>();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDsl() {
+        return dsl;
+    }
+
+    public void setDsl(String dsl) {
+        this.dsl = dsl;
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
+    public boolean isSkip() {
+        return skip;
+    }
+
+    public void setSkip(boolean skip) {
+        this.skip = skip;
+    }
+
+    public List<ModelValidationSingleError> getExpectedErrors() {
+        return expectedErrors;
+    }
+
+    public void setExpectedErrors(List<ModelValidationSingleError> expectedErrors) {
+        this.expectedErrors = expectedErrors;
+    }
 }

@@ -1,10 +1,5 @@
 package dev.openfga.language.util;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-
-@Getter
-@EqualsAndHashCode
 public final class ValidTransformerTestCase {
     private final String name;
     private final String dsl;
@@ -16,6 +11,22 @@ public final class ValidTransformerTestCase {
         this.dsl = dsl;
         this.json = json;
         this.skip = skip;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDsl() {
+        return dsl;
+    }
+
+    public String getJson() {
+        return json;
+    }
+
+    public boolean isSkip() {
+        return skip;
     }
 
     @Override

@@ -1,16 +1,7 @@
 package dev.openfga.language.errors;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.util.Objects;
 
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 public abstract class ParsingError extends SimpleError {
 
     private StartEnd line;
@@ -18,6 +9,9 @@ public abstract class ParsingError extends SimpleError {
     private StartEnd column;
 
     private String fullMessage;
+
+    public ParsingError() {
+    }
 
     public ParsingError(String type, ErrorProperties properties) {
         super(properties.getMessage());
@@ -34,12 +28,28 @@ public abstract class ParsingError extends SimpleError {
         return line.withOffset(offset);
     }
 
+    public void setLine(StartEnd line) {
+        this.line = line;
+    }
+
     public StartEnd getColumn() {
         return getColumn(0);
     }
 
     public StartEnd getColumn(int offset) {
         return column.withOffset(offset);
+    }
+
+    public void setColumn(StartEnd column) {
+        this.column = column;
+    }
+
+    public String getFullMessage() {
+        return fullMessage;
+    }
+
+    public void setFullMessage(String fullMessage) {
+        this.fullMessage = fullMessage;
     }
 
     public String toString() {

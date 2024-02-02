@@ -1,15 +1,7 @@
 package dev.openfga.language.errors;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.antlr.v4.runtime.RecognitionException;
 
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 public class SyntaxError extends ParsingError {
 
     private Metadata metadata;
@@ -18,6 +10,22 @@ public class SyntaxError extends ParsingError {
     public SyntaxError(ErrorProperties properties, Metadata metadata, RecognitionException cause) {
         super(ErrorType.SYNTAX.getValue(), properties);
         this.metadata = metadata;
+        this.cause = cause;
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
+
+    public RecognitionException getCause() {
+        return cause;
+    }
+
+    public void setCause(RecognitionException cause) {
         this.cause = cause;
     }
 }

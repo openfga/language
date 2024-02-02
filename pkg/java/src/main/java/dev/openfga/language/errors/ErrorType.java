@@ -1,8 +1,5 @@
 package dev.openfga.language.errors;
 
-import lombok.Getter;
-
-@Getter
 public enum ErrorType {
     SYNTAX("syntax"),
     VALIDATION("validation");
@@ -11,6 +8,10 @@ public enum ErrorType {
 
     ErrorType(String value) {
         this.value = value;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     @Override

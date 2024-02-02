@@ -10,9 +10,6 @@ plugins {
     id 'idea'
     id 'eclipse'
 
-    // Lombok
-    id 'io.freefair.lombok' version '8.4'
-
     // Publishing
     id 'maven-publish'
     id 'signing'

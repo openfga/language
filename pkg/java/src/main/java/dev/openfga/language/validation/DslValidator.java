@@ -719,7 +719,7 @@ public class DslValidator {
     private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol, WordResolver wordResolver) {
 
         var rawLine = lines[lineIndex];
-        var regex = Pattern.compile("\\b" + Pattern.quote(symbol) + "\\b");
+        var regex = Pattern.compile("\\b" + symbol + "\\b");
         var wordIdx = 0;
         var matcher = regex.matcher(rawLine);
         if (matcher.find()) {

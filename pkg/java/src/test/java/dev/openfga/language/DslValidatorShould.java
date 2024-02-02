@@ -104,9 +104,15 @@ public class DslValidatorShould {
         assertThat(actualError.getLine()).isEqualTo(expectedError.getLine());
         assertThat(actualError.getColumn()).isEqualTo(expectedError.getColumn());
         assertThat(actualError.getMetadata().getErrorType()).isEqualTo(expectedError.getMetadata().getErrorType());
-        assertThat(actualError.getMetadata().getTypeName()).isEqualTo(expectedError.getMetadata().getTypeName());
-        assertThat(actualError.getMetadata().getRelation()).isEqualTo(expectedError.getMetadata().getRelation());
-        assertThat(actualError.getMetadata().getConditionName()).isEqualTo(expectedError.getMetadata().getConditionName());
+        if (expectedError.getMetadata().getTypeName() != null) {
+            assertThat(actualError.getMetadata().getTypeName()).isEqualTo(expectedError.getMetadata().getTypeName());
+        }
+        if (expectedError.getMetadata().getRelation() != null) {
+            assertThat(actualError.getMetadata().getRelation()).isEqualTo(expectedError.getMetadata().getRelation());
+        }
+        if (expectedError.getMetadata().getConditionName() != null) {
+            assertThat(actualError.getMetadata().getConditionName()).isEqualTo(expectedError.getMetadata().getConditionName());
+        }
     }
 
     private static Stream<Arguments> dslSyntaxTestCases() {

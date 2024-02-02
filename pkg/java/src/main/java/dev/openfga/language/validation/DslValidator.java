@@ -781,7 +781,7 @@ public class DslValidator {
         if (invalid) {
             var message = "the relation `" + symbol + "` does not exist.";
             var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-            var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
+            var metadata = new ValidationMetadata(symbol, ValidationError.MissingDefinition);
             errors.add(new ModelValidationSingleError(errorProperties, metadata));
         }
     }

@@ -5,9 +5,9 @@ import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidati
 import { exceptionCollector } from "../util/exceptions";
 
 // eslint-disable-next-line no-useless-escape
-export const defaultTypeRule = "^[^:#@\\s]{1,254}$";
+const defaultTypeRule = "^[^:#@\\s]{1,254}$";
 // eslint-disable-next-line no-useless-escape
-export const defaultRelationRule = "^[^:#@\\s]{1,50}$";
+const defaultRelationRule = "^[^:#@\\s]{1,50}$";
 
 enum RelationDefOperator {
   Union = "union",
@@ -15,12 +15,12 @@ enum RelationDefOperator {
   Difference = "difference",
 }
 
-export interface ValidationRegex {
+interface ValidationRegex {
   rule: string;
   regex: RegExp;
 }
 
-export interface ValidationOptions {
+interface ValidationOptions {
   typeValidation?: string;
   relationValidation?: string;
 }
@@ -36,41 +36,6 @@ interface RelationTargetParserResult {
   from?: string;
   rewrite: RewriteType;
 }
-
-const deepCopy = <T>(object: T): T => {
-  return JSON.parse(JSON.stringify(object));
-};
-
-const geConditionLineNumber = (conditionName: string, lines: string[], skipIndex?: number) => {
-  if (!skipIndex) {
-    skipIndex = 0;
-  }
-  return (
-    lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`condition ${conditionName}`)) + skipIndex
-  );
-};
-
-const getTypeLineNumber = (typeName: string, lines: string[], skipIndex?: number) => {
-  if (!skipIndex) {
-    skipIndex = 0;
-  }
-  return lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`type ${typeName}`)) + skipIndex;
-};
-
-const getRelationLineNumber = (relation: string, lines: string[], skipIndex?: number) => {
-  if (!skipIndex) {
-    skipIndex = 0;
-  }
-  return (
-    lines
-      .slice(skipIndex)
-      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`define ${relation}`)) + skipIndex
-  );
-};
-
-const getSchemaLineNumber = (schema: string, lines: string[]) => {
-  return lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
-};
 
 const getTypeRestrictionString = (typeRestriction: RelationReference): string => {
   let typeRestrictionString = typeRestriction.type;
@@ -112,31 +77,6 @@ const getRelationalParserResult = (userset: Userset): RelationTargetParserResult
   return { target, from, rewrite };
 };
 
-interface DestructedAssignableType {
-  decodedType: string;
-  decodedRelation?: string;
-  isWildcard: boolean;
-  decodedConditionName?: string;
-}
-
-// helper function to figure out whether the specified allowable types
-// are tuple to user set.  If so, return the type and relationship.
-// Otherwise, return null as relationship
-const destructTupleToUserset = (allowableType: string): DestructedAssignableType => {
-  const [tupleString, decodedConditionName] = allowableType.split(" with ");
-  const isWildcard = tupleString.includes(":*");
-  const splittedWords = tupleString.replace(":*", "").split("#");
-  return { decodedType: splittedWords[0], decodedRelation: splittedWords[1], isWildcard, decodedConditionName };
-};
-
-const relationIsSingle = (currentRelation: Userset): boolean => {
-  return (
-    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union) &&
-    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Intersection) &&
-    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference)
-  );
-};
-
 const getRelationDefName = (userset: Userset): string | undefined => {
   let relationDefName = userset.computedUserset?.relation;
 
@@ -147,6 +87,18 @@ const getRelationDefName = (userset: Userset): string | undefined => {
     relationDefName = `${parserResult.target} from ${parserResult.from}`;
   }
   return relationDefName;
+};
+
+const deepCopy = (object: any): any => {
+  return JSON.parse(JSON.stringify(object));
+};
+
+const relationIsSingle = (currentRelation: Userset): boolean => {
+  return (
+    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union) &&
+    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Intersection) &&
+    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference)
+  );
 };
 
 // Return all the allowable types for the specified type/relation
@@ -170,6 +122,23 @@ function allowableTypes(typeName: Record<string, TypeDefinition>, type: string, 
   }
   return [allowedTypes, isValid];
 }
+
+interface DestructedAssignableType {
+  decodedType: string;
+  decodedRelation?: string;
+  isWildcard: boolean;
+  decodedConditionName?: string;
+}
+
+// helper function to figure out whether the specified allowable types
+// are tuple to user set.  If so, return the type and relationship.
+// Otherwise, return null as relationship
+const destructTupleToUserset = (allowableType: string): DestructedAssignableType => {
+  const [tupleString, decodedConditionName] = allowableType.split(" with ");
+  const isWildcard = tupleString.includes(":*");
+  const splittedWords = tupleString.replace(":*", "").split("#");
+  return { decodedType: splittedWords[0], decodedRelation: splittedWords[1], isWildcard, decodedConditionName };
+};
 
 // for the type/relation, whether there are any unique entry points, and if a loop is found
 // if there are unique entry points (i.e., direct relations) then it will return true
@@ -339,12 +308,55 @@ function hasEntryPointOrLoop(
   return [false, false];
 }
 
+const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {
+  if (!skipIndex) {
+    skipIndex = 0;
+  }
+  if (!lines) {
+    return undefined;
+  }
+  return (
+    lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`condition ${conditionName}`)) + skipIndex
+  );
+};
+
+const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: number) => {
+  if (!skipIndex) {
+    skipIndex = 0;
+  }
+  if (!lines) {
+    return undefined;
+  }
+  return lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`type ${typeName}`)) + skipIndex;
+};
+
+const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: number) => {
+  if (!skipIndex) {
+    skipIndex = 0;
+  }
+  if (!lines) {
+    return undefined;
+  }
+  return (
+    lines
+      .slice(skipIndex)
+      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`define ${relation}`)) + skipIndex
+  );
+};
+
+const getSchemaLineNumber = (schema: string, lines?: string[]) => {
+  if (!lines) {
+    return undefined;
+  }
+  return lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
+};
+
 function checkForDuplicatesTypeNamesInRelation(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   relationDef: RelationMetadata,
   relationName: string,
+  lines?: string[],
 ) {
   const typeNameSet = new Set();
   relationDef.directly_related_user_types?.forEach((typeDef) => {
@@ -353,7 +365,7 @@ function checkForDuplicatesTypeNamesInRelation(
     if (typeNameSet.has(typeDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateTypeRestriction(lineIndex, typeDefName, relationName);
+      collector.raiseDuplicateTypeRestriction(typeDefName, relationName, lineIndex);
     }
     typeNameSet.add(typeDefName);
   });
@@ -361,11 +373,11 @@ function checkForDuplicatesTypeNamesInRelation(
 
 // ensure all the referenced relations are defined
 function checkForDuplicatesInRelation(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   typeDef: TypeDefinition,
   relationName: string,
+  lines?: string[],
 ) {
   const relationDef = typeDef.relations![relationName];
 
@@ -376,7 +388,7 @@ function checkForDuplicatesInRelation(
     if (relationDefName && relationUnionNameSet.has(relationDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(lineIndex, relationDefName, relationName);
+      collector.raiseDuplicateType(relationDefName, relationName, lineIndex);
     }
     relationUnionNameSet.add(relationDefName);
   });
@@ -388,7 +400,7 @@ function checkForDuplicatesInRelation(
     if (relationDefName && relationIntersectionNameSet.has(relationDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(lineIndex, relationDefName, relationName);
+      collector.raiseDuplicateType(relationDefName, relationName, lineIndex);
     }
     relationIntersectionNameSet.add(relationDefName);
   });
@@ -400,14 +412,13 @@ function checkForDuplicatesInRelation(
     if (baseName && baseName === subtractName) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(lineIndex, baseName, relationName);
+      collector.raiseDuplicateType(baseName, relationName, lineIndex);
     }
   }
 }
 
 // helper function to ensure all childDefs are defined
 function childDefDefined(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   typeMap: Record<string, TypeDefinition>,
@@ -415,6 +426,7 @@ function childDefDefined(
   relation: string,
   childDef: RelationTargetParserResult,
   conditions: AuthorizationModel["conditions"] = {},
+  lines?: string[],
 ) {
   const relations = typeMap[type].relations;
   if (!relations || !relations[relation]) {
@@ -430,7 +442,7 @@ function childDefDefined(
       if (!fromPossibleTypes.length) {
         const typeIndex = getTypeLineNumber(type, lines);
         const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-        collector.raiseAssignableRelationMustHaveTypes(lineIndex, relation);
+        collector.raiseAssignableRelationMustHaveTypes(relation, lineIndex);
       }
       for (const item of fromPossibleTypes) {
         const { decodedType, decodedRelation, isWildcard, decodedConditionName } = destructTupleToUserset(item);
@@ -438,7 +450,7 @@ function childDefDefined(
           // type is not defined
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-          collector.raiseInvalidType(lineIndex, `${decodedType}`, decodedType);
+          collector.raiseInvalidType(`${decodedType}`, decodedType, lineIndex);
         }
 
         if (decodedConditionName && !conditions[decodedConditionName]) {
@@ -446,11 +458,11 @@ function childDefDefined(
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
           collector.raiseInvalidConditionNameInParameter(
-            lineIndex,
             `${decodedConditionName}`,
             type,
             relation,
             decodedConditionName,
+            lineIndex,
           );
         }
 
@@ -458,17 +470,17 @@ function childDefDefined(
           // we cannot have both wild carded and relation at the same time
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-          collector.raiseAssignableTypeWildcardRelation(lineIndex, item);
+          collector.raiseAssignableTypeWildcardRelation(item, lineIndex);
         } else if (decodedRelation) {
           if (!typeMap[decodedType] || !typeMap[decodedType].relations![decodedRelation]) {
             // type/relation is not defined
             const typeIndex = getTypeLineNumber(type, lines);
             const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
             collector.raiseInvalidTypeRelation(
-              lineIndex,
               `${decodedType}#${decodedRelation}`,
               decodedType,
               decodedRelation,
+              lineIndex,
             );
           }
         }
@@ -480,7 +492,7 @@ function childDefDefined(
         const typeIndex = getTypeLineNumber(type, lines);
         const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
         const value = childDef.target;
-        collector.raiseInvalidRelationError(lineIndex, value, Object.keys(relations));
+        collector.raiseInvalidRelationError(value, Object.keys(relations), lineIndex);
       }
       break;
     }
@@ -492,10 +504,10 @@ function childDefDefined(
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
           collector.raiseInvalidTypeRelation(
-            lineIndex,
             `${childDef.target} from ${childDef.from}`,
             type,
             childDef.from,
+            lineIndex,
           );
         } else {
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
@@ -507,21 +519,21 @@ function childDefDefined(
                 // we cannot have both wild carded and relation at the same time
                 const typeIndex = getTypeLineNumber(type, lines);
                 const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-                collector.raiseAssignableTypeWildcardRelation(lineIndex, item);
+                collector.raiseAssignableTypeWildcardRelation(item, lineIndex);
               } else if (decodedRelation) {
                 const typeIndex = getTypeLineNumber(type, lines);
                 const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-                collector.raiseTupleUsersetRequiresDirect(lineIndex, childDef.from);
+                collector.raiseTupleUsersetRequiresDirect(childDef.from, lineIndex);
               } else {
                 // check to see if the relation is defined in any children
                 if (!typeMap[decodedType] || !typeMap[decodedType].relations![childDef.target]) {
                   const typeIndex = getTypeLineNumber(type, lines);
                   const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
                   childRelationNotValid.push({
-                    lineIndex,
                     symbol: `${childDef.target} from ${childDef.from}`,
                     typeName: decodedType,
                     relationName: childDef.target,
+                    lineIndex,
                   });
                 }
               }
@@ -531,14 +543,14 @@ function childDefDefined(
             if (childRelationNotValid.length === fromTypes.length) {
               for (const item of childRelationNotValid) {
                 const { lineIndex, symbol, typeName, relationName } = item;
-                collector.raiseInvalidTypeRelation(lineIndex, symbol, typeName, relationName);
+                collector.raiseInvalidTypeRelation(symbol, typeName, relationName, lineIndex);
               }
             }
           } else {
             // the from is not allowed.  Only direct assignable types are allowed.
             const typeIndex = getTypeLineNumber(type, lines);
             const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-            collector.raiseTupleUsersetRequiresDirect(lineIndex, childDef.from);
+            collector.raiseTupleUsersetRequiresDirect(childDef.from, lineIndex);
           }
         }
       }
@@ -549,13 +561,13 @@ function childDefDefined(
 
 // ensure all the referenced relations are defined
 function relationDefined(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   typeMap: Record<string, TypeDefinition>,
   type: string,
   relation: string,
   conditions: AuthorizationModel["conditions"],
+  lines?: string[],
 ) {
   const relations = typeMap[type].relations;
   if (!relations || !relations[relation]) {
@@ -575,18 +587,18 @@ function relationDefined(
     } else if (child?.difference?.base && child.difference.subtract) {
       children.push(child?.difference?.base, child.difference.subtract);
     } else if (child) {
-      childDefDefined(lines, collector, typeMap, type, relation, getRelationalParserResult(child), conditions);
+      childDefDefined(collector, typeMap, type, relation, getRelationalParserResult(child), conditions, lines);
     }
   }
 }
 
 function modelValidation(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   errors: ModelValidationSingleError[],
   authorizationModel: AuthorizationModel,
   //relationsPerType: Record<string, TransformedType>
+  lines?: string[],
 ) {
   if (errors.length) {
     // no point in looking at directly assignable types if the model itself already
@@ -614,7 +626,7 @@ function modelValidation(
 
     // parse through each of the relations to do validation
     for (const relationDef in typeDef.relations) {
-      relationDefined(lines, collector, typeMap, typeName, relationDef, authorizationModel.conditions);
+      relationDefined(collector, typeMap, typeName, relationDef, authorizationModel.conditions, lines);
     }
   });
 
@@ -625,20 +637,20 @@ function modelValidation(
       // check for duplicate types
       if (typeSet.has(typeName)) {
         const typeIndex = getTypeLineNumber(typeName, lines);
-        collector.raiseDuplicateTypeName(typeIndex, typeName);
+        collector.raiseDuplicateTypeName(typeName, typeIndex);
       }
       typeSet.add(typeDef.type);
 
       for (const relationDefKey in typeDef.metadata?.relations) {
         // check for duplicate type names in the relation
         checkForDuplicatesTypeNamesInRelation(
-          lines,
           collector,
           typeDef.metadata?.relations[relationDefKey],
           relationDefKey,
+          lines,
         );
         // check for duplicate relations
-        checkForDuplicatesInRelation(lines, collector, typeDef, relationDefKey);
+        checkForDuplicatesInRelation(collector, typeDef, relationDefKey, lines);
       }
     });
   }
@@ -662,9 +674,9 @@ function modelValidation(
           const typeIndex = getTypeLineNumber(typeName, lines);
           const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
           if (loop) {
-            collector.raiseNoEntryPointLoop(lineIndex, relationName, typeName);
+            collector.raiseNoEntryPointLoop(relationName, typeName, lineIndex);
           } else {
-            collector.raiseNoEntryPoint(lineIndex, relationName, typeName);
+            collector.raiseNoEntryPoint(relationName, typeName, lineIndex);
           }
         }
       }
@@ -683,18 +695,18 @@ function modelValidation(
     // Ensure that the condition has been used
     if (!usedConditionNamesSet.has(conditionName)) {
       const conditionIndex = geConditionLineNumber(conditionName, lines);
-      collector.raiseUnusedCondition(conditionIndex, conditionName);
+      collector.raiseUnusedCondition(conditionName, conditionIndex);
     }
   }
 }
 
 function populateRelations(
-  lines: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   collector: any,
   authorizationModel: AuthorizationModel,
   typeRegex: ValidationRegex,
   relationRegex: ValidationRegex,
+  lines?: string[],
 ) {
   // Looking at the types
   authorizationModel.type_definitions?.forEach((typeDef) => {
@@ -702,16 +714,13 @@ function populateRelations(
 
     if (typeName === Keyword.SELF || typeName === ReservedKeywords.THIS) {
       const lineIndex = getTypeLineNumber(typeName, lines);
-      collector.raiseReservedTypeName(lineIndex, typeName);
+      collector.raiseReservedTypeName(typeName, lineIndex);
     }
 
     if (!typeRegex.regex.test(typeName)) {
       const lineIndex = getTypeLineNumber(typeName, lines);
-      collector.raiseInvalidName(lineIndex, typeName, typeRegex.rule);
+      collector.raiseInvalidName(typeName, typeRegex.rule, undefined, lineIndex);
     }
-
-    // Include keyword
-    const encounteredRelationsInType: Record<string, boolean> = { [Keyword.SELF]: true };
 
     for (const relationKey in typeDef.relations) {
       const relationName = relationKey;
@@ -719,36 +728,30 @@ function populateRelations(
       if (relationName === Keyword.SELF || relationName === ReservedKeywords.THIS) {
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-        collector.raiseReservedRelationName(lineIndex, relationName);
-      } else if (!relationRegex.regex.test(relationName)) {
+        collector.raiseReservedRelationName(relationName, lineIndex);
+      }
+
+      if (!relationRegex.regex.test(relationName)) {
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-        collector.raiseInvalidName(lineIndex, relationName, relationRegex.rule, typeName);
-      } else if (encounteredRelationsInType[relationName]) {
-        // Check if we have any duplicate relations
-        // figure out what is the lineIdx in question
-        const typeIndex = getTypeLineNumber(typeName, lines);
-        const initialLineIdx = getRelationLineNumber(relationName, lines, typeIndex);
-        const duplicateLineIdx = getRelationLineNumber(relationName, lines, initialLineIdx + 1);
-        collector.raiseDuplicateDefinition(duplicateLineIdx, relationName);
+        collector.raiseInvalidName(relationName, relationRegex.rule, typeName, lineIndex);
       }
-      encounteredRelationsInType[relationName] = true;
     }
   });
 }
 
 /**
  * validateJSON - Given a JSON string, validates that it is a valid OpenFGA model
- * @param {string} jsonString
+ * @param {string} dslString
  * @param {AuthorizationModel} authorizationModel
  * @param {ValidationOptions} options
  */
 export function validateJSON(
-  jsonString: string,
   authorizationModel: AuthorizationModel,
   options: ValidationOptions = {},
+  dslString?: string,
 ): void {
-  const lines = jsonString.split("\n");
+  const lines = dslString?.split("\n");
   const errors: ModelValidationSingleError[] = [];
   const collector = exceptionCollector(errors, lines);
   const typeValidation = options.typeValidation || defaultTypeRule;
@@ -783,21 +786,21 @@ export function validateJSON(
     throw new ConfigurationError(`Incorrect relation regex specification for ${relationValidation}`, e);
   }
 
-  populateRelations(lines, collector, authorizationModel, typeRegex, relationRegex);
+  populateRelations(collector, authorizationModel, typeRegex, relationRegex, lines);
 
   const schemaVersion = authorizationModel.schema_version;
 
   if (!schemaVersion) {
-    collector.raiseSchemaVersionRequired(0, "");
+    collector.raiseSchemaVersionRequired("", 0);
   }
 
   switch (schemaVersion) {
     case "1.1":
-      modelValidation(lines, collector, errors, authorizationModel);
+      modelValidation(collector, errors, authorizationModel, lines);
       break;
     default: {
       const lineIndex = getSchemaLineNumber(schemaVersion, lines);
-      collector.raiseInvalidSchemaVersion(lineIndex, schemaVersion);
+      collector.raiseInvalidSchemaVersion(schemaVersion, lineIndex);
       break;
     }
   }
@@ -820,5 +823,5 @@ export function validateDSL(dsl: string, options: ValidationOptions = {}): void 
     throw new DSLSyntaxError(errorListener.errors);
   }
 
-  validateJSON(dsl, listener.authorizationModel as AuthorizationModel, options);
+  validateJSON(listener.authorizationModel as AuthorizationModel, options, dsl);
 }

@@ -15,7 +15,7 @@
     "postpublish": "rm -f README.md LICENSE",
     "test": "jest --config ./jest.config.js",
     "typecheck": "tsc  --skipLibCheck",
-    "lint": "eslint -c .eslintrc.js --ext .ts",
+    "lint": "eslint . -c .eslintrc.js --ext .ts",
     "lint:fix": "npm run lint -- --fix",
     "format:check": "prettier --check **/*.ts",
     "format:fix": "prettier --write **/*.ts"

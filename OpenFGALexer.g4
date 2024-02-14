@@ -24,7 +24,8 @@ FROM: 'from';
 
 MODEL: 'model';
 SCHEMA: 'schema';
-SCHEMA_VERSION: '1.1';
+
+SCHEMA_VERSION: DIGIT+'.'DIGIT+;
 TYPE: 'type';
 CONDITION: 'condition' -> pushMode(CONDITION_DEF);
 

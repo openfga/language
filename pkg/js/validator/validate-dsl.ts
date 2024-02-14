@@ -3,7 +3,6 @@ import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { exceptionCollector } from "../util/exceptions";
-import { string } from "yaml/dist/schema/common/string";
 
 // eslint-disable-next-line no-useless-escape
 export const defaultTypeRule = "^[^:#@\\s]{1,254}$";
@@ -38,7 +37,7 @@ interface RelationTargetParserResult {
   rewrite: RewriteType;
 }
 
-const deepCopy = (object: any): any => {
+const deepCopy = <T>(object: T): T => {
   return JSON.parse(JSON.stringify(object));
 };
 
@@ -225,7 +224,7 @@ function hasEntryPointOrLoop(
         continue;
       }
 
-      const [hasEntry, _] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+      const [hasEntry, ] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
       if (hasEntry) {
         return [true, false];
       }
@@ -276,7 +275,7 @@ function hasEntryPointOrLoop(
           continue;
         }
 
-        const [hasEntry, _] = hasEntryPointOrLoop(
+        const [hasEntry, ] = hasEntryPointOrLoop(
           typeMap,
           assignableType,
           computedRelationName,
@@ -673,7 +672,7 @@ function modelValidation(
   }
 
   for (const conditionName in authorizationModel.conditions) {
-    const condition = authorizationModel.conditions[conditionName];
+    // const condition = authorizationModel.conditions[conditionName];
     // Ensure that the nested condition name matches
     // TODO: This does not make sense for the DSL, and is a JSON only error
     // if (conditionName != condition.name) {

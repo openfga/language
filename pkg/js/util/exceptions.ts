@@ -291,7 +291,7 @@ export const createSchemaVersionRequiredError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
     constructValidationError({
-      message: `schema version required`,
+      message: "schema version required",
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.SchemaVersionRequired },

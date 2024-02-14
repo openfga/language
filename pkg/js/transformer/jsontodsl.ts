@@ -95,7 +95,13 @@ function parseDifference(
   typeRestrictions: RelationReference[],
   validator: DirectAssignmentValidator,
 ): string {
-  const base = parseSubRelation(typeName, relationName, relationDefinition!.difference!.base!, typeRestrictions, validator);
+  const base = parseSubRelation(
+    typeName,
+    relationName,
+    relationDefinition!.difference!.base!,
+    typeRestrictions,
+    validator
+  );
   const difference = parseSubRelation(
     typeName,
     relationName,

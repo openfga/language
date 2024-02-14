@@ -100,7 +100,7 @@ function parseDifference(
     relationName,
     relationDefinition!.difference!.base!,
     typeRestrictions,
-    validator
+    validator,
   );
   const difference = parseSubRelation(
     typeName,

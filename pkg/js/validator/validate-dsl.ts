@@ -224,7 +224,7 @@ function hasEntryPointOrLoop(
         continue;
       }
 
-      const [hasEntry, ] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+      const [hasEntry] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
       if (hasEntry) {
         return [true, false];
       }
@@ -275,7 +275,7 @@ function hasEntryPointOrLoop(
           continue;
         }
 
-        const [hasEntry, ] = hasEntryPointOrLoop(
+        const [hasEntry] = hasEntryPointOrLoop(
           typeMap,
           assignableType,
           computedRelationName,

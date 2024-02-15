@@ -24,8 +24,28 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: '1.22'
+          cache-dependency-path: './pkg/go/go.sum'
+          check-latest: true
+
+      - name: Audit dependencies
+        run: make audit-go
+
+      - name: Lint
+        run: make lint-go
+
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.21', '1.22']
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
@@ -36,12 +56,12 @@ jobs:
 
     - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
       with:
-        go-version-file: './pkg/go/go.mod'
+        go-version: ${{ matrix.go-version }}
         cache-dependency-path: './pkg/go/go.sum'
         check-latest: true
 
     - name: Build
-      run: make all-tests-go
+      run: make test-go
 
   release:
     runs-on: ubuntu-latest

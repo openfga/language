@@ -105,7 +105,7 @@ export default class OpenFGAParser extends Parser {
                                                             "'but not'", 
                                                             "'from'", "'model'", 
                                                             "'schema'", 
-                                                            "'1.1'", "'type'", 
+                                                            null, "'type'", 
                                                             "'condition'", 
                                                             "'relations'", 
                                                             "'define'", 

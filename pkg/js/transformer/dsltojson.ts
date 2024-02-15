@@ -22,8 +22,6 @@ import OpenFGAParser, {
   RelationDefPartialsContext,
   RelationDefRewriteContext,
   RelationDefTypeRestrictionContext,
-  RelationRecurseContext,
-  RelationRecurseNoDirectContext,
   TypeDefContext,
   TypeDefsContext,
 } from "../gen/OpenFGAParser";
@@ -168,7 +166,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     const relationName = ctx.relationName().getText();
     const rewrites = this.currentRelation?.rewrites;
 
-    let relationDef = parseExpression(rewrites, this.currentRelation?.operator);
+    const relationDef = parseExpression(rewrites, this.currentRelation?.operator);
 
     if (relationDef) {
       // Throw error if same named relation occurs more than once in a relationship definition block
@@ -250,17 +248,17 @@ class OpenFgaDslListener extends OpenFGAListener {
     this.currentRelation?.rewrites?.push(partialRewrite);
   };
 
-  exitRelationRecurse = (ctx: RelationRecurseContext) => {
+  exitRelationRecurse = () => {
     const rewrites = this.currentRelation?.rewrites;
 
-    let relationDef = parseExpression(rewrites, this.currentRelation?.operator);
+    const relationDef = parseExpression(rewrites, this.currentRelation?.operator);
 
     if (relationDef) {
       this.currentRelation!.rewrites = [relationDef];
     }
   };
 
-  enterRelationRecurseNoDirect = (ctx: RelationRecurseNoDirectContext) => {
+  enterRelationRecurseNoDirect = () => {
     this.rewriteStack?.push({
       rewrites: this.currentRelation!.rewrites!,
       operator: this.currentRelation!.operator!,
@@ -269,10 +267,10 @@ class OpenFgaDslListener extends OpenFGAListener {
     this.currentRelation!.rewrites = [];
   };
 
-  exitRelationRecurseNoDirect = (ctx: RelationRecurseNoDirectContext) => {
+  exitRelationRecurseNoDirect = () => {
     const rewrites = this.currentRelation?.rewrites;
 
-    let relationDef = parseExpression(rewrites, this.currentRelation?.operator);
+    const relationDef = parseExpression(rewrites, this.currentRelation?.operator);
 
     const popped = this.rewriteStack.pop();
 
@@ -351,7 +349,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     this.currentCondition!.expression = ctx.getText().trim();
   };
 
-  exitCondition = (_ctx: ConditionContext) => {
+  exitCondition = () => {
     if (this.currentCondition) {
       this.authorizationModel.conditions![this.currentCondition.name!] = this.currentCondition!;
 

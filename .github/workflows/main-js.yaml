@@ -41,10 +41,7 @@ jobs:
       - name: Audit dependencies
         run: make audit-js
 
-      - name: Run Prettier
-        run: make format-js
-
-      - name: Run eslint
+      - name: Run eslint and prettier
         run: make lint-js
 
   build:

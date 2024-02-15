@@ -35,10 +35,10 @@ func openfgaparserParserInit() {
   staticData := &OpenFGAParserParserStaticData
   staticData.LiteralNames = []string{
     "", "':'", "','", "'<'", "'>'", "'['", "", "'('", "')'", "", "", "'#'", 
-    "'and'", "'or'", "'but not'", "'from'", "'model'", "'schema'", "'1.1'", 
-    "'type'", "'condition'", "'relations'", "'define'", "'with'", "'=='", 
-    "'!='", "'in'", "'<='", "'>='", "'&&'", "'||'", "']'", "'{'", "'}'", 
-    "'.'", "'-'", "'!'", "'?'", "'+'", "'*'", "'/'", "'%'", "'true'", "'false'", 
+    "'and'", "'or'", "'but not'", "'from'", "'model'", "'schema'", "", "'type'", 
+    "'condition'", "'relations'", "'define'", "'with'", "'=='", "'!='", 
+    "'in'", "'<='", "'>='", "'&&'", "'||'", "']'", "'{'", "'}'", "'.'", 
+    "'-'", "'!'", "'?'", "'+'", "'*'", "'/'", "'%'", "'true'", "'false'", 
     "'null'",
   }
   staticData.SymbolicNames = []string{

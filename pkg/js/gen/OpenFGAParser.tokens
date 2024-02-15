@@ -60,7 +60,6 @@ CONDITION_PARAM_TYPE=53
 'from'=15
 'model'=16
 'schema'=17
-'1.1'=18
 'type'=19
 'condition'=20
 'relations'=21

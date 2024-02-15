@@ -1152,7 +1152,24 @@
       metadata:
         symbol: "allowed_ip"
         errorType: condition-not-used
-
+- name: unsupported schema version should yield error
+  dsl: |
+    model
+      schema 0.9
+    type user
+    type org
+      relations
+        define member: [user]
+  expected_errors:
+    - msg: "invalid schema 0.9"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 10
+        end: 13
+      metadata:
+        errorType: invalid-schema
 #- name: invalid cel expression
 #  dsl: |
 #    model

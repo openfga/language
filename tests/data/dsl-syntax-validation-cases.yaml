@@ -85,7 +85,7 @@
     model
       schema 11
   expected_errors:
-    - msg: "mismatched input '11' expecting '1.1'"
+    - msg: "mismatched input '11' expecting SCHEMA_VERSION"
       line:
         start: 2
         end: 2
@@ -99,7 +99,7 @@
     model
       schema a.b
   expected_errors:
-    - msg: "mismatched input 'a' expecting '1.1'"
+    - msg: "mismatched input 'a' expecting SCHEMA_VERSION"
       line:
         start: 2
         end: 2
@@ -419,24 +419,6 @@
         end: 17
       metadata:
         symbol: "reader"
-- name: unsupported schema version should yield error
-  dsl: |
-    model
-      schema 0.9
-    type user
-    type org
-      relations
-        define member: [user]
-  expected_errors:
-    - msg: "mismatched input '0.9' expecting '1.1'"
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 9
-        end: 12
-      metadata:
-        symbol: "0.9"
 - name: model 1.1 has no directly allowed types in viewer
   dsl: |
     model

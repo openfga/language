@@ -22,6 +22,7 @@ OR: 'or';
 BUT_NOT: 'but not';
 FROM: 'from';
 
+MODULE: 'module';
 MODEL: 'model';
 SCHEMA: 'schema';
 SCHEMA_VERSION: DIGIT+'.'DIGIT+;

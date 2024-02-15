@@ -1,10 +1,12 @@
 parser grammar OpenFGAParser;
 options { tokenVocab=OpenFGALexer; }
 
-main: WHITESPACE? NEWLINE? modelHeader NEWLINE? typeDefs NEWLINE? conditions NEWLINE? EOF;
+main: WHITESPACE? NEWLINE? (modelHeader | moduleHeader) NEWLINE? typeDefs NEWLINE? conditions NEWLINE? EOF;
 
 // Model Header
 modelHeader: (multiLineComment NEWLINE)? MODEL NEWLINE SCHEMA WHITESPACE schemaVersion=SCHEMA_VERSION WHITESPACE?;
+// Module Header
+moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=IDENTIFIER WHITESPACE?;
 
 // Type Definitions
 typeDefs: typeDef*;

@@ -1170,6 +1170,21 @@
         end: 13
       metadata:
         errorType: invalid-schema
+- name: supports module keyword
+  dsl: |
+    module foo
+    type user
+  expected_errors:
+    - msg: schema version required
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: schema-version-required
+
 #- name: invalid cel expression
 #  dsl: |
 #    model

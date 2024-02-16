@@ -1,0 +1,68 @@
+run:
+  timeout: 3m
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+
+skip-dirs:
+  - gen
+
+linters:
+  enable-all: true
+  disable:
+    - dupl #temporary
+    - exhaustruct
+    - gochecknoinits
+    - forbidigo
+    - gochecknoglobals
+    # deprecated
+    - exhaustivestruct
+    - interfacer
+    - maligned
+    - scopelint
+    - structcheck
+    - varcheck
+    - deadcode
+    - ifshort
+    - golint
+    - nosnakecase
+    - testpackage
+    - gci
+linters-settings:
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/antlr4-go/antlr/v4
+          - github.com/hashicorp/go-multierror
+          - github.com/openfga/api
+          - google.golang.org/protobuf
+          - github.com/openfga/language/pkg/go
+      test:
+        files:
+          - "$test"
+        allow:
+          - $gostd
+          - github.com/stretchr/testify
+          - github.com/openfga/api
+          - gopkg.in/yaml.v3
+          - github.com/openfga/language/pkg/go
+
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: snake
+
+  funlen:
+    lines: 120
+    statements: 80
+
+  goimports:
+    local-prefixes: "github.com/openfga/language/pkg/go"
+
+issues:
+  exclude-use-default: true

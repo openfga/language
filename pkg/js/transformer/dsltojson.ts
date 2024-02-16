@@ -99,8 +99,13 @@ class OpenFgaDslListener extends OpenFGAListener {
   private currentTypeDef: Partial<TypeDefinition> | undefined;
   private currentRelation: Partial<Relation> | undefined;
   private currentCondition: Condition | undefined;
+  private isModularModel = false;
 
   private rewriteStack: StackRelation[] = [];
+
+  exitModuleHeader = () => {
+    this.isModularModel = true;
+  };
 
   exitModelHeader = (ctx: ModelHeaderContext) => {
     if (ctx.SCHEMA_VERSION()) {
@@ -124,6 +129,10 @@ class OpenFgaDslListener extends OpenFGAListener {
   enterTypeDef = (ctx: TypeDefContext) => {
     if (!ctx._typeName) {
       return;
+    }
+
+    if (ctx.EXTEND() && !this.isModularModel) {
+      ctx.parser?.notifyErrorListeners("extend can only be used in a modular model", ctx._typeName, undefined);
     }
 
     this.currentTypeDef = {

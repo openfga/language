@@ -43,6 +43,7 @@ type OpenFgaDslListener struct {
 	currentRelation    *relation
 	currentCondition   *pb.Condition
 	rewriteStack       []*stackRelation
+	isModularModel     bool
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
@@ -97,6 +98,10 @@ func (l *OpenFgaDslListener) EnterMain(_ *parser.MainContext) {
 	l.authorizationModel.Conditions = map[string]*pb.Condition{}
 }
 
+func (l *OpenFgaDslListener) ExitModuleHeader(_ *parser.ModuleHeaderContext) {
+	l.isModularModel = true
+}
+
 func (l *OpenFgaDslListener) ExitModelHeader(ctx *parser.ModelHeaderContext) {
 	if ctx.GetSchemaVersion() != nil {
 		l.authorizationModel.SchemaVersion = ctx.GetSchemaVersion().GetText()
@@ -106,6 +111,14 @@ func (l *OpenFgaDslListener) ExitModelHeader(ctx *parser.ModelHeaderContext) {
 func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 	if ctx.GetTypeName() == nil {
 		return
+	}
+
+	if ctx.EXTEND() != nil && !l.isModularModel {
+		ctx.GetParser().NotifyErrorListeners(
+			"extend can only be used in a modular model",
+			ctx.GetTypeName(),
+			nil,
+		)
 	}
 
 	l.currentTypeDef = &pb.TypeDefinition{

@@ -1185,6 +1185,21 @@
       metadata:
         errorType: schema-version-required
 
+- name: allows extend in modular model
+  dsl: |
+    module foo
+
+    extend type bar
+  expected_errors:
+    - msg: schema version required
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: schema-version-required
 #- name: invalid cel expression
 #  dsl: |
 #    model

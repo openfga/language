@@ -26,6 +26,7 @@ MODULE: 'module';
 MODEL: 'model';
 SCHEMA: 'schema';
 SCHEMA_VERSION: DIGIT+'.'DIGIT+;
+EXTEND: 'extend';
 TYPE: 'type';
 CONDITION: 'condition' -> pushMode(CONDITION_DEF);
 

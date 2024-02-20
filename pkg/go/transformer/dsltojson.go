@@ -15,10 +15,10 @@ import (
 type RelationDefinitionOperator string
 
 const (
-	RELATION_DEFINITION_OPERATOR_NONE    RelationDefinitionOperator = ""
-	RELATION_DEFINITION_OPERATOR_OR      RelationDefinitionOperator = "or"
-	RELATION_DEFINITION_OPERATOR_AND     RelationDefinitionOperator = "and"
-	RELATION_DEFINITION_OPERATOR_BUT_NOT RelationDefinitionOperator = "but not"
+	RELATION_DEFINITION_OPERATOR_NONE    RelationDefinitionOperator = ""        //nolint:stylecheck,revive
+	RELATION_DEFINITION_OPERATOR_OR      RelationDefinitionOperator = "or"      //nolint:stylecheck,revive
+	RELATION_DEFINITION_OPERATOR_AND     RelationDefinitionOperator = "and"     //nolint:stylecheck,revive
+	RELATION_DEFINITION_OPERATOR_BUT_NOT RelationDefinitionOperator = "but not" //nolint:stylecheck,revive
 )
 
 // OpenFGA DSL Listener
@@ -60,6 +60,8 @@ func ParseExpression(rewrites []*pb.Userset, operator RelationDefinitionOperator
 		relationDef = rewrites[0]
 	} else {
 		switch operator {
+		case RELATION_DEFINITION_OPERATOR_NONE:
+			// do nothing
 		case RELATION_DEFINITION_OPERATOR_OR:
 			relationDef = &pb.Userset{
 				Userset: &pb.Userset_Union{
@@ -354,16 +356,17 @@ func (l *OpenFgaDslListener) ExitRelationRecurseNoDirect(_ *parser.RelationRecur
 
 	if relationDef != nil {
 		l.currentRelation.Operator = popped.Operator
-		l.currentRelation.Rewrites = append(popped.Rewrites, relationDef)
+		l.currentRelation.Rewrites = append(popped.Rewrites, relationDef) //nolint:gocritic
 	}
 }
 
 func (l *OpenFgaDslListener) EnterRelationDefPartials(ctx *parser.RelationDefPartialsContext) {
-	if len(ctx.AllOR()) > 0 {
+	switch {
+	case (len(ctx.AllOR()) > 0):
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR
-	} else if len(ctx.AllAND()) > 0 {
+	case (len(ctx.AllAND()) > 0):
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND
-	} else if ctx.BUT_NOT() != nil {
+	case (ctx.BUT_NOT() != nil):
 		l.currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT
 	}
 }
@@ -423,11 +426,13 @@ func (c *OpenFgaDslErrorListener) SyntaxError(
 	var metadata *OpenFgaDslSyntaxErrorMetadata
 
 	if offendingSymbol != nil {
-		symbol := offendingSymbol.(*antlr.CommonToken)
-		metadata = &OpenFgaDslSyntaxErrorMetadata{
-			symbol: symbol.GetText(),
-			start:  symbol.GetStart(),
-			stop:   symbol.GetStop(),
+		symbol, ok := offendingSymbol.(*antlr.CommonToken)
+		if ok {
+			metadata = &OpenFgaDslSyntaxErrorMetadata{
+				symbol: symbol.GetText(),
+				start:  symbol.GetStart(),
+				stop:   symbol.GetStop(),
+			}
 		}
 	}
 
@@ -447,11 +452,12 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	for _, line := range strings.Split(data, "\n") {
 		cleanedLine := ""
 
-		if len(strings.TrimLeft(line, " ")) == 0 {
+		switch {
+		case len(strings.TrimLeft(line, " ")) == 0:
 			// do nothing, it's an empty line
-		} else if strings.TrimLeft(line, " ")[0:1] == "#" {
+		case strings.TrimLeft(line, " ")[0:1] == "#":
 			cleanedLine = ""
-		} else {
+		default:
 			cleanedLine = strings.TrimRight(strings.Split(line, " #")[0], " ")
 		}
 

@@ -23,26 +23,27 @@ func (v *DirectAssignmentValidator) occurrences() int {
 	return v.occurred
 }
 
-func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
+func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool { //nolint:cyclop
 	if userset.GetThis() != nil {
 		return true
 	}
 
-	if userset.GetDifference() != nil && userset.GetDifference().GetBase() != nil {
+	switch {
+	case userset.GetDifference() != nil && userset.GetDifference().GetBase() != nil:
 		if userset.GetDifference().GetBase().GetThis() != nil {
 			return true
 		}
 
 		return v.isFirstPosition(userset.GetDifference().GetBase())
-	} else if userset.GetIntersection() != nil && userset.GetIntersection().GetChild() != nil {
-		if len(userset.GetIntersection().GetChild()) > 0 {
-			if userset.GetIntersection().GetChild()[0].GetThis() != nil {
-				return true
-			}
-
-			return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+	case userset.GetIntersection() != nil &&
+		userset.GetIntersection().GetChild() != nil &&
+		len(userset.GetIntersection().GetChild()) > 0:
+		if userset.GetIntersection().GetChild()[0].GetThis() != nil {
+			return true
 		}
-	} else if userset.GetUnion() != nil && len(userset.GetUnion().GetChild()) > 0 {
+
+		return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+	case userset.GetUnion() != nil && len(userset.GetUnion().GetChild()) > 0:
 		if userset.GetUnion().GetChild()[0].GetThis() != nil {
 			return true
 		}
@@ -248,11 +249,12 @@ func parseRelation(
 
 	parseFn := parseSubRelation
 
-	if relationDefinition.GetDifference() != nil {
+	switch {
+	case relationDefinition.GetDifference() != nil:
 		parseFn = parseDifference
-	} else if relationDefinition.GetUnion() != nil {
+	case relationDefinition.GetUnion() != nil:
 		parseFn = parseUnion
-	} else if relationDefinition.GetIntersection() != nil {
+	case relationDefinition.GetIntersection() != nil:
 		parseFn = parseIntersection
 	}
 

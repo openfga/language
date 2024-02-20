@@ -56,10 +56,15 @@ linters-settings:
       use-field-name: true
       rules:
         json: snake
+        yaml: snake
 
   funlen:
     lines: 120
     statements: 80
+
+  wrapcheck:
+    ignorePackageGlobs:
+      - github.com/openfga/language/pkg/go/*
 
   goimports:
     local-prefixes: "github.com/openfga/language/pkg/go"

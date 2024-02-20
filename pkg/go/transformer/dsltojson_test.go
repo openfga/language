@@ -4,19 +4,25 @@ import (
 	"testing"
 
 	pb "github.com/openfga/api/proto/openfga/v1"
-	"github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/openfga/language/pkg/go/transformer"
 )
 
 func TestDSLToJSONTransformerForValidCases(t *testing.T) {
+	t.Parallel()
+
 	testCases, err := loadValidTransformerTestCases()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {
+		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
 			if testCase.Skip {
 				t.Skip()
 			}
@@ -38,13 +44,18 @@ func TestDSLToJSONTransformerForValidCases(t *testing.T) {
 }
 
 func TestDSLToJSONTransformerForSyntaxErrorCases(t *testing.T) {
+	t.Parallel()
+
 	testCases, err := loadInvalidDslSyntaxTestCases()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {
+		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := transformer.TransformDSLToJSON(testCase.DSL)
 
 			errorsCount := len(testCase.ExpectedErrors)

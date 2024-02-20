@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	pb "github.com/openfga/api/proto/openfga/v1"
-	"github.com/openfga/language/pkg/go/errors"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/openfga/language/pkg/go/errors"
 )
 
 type DirectAssignmentValidator struct {
@@ -30,23 +31,23 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
 	if userset.GetDifference() != nil && userset.GetDifference().GetBase() != nil {
 		if userset.GetDifference().GetBase().GetThis() != nil {
 			return true
-		} else {
-			return v.isFirstPosition(userset.GetDifference().GetBase())
 		}
+
+		return v.isFirstPosition(userset.GetDifference().GetBase())
 	} else if userset.GetIntersection() != nil && userset.GetIntersection().GetChild() != nil {
 		if len(userset.GetIntersection().GetChild()) > 0 {
 			if userset.GetIntersection().GetChild()[0].GetThis() != nil {
 				return true
-			} else {
-				return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
 			}
+
+			return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
 		}
 	} else if userset.GetUnion() != nil && len(userset.GetUnion().GetChild()) > 0 {
 		if userset.GetUnion().GetChild()[0].GetThis() != nil {
 			return true
-		} else {
-			return v.isFirstPosition(userset.GetUnion().GetChild()[0])
 		}
+
+		return v.isFirstPosition(userset.GetUnion().GetChild()[0])
 	}
 
 	return false
@@ -58,7 +59,7 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 	wildcard := restriction.GetWildcard()
 	condition := restriction.GetCondition()
 
-	typeRestriction := fmt.Sprintf("%v", typeName)
+	typeRestriction := typeName
 	if wildcard != nil {
 		typeRestriction += ":*"
 	}
@@ -98,16 +99,34 @@ func parseTupleToUserset(relationDefinition *pb.Userset) string {
 }
 
 func parseComputedUserset(relationDefinition *pb.Userset) string {
-	return fmt.Sprintf("%v", relationDefinition.GetComputedUserset().GetRelation())
+	return relationDefinition.GetComputedUserset().GetRelation()
 }
 
-func parseDifference(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
-	parsedSubStringBase, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetBase(), typeRestrictions, validator)
+func parseDifference(
+	typeName string,
+	relationName string,
+	relationDefinition *pb.Userset,
+	typeRestrictions []*pb.RelationReference,
+	validator *DirectAssignmentValidator,
+) (string, error) {
+	parsedSubStringBase, err := parseSubRelation(
+		typeName,
+		relationName,
+		relationDefinition.GetDifference().GetBase(),
+		typeRestrictions,
+		validator,
+	)
 	if err != nil {
 		return "", err
 	}
 
-	parsedSubStringSubtract, err := parseSubRelation(typeName, relationName, relationDefinition.GetDifference().GetSubtract(), typeRestrictions, validator)
+	parsedSubStringSubtract, err := parseSubRelation(
+		typeName,
+		relationName,
+		relationDefinition.GetDifference().GetSubtract(),
+		typeRestrictions,
+		validator,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -119,7 +138,13 @@ func parseDifference(typeName string, relationName string, relationDefinition *p
 	), nil
 }
 
-func parseUnion(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
+func parseUnion(
+	typeName string,
+	relationName string,
+	relationDefinition *pb.Userset,
+	typeRestrictions []*pb.RelationReference,
+	validator *DirectAssignmentValidator,
+) (string, error) {
 	parsedString := []string{}
 	children := relationDefinition.GetUnion().GetChild()
 
@@ -132,13 +157,16 @@ func parseUnion(typeName string, relationName string, relationDefinition *pb.Use
 		parsedString = append(parsedString, parsedSubString)
 	}
 
-	return fmt.Sprintf(
-		"%v",
-		strings.Join(parsedString, " or "),
-	), nil
+	return strings.Join(parsedString, " or "), nil
 }
 
-func parseIntersection(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
+func parseIntersection(
+	typeName string,
+	relationName string,
+	relationDefinition *pb.Userset,
+	typeRestrictions []*pb.RelationReference,
+	validator *DirectAssignmentValidator,
+) (string, error) {
 	parsedString := []string{}
 	children := relationDefinition.GetIntersection().GetChild()
 
@@ -151,16 +179,20 @@ func parseIntersection(typeName string, relationName string, relationDefinition 
 		parsedString = append(parsedString, parsedSubString)
 	}
 
-	return fmt.Sprintf(
-		"%v",
-		strings.Join(parsedString, " and "),
-	), nil
+	return strings.Join(parsedString, " and "), nil
 }
 
-func parseSubRelation(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
+func parseSubRelation(
+	typeName string,
+	relationName string,
+	relationDefinition *pb.Userset,
+	typeRestrictions []*pb.RelationReference,
+	validator *DirectAssignmentValidator,
+) (string, error) {
 	if relationDefinition.GetThis() != nil {
 		// Make sure we have no more than 1 reference for direct assignment in a given relation
 		validator.incr()
+
 		return parseThis(typeRestrictions), nil
 	}
 
@@ -177,6 +209,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 		if err != nil {
 			return "", err
 		}
+
 		return fmt.Sprintf("(%s)", parsedUnion), nil
 	}
 
@@ -185,6 +218,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 		if err != nil {
 			return "", err
 		}
+
 		return fmt.Sprintf("(%s)", parsedIntersection), nil
 	}
 
@@ -193,6 +227,7 @@ func parseSubRelation(typeName string, relationName string, relationDefinition *
 		if err != nil {
 			return "", err
 		}
+
 		return fmt.Sprintf("(%s)", parsedDiff), nil
 	}
 
@@ -269,7 +304,7 @@ func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
 	return parsedTypeString, nil
 }
 
-func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) (string, error) {
+func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) string {
 	parametersStringArray := []string{}
 
 	parameterNames := []string{}
@@ -283,16 +318,20 @@ func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) (st
 
 	for _, parameterName := range parameterNames {
 		parameterType := parameterMap[parameterName]
-		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.TypeName.String(), "TYPE_NAME_", ""))
+		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.GetTypeName().String(), "TYPE_NAME_", ""))
+
 		if parameterTypeString == "list" || parameterTypeString == "map" {
-			genericTypeString := strings.ToLower(strings.ReplaceAll(parameterType.GetGenericTypes()[0].TypeName.String(), "TYPE_NAME_", ""))
+			genericTypeString := strings.ToLower(
+				strings.ReplaceAll(
+					parameterType.GetGenericTypes()[0].GetTypeName().String(), "TYPE_NAME_", ""),
+			)
 			parameterTypeString = fmt.Sprintf("%s<%s>", parameterTypeString, genericTypeString)
 		}
 
 		parametersStringArray = append(parametersStringArray, fmt.Sprintf("%s: %s", parameterName, parameterTypeString))
 	}
 
-	return strings.Join(parametersStringArray, ", "), nil
+	return strings.Join(parametersStringArray, ", ")
 }
 
 func parseCondition(conditionName string, conditionDef *pb.Condition) (string, error) {
@@ -300,12 +339,14 @@ func parseCondition(conditionName string, conditionDef *pb.Condition) (string, e
 		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
 	}
 
-	paramsString, err := parseConditionParams(conditionDef.GetParameters())
-	if err != nil {
-		return "", err
-	}
+	paramsString := parseConditionParams(conditionDef.GetParameters())
 
-	return fmt.Sprintf("condition %s(%s) {\n  %s\n}\n", conditionDef.Name, paramsString, conditionDef.GetExpression()), nil
+	return fmt.Sprintf(
+		"condition %s(%s) {\n  %s\n}\n",
+		conditionDef.GetName(),
+		paramsString,
+		conditionDef.GetExpression(),
+	), nil
 }
 
 func parseConditions(model *pb.AuthorizationModel) (string, error) {
@@ -340,9 +381,9 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 	return parsedConditionsString, nil
 }
 
-// TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL
+// TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.
 func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
-	schemaVersion := model.SchemaVersion
+	schemaVersion := model.GetSchemaVersion()
 
 	typeDefinitions := []string{}
 	typeDefs := model.GetTypeDefinitions()
@@ -373,7 +414,7 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 %v%v`, schemaVersion, typeDefsString, parsedConditionsString), nil
 }
 
-// LoadJSONStringToProto - Converts models authored in OpenFGA JSON syntax to the protobuf representation
+// LoadJSONStringToProto - Converts models authored in OpenFGA JSON syntax to the protobuf representation.
 func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
 	model := &pb.AuthorizationModel{}
 	unmarshaller := protojson.UnmarshalOptions{
@@ -382,13 +423,13 @@ func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
 	}
 
 	if err := unmarshaller.Unmarshal([]byte(modelString), model); err != nil {
-		return nil, err
+		return nil, err //nolint:wrapcheck
 	}
 
 	return model, nil
 }
 
-// TransformJSONStringToDSL - Converts models authored in OpenFGA JSON syntax to the DSL syntax
+// TransformJSONStringToDSL - Converts models authored in OpenFGA JSON syntax to the DSL syntax.
 func TransformJSONStringToDSL(modelString string) (*string, error) {
 	model, err := LoadJSONStringToProto(modelString)
 	if err != nil {

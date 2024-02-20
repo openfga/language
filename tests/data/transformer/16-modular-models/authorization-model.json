@@ -1,0 +1,12 @@
+{
+  "type_definitions": [
+    {
+      "type": "user",
+      "relations": {},
+      "metadata": {
+        "module": "core",
+        "filename": "core.fga"
+      }
+    }
+  ]
+}

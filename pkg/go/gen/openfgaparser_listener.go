@@ -15,6 +15,9 @@ type OpenFGAParserListener interface {
 	// EnterModelHeader is called when entering the modelHeader production.
 	EnterModelHeader(c *ModelHeaderContext)
 
+	// EnterModuleHeader is called when entering the moduleHeader production.
+	EnterModuleHeader(c *ModuleHeaderContext)
+
 	// EnterTypeDefs is called when entering the typeDefs production.
 	EnterTypeDefs(c *TypeDefsContext)
 
@@ -86,6 +89,9 @@ type OpenFGAParserListener interface {
 
 	// ExitModelHeader is called when exiting the modelHeader production.
 	ExitModelHeader(c *ModelHeaderContext)
+
+	// ExitModuleHeader is called when exiting the moduleHeader production.
+	ExitModuleHeader(c *ModuleHeaderContext)
 
 	// ExitTypeDefs is called when exiting the typeDefs production.
 	ExitTypeDefs(c *TypeDefsContext)

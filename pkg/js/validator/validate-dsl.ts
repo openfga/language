@@ -789,6 +789,7 @@ export function validateJSON(
 
   if (!schemaVersion) {
     collector.raiseSchemaVersionRequired(0, "");
+    throw new ModelValidationError(errors);
   }
 
   switch (schemaVersion) {

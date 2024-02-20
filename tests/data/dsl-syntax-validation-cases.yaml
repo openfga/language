@@ -25,7 +25,7 @@
   dsl: |
     type user
   expected_errors:
-    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -34,7 +34,7 @@
         end: 4
       metadata:
         symbol: "type"
-    - msg: "extraneous input 'user' expecting {'#', 'model', NEWLINE}"
+    - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -43,7 +43,7 @@
         end: 9
       metadata:
         symbol: "user"
-    - msg: "mismatched input '<EOF>' expecting {'#', 'model'}"
+    - msg: "mismatched input '<EOF>' expecting {'#', 'module', 'model'}"
       line:
         start: 2
         end: 2
@@ -484,7 +484,7 @@
       relations
         define group: [user] as self
   expected_errors:
-    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -493,7 +493,7 @@
         end: 4
       metadata:
         symbol: "type"
-    - msg: "extraneous input 'user' expecting {'#', 'model', NEWLINE}"
+    - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -502,7 +502,7 @@
         end: 9
       metadata:
         symbol: "user"
-    - msg: "mismatched input 'type' expecting {'#', 'model'}"
+    - msg: "mismatched input 'type' expecting {'#', 'module', 'model'}"
       line:
         start: 2
         end: 2
@@ -1430,3 +1430,19 @@
       schema 1.1
     type list
     type map
+
+- name: does not allow module and model
+  dsl: |
+    model
+      schema 1.1
+    module foo
+
+    type user
+  expected_errors:
+    - msg: no viable alternative at input '\nmodule'
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 0
+        end: 6

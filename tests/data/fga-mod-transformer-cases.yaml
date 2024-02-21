@@ -1,0 +1,145 @@
+---
+- name: valid syntax
+  modFile: |
+    schema: '1.2'
+    module: acme
+    contents:
+      - core.fga
+      - team1/project.fga
+      - team1/board.fga
+      - wiki.fga
+  json: |
+    {
+      "schema": "1.2",
+      "module": "acme",
+      "contents": ["core.fga", "team1/project.fga", "team1/board.fga", "wiki.fga"]
+    }
+- name: missing schema
+  modFile: |
+    module: acme
+    contents:
+      - core.fga
+  expected_errors:
+    - msg: missing schema field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+- name: invalid schema type
+  modFile: |
+    schema: true
+    module: acme
+    contents:
+      - core.fga
+  expected_errors:
+    - msg: unexpected schema type, expected string got boolean value true
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 8
+        end: 12
+- name: invalid schema version
+  modFile: |
+    schema: "1.1"
+    module: acme
+    contents:
+      - core.fga
+  expected_errors:
+    - msg: unsupported schema version, fga.mod only supported in version `1.2`
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 8
+        end: 13
+- name: missing module
+  modFile: |
+    schema: "1.2"
+    contents:
+      - core.fga
+  expected_errors:
+    - msg: missing module field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+- name: invalid module type
+  modFile: |
+    schema: "1.2"
+    module: true
+    contents:
+      - core.fga
+  expected_errors:
+    - msg: unexpected module type, expected string got boolean value true
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 8
+        end: 12
+- name: missing contents
+  modFile: |
+    schema: "1.2"
+    module: acme
+  expected_errors:
+    - msg: missing contents field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+- name: invalid contents type
+  modFile: |
+    schema: "1.2"
+    module: acme
+    contents: true
+  expected_errors:
+    - msg: unexpected contents type, expected list of strings got boolean value true
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 10
+        end: 14
+- name: contents is not a list of strings
+  modFile: |
+    schema: "1.2"
+    module: acme
+    contents:
+      - true
+      - 1
+  expected_errors:
+    - msg: unexpected contents item type, expected string got boolean value true
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 4
+        end: 8
+    - msg: unexpected contents item type, expected string got number value 1
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 4
+        end: 5
+- name: contents item does not end with `.fga`
+  modFile: |
+    schema: "1.2"
+    module: acme
+    contents:
+      - core.txt
+  expected_errors:
+    - msg: contents items should use fga file extension, got core.txt
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 4
+        end: 12

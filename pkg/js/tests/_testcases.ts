@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "yaml";
-import { DSLSyntaxSingleError, ModelValidationSingleError } from "../errors";
+import { DSLSyntaxSingleError, FGAModFileValidationSingleError, ModelValidationSingleError } from "../errors";
 
 interface ValidTestCase {
   name: string;
@@ -30,6 +30,11 @@ interface MultipleInvalidDSLSyntaxTestCase extends InvalidDSLSyntaxTestCase {
 
 interface MultipleInvalidTestCase extends InvalidDSLSyntaxTestCase {
   expected_errors: ModelValidationSingleError[];
+}
+
+interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
+  modFile: string;
+  expected_errors?: FGAModFileValidationSingleError[];
 }
 
 export function loadValidTransformerTestCases(): ValidTestCase[] {
@@ -87,4 +92,10 @@ export function loadInvalidJSONSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
       "utf-8",
     ),
   ) as InvalidJSONSyntaxTestCase[];
+}
+
+export function loadModFileTestCases(): FGAModFileTestCase[] {
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "fga-mod-transformer-cases.yaml"), "utf-8"),
+  ) as FGAModFileTestCase[];
 }

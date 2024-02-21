@@ -6,6 +6,7 @@ import type {
   RelationReference,
   TypeDefinition,
   Userset,
+  Usersets,
 } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 
@@ -168,10 +169,12 @@ function parseSubRelation(
   }
 
   if (relationDefinition.union != null) {
+    relationDefinition.union = prioritizeDirectAssignment(relationDefinition.union);
     return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
   if (relationDefinition.intersection != null) {
+    relationDefinition.intersection = prioritizeDirectAssignment(relationDefinition.intersection);
     return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
@@ -196,8 +199,10 @@ function parseRelation(
   if (relationDefinition.difference != null) {
     parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.union != null) {
+    relationDefinition.union = prioritizeDirectAssignment(relationDefinition.union);
     parsedRelationString += parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.intersection != null) {
+    relationDefinition.intersection = prioritizeDirectAssignment(relationDefinition.intersection);
     parsedRelationString += parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else {
     parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions, validator);
@@ -212,6 +217,16 @@ function parseRelation(
     `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
   );
 }
+
+const prioritizeDirectAssignment = (usersets: Usersets): Usersets => {
+  if (usersets.child.length) {
+    let position = usersets.child.findIndex((child) => child.this != null);
+    if (position !== -1) {
+      usersets.child.unshift(...usersets.child.splice(position, 1));
+    }
+  }
+  return usersets;
+};
 
 const parseType = (typeDef: TypeDefinition): string => {
   const typeName = typeDef.type;

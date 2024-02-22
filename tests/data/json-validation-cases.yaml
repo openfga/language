@@ -23,3 +23,52 @@
     - msg: "invalid schema undefined"
       metadata:
         errorType: invalid-schema
+
+- name: relation def where this is not in first place
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user",
+          "relations": {
+            "rel1": {
+              "this": {}
+            },
+            "rel2": {
+              "union": {
+                "child": [
+                  {
+                    "computedUserset": {
+                      "relation": "rel1"
+                    }
+                  },
+                  {
+                    "this": {}
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "rel1": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "rel2": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors:

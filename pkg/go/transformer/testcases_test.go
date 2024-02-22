@@ -127,3 +127,23 @@ func loadInvalidJSONSyntaxTestCases() ([]invalidJSONSyntaxTestCase, error) {
 
 	return testCases, err //nolint:wrapcheck
 }
+
+type fgdModFileTestCase struct {
+	Name           string          `json:"name"            yaml:"name"`
+	ModFile        string          `json:"modFile"         yaml:"modFile"` //nolint:tagliatelle
+	JSON           string          `json:"json"            yaml:"json"`
+	Skip           bool            `json:"skip"            yaml:"skip"`
+	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
+}
+
+func loadModFileTestCases() ([]fgdModFileTestCase, error) {
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "fga-mod-transformer-cases.yaml"))
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	testCases := []fgdModFileTestCase{}
+	err = yaml.Unmarshal(data, &testCases)
+
+	return testCases, err //nolint:wrapcheck
+}

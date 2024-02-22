@@ -41,6 +41,7 @@ linters-settings:
           - github.com/openfga/api
           - google.golang.org/protobuf
           - github.com/openfga/language/pkg/go
+          - gopkg.in/yaml.v3
       test:
         files:
           - "$test"

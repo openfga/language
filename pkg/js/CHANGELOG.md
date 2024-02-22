@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.11
+
+### [v0.2.0-beta.11](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.10...v0.2.0-beta.11) (2024-02-22)
+
+Fixed:
+- Allow transforming JSON where `this` is not the first element (#167)
+
 ## v0.2.0-beta.10
 
 ### [v0.2.0-beta.10](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.9...v0.2.0-beta.10) (2024-01-23)

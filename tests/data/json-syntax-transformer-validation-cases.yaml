@@ -289,7 +289,7 @@
   valid: false,
   error_message: the 'rel4' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
-- name: relation def where this is not in first place
+- name: relation def where this is not in first place (union)
   json: >-2
     {
       "schema_version": "1.1",
@@ -302,6 +302,55 @@
             },
             "rel2": {
               "union": {
+                "child": [
+                  {
+                    "computedUserset": {
+                      "relation": "rel1"
+                    }
+                  },
+                  {
+                    "this": {}
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "rel1": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "rel2": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  valid: true
+
+- name: relation def where this is not in first place (intersection)
+  json: >-2
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user",
+          "relations": {
+            "rel1": {
+              "this": {}
+            },
+            "rel2": {
+              "intersection": {
                 "child": [
                   {
                     "computedUserset": {

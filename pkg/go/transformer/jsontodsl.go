@@ -34,18 +34,28 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool {
 			return v.isFirstPosition(userset.GetDifference().GetBase())
 		}
 	} else if userset.GetIntersection() != nil && userset.GetIntersection().GetChild() != nil {
-		if len(userset.GetIntersection().GetChild()) > 0 {
-			if userset.GetIntersection().GetChild()[0].GetThis() != nil {
-				return true
-			} else {
-				return v.isFirstPosition(userset.GetIntersection().GetChild()[0])
+		// For union and intersection, we are moving `this` to first position in the parse,
+		// so even if it is not in the first position here, we're fine
+		children := userset.GetIntersection().GetChild()
+		if len(children) > 0 {
+			for _, child := range children {
+				if child.GetThis() != nil {
+					return true
+				}
 			}
+
+			return v.isFirstPosition(children[0])
 		}
-	} else if userset.GetUnion() != nil && len(userset.GetUnion().GetChild()) > 0 {
-		if userset.GetUnion().GetChild()[0].GetThis() != nil {
-			return true
-		} else {
-			return v.isFirstPosition(userset.GetUnion().GetChild()[0])
+	} else if userset.GetUnion() != nil && userset.GetUnion().GetChild() != nil {
+		children := userset.GetUnion().GetChild()
+		if len(children) > 0 {
+			for _, child := range children {
+				if child.GetThis() != nil {
+					return true
+				}
+			}
+
+			return v.isFirstPosition(children[0])
 		}
 	}
 
@@ -121,7 +131,7 @@ func parseDifference(typeName string, relationName string, relationDefinition *p
 
 func parseUnion(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
 	parsedString := []string{}
-	children := relationDefinition.GetUnion().GetChild()
+	children := prioritizeDirectAssignment(relationDefinition.GetUnion().GetChild())
 
 	for index := 0; index < len(children); index++ {
 		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions, validator)
@@ -140,7 +150,7 @@ func parseUnion(typeName string, relationName string, relationDefinition *pb.Use
 
 func parseIntersection(typeName string, relationName string, relationDefinition *pb.Userset, typeRestrictions []*pb.RelationReference, validator *DirectAssignmentValidator) (string, error) {
 	parsedString := []string{}
-	children := relationDefinition.GetIntersection().GetChild()
+	children := prioritizeDirectAssignment(relationDefinition.GetIntersection().GetChild())
 
 	for index := 0; index < len(children); index++ {
 		parsedSubString, err := parseSubRelation(typeName, relationName, children[index], typeRestrictions, validator)
@@ -232,6 +242,28 @@ func parseRelation(
 	}
 
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
+}
+
+func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
+	if len(usersets) > 0 {
+		thisPosition := -1
+		for index, userset := range usersets {
+			if userset.GetThis() != nil {
+				thisPosition = index
+				break
+			}
+		}
+
+		if thisPosition > 0 {
+			newUsersets := []*pb.Userset{usersets[thisPosition]}
+			newUsersets = append(newUsersets, usersets[:thisPosition]...)
+			newUsersets = append(newUsersets, usersets[thisPosition+1:]...)
+
+			return newUsersets
+		}
+	}
+
+	return usersets
 }
 
 func parseType(typeDefinition *pb.TypeDefinition) (string, error) {

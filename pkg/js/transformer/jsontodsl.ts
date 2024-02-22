@@ -121,7 +121,7 @@ function parseUnion(
   validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
-  const children = relationDefinition?.union?.child;
+  const children = prioritizeDirectAssignment(relationDefinition?.union?.child);
 
   for (const child of children || []) {
     parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
@@ -138,7 +138,7 @@ function parseIntersection(
   validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
-  const children = relationDefinition?.intersection?.child;
+  const children = prioritizeDirectAssignment(relationDefinition?.intersection?.child);
 
   for (const child of children || []) {
     parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
@@ -154,31 +154,29 @@ function parseSubRelation(
   typeRestrictions: RelationReference[],
   validator: DirectAssignmentValidator,
 ): string {
-  if (relationDefinition.this != null) {
+  if (relationDefinition.this) {
     // Make sure we have no more than 1 reference for direct assignment in a given relation
     validator.occured++;
     return parseThis(typeRestrictions);
   }
 
-  if (relationDefinition.computedUserset != null) {
+  if (relationDefinition.computedUserset) {
     return parseComputedUserset(relationDefinition);
   }
 
-  if (relationDefinition.tupleToUserset != null) {
+  if (relationDefinition.tupleToUserset) {
     return parseTupleToUserset(relationDefinition);
   }
 
-  if (relationDefinition.union != null) {
-    relationDefinition.union = prioritizeDirectAssignment(relationDefinition.union);
+  if (relationDefinition.union) {
     return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
-  if (relationDefinition.intersection != null) {
-    relationDefinition.intersection = prioritizeDirectAssignment(relationDefinition.intersection);
+  if (relationDefinition.intersection) {
     return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
-  if (relationDefinition.difference != null) {
+  if (relationDefinition.difference) {
     return `(${parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
@@ -199,10 +197,8 @@ function parseRelation(
   if (relationDefinition.difference != null) {
     parsedRelationString += parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.union != null) {
-    relationDefinition.union = prioritizeDirectAssignment(relationDefinition.union);
     parsedRelationString += parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else if (relationDefinition.intersection != null) {
-    relationDefinition.intersection = prioritizeDirectAssignment(relationDefinition.intersection);
     parsedRelationString += parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator);
   } else {
     parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions, validator);
@@ -218,13 +214,14 @@ function parseRelation(
   );
 }
 
-const prioritizeDirectAssignment = (usersets: Usersets): Usersets => {
-  if (usersets.child.length) {
-    let position = usersets.child.findIndex((child) => child.this != null);
-    if (position !== -1) {
-      usersets.child.unshift(...usersets.child.splice(position, 1));
+const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] | undefined => {
+  if (usersets?.length) {
+    const thisPosition = usersets.findIndex((userset) => userset.this);
+    if (thisPosition > 0) {
+      usersets.unshift(...usersets.splice(thisPosition, 1));
     }
   }
+
   return usersets;
 };
 

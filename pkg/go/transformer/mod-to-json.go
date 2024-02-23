@@ -22,6 +22,8 @@ type YAMLModFile struct {
 
 type ModFileValidationErrorMetadata struct{}
 
+// ModFileValidationError is an error occurred during validation of the mod.fga file. Line and
+// column number provided are one based.
 type ModFileValidationError struct {
 	Line, Column int
 	Msg          string
@@ -54,6 +56,7 @@ const (
 	seqNode    = "!!seq"
 )
 
+// TransformModFile transforms a mod.fga and validates the fields are correct.
 func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	yamlModFile := &YAMLModFile{}
 
@@ -69,23 +72,20 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Schema.IsZero():
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "missing schema field",
-			Line:   0,
-			Column: 0,
+			Line:   1,
+			Column: 1,
 		})
 	case yamlModFile.Schema.Tag != stringNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
-			Msg: fmt.Sprintf(
-				"unexpected schema type, expected string got value %s",
-				yamlModFile.Schema.Value,
-			),
-			Line:   yamlModFile.Schema.Line - 1,
-			Column: yamlModFile.Schema.Column - 1,
+			Msg:    "unexpected schema type, expected string got value " + yamlModFile.Schema.Value,
+			Line:   yamlModFile.Schema.Line,
+			Column: yamlModFile.Schema.Column,
 		})
 	case yamlModFile.Schema.Value != "1.2":
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "unsupported schema version, fga.mod only supported in version `1.2`",
-			Line:   yamlModFile.Schema.Line - 1,
-			Column: yamlModFile.Schema.Column - 1,
+			Line:   yamlModFile.Schema.Line,
+			Column: yamlModFile.Schema.Column,
 		})
 	default:
 		modFile.Schema = yamlModFile.Schema.Value
@@ -95,17 +95,14 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Module.IsZero():
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "missing module field",
-			Line:   0,
-			Column: 0,
+			Line:   1,
+			Column: 1,
 		})
 	case yamlModFile.Module.Tag != stringNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
-			Msg: fmt.Sprintf(
-				"unexpected module type, expected string got value %s",
-				yamlModFile.Module.Value,
-			),
-			Line:   yamlModFile.Module.Line - 1,
-			Column: yamlModFile.Module.Column - 1,
+			Msg:    "unexpected module type, expected string got value " + yamlModFile.Module.Value,
+			Line:   yamlModFile.Module.Line,
+			Column: yamlModFile.Module.Column,
 		})
 	default:
 		modFile.Module = yamlModFile.Module.Value
@@ -115,17 +112,14 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Contents.IsZero():
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "missing contents field",
-			Line:   0,
-			Column: 0,
+			Line:   1,
+			Column: 1,
 		})
 	case yamlModFile.Contents.Tag != seqNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
-			Msg: fmt.Sprintf(
-				"unexpected contents type, expected list of strings got value %s",
-				yamlModFile.Contents.Value,
-			),
-			Line:   yamlModFile.Contents.Line - 1,
-			Column: yamlModFile.Contents.Column - 1,
+			Msg:    "unexpected contents type, expected list of strings got value " + yamlModFile.Contents.Value,
+			Line:   yamlModFile.Contents.Line,
+			Column: yamlModFile.Contents.Column,
 		})
 	default:
 		contents := []string{}
@@ -134,18 +128,15 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 
 			if file.Tag != stringNode {
 				errors = multierror.Append(errors, &ModFileValidationError{
-					Msg: fmt.Sprintf(
-						"unexpected contents item type, expected string got value %s",
-						file.Value,
-					),
-					Line:   file.Line - 1,
-					Column: file.Column - 1,
+					Msg:    "unexpected contents item type, expected string got value " + file.Value,
+					Line:   file.Line,
+					Column: file.Column,
 				})
 			} else if !strings.HasSuffix(file.Value, ".fga") {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg:    "contents items should use fga file extension, got " + file.Value,
-					Line:   file.Line - 1,
-					Column: file.Column - 1,
+					Line:   file.Line,
+					Column: file.Column,
 				})
 			}
 		}

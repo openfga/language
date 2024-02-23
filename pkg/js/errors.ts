@@ -175,7 +175,7 @@ export class ConditionNameDoesntMatchError extends Error {
 
 /**
  * Represents an individual error returned during validation of `fga.mod`.
- * Line and column numbers returned as part of this are zero based,
+ * Line and column numbers returned as part of this are one based,
  */
 export class FGAModFileValidationSingleError extends BaseError {
   constructor(

@@ -22,11 +22,11 @@
   expected_errors:
     - msg: missing schema field
       line:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
       column:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
 - name: invalid schema type
   modFile: |
     schema: true
@@ -36,11 +36,11 @@
   expected_errors:
     - msg: unexpected schema type, expected string got value true
       line:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
       column:
-        start: 8
-        end: 12
+        start: 9
+        end: 13
 - name: invalid schema version
   modFile: |
     schema: "1.1"
@@ -50,11 +50,11 @@
   expected_errors:
     - msg: unsupported schema version, fga.mod only supported in version `1.2`
       line:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
       column:
-        start: 8
-        end: 13
+        start: 9
+        end: 14
 - name: missing module
   modFile: |
     schema: "1.2"
@@ -63,11 +63,11 @@
   expected_errors:
     - msg: missing module field
       line:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
       column:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
 - name: invalid module type
   modFile: |
     schema: "1.2"
@@ -77,11 +77,11 @@
   expected_errors:
     - msg: unexpected module type, expected string got value true
       line:
-        start: 1
-        end: 1
+        start: 2
+        end: 2
       column:
-        start: 8
-        end: 12
+        start: 9
+        end: 13
 - name: missing contents
   modFile: |
     schema: "1.2"
@@ -89,11 +89,11 @@
   expected_errors:
     - msg: missing contents field
       line:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
       column:
-        start: 0
-        end: 0
+        start: 1
+        end: 1
 - name: invalid contents type
   modFile: |
     schema: "1.2"
@@ -102,11 +102,11 @@
   expected_errors:
     - msg: unexpected contents type, expected list of strings got value true
       line:
-        start: 2
-        end: 2
+        start: 3
+        end: 3
       column:
-        start: 10
-        end: 14
+        start: 11
+        end: 15
 - name: contents is not a list of strings
   modFile: |
     schema: "1.2"
@@ -117,18 +117,18 @@
   expected_errors:
     - msg: unexpected contents item type, expected string got value true
       line:
-        start: 3
-        end: 3
-      column:
-        start: 4
-        end: 8
-    - msg: unexpected contents item type, expected string got value 1
-      line:
         start: 4
         end: 4
       column:
-        start: 4
+        start: 5
+        end: 9
+    - msg: unexpected contents item type, expected string got value 1
+      line:
+        start: 5
         end: 5
+      column:
+        start: 5
+        end: 6
 - name: contents item does not end with `.fga`
   modFile: |
     schema: "1.2"
@@ -138,8 +138,8 @@
   expected_errors:
     - msg: contents items should use fga file extension, got core.txt
       line:
-        start: 3
-        end: 3
-      column:
         start: 4
-        end: 12
+        end: 4
+      column:
+        start: 5
+        end: 13

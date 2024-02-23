@@ -51,9 +51,10 @@ func TestModFileToJSONTransformer(t *testing.T) {
 					}
 				}
 			} else {
+				require.NoError(t, err)
+
 				expected := &transformer.ModFile{}
 				err = json.Unmarshal([]byte(testCase.JSON), expected)
-				require.NoError(t, err)
 				require.NoError(t, err)
 				require.Equal(t, expected, actual)
 			}

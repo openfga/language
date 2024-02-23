@@ -136,6 +136,28 @@ type fgdModFileTestCase struct {
 	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
 }
 
+func (testCase *fgdModFileTestCase) GetErrorString() string {
+	pluralS := ""
+	if len(testCase.ExpectedErrors) > 1 {
+		pluralS = "s"
+	}
+
+	errorsString := []string{}
+	for _, err := range testCase.ExpectedErrors {
+		errorsString = append(
+			errorsString,
+			fmt.Sprintf("validation error at line=%d, column=%d: %s", err.Line.Start, err.Column.Start, err.Msg),
+		)
+	}
+
+	return fmt.Sprintf(
+		"%d error%s occurred:\n\t* %s\n\n",
+		len(testCase.ExpectedErrors),
+		pluralS,
+		strings.Join(errorsString, "\n\t* "),
+	)
+}
+
 func loadModFileTestCases() ([]fgdModFileTestCase, error) {
 	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "fga-mod-transformer-cases.yaml"))
 	if err != nil {

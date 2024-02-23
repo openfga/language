@@ -3,8 +3,6 @@ package transformer_test
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,26 +31,7 @@ func TestModFileToJSONTransformer(t *testing.T) {
 			if len(testCase.ExpectedErrors) != 0 {
 				require.Error(t, err)
 
-				pluralS := ""
-				if len(testCase.ExpectedErrors) > 1 {
-					pluralS = "s"
-				}
-
-				errorsString := []string{}
-				for _, err := range testCase.ExpectedErrors {
-					errorsString = append(
-						errorsString,
-						fmt.Sprintf("validation error at line=%d, column=%d: %s", err.Line.Start, err.Column.Start, err.Msg),
-					)
-				}
-
-				errorMessage := fmt.Sprintf(
-					"%d error%s occurred:\n\t* %s\n\n",
-					len(testCase.ExpectedErrors),
-					pluralS,
-					strings.Join(errorsString, "\n\t*"),
-				)
-
+				errorMessage := testCase.GetErrorString()
 				assert.Equal(t, errorMessage, err.Error())
 
 				var verr *transformer.ModFileValidationMultipleError

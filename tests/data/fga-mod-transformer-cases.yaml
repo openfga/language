@@ -34,7 +34,7 @@
     contents:
       - core.fga
   expected_errors:
-    - msg: unexpected schema type, expected string got boolean value true
+    - msg: unexpected schema type, expected string got value true
       line:
         start: 0
         end: 0
@@ -75,7 +75,7 @@
     contents:
       - core.fga
   expected_errors:
-    - msg: unexpected module type, expected string got boolean value true
+    - msg: unexpected module type, expected string got value true
       line:
         start: 1
         end: 1
@@ -100,7 +100,7 @@
     module: acme
     contents: true
   expected_errors:
-    - msg: unexpected contents type, expected list of strings got boolean value true
+    - msg: unexpected contents type, expected list of strings got value true
       line:
         start: 2
         end: 2
@@ -115,14 +115,14 @@
       - true
       - 1
   expected_errors:
-    - msg: unexpected contents item type, expected string got boolean value true
+    - msg: unexpected contents item type, expected string got value true
       line:
         start: 3
         end: 3
       column:
         start: 4
         end: 8
-    - msg: unexpected contents item type, expected string got number value 1
+    - msg: unexpected contents item type, expected string got value 1
       line:
         start: 4
         end: 4

@@ -107,7 +107,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
       const node = yamlDoc.getIn(["schema"], true);
 
       errors.push(new FGAModFileValidationSingleError({
-        msg: `unexpected schema type, expected string got ${typeof schema} value ${schema}`,
+        msg: `unexpected schema type, expected string got value ${schema}`,
         ...getLineAndColumnFromNode(node, lineCounter)
       }));
     } else if (schema !== "1.2") {
@@ -127,7 +127,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
   } else if (typeof yamlDoc.get("module") !== "string") {
     const node = yamlDoc.getIn(["module"], true);
     errors.push(new FGAModFileValidationSingleError({
-      msg: `unexpected module type, expected string got ${typeof yamlDoc.get("module")} value ${yamlDoc.get("module")}`,
+      msg: `unexpected module type, expected string got value ${yamlDoc.get("module")}`,
       ...getLineAndColumnFromNode(node, lineCounter)
     }));
   }
@@ -141,7 +141,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
     const node = yamlDoc.getIn(["contents"], true);
     const contents = yamlDoc.get("contents");
     errors.push(new FGAModFileValidationSingleError({
-      msg: `unexpected contents type, expected list of strings got ${typeof contents} value ${contents}`,
+      msg: `unexpected contents type, expected list of strings got value ${contents}`,
       ...getLineAndColumnFromNode(node, lineCounter)
     }));
   } else {
@@ -149,7 +149,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
     for (const file of contents.items) {
       if (typeof file.value !== "string") {
         errors.push(new FGAModFileValidationSingleError({
-          msg: `unexpected contents item type, expected string got ${typeof file.value} value ${file.value}`,
+          msg: `unexpected contents item type, expected string got value ${file.value}`,
           ...getLineAndColumnFromNode(file, lineCounter)
         }));
         continue;

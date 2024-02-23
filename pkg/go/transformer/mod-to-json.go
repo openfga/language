@@ -2,7 +2,6 @@ package transformer
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -76,8 +75,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Schema.Tag != stringNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg: fmt.Sprintf(
-				"unexpected schema type, expected string got %s value %s",
-				reflect.TypeOf(yamlModFile.Schema.Value),
+				"unexpected schema type, expected string got value %s",
 				yamlModFile.Schema.Value,
 			),
 			Line:   yamlModFile.Schema.Line - 1,
@@ -103,8 +101,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Module.Tag != stringNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg: fmt.Sprintf(
-				"unexpected module type, expected string got %s value %s",
-				reflect.TypeOf(yamlModFile.Module.Value),
+				"unexpected module type, expected string got value %s",
 				yamlModFile.Module.Value,
 			),
 			Line:   yamlModFile.Module.Line - 1,
@@ -124,8 +121,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Contents.Tag != seqNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg: fmt.Sprintf(
-				"unexpected contents type, expected list of strings got %s value %s",
-				reflect.TypeOf(yamlModFile.Contents.Value),
+				"unexpected contents type, expected list of strings got value %s",
 				yamlModFile.Contents.Value,
 			),
 			Line:   yamlModFile.Contents.Line - 1,
@@ -139,8 +135,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			if file.Tag != stringNode {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg: fmt.Sprintf(
-						"unexpected contents item type, expected string got %s value %s",
-						reflect.TypeOf(file.Value),
+						"unexpected contents item type, expected string got value %s",
 						file.Value,
 					),
 					Line:   file.Line - 1,

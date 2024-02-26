@@ -24,11 +24,11 @@ export enum ValidationError {
 }
 
 export interface ErrorProperties {
-  line: {
+  line?: {
     start: number;
     end: number;
   };
-  column: {
+  column?: {
     start: number;
     end: number;
   };
@@ -39,26 +39,24 @@ export interface ErrorProperties {
  * Abstract base class for syntax and validation exceptions
  */
 export abstract class BaseError extends Error {
-  public line: { start: number; end: number };
-  public column: { start: number; end: number };
+  public line: { start: number; end: number } | undefined;
+  public column: { start: number; end: number } | undefined;
   public msg: string;
 
   constructor(
     public properties: ErrorProperties,
     public type: string,
   ) {
-    super(`${type} error at line=${properties.line.start}, column=${properties.column.start}: ${properties.msg}`);
+    super(
+      `${type} error${
+        properties.line !== undefined && properties.column !== undefined
+          ? ` at line=${properties.line.start}, column=${properties.column.start}`
+          : ""
+      }: ${properties.msg}`,
+    );
     this.line = properties.line;
     this.column = properties.column;
     this.msg = properties.msg;
-  }
-
-  public getLine(offset = 0) {
-    return { start: this.line.start + offset, end: this.line.end + offset };
-  }
-
-  public getColumn(offset = 0) {
-    return { start: this.column.start + offset, end: this.column.end + offset };
   }
 
   toString() {

@@ -171,3 +171,34 @@ export class ConditionNameDoesntMatchError extends Error {
     super(`the '${conditionName}' condition has a different nested condition name ('${conditionNestedName}')`);
   }
 }
+
+
+/**
+ * Represents an individual error returned during validation of `fga.mod`.
+ * Line and column numbers returned as part of this are one based,
+ */
+export class FGAModFileValidationSingleError extends BaseError {
+  constructor(
+    public properties: ErrorProperties,
+  ) {
+    super(properties, "validation");
+  }
+
+  toString() {
+    return this.message;
+  }
+}
+
+/**
+ * Thrown when an `fga.mod` file is invalid
+ */
+export class FGAModFileValidationError extends Error {
+  constructor(public errors: FGAModFileValidationSingleError[]) {
+    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
+    this.errors = errors;
+  }
+
+  toString() {
+    return this.message;
+  }
+}

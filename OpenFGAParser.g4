@@ -10,7 +10,7 @@ moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=IDENTIFIE
 
 // Type Definitions
 typeDefs: typeDef*;
-typeDef:  (NEWLINE multiLineComment)? NEWLINE TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
+typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
 
 // Relation definitions
 relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);

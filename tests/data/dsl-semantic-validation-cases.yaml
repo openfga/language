@@ -746,8 +746,8 @@
         start: 7
         end: 7
       column:
-        start: 0
-        end: 10
+        start: 1
+        end: 11
       metadata:
         symbol: "document:*"
         errorType: type-wildcard-relation
@@ -1184,6 +1184,15 @@
         end: 1
       metadata:
         errorType: schema-version-required
+    - msg: invalid schema undefined
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: invalid-schema
 
 - name: allows extend in modular model
   dsl: |
@@ -1200,6 +1209,17 @@
         end: 1
       metadata:
         errorType: schema-version-required
+    - msg: invalid schema undefined
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: invalid-schema
+
+
 #- name: invalid cel expression
 #  dsl: |
 #    model

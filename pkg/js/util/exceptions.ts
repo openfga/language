@@ -357,6 +357,10 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
   const re = new RegExp("\\b" + metadata.symbol + "\\b");
   let wordIdx = rawLine?.search(re) + 1;
 
+  if (isNaN(wordIdx) || wordIdx === 0) {
+    wordIdx = 1;
+  }
+
   if (typeof customResolver === "function") {
     wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
   }
@@ -364,7 +368,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
   return new ModelValidationSingleError(
     {
       line: { start: lineIndex + 1, end: lineIndex + 1 },
-      column: { start: wordIdx, end: wordIdx + metadata.symbol.length },
+      column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
       msg: message,
     },
     { symbol: metadata?.symbol, errorType: metadata.errorType },

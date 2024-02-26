@@ -348,7 +348,15 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
   if (!lines) {
     return undefined;
   }
-  return lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
+
+  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
+
+  // As findIndex returns -1 when it doesn't find the line, we want to return 0 instead
+  if (index >= 1) {
+    return index;
+  } else {
+    return 0;
+  }
 };
 
 function checkForDuplicatesTypeNamesInRelation(
@@ -792,7 +800,6 @@ export function validateJSON(
 
   if (!schemaVersion) {
     collector.raiseSchemaVersionRequired("", 0);
-    throw new ModelValidationError(errors);
   }
 
   switch (schemaVersion) {

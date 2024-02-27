@@ -17,11 +17,22 @@ interface InvalidJSONSyntaxTestCase {
   skip?: boolean;
 }
 
+interface InvalidJSONValidationTestCase {
+  name: string;
+  json: string;
+  error_message: string;
+  skip?: boolean;
+}
+
 interface InvalidDSLSyntaxTestCase {
   name: string;
   dsl: string;
   error_message: string;
   skip?: boolean;
+}
+
+interface MultipleInvalidJSONTestCase extends InvalidJSONValidationTestCase {
+  expected_errors: ModelValidationSingleError[];
 }
 
 interface MultipleInvalidDSLSyntaxTestCase extends InvalidDSLSyntaxTestCase {
@@ -92,6 +103,12 @@ export function loadInvalidJSONSyntaxTestCases(): InvalidJSONSyntaxTestCase[] {
       "utf-8",
     ),
   ) as InvalidJSONSyntaxTestCase[];
+}
+
+export function loadInvalidJSONSValidationTestCases(): MultipleInvalidJSONTestCase[] {
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "json-validation-cases.yaml"), "utf-8"),
+  ) as MultipleInvalidJSONTestCase[];
 }
 
 export function loadModFileTestCases(): FGAModFileTestCase[] {

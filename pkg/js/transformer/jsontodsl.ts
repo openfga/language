@@ -120,7 +120,7 @@ function parseUnion(
   validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
-  const children = relationDefinition?.union?.child;
+  const children = prioritizeDirectAssignment(relationDefinition?.union?.child);
 
   for (const child of children || []) {
     parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
@@ -137,7 +137,7 @@ function parseIntersection(
   validator: DirectAssignmentValidator,
 ): string {
   const parsedString: string[] = [];
-  const children = relationDefinition?.intersection?.child;
+  const children = prioritizeDirectAssignment(relationDefinition?.intersection?.child);
 
   for (const child of children || []) {
     parsedString.push(parseSubRelation(typeName, relationName, child, typeRestrictions, validator));
@@ -153,29 +153,29 @@ function parseSubRelation(
   typeRestrictions: RelationReference[],
   validator: DirectAssignmentValidator,
 ): string {
-  if (relationDefinition.this != null) {
+  if (relationDefinition.this) {
     // Make sure we have no more than 1 reference for direct assignment in a given relation
     validator.occured++;
     return parseThis(typeRestrictions);
   }
 
-  if (relationDefinition.computedUserset != null) {
+  if (relationDefinition.computedUserset) {
     return parseComputedUserset(relationDefinition);
   }
 
-  if (relationDefinition.tupleToUserset != null) {
+  if (relationDefinition.tupleToUserset) {
     return parseTupleToUserset(relationDefinition);
   }
 
-  if (relationDefinition.union != null) {
+  if (relationDefinition.union) {
     return `(${parseUnion(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
-  if (relationDefinition.intersection != null) {
+  if (relationDefinition.intersection) {
     return `(${parseIntersection(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
-  if (relationDefinition.difference != null) {
+  if (relationDefinition.difference) {
     return `(${parseDifference(typeName, relationName, relationDefinition, typeRestrictions, validator)})`;
   }
 
@@ -212,6 +212,17 @@ function parseRelation(
     `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
   );
 }
+
+const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] | undefined => {
+  if (usersets?.length) {
+    const thisPosition = usersets.findIndex((userset) => userset.this);
+    if (thisPosition > 0) {
+      usersets.unshift(...usersets.splice(thisPosition, 1));
+    }
+  }
+
+  return usersets;
+};
 
 const parseType = (typeDef: TypeDefinition): string => {
   const typeName = typeDef.type;

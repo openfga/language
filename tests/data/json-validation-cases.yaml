@@ -1,0 +1,74 @@
+---
+- name: invalid schema version
+  json: |
+    {
+      "schema_version": "1.3"
+    }
+  expected_errors:
+    - msg: "invalid schema 1.3"
+      metadata:
+        symbol: "1.3"
+        errorType: invalid-schema
+
+- name: missing schema
+  json: |
+    {
+      "type_definitions": []
+    }
+  expected_errors:
+    - msg: "schema version required"
+      metadata:
+        symbol: ""
+        errorType: schema-version-required
+    - msg: "invalid schema undefined"
+      metadata:
+        errorType: invalid-schema
+
+- name: relation def where this is not in first place
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user",
+          "relations": {
+            "rel1": {
+              "this": {}
+            },
+            "rel2": {
+              "union": {
+                "child": [
+                  {
+                    "computedUserset": {
+                      "relation": "rel1"
+                    }
+                  },
+                  {
+                    "this": {}
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "rel1": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              },
+              "rel2": {
+                "directly_related_user_types": [
+                  {
+                    "type": "user"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors:

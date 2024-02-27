@@ -3,8 +3,6 @@ import { Keyword, ReservedKeywords } from "../validator/keywords";
 
 interface ValidationErrorProps {
   message: string;
-  lines: string[];
-  lineIndex: number;
   metadata: {
     symbol: string;
     errorType: ValidationError;
@@ -12,14 +10,16 @@ interface ValidationErrorProps {
     typeName?: string;
     conditionName?: string;
   };
+  lines?: string[];
+  lineIndex?: number;
   customResolver?: (wordIndex: number, rawLine: string, symbol: string) => number;
 }
 
 interface BaseProps {
   errors: ModelValidationSingleError[];
-  lines: string[];
-  lineIndex: number;
   symbol: string;
+  lines?: string[];
+  lineIndex?: number;
 }
 
 const createInvalidName = (props: BaseProps, clause: string, typeName?: string) => {
@@ -171,6 +171,18 @@ const createInvalidTypeError = (props: BaseProps, typeName: string) => {
 
 const createAssignableRelationMustHaveTypesError = (props: BaseProps) => {
   const { errors, lines, lineIndex } = props;
+
+  if (!lines?.length || lineIndex === undefined) {
+    const actualValue = "";
+    errors.push(
+      constructValidationError({
+        message: `assignable relation '${actualValue}' must have types`,
+        metadata: { symbol: actualValue, errorType: ValidationError.AssignableRelationsMustHaveType },
+      }),
+    );
+    return;
+  }
+
   const rawLine = lines[lineIndex];
   const actualValue = rawLine.includes("[")
     ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]") + 1)
@@ -228,12 +240,25 @@ const createDuplicateRelationError = (props: BaseProps, relationName: string) =>
 
 const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
+
+  if (!lines?.length || lineIndex === undefined) {
+    errors.push(
+      new ModelValidationSingleError(
+        {
+          msg: `duplicate relationship definition \`${symbol}\`.`,
+        },
+        { symbol, errorType: ValidationError.DuplicatedError },
+      ),
+    );
+    return;
+  }
+
   const rawLine = lines[lineIndex];
 
   errors.push(
     new ModelValidationSingleError(
       {
-        msg: `duplicate definition \`${symbol}\`.`,
+        msg: `duplicate relationship definition \`${symbol}\`.`,
         line: {
           start: lineIndex + 1,
           end: lineIndex + 1,
@@ -318,9 +343,23 @@ export const createMaximumOneDirectRelationship = (props: BaseProps) => {
 function constructValidationError(props: ValidationErrorProps): ModelValidationSingleError {
   const { message, lines, lineIndex, customResolver, metadata } = props;
 
+  if (!lines?.length || lineIndex === undefined) {
+    return new ModelValidationSingleError(
+      {
+        msg: message,
+      },
+      { symbol: metadata?.symbol, errorType: metadata.errorType },
+    );
+  }
+
   const rawLine = lines[lineIndex];
+
   const re = new RegExp("\\b" + metadata.symbol + "\\b");
   let wordIdx = rawLine?.search(re) + 1;
+
+  if (isNaN(wordIdx) || wordIdx === 0) {
+    wordIdx = 1;
+  }
 
   if (typeof customResolver === "function") {
     wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
@@ -329,75 +368,75 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
   return new ModelValidationSingleError(
     {
       line: { start: lineIndex + 1, end: lineIndex + 1 },
-      column: { start: wordIdx, end: wordIdx + metadata.symbol.length },
+      column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
       msg: message,
     },
     { symbol: metadata?.symbol, errorType: metadata.errorType },
   );
 }
 
-export const exceptionCollector = (errors: ModelValidationSingleError[], lines: string[]) => {
+export const exceptionCollector = (errors: ModelValidationSingleError[], lines?: string[]) => {
   return {
-    raiseInvalidName(lineIndex: number, symbol: string, clause: string, typeName?: string) {
+    raiseInvalidName(symbol: string, clause: string, typeName?: string, lineIndex?: number) {
       createInvalidName({ errors, lines, lineIndex, symbol }, clause, typeName);
     },
-    raiseReservedTypeName(lineIndex: number, symbol: string) {
+    raiseReservedTypeName(symbol: string, lineIndex?: number) {
       createReservedTypeNameError({ errors, lines, lineIndex, symbol });
     },
-    raiseReservedRelationName(lineIndex: number, symbol: string) {
+    raiseReservedRelationName(symbol: string, lineIndex?: number) {
       createReservedRelationNameError({ errors, lines, lineIndex, symbol });
     },
-    raiseTupleUsersetRequiresDirect(lineIndex: number, symbol: string) {
+    raiseTupleUsersetRequiresDirect(symbol: string, lineIndex?: number) {
       createTupleUsersetRequireDirectError({ errors, lines, lineIndex, symbol });
     },
-    raiseDuplicateTypeName(lineIndex: number, symbol: string) {
+    raiseDuplicateTypeName(symbol: string, lineIndex?: number) {
       createDuplicateTypeNameError({ errors, lines, lineIndex, symbol });
     },
-    raiseDuplicateTypeRestriction(lineIndex: number, symbol: string, relationName: string) {
+    raiseDuplicateTypeRestriction(symbol: string, relationName: string, lineIndex?: number) {
       createDuplicateTypeRestrictionError({ errors, lines, lineIndex, symbol }, relationName);
     },
-    raiseDuplicateType(lineIndex: number, symbol: string, relationName: string) {
+    raiseDuplicateType(symbol: string, relationName: string, lineIndex?: number) {
       createDuplicateRelationError({ errors, lines, lineIndex, symbol }, relationName);
     },
-    raiseDuplicateRelationshipDefinition(lineIndex: number, symbol: string) {
+    raiseDuplicateRelationshipDefinition(symbol: string, lineIndex?: number) {
       createDuplicateRelationshipDefinitionError({ errors, lines, lineIndex, symbol });
     },
-    raiseNoEntryPointLoop(lineIndex: number, symbol: string, typeName: string) {
+    raiseNoEntryPointLoop(symbol: string, typeName: string, lineIndex?: number) {
       createNoEntryPointLoopError({ errors, lines, lineIndex, symbol }, typeName);
     },
-    raiseNoEntryPoint(lineIndex: number, symbol: string, typeName: string) {
+    raiseNoEntryPoint(symbol: string, typeName: string, lineIndex?: number) {
       createNoEntryPointError({ errors, lines, lineIndex, symbol }, typeName);
     },
-    raiseInvalidTypeRelation(lineIndex: number, symbol: string, typeName: string, relationName: string) {
+    raiseInvalidTypeRelation(symbol: string, typeName: string, relationName: string, lineIndex?: number) {
       createInvalidTypeRelationError({ errors, lines, lineIndex, symbol }, typeName, relationName);
     },
-    raiseInvalidType(lineIndex: number, symbol: string, typeName: string) {
+    raiseInvalidType(symbol: string, typeName: string, lineIndex?: number) {
       createInvalidTypeError({ errors, lines, lineIndex, symbol }, typeName);
     },
-    raiseAssignableRelationMustHaveTypes(lineIndex: number, symbol: string) {
+    raiseAssignableRelationMustHaveTypes(symbol: string, lineIndex?: number) {
       createAssignableRelationMustHaveTypesError({ errors, lines, lineIndex, symbol });
     },
-    raiseAssignableTypeWildcardRelation(lineIndex: number, symbol: string) {
+    raiseAssignableTypeWildcardRelation(symbol: string, lineIndex?: number) {
       createAssignableTypeWildcardRelationError({ errors, lines, lineIndex, symbol });
     },
-    raiseInvalidRelationError(lineIndex: number, symbol: string, validRelations: string[]) {
+    raiseInvalidRelationError(symbol: string, validRelations: string[], lineIndex?: number) {
       createInvalidRelationError({ errors, lines, lineIndex, symbol }, validRelations);
     },
-    raiseInvalidSchemaVersion(lineIndex: number, symbol: string) {
+    raiseInvalidSchemaVersion(symbol: string, lineIndex?: number) {
       createInvalidSchemaVersionError({ errors, lines, lineIndex, symbol });
     },
-    raiseSchemaVersionRequired(lineIndex: number, symbol: string) {
+    raiseSchemaVersionRequired(symbol: string, lineIndex?: number) {
       createSchemaVersionRequiredError({ errors, lines, lineIndex, symbol });
     },
-    raiseMaximumOneDirectRelationship(lineIndex: number, symbol: string) {
+    raiseMaximumOneDirectRelationship(symbol: string, lineIndex?: number) {
       createMaximumOneDirectRelationship({ errors, lines, lineIndex, symbol });
     },
     raiseInvalidConditionNameInParameter(
-      lineIndex: number,
       symbol: string,
       typeName: string,
       relationName: string,
       conditionName: string,
+      lineIndex?: number,
     ) {
       createInvalidConditionNameInParameterError(
         { errors, lines, lineIndex, symbol },
@@ -406,7 +445,7 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines: 
         conditionName,
       );
     },
-    raiseUnusedCondition(lineIndex: number, symbol: string) {
+    raiseUnusedCondition(symbol: string, lineIndex?: number) {
       createUnusedConditionError({ errors, lines, lineIndex, symbol });
     },
   };

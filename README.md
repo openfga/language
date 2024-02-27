@@ -43,12 +43,12 @@ This repo contains everything needed to interact with the OpenFGA Authorization 
 | Nesting    | ✅ (partial, see #113 |
 | Conditions | ✅                    |
 
-| Feature                                               | Go          | JS          |
-|-------------------------------------------------------|-------------|-------------|
-| Transformer from the DSL to JSON and from JSON to DSL | ✅           | ✅           |
-| Syntactic Model Validations                           | ✅           | ✅           |
-| Semantic Model Validations                            | ❌ (planned) | ✅           |
-| Graphing & Utility Methods                            | ❌ (planned) | ❌ (planned) |
+| Feature                                               | Go                   | JS          | Java                  |
+|-------------------------------------------------------|----------------------|-------------|-----------------------|
+| Transformer from the DSL to JSON and from JSON to DSL | ✅                    | ✅           | ❌ (planned, see #139) |
+| Syntactic Model Validations                           | ✅                    | ✅           | ❌ (planned, see #139) |
+| Semantic Model Validations                            | ❌ (planned, see #99) | ✅           | ❌ (planned, see #139) |
+| Graphing & Utility Methods                            | ❌ (planned)          | ❌ (planned) | ❌ (planned)           |
 
 
 ## Installation

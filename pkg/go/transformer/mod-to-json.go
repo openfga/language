@@ -62,7 +62,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 
 	err := yaml.Unmarshal([]byte(data), yamlModFile)
 	if err != nil {
-		return nil, err
+		return nil, err //nolint:wrapcheck
 	}
 
 	modFile := &ModFile{}

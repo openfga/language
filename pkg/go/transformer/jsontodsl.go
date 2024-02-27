@@ -285,9 +285,11 @@ func parseRelation(
 func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 	if len(usersets) > 0 {
 		thisPosition := -1
+
 		for index, userset := range usersets {
 			if userset.GetThis() != nil {
 				thisPosition = index
+
 				break
 			}
 		}

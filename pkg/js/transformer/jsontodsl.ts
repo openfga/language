@@ -6,7 +6,6 @@ import type {
   RelationReference,
   TypeDefinition,
   Userset,
-  Usersets,
 } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 

@@ -89,7 +89,7 @@ const getRelationDefName = (userset: Userset): string | undefined => {
   return relationDefName;
 };
 
-const deepCopy = (object: any): any => {
+const deepCopy = <T>(object: T): T => {
   return JSON.parse(JSON.stringify(object));
 };
 

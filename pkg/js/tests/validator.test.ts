@@ -5,7 +5,7 @@ import {
 } from "./_testcases";
 import { DSLSyntaxError, DSLSyntaxSingleError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { validateDSL, validateJSON } from "../validator";
-import { transformDSLToJSON, transformDSLToJSONObject } from "../transformer";
+import { transformDSLToJSONObject } from "../transformer";
 import { AuthorizationModel } from "@openfga/sdk";
 
 describe("validateDSL", () => {

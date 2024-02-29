@@ -1,0 +1,14 @@
+[
+  {
+    "msg": "duplicate condition a_check",
+    "metadata": {
+        "errorType": "transformation-error"
+    }
+  },
+  {
+    "msg": "the type `user` is a duplicate.",
+    "metadata": {
+        "errorType": "duplicated-error"
+    }
+  }
+]

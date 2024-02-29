@@ -160,8 +160,8 @@ class OpenFgaDslListener extends OpenFGAListener {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.currentTypeDef!.metadata!.relations = undefined as any;
     } else if (!this.isModularModel && !Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.currentTypeDef!.metadata = null as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.currentTypeDef!.metadata = null as any;
     }
 
     this.authorizationModel.type_definitions?.push(this.currentTypeDef as TypeDefinition);
@@ -336,7 +336,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     if (this.isModularModel) {
       //@ts-expect-error
       this.currentCondition.metadata = {
-        module: this.moduleName
+        module: this.moduleName,
       };
     }
   };

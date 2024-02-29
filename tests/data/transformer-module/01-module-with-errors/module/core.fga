@@ -1,0 +1,7 @@
+module core
+
+type user
+
+condition a_check(val: int) {
+  val <= 10
+}

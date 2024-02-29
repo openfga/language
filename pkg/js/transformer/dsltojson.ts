@@ -17,6 +17,7 @@ import OpenFGAParser, {
   ConditionExpressionContext,
   ConditionParameterContext,
   ModelHeaderContext,
+  ModuleHeaderContext,
   RelationDeclarationContext,
   RelationDefDirectAssignmentContext,
   RelationDefPartialsContext,
@@ -100,11 +101,13 @@ class OpenFgaDslListener extends OpenFGAListener {
   private currentRelation: Partial<Relation> | undefined;
   private currentCondition: Condition | undefined;
   private isModularModel = false;
+  private moduleName?: string;
 
   private rewriteStack: StackRelation[] = [];
 
-  exitModuleHeader = () => {
+  exitModuleHeader = (ctx: ModuleHeaderContext) => {
     this.isModularModel = true;
+    this.moduleName = ctx._moduleName.text;
   };
 
   exitModelHeader = (ctx: ModelHeaderContext) => {
@@ -140,6 +143,11 @@ class OpenFgaDslListener extends OpenFGAListener {
       relations: {},
       metadata: { relations: {} },
     };
+
+    if (this.isModularModel) {
+      //@ts-expect-error
+      this.currentTypeDef.metadata.module = this.moduleName;
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -148,9 +156,12 @@ class OpenFgaDslListener extends OpenFGAListener {
       return;
     }
 
-    if (!Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
+    if (this.isModularModel && !Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.currentTypeDef!.metadata = null as any;
+      this.currentTypeDef!.metadata!.relations = undefined as any;
+    } else if (!this.isModularModel && !Object.keys(this.currentTypeDef?.metadata?.relations || {}).length) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.currentTypeDef!.metadata = null as any;
     }
 
     this.authorizationModel.type_definitions?.push(this.currentTypeDef as TypeDefinition);
@@ -321,6 +332,13 @@ class OpenFgaDslListener extends OpenFGAListener {
       expression: "",
       parameters: {},
     };
+
+    if (this.isModularModel) {
+      //@ts-expect-error
+      this.currentCondition.metadata = {
+        module: this.moduleName
+      };
+    }
   };
 
   exitConditionParameter = (ctx: ConditionParameterContext) => {

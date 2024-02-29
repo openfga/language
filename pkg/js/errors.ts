@@ -173,7 +173,7 @@ export class ConditionNameDoesntMatchError extends Error {
 
 /**
  * Represents an individual error returned during validation of `fga.mod`.
- * Line and column numbers returned as part of this are one based,
+ * Line and column numbers returned as part of this are one based.
  */
 export class FGAModFileValidationSingleError extends BaseError {
   constructor(
@@ -188,7 +188,7 @@ export class FGAModFileValidationSingleError extends BaseError {
 }
 
 /**
- * Thrown when an `fga.mod` file is invalid
+ * Thrown when an `fga.mod` file is invalid.
  */
 export class FGAModFileValidationError extends Error {
   constructor(public errors: FGAModFileValidationSingleError[]) {
@@ -199,4 +199,34 @@ export class FGAModFileValidationError extends Error {
   toString() {
     return this.message;
   }
+}
+
+/*
+* Represents an individual error returned during transformation of a module.
+* Line and column numbers returned as part of this are one based.
+*/
+export class ModuleTransformationSingleError extends BaseError {
+  constructor(
+    public properties: ErrorProperties,
+  ) {
+    super(properties, "transformation-error");
+  }
+
+  toString() {
+      return this.message;
+  }
+}
+
+/**
+ * Thrown when a module is invalid.
+ */
+export class ModuleTransformationError extends Error {
+  constructor(public errors: Array<BaseError>) {
+    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
+    this.errors = errors;
+  }
+
+  toString() {
+    return this.message;
+}
 }

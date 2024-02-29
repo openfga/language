@@ -1448,3 +1448,33 @@
       schema 1.1
     type list
     type map
+
+- name: a valid model with type names doesn't conflict with built-in keywords
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type model
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+    type schema
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+    type type
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+    type relation
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]

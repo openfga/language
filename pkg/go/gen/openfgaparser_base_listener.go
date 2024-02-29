@@ -159,6 +159,12 @@ func (s *BaseOpenFGAParserListener) EnterMultiLineComment(ctx *MultiLineCommentC
 // ExitMultiLineComment is called when production multiLineComment is exited.
 func (s *BaseOpenFGAParserListener) ExitMultiLineComment(ctx *MultiLineCommentContext) {}
 
+// EnterIdentifier is called when production identifier is entered.
+func (s *BaseOpenFGAParserListener) EnterIdentifier(ctx *IdentifierContext) {}
+
+// ExitIdentifier is called when production identifier is exited.
+func (s *BaseOpenFGAParserListener) ExitIdentifier(ctx *IdentifierContext) {}
+
 // EnterConditionExpression is called when production conditionExpression is entered.
 func (s *BaseOpenFGAParserListener) EnterConditionExpression(ctx *ConditionExpressionContext) {}
 

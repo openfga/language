@@ -127,7 +127,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     }
 
     this.currentTypeDef = {
-      type: ctx._typeName.text,
+      type: ctx._typeName.getText(),
       relations: {},
       metadata: { relations: {} },
     };

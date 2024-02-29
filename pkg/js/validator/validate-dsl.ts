@@ -804,6 +804,7 @@ export function validateJSON(
 
   switch (schemaVersion) {
     case "1.1":
+    case "1.2":
       modelValidation(collector, errors, authorizationModel, lines);
       break;
     default: {

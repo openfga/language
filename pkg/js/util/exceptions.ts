@@ -1,4 +1,4 @@
-import { ModelValidationSingleError, ValidationError } from "../errors";
+import { ModelValidationSingleError, ModuleTransformationSingleError, ValidationError } from "../errors";
 import { Keyword, ReservedKeywords } from "../validator/keywords";
 
 interface ValidationErrorProps {
@@ -450,3 +450,49 @@ export const exceptionCollector = (errors: ModelValidationSingleError[], lines?:
     },
   };
 };
+
+interface TransformationErrorProps {
+  message: string;
+  metadata: {
+    symbol: string;
+    relation?: string;
+    typeName?: string;
+    conditionName?: string;
+    file?: string;
+  };
+  lines?: string[];
+  lineIndex?: number;
+  customResolver?: (wordIndex: number, rawLine: string, symbol: string) => number;
+}
+
+export function constructTransformationError(props: TransformationErrorProps) {
+  const { message, lines, lineIndex, metadata } = props;
+
+  if (!lines?.length || lineIndex === undefined) {
+    return new ModuleTransformationSingleError(
+      {
+        msg: message,
+      },
+      { symbol: metadata?.symbol },
+    );
+  }
+
+  const rawLine = lines[lineIndex];
+
+  const re = new RegExp("\\b" + metadata.symbol + "\\b");
+  let wordIdx = rawLine?.search(re) + 1;
+
+  if (isNaN(wordIdx) || wordIdx === 0) {
+    wordIdx = 1;
+  }
+
+  return new ModuleTransformationSingleError(
+    {
+      line: { start: lineIndex + 1, end: lineIndex + 1 },
+      column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
+      msg: message,
+      file: metadata.file,
+    },
+    { symbol: metadata?.symbol },
+  );
+}

@@ -126,61 +126,55 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
 
   const parsedModFile: Partial<ModFile> = {};
 
-  if (!yamlDoc.has("schema")) {
+  const schemaNode = yamlDoc.get("schema", true) as Scalar<string>;
+  if (!schemaNode) {
     errors.push(new FGAModFileValidationSingleError({
       msg: "missing schema field",
       ...getLineAndColumnFromLinePos()
     }));
-  } else if (typeof yamlDoc.get("schema") !== "string") {
-    const node = yamlDoc.getIn(["schema"], true);
-
+  } else if (typeof schemaNode.value !== "string") {
     errors.push(new FGAModFileValidationSingleError({
-      msg: `unexpected schema type, expected string got value ${yamlDoc.get("schema")}`,
-      ...getLineAndColumnFromNode(node, lineCounter)
+      msg: `unexpected schema type, expected string got value ${schemaNode.value}`,
+      ...getLineAndColumnFromNode(schemaNode, lineCounter)
     }));
-  } else if (yamlDoc.get("schema") !== "1.2") {
-    const node = yamlDoc.getIn(["schema"], true);
+  } else if (schemaNode.value !== "1.2") {
     errors.push(new FGAModFileValidationSingleError({
       msg: "unsupported schema version, fga.mod only supported in version `1.2`",
-      ...getLineAndColumnFromNode(node, lineCounter)
+      ...getLineAndColumnFromNode(schemaNode, lineCounter)
     }));
   } else {
-    const node = yamlDoc.getIn(["schema"], true);
     parsedModFile.schema = {
-      //@ts-expect-error
-      value: node.value,
-      ...getLineAndColumnFromNode(node, lineCounter)
+      value: schemaNode.value,
+      ...getLineAndColumnFromNode(schemaNode, lineCounter)
     };
   }
 
-
-  if (!yamlDoc.has("module")) {
+  const moduleNode = yamlDoc.get("module", true) as Scalar<string>;
+  if (!moduleNode) {
     errors.push(new FGAModFileValidationSingleError({
       msg: "missing module field",
       ...getLineAndColumnFromLinePos()
     }));
-  } else if (typeof yamlDoc.get("module") !== "string") {
-    const node = yamlDoc.getIn(["module"], true);
+  } else if (typeof moduleNode.value !== "string") {
     errors.push(new FGAModFileValidationSingleError({
-      msg: `unexpected module type, expected string got value ${yamlDoc.get("module")}`,
-      ...getLineAndColumnFromNode(node, lineCounter)
+      msg: `unexpected module type, expected string got value ${moduleNode.value}`,
+      ...getLineAndColumnFromNode(moduleNode, lineCounter)
     }));
   } else {
-    const node = yamlDoc.getIn(["module"], true);
     parsedModFile.module = {
-      //@ts-expect-error
-      value: node.value,
-      ...getLineAndColumnFromNode(node, lineCounter)
+      value: moduleNode.value,
+      ...getLineAndColumnFromNode(moduleNode, lineCounter)
     };
   }
 
-  if (!yamlDoc.has("contents")) {
+  const contentsNode = yamlDoc.get("contents", true) as YAMLSeq<Scalar>;
+  if (!contentsNode) {
     errors.push(new FGAModFileValidationSingleError({
       msg: "missing contents field",
       ...getLineAndColumnFromLinePos()
     }));
-  } else if (!isSeq(yamlDoc.get("contents"))) {
-    const node = yamlDoc.getIn(["contents"], true);
+  } else if (!isSeq(contentsNode)) {
+    const node = yamlDoc.get("contents", true);
     const contents = yamlDoc.get("contents");
     errors.push(new FGAModFileValidationSingleError({
       msg: `unexpected contents type, expected list of strings got value ${contents}`,
@@ -211,7 +205,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
         ...getLineAndColumnFromNode(file, lineCounter)
       });
     }
-    const node = yamlDoc.getIn(["contents"], true);
+    const node = yamlDoc.get("contents", true);
     parsedModFile.contents = {
       value: contentsValue,
       ...getLineAndColumnFromNode(node, lineCounter)

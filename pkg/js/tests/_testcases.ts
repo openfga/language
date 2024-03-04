@@ -172,7 +172,6 @@ export function loadModuleTestCases(): ModuleTestCase[] {
 
     for (const file of files) {
       if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
-
         continue;
       }
 

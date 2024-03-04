@@ -344,7 +344,6 @@ class OpenFgaDslListener extends OpenFGAListener {
     };
 
     if (this.isModularModel) {
-      //@ts-expect-error
       this.currentCondition.metadata = {
         module: this.moduleName,
       };

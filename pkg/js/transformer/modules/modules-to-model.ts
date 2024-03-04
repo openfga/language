@@ -1,4 +1,4 @@
-import { AuthorizationModel as OGAuthorizationModel, Condition as OGCondition, TypeDefinition as OGTypeDefinition, Metadata as OGMetadata } from "@openfga/sdk";
+import { AuthorizationModel , Condition , TypeDefinition } from "@openfga/sdk";
 import { validateJSON } from "../../validator";
 import { transformDSLToJSONObject } from "../dsltojson";
 import { BaseError, DSLSyntaxError, ModelValidationError, ModuleTransformationError, ModuleTransformationSingleError } from "../../errors";
@@ -6,27 +6,6 @@ import { BaseError, DSLSyntaxError, ModelValidationError, ModuleTransformationEr
 export interface ModuleFiles {
   name: string;
   contents: string;
-}
-
-// TODO: need to move these out once we have them added to the API
-interface Condition extends OGCondition {
-  metadata: {
-    file?: string;
-    module?: string
-  }
-}
-
-interface Metadata extends OGMetadata {
-  file?: string;
-  module?: string
-}
-
-interface TypeDefinition extends OGTypeDefinition {
-  metadata: Metadata
-}
-
-interface AuthorizationModel extends OGAuthorizationModel {
-  name?: string
 }
 
 export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<AuthorizationModel, "id"> => {

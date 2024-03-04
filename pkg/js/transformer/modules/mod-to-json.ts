@@ -1,6 +1,34 @@
 import { parseDocument, LineCounter, Scalar, isSeq, isNode, YAMLSeq } from "yaml";
 import { LinePos } from "yaml/dist/errors";
 import { FGAModFileValidationError, FGAModFileValidationSingleError } from "../../errors";
+
+/**
+ * Represents a property contained in the `fga.mod` file, includes the value as well as line an
+ * column information to allow improved error reporting.
+ */
+export interface ModFileProperty<T> {
+  /**
+   * The value of the property.
+   */
+  value: T
+
+  /**
+   * The start and end line number of the property.
+   */
+  line: {
+    start: number;
+    end: number;
+  }
+
+  /**
+   * The start and end column number of the property.
+   */
+  column: {
+    start: number;
+    end: number;
+  }
+}
+
 /**
  * An `fga.mod` file represented as JSON
  */
@@ -8,15 +36,15 @@ export interface ModFile {
   /**
    * The schema version. This currently will only be 1.2
    */
-  schema: string
+  schema: ModFileProperty<string>
   /**
    * The module name.
    */
-  module: string
+  module: ModFileProperty<string>
   /**
    * The individual files that make up the modular model.
    */
-  contents: string[]
+  contents: ModFileProperty<ModFileProperty<string>[]>
 }
 
 /**
@@ -96,28 +124,35 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
     }));
   }
 
+  const parsedModFile: Partial<ModFile> = {};
+
   if (!yamlDoc.has("schema")) {
     errors.push(new FGAModFileValidationSingleError({
       msg: "missing schema field",
       ...getLineAndColumnFromLinePos()
     }));
-  } else {
-    const schema = yamlDoc.get("schema");
-    if (typeof schema !== "string") {
-      const node = yamlDoc.getIn(["schema"], true);
+  } else if (typeof yamlDoc.get("schema") !== "string") {
+    const node = yamlDoc.getIn(["schema"], true);
 
-      errors.push(new FGAModFileValidationSingleError({
-        msg: `unexpected schema type, expected string got value ${schema}`,
-        ...getLineAndColumnFromNode(node, lineCounter)
-      }));
-    } else if (schema !== "1.2") {
-      const node = yamlDoc.getIn(["schema"], true);
-      errors.push(new FGAModFileValidationSingleError({
-        msg: "unsupported schema version, fga.mod only supported in version `1.2`",
-        ...getLineAndColumnFromNode(node, lineCounter)
-      }));
-    }
+    errors.push(new FGAModFileValidationSingleError({
+      msg: `unexpected schema type, expected string got value ${yamlDoc.get("schema")}`,
+      ...getLineAndColumnFromNode(node, lineCounter)
+    }));
+  } else if (yamlDoc.get("schema") !== "1.2") {
+    const node = yamlDoc.getIn(["schema"], true);
+    errors.push(new FGAModFileValidationSingleError({
+      msg: "unsupported schema version, fga.mod only supported in version `1.2`",
+      ...getLineAndColumnFromNode(node, lineCounter)
+    }));
+  } else {
+    const node = yamlDoc.getIn(["schema"], true);
+    parsedModFile.schema = {
+      //@ts-expect-error
+      value: node.value,
+      ...getLineAndColumnFromNode(node, lineCounter)
+    };
   }
+
 
   if (!yamlDoc.has("module")) {
     errors.push(new FGAModFileValidationSingleError({
@@ -130,6 +165,13 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
       msg: `unexpected module type, expected string got value ${yamlDoc.get("module")}`,
       ...getLineAndColumnFromNode(node, lineCounter)
     }));
+  } else {
+    const node = yamlDoc.getIn(["module"], true);
+    parsedModFile.module = {
+      //@ts-expect-error
+      value: node.value,
+      ...getLineAndColumnFromNode(node, lineCounter)
+    };
   }
 
   if (!yamlDoc.has("contents")) {
@@ -146,6 +188,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
     }));
   } else {
     const contents = yamlDoc.get("contents") as YAMLSeq<Scalar>;
+    const contentsValue = [];
     for (const file of contents.items) {
       if (typeof file.value !== "string") {
         errors.push(new FGAModFileValidationSingleError({
@@ -160,13 +203,25 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
           msg: `contents items should use fga file extension, got ${file.value}`,
           ...getLineAndColumnFromNode(file, lineCounter)
         }));
+        continue;
       }
+
+      contentsValue.push({
+        value: file.value,
+        ...getLineAndColumnFromNode(file, lineCounter)
+      });
     }
+    const node = yamlDoc.getIn(["contents"], true);
+    parsedModFile.contents = {
+      value: contentsValue,
+      ...getLineAndColumnFromNode(node, lineCounter)
+    };
+
   }
 
   if (errors.length) {
     throw new FGAModFileValidationError(errors);
   }
 
-  return yamlDoc.toJSON();
+  return parsedModFile as ModFile;
 };

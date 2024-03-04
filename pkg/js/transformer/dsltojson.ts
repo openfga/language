@@ -97,6 +97,8 @@ interface StackRelation {
  */
 class OpenFgaDslListener extends OpenFGAListener {
   public authorizationModel: Partial<AuthorizationModel> = {};
+  public typeDefExtensions: Map<string, TypeDefinition> = new Map();
+
   private currentTypeDef: Partial<TypeDefinition> | undefined;
   private currentRelation: Partial<Relation> | undefined;
   private currentCondition: Condition | undefined;
@@ -145,13 +147,11 @@ class OpenFgaDslListener extends OpenFGAListener {
     };
 
     if (this.isModularModel) {
-      //@ts-expect-error
-      this.currentTypeDef.metadata.module = this.moduleName;
+      this.currentTypeDef.metadata!.module = this.moduleName;
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  exitTypeDef = (_ctx: TypeDefContext) => {
+  exitTypeDef = (ctx: TypeDefContext) => {
     if (!this.currentTypeDef?.type) {
       return;
     }
@@ -165,6 +165,11 @@ class OpenFgaDslListener extends OpenFGAListener {
     }
 
     this.authorizationModel.type_definitions?.push(this.currentTypeDef as TypeDefinition);
+
+    if (ctx.EXTEND()) {
+      this.typeDefExtensions.set(this.currentTypeDef.type, this.currentTypeDef as TypeDefinition);
+    }
+
     this.currentTypeDef = undefined;
   };
 
@@ -203,6 +208,10 @@ class OpenFgaDslListener extends OpenFGAListener {
       this.currentTypeDef!.metadata!.relations![relationName] = {
         directly_related_user_types: directlyRelatedUserTypes,
       };
+
+      if (this.isModularModel) {
+        this.currentTypeDef!.metadata!.relations![relationName].module = this.moduleName;
+      }
     }
 
     this.currentRelation = undefined;
@@ -334,7 +343,6 @@ class OpenFgaDslListener extends OpenFGAListener {
     };
 
     if (this.isModularModel) {
-      //@ts-expect-error
       this.currentCondition.metadata = {
         module: this.moduleName,
       };
@@ -479,4 +487,29 @@ export function transformDSLToJSONObject(data: string): Omit<AuthorizationModel,
  */
 export function transformDSLToJSON(data: string): string {
   return JSON.stringify(transformDSLToJSONObject(data));
+}
+
+interface ModularDSLTransformResult {
+  authorizationModel: Omit<AuthorizationModel, "id">;
+  typeDefExtensions: Map<string, TypeDefinition>;
+}
+
+/**
+ * transformModularDSLToJSONObject - Converts a part of a modular model in DSL syntax to the json syntax accepted by
+ * OpenFGA API and also returns the type definitions that are extended in the DSL if any are.
+ * @internal
+ * @param {string} data
+ * @returns {ModularDSLTransformResult}
+ */
+export function transformModularDSLToJSONObject(data: string): ModularDSLTransformResult {
+  const { listener, errorListener } = parseDSL(data);
+
+  if (errorListener.errors.length) {
+    throw new DSLSyntaxError(errorListener.errors);
+  }
+
+  return {
+    authorizationModel: listener.authorizationModel as Omit<AuthorizationModel, "id">,
+    typeDefExtensions: listener.typeDefExtensions,
+  };
 }

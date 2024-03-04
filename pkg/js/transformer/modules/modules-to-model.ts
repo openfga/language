@@ -1,7 +1,13 @@
-import { AuthorizationModel , Condition , TypeDefinition } from "@openfga/sdk";
+import { AuthorizationModel, Condition, TypeDefinition } from "@openfga/sdk";
 import { validateJSON } from "../../validator";
-import { transformDSLToJSONObject } from "../dsltojson";
-import { BaseError, DSLSyntaxError, ModelValidationError, ModuleTransformationError, ModuleTransformationSingleError } from "../../errors";
+import { transformModularDSLToJSONObject } from "../dsltojson";
+import {
+  BaseError,
+  DSLSyntaxError,
+  ModelValidationError,
+  ModuleTransformationError,
+  ModuleTransformationSingleError
+} from "../../errors";
 
 export interface ModuleFiles {
   name: string;
@@ -9,44 +15,71 @@ export interface ModuleFiles {
 }
 
 export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<AuthorizationModel, "id"> => {
-  // Build all the individual models
-  // Validate them (no conflicting names that aren't extensions?)
-  // Copy over any extensions?
-  // Stitch them into the main model
   const model: Omit<AuthorizationModel, "id"> = {
     schema_version: "1.2",
     type_definitions: [],
     conditions: {}
   };
 
-  const types: TypeDefinition[] = [];
+  const rawTypeDefs: TypeDefinition[] = [];
+  const types = new Set<string>();
+  const extendedTypeDefs: Record<string, TypeDefinition[]> = {};
   const conditions = new Map<string, Condition>();
   const errors: BaseError[] = [];
 
   for (const { name, contents } of files) {
     try {
-      const model = transformDSLToJSONObject(contents) as AuthorizationModel;
+      const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
-      types.push(...model.type_definitions.map((type) => ({
-        ...type,
-        metadata: {
-          ...type.metadata,
-          file: name,
+      for (const typeDef of authorizationModel.type_definitions) {
+        // Check if we've already seen this type and it's not marked as an extension
+        if (types.has(typeDef.type) && !typeDefExtensions.has(typeDef.type)) {
+          errors.push(new ModuleTransformationSingleError({
+            msg: `duplicate type definition ${typeDef.type}`
+          }));
+          continue;
         }
-      })));
 
-      if (model.conditions) {
-        for (const [conditionName, condition] of Object.entries(model.conditions)) {
+        // Add the file metadata to any relations metadata that exists
+        if (typeDef.metadata?.relations) {
+          for (const relationName of Object.keys(typeDef.metadata.relations)) {
+            typeDef.metadata.relations[relationName].file = name;
+          }
+        }
+
+        // If this is an extension mark it to be merged later
+        if (typeDefExtensions.has(typeDef.type)) {
+          if (!extendedTypeDefs[name]) {
+            extendedTypeDefs[name] = [];
+          }
+          extendedTypeDefs[name].push(typeDef);
+          continue;
+        }
+
+        types.add(typeDef.type);
+        rawTypeDefs.push({
+          ...typeDef,
+          metadata: {
+            ...typeDef.metadata,
+            file: name,
+          }
+        });
+      }
+
+      if (authorizationModel.conditions) {
+        for (const [conditionName, condition] of Object.entries(authorizationModel.conditions)) {
+          // If we have already seen a condition with this name mark it as duplicate
           if (conditions.has(conditionName)) {
             errors.push(new ModuleTransformationSingleError({
               msg: `duplicate condition ${conditionName}`
             }));
+            continue;
           }
           conditions.set(conditionName, {
             ...condition as Condition,
             metadata: {
               ...(condition as Condition).metadata,
-              file: conditionName,
+              file: name,
             }
           });
         }
@@ -60,7 +93,58 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
     }
   }
 
-  model.type_definitions = types;
+  for (const [filename, typeDefs] of Object.entries(extendedTypeDefs)) {
+    for (const typeDef of typeDefs) {
+      const originalIndex = rawTypeDefs.findIndex((t) => t.type === typeDef.type);
+      const original = rawTypeDefs[originalIndex];
+
+      if (!original) {
+        errors.push(new ModuleTransformationSingleError({
+          msg: `extended type ${typeDef.type} does not exist`
+        }));
+        continue;
+      }
+
+      if (!original.relations || !Object.keys(original.relations).length) {
+        original.relations = typeDef.relations;
+        if (!original.metadata) {
+          original.metadata = {};
+        }
+        original.metadata.relations = typeDef.metadata!.relations;
+        rawTypeDefs[originalIndex] = original;
+        continue;
+      }
+
+      const existingRelationNames = Object.keys(original.relations);
+
+      for (const [name, relation] of Object.entries(typeDef.relations || {})) {
+        if (existingRelationNames.includes(name)) {
+          errors.push(new ModuleTransformationSingleError({
+            msg: `relation ${name} already exists on type ${typeDef.type}`
+          }));
+          continue;
+        }
+
+        const relationsMeta = Object.entries(typeDef.metadata?.relations || {}).find(([n]) => n === name);
+        relationsMeta![1].file = filename;
+        original.relations = {
+          ...original.relations,
+          [name]: relation
+        };
+
+        original.metadata!.relations = {
+          ...original.metadata!.relations,
+          [name]: relationsMeta![1]
+        };
+      }
+
+      rawTypeDefs[originalIndex] = original;
+    }
+  }
+
+  const typeDefs = rawTypeDefs;
+
+  model.type_definitions = Array.from(typeDefs);
   model.conditions = Object.fromEntries(conditions);
 
   try {
@@ -74,7 +158,6 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
   if (errors.length !== 0) {
     throw new ModuleTransformationError(errors);
   }
-
 
   return model;
 };

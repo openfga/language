@@ -1,9 +1,10 @@
 {
+  "schema_version": "1.2",
   "conditions": {
     "a_check": {
       "expression": "val <= 10",
       "metadata": {
-        "file": "a_check",
+        "file": "org.fga",
         "module": "org"
       },
       "name": "a_check",
@@ -14,7 +15,6 @@
       }
     }
   },
-  "schema_version": "1.2",
   "type_definitions": [
     {
       "metadata": {
@@ -35,7 +35,9 @@
                 "condition": "a_check",
                 "type": "user"
               }
-            ]
+            ],
+            "module": "org",
+            "file": "org.fga"
           }
         }
       },

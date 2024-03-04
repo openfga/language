@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.2",
+  "conditions": {
+    "a_check": {
+      "expression": "val <= 10",
+      "metadata": {
+        "file": "org.fga",
+        "module": "org"
+      },
+      "name": "a_check",
+      "parameters": {
+        "val": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    }
+  },
+  "type_definitions": [
+    {
+      "metadata": {
+        "file": "core.fga",
+        "module": "core",
+        "relations": {
+          "another_thing": {
+            "directly_related_user_types":  [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "file": "board.fga"
+          },
+          "manager":  {
+            "directly_related_user_types":  [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "org",
+            "file": "org.fga"
+          },
+          "thing":  {
+            "directly_related_user_types":  [
+              {
+                "type": "other"
+              }
+            ],
+            "module": "core",
+            "file": "core.fga"
+          }
+        }
+      },
+      "relations": {
+        "thing": {
+         "this": {}
+        },
+        "another_thing": {
+          "this": {}
+        },
+        "manager": {
+          "this": {}
+        }
+      },
+      "type": "user"
+    },
+    {
+      "type": "other",
+      "relations": {
+        "second_thing": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "module": "core",
+        "file": "core.fga",
+        "relations": {
+          "second_thing": {
+            "directly_related_user_types":  [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "file": "board.fga"
+          }
+        }
+      }
+    },
+    {
+      "metadata": {
+        "file": "org.fga",
+        "module": "org",
+        "relations": {
+          "member": {
+            "directly_related_user_types": [
+              {
+                "condition": "a_check",
+                "type": "user"
+              }
+            ],
+            "module": "org",
+            "file": "org.fga"
+          }
+        }
+      },
+      "relations": {
+        "member": {
+          "this": {}
+        }
+      },
+      "type": "org"
+    }
+  ]
+}

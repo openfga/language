@@ -1,14 +1,14 @@
 [
   {
-    "msg": "duplicate condition a_check",
+    "msg": "duplicate type definition user",
     "metadata": {
         "errorType": "transformation-error"
     }
   },
   {
-    "msg": "the type `user` is a duplicate.",
+    "msg": "duplicate condition a_check",
     "metadata": {
-        "errorType": "duplicated-error"
+        "errorType": "transformation-error"
     }
   }
 ]

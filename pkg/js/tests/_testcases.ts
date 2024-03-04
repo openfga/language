@@ -165,11 +165,13 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     }
 
     const modules: ModuleFiles[] = [];
-    for (const file of fs.readdirSync(path.join(testDataPath, testCase.name!, "module"), {
+    const files = fs.readdirSync(path.join(testDataPath, testCase.name!, "module"), {
       withFileTypes: true,
       recursive: true,
-    })) {
-      if (!file.isFile()) {
+    });
+
+    for (const file of files) {
+      if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
         continue;
       }
 

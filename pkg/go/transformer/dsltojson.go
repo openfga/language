@@ -44,6 +44,8 @@ type OpenFgaDslListener struct {
 	currentCondition   *pb.Condition
 	rewriteStack       []*stackRelation
 	isModularModel     bool
+	moduleName         string
+	typeDefExtensions  map[string]*pb.TypeDefinition
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
@@ -98,8 +100,12 @@ func (l *OpenFgaDslListener) EnterMain(_ *parser.MainContext) {
 	l.authorizationModel.Conditions = map[string]*pb.Condition{}
 }
 
-func (l *OpenFgaDslListener) ExitModuleHeader(_ *parser.ModuleHeaderContext) {
+func (l *OpenFgaDslListener) ExitModuleHeader(ctx *parser.ModuleHeaderContext) {
 	l.isModularModel = true
+	if ctx.GetModuleName() != nil {
+		l.moduleName = ctx.GetModuleName().GetText()
+		l.typeDefExtensions = map[string]*pb.TypeDefinition{}
+	}
 }
 
 func (l *OpenFgaDslListener) ExitModelHeader(ctx *parser.ModelHeaderContext) {
@@ -128,6 +134,10 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 			Relations: map[string]*pb.RelationMetadata{},
 		},
 	}
+
+	if l.isModularModel {
+		l.currentTypeDef.Metadata.Module = l.moduleName
+	}
 }
 
 func (l *OpenFgaDslListener) EnterConditions(_ *parser.ConditionsContext) {
@@ -151,6 +161,12 @@ func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
 		Name:       conditionName,
 		Expression: "",
 		Parameters: map[string]*pb.ConditionParamTypeRef{},
+	}
+
+	if l.isModularModel {
+		l.currentCondition.Metadata = &pb.ConditionMetadata{
+			Module: l.moduleName,
+		}
 	}
 }
 
@@ -215,16 +231,22 @@ func (l *OpenFgaDslListener) ExitCondition(_ *parser.ConditionContext) {
 	}
 }
 
-func (l *OpenFgaDslListener) ExitTypeDef(_ *parser.TypeDefContext) {
+func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
 	if l.currentTypeDef == nil || l.currentTypeDef.GetType() == "" {
 		return
 	}
 
-	if len(l.currentTypeDef.GetMetadata().GetRelations()) == 0 {
+	if !l.isModularModel && len(l.currentTypeDef.GetMetadata().GetRelations()) == 0 {
 		l.currentTypeDef.Metadata = nil
+	} else if l.isModularModel && len(l.currentTypeDef.GetMetadata().GetRelations()) == 0 {
+		l.currentTypeDef.Metadata.Relations = nil
 	}
 
 	l.authorizationModel.TypeDefinitions = append(l.authorizationModel.TypeDefinitions, l.currentTypeDef)
+
+	if ctx.EXTEND() != nil && l.isModularModel {
+		l.typeDefExtensions[l.currentTypeDef.GetType()] = l.currentTypeDef
+	}
 
 	l.currentTypeDef = nil
 }
@@ -258,6 +280,15 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 		directlyRelatedUserTypes := l.currentRelation.TypeInfo.GetDirectlyRelatedUserTypes()
 		l.currentTypeDef.Metadata.Relations[relationName] = &pb.RelationMetadata{
 			DirectlyRelatedUserTypes: directlyRelatedUserTypes,
+		}
+
+		isExtension := false
+		if parent, ok := ctx.GetParent().(*parser.TypeDefContext); ok {
+			isExtension = parent.EXTEND() != nil
+		}
+
+		if l.isModularModel && isExtension {
+			l.currentTypeDef.Metadata.Relations[relationName].Module = l.moduleName
 		}
 	}
 
@@ -542,4 +573,16 @@ func MustTransformDSLToJSON(data string) string {
 	}
 
 	return jsonString
+}
+
+// TransformModularDSLToProto - Converts a part of a modular model in DSL syntax to the json syntax accepted by
+// OpenFGA API and also returns the type definitions that are extended in the DSL if any are.
+func TransformModularDSLToProto(data string) (*pb.AuthorizationModel, map[string]*pb.TypeDefinition, error) {
+	listener, errorListener := ParseDSL(data)
+
+	if errorListener.Errors != nil {
+		return nil, nil, errorListener.Errors
+	}
+
+	return &listener.authorizationModel, listener.typeDefExtensions, nil
 }

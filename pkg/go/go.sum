@@ -26,6 +26,8 @@ github.com/openfga/api/proto v0.0.0-20240201160513-05de9d8be3ee h1:ZqeLB0dxo4XgR
 github.com/openfga/api/proto v0.0.0-20240201160513-05de9d8be3ee/go.mod h1:XF/4W9je/FGBZQ2M5pbQnrzdKF4VcEEtds3ole9sW5E=
 github.com/openfga/api/proto v0.0.0-20240304140508-9ce22ac12676 h1:X8VO/iReZVYiBrWA6CqdISb0Jp9xofJe9j7ZafsmMAk=
 github.com/openfga/api/proto v0.0.0-20240304140508-9ce22ac12676/go.mod h1:XF/4W9je/FGBZQ2M5pbQnrzdKF4VcEEtds3ole9sW5E=
+github.com/openfga/api/proto v0.0.0-20240304160510-ebfff7f01e38 h1:GiazOjV9wOMqTkpnmfGLxFJaRU9rQFG0fCpsxIEaRQY=
+github.com/openfga/api/proto v0.0.0-20240304160510-ebfff7f01e38/go.mod h1:XF/4W9je/FGBZQ2M5pbQnrzdKF4VcEEtds3ole9sW5E=
 github.com/openfga/go-sdk v0.3.6-0.20240304141015-b00eb46bfc5c h1:WrG4QstYgyJYZdRHTzYreRj8jdye3yDRAws0HRtl0k4=
 github.com/openfga/go-sdk v0.3.6-0.20240304141015-b00eb46bfc5c/go.mod h1:dybCHDtJDwkmtlxxtgQrHR2c8HPVOwN493drbXv46Ec=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

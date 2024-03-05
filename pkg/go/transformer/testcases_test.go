@@ -1,12 +1,15 @@
 package transformer_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/openfga/language/pkg/go/transformer"
 )
 
 type validTestCase struct {
@@ -168,4 +171,98 @@ func loadModFileTestCases() ([]fgdModFileTestCase, error) {
 	err = yaml.Unmarshal(data, &testCases)
 
 	return testCases, err //nolint:wrapcheck
+}
+
+type moduleTestCase struct {
+	Name           string `json:"name" yaml:"name"`
+	Modules        []transformer.ModuleFile
+	JSON           string `json:"json" yaml:"json"`
+	Skip           bool
+	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
+}
+
+func (testCase *moduleTestCase) GetErrorString() string {
+	pluralS := ""
+	if len(testCase.ExpectedErrors) > 1 {
+		pluralS = "s"
+	}
+
+	errorsString := []string{}
+	for _, err := range testCase.ExpectedErrors {
+		errorsString = append(
+			errorsString,
+			fmt.Sprintf("transformation error at line=%d, column=%d: %s", err.Line.Start, err.Column.Start, err.Msg),
+		)
+	}
+
+	return fmt.Sprintf(
+		"%d error%s occurred:\n\t* %s\n\n",
+		len(testCase.ExpectedErrors),
+		pluralS,
+		strings.Join(errorsString, "\n\t* "),
+	)
+}
+
+func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
+	testDataPath := filepath.Join("../../../tests", "data", "transformer-module")
+
+	entries, err := os.ReadDir(testDataPath)
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	testCases := []moduleTestCase{}
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+
+		testCase := moduleTestCase{Name: e.Name()}
+
+		skipFile, _ := os.ReadFile(filepath.Join(testDataPath, testCase.Name, "test.skip"))
+		if skipFile != nil {
+			testCase.Skip = true
+		}
+
+		modelFile := filepath.Join(testDataPath, testCase.Name, "authorization-model.json")
+		if jsonData, err := os.ReadFile(modelFile); err == nil {
+			testCase.JSON = string(jsonData)
+		}
+
+		errorsFile := filepath.Join(testDataPath, testCase.Name, "expected_errors.json")
+		if errorsData, err := os.ReadFile(errorsFile); err == nil {
+			err := json.Unmarshal(errorsData, &testCase.ExpectedErrors)
+			if err != nil {
+				return nil, err //nolint:wrapcheck
+			}
+		}
+
+		moduleDirectory := filepath.Join(testDataPath, testCase.Name, "module")
+
+		moduleFiles, err := os.ReadDir(moduleDirectory)
+		if err != nil {
+			return nil, err //nolint:wrapcheck
+		}
+
+		modules := []transformer.ModuleFile{}
+
+		for _, file := range moduleFiles {
+			if file.IsDir() || !strings.HasSuffix(file.Name(), ".fga") {
+				continue
+			}
+
+			moduleFile, _ := os.ReadFile(filepath.Join(moduleDirectory, file.Name()))
+
+			modules = append(modules, transformer.ModuleFile{
+				Name:     file.Name(),
+				Contents: string(moduleFile),
+			})
+		}
+
+		testCase.Modules = modules
+		testCases = append(testCases, testCase)
+	}
+
+	return testCases, nil
 }

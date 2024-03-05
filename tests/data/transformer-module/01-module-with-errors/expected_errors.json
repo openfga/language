@@ -1,14 +1,8 @@
 [
   {
-    "msg": "duplicate type definition user",
-    "metadata": {
-        "errorType": "transformation-error"
-    }
+    "msg": "duplicate type definition user"
   },
   {
-    "msg": "duplicate condition a_check",
-    "metadata": {
-        "errorType": "transformation-error"
-    }
+    "msg": "duplicate condition a_check"
   }
 ]

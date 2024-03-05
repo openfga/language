@@ -22,8 +22,7 @@ describe("transformModuleFilesToModel", () => {
                     expect(exception.message).toEqual(
                         `${errorsCount} error${errorsCount === 1 ? "" : "s"} occurred:\n\t* ${testCase.expected_errors
                         .map((err: BaseError) => {
-                            //@ts-expect-error
-                            let msg = `${err.metadata?.errorType || "validation-error"} error: `;
+                            let msg = "transformation-error error: ";
                             if (err?.line) {
                                 msg += ` at line ${err.line.start}, column=${err.column?.start} :`;
                             }
@@ -34,9 +33,9 @@ describe("transformModuleFilesToModel", () => {
                     );
 
                     // TODO: need to enable this
-                    // for (let index = 0; index < errorsCount; index++) {
-                    //     expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
-                    // }
+                    for (let index = 0; index < errorsCount; index++) {
+                        expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
+                    }
                 }
             }
         });

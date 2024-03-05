@@ -21,7 +21,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
     conditions: {}
   };
 
-  const rawTypeDefs: TypeDefinition[] = [];
+  const typeDefs: TypeDefinition[] = [];
   const types = new Set<string>();
   const extendedTypeDefs: Record<string, TypeDefinition[]> = {};
   const conditions = new Map<string, Condition>();
@@ -40,13 +40,6 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
           continue;
         }
 
-        // Add the file metadata to any relations metadata that exists
-        if (typeDef.metadata?.relations) {
-          for (const relationName of Object.keys(typeDef.metadata.relations)) {
-            typeDef.metadata.relations[relationName].file = name;
-          }
-        }
-
         // If this is an extension mark it to be merged later
         if (typeDefExtensions.has(typeDef.type)) {
           if (!extendedTypeDefs[name]) {
@@ -57,7 +50,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
         }
 
         types.add(typeDef.type);
-        rawTypeDefs.push({
+        typeDefs.push({
           ...typeDef,
           metadata: {
             ...typeDef.metadata,
@@ -93,10 +86,10 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
     }
   }
 
-  for (const [filename, typeDefs] of Object.entries(extendedTypeDefs)) {
-    for (const typeDef of typeDefs) {
-      const originalIndex = rawTypeDefs.findIndex((t) => t.type === typeDef.type);
-      const original = rawTypeDefs[originalIndex];
+  for (const [filename, extended] of Object.entries(extendedTypeDefs)) {
+    for (const typeDef of extended) {
+      const originalIndex = typeDefs.findIndex((t) => t.type === typeDef.type);
+      const original = typeDefs[originalIndex];
 
       if (!original) {
         errors.push(new ModuleTransformationSingleError({
@@ -111,7 +104,13 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
           original.metadata = {};
         }
         original.metadata.relations = typeDef.metadata!.relations;
-        rawTypeDefs[originalIndex] = original;
+
+        // Add the file metadata to any relations metadata that exists
+        for (const relationName of Object.keys(original.metadata.relations!)) {
+          original.metadata.relations![relationName].file = filename;
+        }
+
+        typeDefs[originalIndex] = original;
         continue;
       }
 
@@ -126,23 +125,23 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
         }
 
         const relationsMeta = Object.entries(typeDef.metadata?.relations || {}).find(([n]) => n === name);
-        relationsMeta![1].file = filename;
-        original.relations = {
-          ...original.relations,
-          [name]: relation
-        };
 
-        original.metadata!.relations = {
-          ...original.metadata!.relations,
-          [name]: relationsMeta![1]
-        };
+        if (!relationsMeta) {
+          errors.push(new ModuleTransformationSingleError({
+            msg: `unable to find relation metadata for ${name}`
+          }));
+          continue;
+        }
+
+        const [, meta] = relationsMeta;
+        meta.file = filename;
+        original.relations[name] = relation;
+        original.metadata!.relations![name] = meta;
       }
 
-      rawTypeDefs[originalIndex] = original;
+      typeDefs[originalIndex] = original;
     }
   }
-
-  const typeDefs = rawTypeDefs;
 
   model.type_definitions = Array.from(typeDefs);
   model.conditions = Object.fromEntries(conditions);
@@ -155,7 +154,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
     }
   }
 
-  if (errors.length !== 0) {
+  if (errors.length) {
     throw new ModuleTransformationError(errors);
   }
 

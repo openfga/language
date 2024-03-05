@@ -209,7 +209,8 @@ class OpenFgaDslListener extends OpenFGAListener {
         directly_related_user_types: directlyRelatedUserTypes,
       };
 
-      if (this.isModularModel) {
+      // Only add the module name for a relation when we're parsing an extended type
+      if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {
         this.currentTypeDef!.metadata!.relations![relationName].module = this.moduleName;
       }
     }

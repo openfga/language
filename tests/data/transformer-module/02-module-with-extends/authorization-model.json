@@ -44,9 +44,7 @@
               {
                 "type": "other"
               }
-            ],
-            "module": "core",
-            "file": "core.fga"
+            ]
           }
         }
       },
@@ -97,9 +95,7 @@
                 "condition": "a_check",
                 "type": "user"
               }
-            ],
-            "module": "org",
-            "file": "org.fga"
+            ]
           }
         }
       },

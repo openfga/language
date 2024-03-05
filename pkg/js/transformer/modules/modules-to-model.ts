@@ -49,14 +49,9 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
           continue;
         }
 
+        typeDef.metadata!.file = name;
         types.add(typeDef.type);
-        typeDefs.push({
-          ...typeDef,
-          metadata: {
-            ...typeDef.metadata,
-            file: name,
-          }
-        });
+        typeDefs.push(typeDef);
       }
 
       if (authorizationModel.conditions) {
@@ -68,13 +63,8 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
             }));
             continue;
           }
-          conditions.set(conditionName, {
-            ...condition as Condition,
-            metadata: {
-              ...(condition as Condition).metadata,
-              file: name,
-            }
-          });
+          condition.metadata!.file = name;
+          conditions.set(conditionName, condition);
         }
       }
     } catch (error) {
@@ -88,6 +78,12 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
 
   for (const [filename, extended] of Object.entries(extendedTypeDefs)) {
     for (const typeDef of extended) {
+
+      if (!typeDef.relations) {
+        // TODO: Maybe should be an error case or at least a warning?
+        continue;
+      }
+
       const originalIndex = typeDefs.findIndex((t) => t.type === typeDef.type);
       const original = typeDefs[originalIndex];
 
@@ -98,7 +94,9 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
         continue;
       }
 
-      if (!original.relations || !Object.keys(original.relations).length) {
+      const existingRelationNames = Object.keys(original.relations || {});
+
+      if (!existingRelationNames || !existingRelationNames.length) {
         original.relations = typeDef.relations;
         if (!original.metadata) {
           original.metadata = {};
@@ -114,9 +112,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
         continue;
       }
 
-      const existingRelationNames = Object.keys(original.relations);
-
-      for (const [name, relation] of Object.entries(typeDef.relations || {})) {
+      for (const [name, relation] of Object.entries(typeDef.relations)) {
         if (existingRelationNames.includes(name)) {
           errors.push(new ModuleTransformationSingleError({
             msg: `relation ${name} already exists on type ${typeDef.type}`
@@ -135,7 +131,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
 
         const [, meta] = relationsMeta;
         meta.file = filename;
-        original.relations[name] = relation;
+        original.relations![name] = relation;
         original.metadata!.relations![name] = meta;
       }
 
@@ -143,7 +139,7 @@ export const transformModuleFilesToModel = (files: ModuleFiles[]): Omit<Authoriz
     }
   }
 
-  model.type_definitions = Array.from(typeDefs);
+  model.type_definitions = typeDefs;
   model.conditions = Object.fromEntries(conditions);
 
   try {

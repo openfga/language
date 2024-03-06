@@ -4,7 +4,7 @@ DOCKER_BINARY=docker
 all: build
 
 build:
-	gradlew build
+	./gradlew build
 
 clean:
 	gradlew clean

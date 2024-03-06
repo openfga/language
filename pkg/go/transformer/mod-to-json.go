@@ -8,10 +8,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ModFileStringProperty struct {
+	Value  string `json:"value"`
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
+}
+
+type ModFileArrayProperty struct {
+	Value  []ModFileStringProperty `json:"value"`
+	Line   int                     `json:"line"`
+	Column int                     `json:"column"`
+}
+
 type ModFile struct {
-	Schema   string   `json:"schema"`
-	Module   string   `json:"module"`
-	Contents []string `json:"contents"`
+	Schema   ModFileStringProperty `json:"schema"`
+	Module   ModFileStringProperty `json:"module"`
+	Contents ModFileArrayProperty  `json:"contents"`
 }
 
 type YAMLModFile struct {
@@ -88,7 +100,11 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			Column: yamlModFile.Schema.Column,
 		})
 	default:
-		modFile.Schema = yamlModFile.Schema.Value
+		modFile.Schema = ModFileStringProperty{
+			Value:  yamlModFile.Schema.Value,
+			Line:   yamlModFile.Schema.Line,
+			Column: yamlModFile.Schema.Column,
+		}
 	}
 
 	switch {
@@ -105,7 +121,11 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			Column: yamlModFile.Module.Column,
 		})
 	default:
-		modFile.Module = yamlModFile.Module.Value
+		modFile.Module = ModFileStringProperty{
+			Value:  yamlModFile.Module.Value,
+			Line:   yamlModFile.Module.Line,
+			Column: yamlModFile.Module.Column,
+		}
 	}
 
 	switch {
@@ -122,10 +142,9 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			Column: yamlModFile.Contents.Column,
 		})
 	default:
-		contents := []string{}
-		for _, file := range yamlModFile.Contents.Content {
-			contents = append(contents, file.Value)
+		contents := []ModFileStringProperty{}
 
+		for _, file := range yamlModFile.Contents.Content {
 			if file.Tag != stringNode {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg:    "unexpected contents item type, expected string got value " + file.Value,
@@ -139,9 +158,19 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 					Column: file.Column,
 				})
 			}
+
+			contents = append(contents, ModFileStringProperty{
+				Value:  file.Value,
+				Line:   file.Line,
+				Column: file.Column,
+			})
 		}
 
-		modFile.Contents = contents
+		modFile.Contents = ModFileArrayProperty{
+			Value:  contents,
+			Line:   yamlModFile.Contents.Line,
+			Column: yamlModFile.Contents.Column,
+		}
 	}
 
 	if len(errors.Errors) != 0 {

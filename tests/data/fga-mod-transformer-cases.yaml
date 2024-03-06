@@ -10,9 +10,84 @@
       - wiki.fga
   json: |
     {
-      "schema": "1.2",
-      "module": "acme",
-      "contents": ["core.fga", "team1/project.fga", "team1/board.fga", "wiki.fga"]
+      "schema": {
+        "value": "1.2",
+        "line": {
+          "start": 1,
+          "end": 1
+        },
+        "column": {
+          "start": 9,
+          "end": 14
+        }
+      },
+      "module":{
+        "value": "acme",
+        "line": {
+          "start": 2,
+          "end": 2
+        },
+        "column": {
+          "start": 9,
+          "end": 13
+        }
+      },
+      "contents": {
+        "value": [
+          {
+            "value": "core.fga",
+            "line": {
+              "start": 4,
+              "end": 4
+            },
+            "column": {
+              "start": 5,
+              "end": 13
+            }
+          },
+          {
+            "value": "team1/project.fga",
+            "line": {
+              "start": 5,
+              "end": 5
+            },
+            "column": {
+              "start": 5,
+              "end": 22
+            }
+          },
+          {
+            "value": "team1/board.fga",
+            "line": {
+              "start": 6,
+              "end": 6
+            },
+            "column": {
+              "start": 5,
+              "end": 20
+            }
+          },
+          {
+            "value": "wiki.fga",
+            "line": {
+              "start": 7,
+              "end": 7
+            },
+            "column": {
+              "start": 5,
+              "end": 13
+            }
+          }
+        ],
+        "line": {
+          "start": 4,
+          "end": 8
+        },
+        "column": {
+          "start": 3,
+          "end": 1
+        }
+      }
     }
 - name: missing schema
   modFile: |

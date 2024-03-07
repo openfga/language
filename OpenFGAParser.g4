@@ -10,11 +10,11 @@ moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=IDENTIFIE
 
 // Type Definitions
 typeDefs: typeDef*;
-typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=IDENTIFIER (NEWLINE RELATIONS relationDeclaration+)?;
+typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=identifier (NEWLINE RELATIONS relationDeclaration+)?;
 
 // Relation definitions
 relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
-relationName: IDENTIFIER;
+relationName: identifier;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping | relationRecurse) (relationDefPartials)?;
 relationDefNoDirect: (relationDefGrouping | relationRecurseNoDirect) (relationDefPartials)?;
@@ -63,6 +63,8 @@ parameterName: IDENTIFIER;
 parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_PARAM_TYPE GREATER);
 
 multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
+
+identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER;
 
 conditionExpression: ((
 IDENTIFIER |

@@ -132,11 +132,11 @@ class OpenFgaDslListener extends OpenFGAListener {
     }
 
     if (ctx.EXTEND() && !this.isModularModel) {
-      ctx.parser?.notifyErrorListeners("extend can only be used in a modular model", ctx._typeName, undefined);
+      ctx.parser?.notifyErrorListeners("extend can only be used in a modular model", ctx._typeName.start, undefined);
     }
 
     this.currentTypeDef = {
-      type: ctx._typeName.text,
+      type: ctx._typeName.getText(),
       relations: {},
       metadata: { relations: {} },
     };

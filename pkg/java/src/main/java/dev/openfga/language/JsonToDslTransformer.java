@@ -6,6 +6,7 @@ import dev.openfga.sdk.api.model.*;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.joining;
@@ -111,7 +112,7 @@ public class JsonToDslTransformer {
     private StringBuilder joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
         List<Userset> children = null;
         if (relationDefinition != null && childrenAccessor.apply(relationDefinition) != null) {
-            children = childrenAccessor.apply(relationDefinition).getChild();
+            children = prioritizeDirectAssignment(childrenAccessor.apply(relationDefinition).getChild());
         }
         children = requireNonNullElseGet(children, ArrayList::new);
 
@@ -128,6 +129,21 @@ public class JsonToDslTransformer {
 
         return formattedUnion;
     }
+
+private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) {
+        if (usersets != null && !usersets.isEmpty()) {
+            var thisPosition = IntStream.range(0, usersets.size())
+                    .filter(i -> usersets.get(i).getThis() != null)
+                    .findFirst()
+                    .orElse(-1);
+            if (thisPosition > 0) {
+                var thisUserset = usersets.remove(thisPosition);
+                usersets.add(0, thisUserset);
+            }
+        }
+
+        return usersets;
+    };
 
     private static class DirectAssignmentValidator {
         private int occured = 0;

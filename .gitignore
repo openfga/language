@@ -29,3 +29,8 @@ node_modules/
 # Generated code
 /OpenFGALexer.tokens
 /gen/OpenFGALexer.*
+
+# build files
+.gradle
+build
+target

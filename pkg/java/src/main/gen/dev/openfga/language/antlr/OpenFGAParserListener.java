@@ -238,6 +238,16 @@ public interface OpenFGAParserListener extends ParseTreeListener {
 	 */
 	void exitMultiLineComment(OpenFGAParser.MultiLineCommentContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link OpenFGAParser#identifier}.
+	 * @param ctx the parse tree
+	 */
+	void enterIdentifier(OpenFGAParser.IdentifierContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link OpenFGAParser#identifier}.
+	 * @param ctx the parse tree
+	 */
+	void exitIdentifier(OpenFGAParser.IdentifierContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link OpenFGAParser#conditionExpression}.
 	 * @param ctx the parse tree
 	 */

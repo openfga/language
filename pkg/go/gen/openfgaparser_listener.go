@@ -81,6 +81,9 @@ type OpenFGAParserListener interface {
 	// EnterMultiLineComment is called when entering the multiLineComment production.
 	EnterMultiLineComment(c *MultiLineCommentContext)
 
+	// EnterIdentifier is called when entering the identifier production.
+	EnterIdentifier(c *IdentifierContext)
+
 	// EnterConditionExpression is called when entering the conditionExpression production.
 	EnterConditionExpression(c *ConditionExpressionContext)
 
@@ -155,6 +158,9 @@ type OpenFGAParserListener interface {
 
 	// ExitMultiLineComment is called when exiting the multiLineComment production.
 	ExitMultiLineComment(c *MultiLineCommentContext)
+
+	// ExitIdentifier is called when exiting the identifier production.
+	ExitIdentifier(c *IdentifierContext)
 
 	// ExitConditionExpression is called when exiting the conditionExpression production.
 	ExitConditionExpression(c *ConditionExpressionContext)

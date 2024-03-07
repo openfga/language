@@ -116,7 +116,7 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 	if ctx.EXTEND() != nil && !l.isModularModel {
 		ctx.GetParser().NotifyErrorListeners(
 			"extend can only be used in a modular model",
-			ctx.GetTypeName(),
+			ctx.GetTypeName().GetStart(),
 			nil,
 		)
 	}

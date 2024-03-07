@@ -31,6 +31,7 @@ TYPE: 'type';
 CONDITION: 'condition' -> pushMode(CONDITION_DEF);
 
 RELATIONS: 'relations';
+RELATION: 'relation';
 DEFINE: 'define';
 KEYWORD_WITH: 'with';
 

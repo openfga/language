@@ -1,6 +1,7 @@
 package transformer
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -56,7 +57,7 @@ func (e *ModuleValidationMultipleError) Error() string {
 }
 
 // TransformModuleFilesToModel transforms the provided modules into a singular authorization model.
-func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, error) {
+func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, error) { //nolint:funlen,gocognit,cyclop
 	model := &pb.AuthorizationModel{
 		SchemaVersion:   "1.2",
 		TypeDefinitions: []*pb.TypeDefinition{},
@@ -69,7 +70,7 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 	conditions := map[string]*pb.Condition{}
 	moduleFiles := map[string][]string{}
 
-	errors := &multierror.Error{}
+	transformErrors := &multierror.Error{}
 
 	for _, module := range modules {
 		lines := strings.Split(module.Contents, "\n")
@@ -77,7 +78,11 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 
 		mdl, typeDefExtensions, err := TransformModularDSLToProto(module.Contents)
 		if err != nil {
-			// add
+			var syntaxError *OpenFgaDslSyntaxMultipleError
+			if errors.As(err, &syntaxError) {
+				transformErrors = multierror.Append(transformErrors, syntaxError.Errors...)
+			}
+
 			continue
 		}
 
@@ -87,7 +92,7 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 				lineIndex := utils.GetTypeLineNumber(typeDef.GetType(), lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, typeDef.GetType())
 
-				errors = multierror.Append(errors, &ModuleTransformationSingleError{
+				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
 					Msg:    "duplicate type definition " + typeDef.GetType(),
 					File:   module.Name,
 					Line:   line,
@@ -116,7 +121,7 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 			if _, ok := conditions[name]; ok {
 				lineIndex := utils.GetConditionLineNumber(name, lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)
-				errors = multierror.Append(errors, &ModuleTransformationSingleError{
+				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
 					Msg:    "duplicate condition " + name,
 					File:   module.Name,
 					Line:   line,
@@ -142,7 +147,7 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 			if originalIndex == -1 {
 				lineIndex := utils.GetExtendedTypeLineNumber(typeDef.GetType(), lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, typeDef.GetType())
-				errors = multierror.Append(errors, &ModuleTransformationSingleError{
+				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
 					Msg:    fmt.Sprintf("extended type %s does not exist", typeDef.GetType()),
 					File:   filename,
 					Line:   line,
@@ -183,7 +188,7 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 				if slices.Contains(existingRelationNames, name) {
 					lineIndex := utils.GetRelationLineNumber(name, lines)
 					line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)
-					errors = multierror.Append(errors, &ModuleTransformationSingleError{
+					transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
 						Msg:    fmt.Sprintf("relation %s already exists on type %s", name, typeDef.GetType()),
 						File:   filename,
 						Line:   line,
@@ -213,9 +218,9 @@ func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, 
 	model.TypeDefinitions = rawTypeDefs
 	model.Conditions = conditions
 
-	if len(errors.Errors) != 0 {
+	if len(transformErrors.Errors) != 0 {
 		return nil, &ModuleValidationMultipleError{
-			Errors: errors.Errors,
+			Errors: transformErrors.Errors,
 		}
 	}
 

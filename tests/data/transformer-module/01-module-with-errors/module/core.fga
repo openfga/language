@@ -1,0 +1,11 @@
+module core
+
+type user
+
+type other
+  relations
+    define foo: [user]
+
+condition a_check(val: int) {
+  val <= 10
+}

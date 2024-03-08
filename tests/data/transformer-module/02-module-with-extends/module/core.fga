@@ -1,0 +1,7 @@
+module core
+
+type user
+  relations
+    define thing: [other]
+
+type other

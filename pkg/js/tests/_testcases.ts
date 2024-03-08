@@ -1,7 +1,13 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "yaml";
-import { DSLSyntaxSingleError, FGAModFileValidationSingleError, ModelValidationSingleError } from "../errors";
+import {
+  BaseError,
+  DSLSyntaxSingleError,
+  FGAModFileValidationSingleError,
+  ModelValidationSingleError,
+} from "../errors";
+import { ModuleFile } from "../transformer";
 
 interface ValidTestCase {
   name: string;
@@ -46,6 +52,11 @@ interface MultipleInvalidTestCase extends InvalidDSLSyntaxTestCase {
 interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
   modFile: string;
   expected_errors?: FGAModFileValidationSingleError[];
+}
+
+interface ModuleTestCase extends Omit<ValidTestCase, "dsl"> {
+  modules: ModuleFile[];
+  expected_errors?: BaseError[];
 }
 
 export function loadValidTransformerTestCases(): ValidTestCase[] {
@@ -115,4 +126,65 @@ export function loadModFileTestCases(): FGAModFileTestCase[] {
   return yaml.parse(
     fs.readFileSync(path.join(__dirname, "../../../tests", "data", "fga-mod-transformer-cases.yaml"), "utf-8"),
   ) as FGAModFileTestCase[];
+}
+
+export function loadModuleTestCases(): ModuleTestCase[] {
+  const testDataPath = path.join(__dirname, "../../../tests", "data", "transformer-module");
+  const entries = fs.readdirSync(testDataPath, { withFileTypes: true });
+
+  const testCases: ModuleTestCase[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const testCase: Partial<ModuleTestCase> = {
+      name: entry.name,
+    };
+
+    try {
+      const skipFile = fs.readFileSync(path.join(testDataPath, testCase.name!, "test.skip"));
+      if (skipFile) {
+        testCase.skip = true;
+      }
+    } catch (e) {
+      // do nothing
+    }
+
+    const modelPath = path.join(testDataPath, testCase.name!, "authorization-model.json");
+    if (fs.existsSync(modelPath)) {
+      const jsonData = fs.readFileSync(modelPath);
+      testCase.json = jsonData.toString("utf8");
+    }
+
+    const errorsPath = path.join(testDataPath, testCase.name!, "expected_errors.json");
+    if (fs.existsSync(errorsPath)) {
+      const expectedErrors = fs.readFileSync(errorsPath);
+      testCase.expected_errors = JSON.parse(expectedErrors.toString("utf8"));
+    }
+
+    const modules: ModuleFile[] = [];
+    const files = fs.readdirSync(path.join(testDataPath, testCase.name!, "module"), {
+      withFileTypes: true,
+      recursive: true,
+    });
+
+    for (const file of files) {
+      if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
+        continue;
+      }
+
+      modules.push({
+        name: file.name,
+        contents: fs.readFileSync(path.join(testDataPath, testCase.name!, "module", file.name), "utf8"),
+      });
+    }
+
+    testCase.modules = modules;
+
+    testCases.push(testCase as ModuleTestCase);
+  }
+
+  return testCases;
 }

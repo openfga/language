@@ -22,13 +22,11 @@ type ModFileArrayProperty struct {
 
 type ModFile struct {
 	Schema   ModFileStringProperty `json:"schema"`
-	Module   ModFileStringProperty `json:"module"`
 	Contents ModFileArrayProperty  `json:"contents"`
 }
 
 type YAMLModFile struct {
 	Schema   yaml.Node `yaml:"schema"`
-	Module   yaml.Node `yaml:"module"`
 	Contents yaml.Node `yaml:"contents"`
 }
 
@@ -104,27 +102,6 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			Value:  yamlModFile.Schema.Value,
 			Line:   yamlModFile.Schema.Line,
 			Column: yamlModFile.Schema.Column,
-		}
-	}
-
-	switch {
-	case yamlModFile.Module.IsZero():
-		errors = multierror.Append(errors, &ModFileValidationError{
-			Msg:    "missing module field",
-			Line:   1,
-			Column: 1,
-		})
-	case yamlModFile.Module.Tag != stringNode:
-		errors = multierror.Append(errors, &ModFileValidationError{
-			Msg:    "unexpected module type, expected string got value " + yamlModFile.Module.Value,
-			Line:   yamlModFile.Module.Line,
-			Column: yamlModFile.Module.Column,
-		})
-	default:
-		modFile.Module = ModFileStringProperty{
-			Value:  yamlModFile.Module.Value,
-			Line:   yamlModFile.Module.Line,
-			Column: yamlModFile.Module.Column,
 		}
 	}
 

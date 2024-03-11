@@ -53,7 +53,6 @@ func TestModFileToJSONTransformer(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.NotNil(t, actual.Schema.Value)
-				assert.NotNil(t, actual.Module.Value)
 				assert.NotNil(t, actual.Contents.Value)
 			}
 		})

@@ -722,27 +722,44 @@ function populateRelations(
 
     if (typeName === Keyword.SELF || typeName === ReservedKeywords.THIS) {
       const lineIndex = getTypeLineNumber(typeName, lines);
-      collector.raiseReservedTypeName(typeName, lineIndex);
+      collector.raiseReservedTypeName(typeName, lineIndex, {
+        file: typeDef.metadata?.file,
+        module: typeDef.metadata?.module,
+      });
     }
 
     if (!typeRegex.regex.test(typeName)) {
       const lineIndex = getTypeLineNumber(typeName, lines);
-      collector.raiseInvalidName(typeName, typeRegex.rule, undefined, lineIndex);
+      collector.raiseInvalidName(typeName, typeRegex.rule, undefined, lineIndex, {
+        file: typeDef.metadata?.file,
+        module: typeDef.metadata?.module,
+      });
     }
 
     for (const relationKey in typeDef.relations) {
       const relationName = relationKey;
+      let relationMeta = typeDef.metadata?.relations?.[relationKey];
+      if (!relationMeta?.module) {
+        // relation belongs to typedef
+        relationMeta = typeDef.metadata;
+      }
 
       if (relationName === Keyword.SELF || relationName === ReservedKeywords.THIS) {
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-        collector.raiseReservedRelationName(relationName, lineIndex);
+        collector.raiseReservedRelationName(relationName, lineIndex, {
+          file: relationMeta?.file,
+          module: relationMeta?.module,
+        });
       }
 
       if (!relationRegex.regex.test(relationName)) {
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-        collector.raiseInvalidName(relationName, relationRegex.rule, typeName, lineIndex);
+        collector.raiseInvalidName(relationName, relationRegex.rule, typeName, lineIndex, {
+          file: relationMeta?.file,
+          module: relationMeta?.module,
+        });
       }
     }
   });

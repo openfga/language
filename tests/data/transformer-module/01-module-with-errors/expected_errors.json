@@ -46,5 +46,65 @@
       "start": 12,
       "end": 15
     }
+  },
+  {
+    "msg": "relation 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' of type 'other' does not match naming rule: '^[^:#@\\s]{1,50}$'.",
+    "file": "core.fga",
+    "line": {
+      "start": 8,
+      "end": 8
+    },
+    "column": {
+      "start": 12,
+      "end": 112
+    },
+    "metadata" :{
+      "errorType": "invalid-name"
+    }
+  },
+  {
+    "msg": "a type cannot be named 'self' or 'this'.",
+    "file": "core.fga",
+    "line": {
+      "start": 10,
+      "end": 10
+    },
+    "column": {
+      "start": 6,
+      "end": 10
+    },
+    "metadata" :{
+      "errorType": "reserved-type-keywords"
+    }
+  },
+  {
+    "msg": "a relation cannot be named 'self' or 'this'.",
+    "file": "core.fga",
+    "line": {
+      "start": 12,
+      "end": 12
+    },
+    "column": {
+      "start": 12,
+      "end": 16
+    },
+    "metadata" :{
+      "errorType": "reserved-relation-keywords"
+    }
+  },
+  {
+    "msg": "type 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' does not match naming rule: '^[^:#@\\s]{1,254}$'.",
+    "file": "core.fga",
+    "line": {
+      "start": 14,
+      "end": 14
+    },
+    "column": {
+      "start": 6,
+      "end": 350
+    },
+    "metadata" :{
+      "errorType": "invalid-name"
+    }
   }
 ]

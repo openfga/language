@@ -113,6 +113,7 @@ export class ModelValidationSingleError extends BaseError {
     public metadata?: {
       symbol: string;
       errorType: ValidationError;
+      module? : string
     },
   ) {
     super(properties, metadata?.errorType || "validation");

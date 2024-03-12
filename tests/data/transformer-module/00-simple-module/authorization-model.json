@@ -4,8 +4,10 @@
     "a_check": {
       "expression": "val <= 10",
       "metadata": {
-        "file": "org.fga",
-        "module": "org"
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        }
       },
       "name": "a_check",
       "parameters": {
@@ -18,16 +20,20 @@
   "type_definitions": [
     {
       "metadata": {
-          "file": "core.fga",
-          "module": "core"
+        "module": "core",
+        "source_info": {
+          "file": "core.fga"
+        }
       },
       "relations": {},
       "type": "user"
     },
     {
       "metadata": {
-        "file": "org.fga",
         "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        },
         "relations": {
           "member": {
             "directly_related_user_types": [

@@ -4,8 +4,10 @@
     "a_check": {
       "expression": "val <= 10",
       "metadata": {
-        "file": "org.fga",
-        "module": "org"
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        }
       },
       "name": "a_check",
       "parameters": {
@@ -18,8 +20,10 @@
   "type_definitions": [
     {
       "metadata": {
-        "file": "core.fga",
         "module": "core",
+        "source_info": {
+          "file": "core.fga"
+        },
         "relations": {
           "another_thing": {
             "directly_related_user_types":  [
@@ -28,7 +32,9 @@
               }
             ],
             "module": "board",
-            "file": "board.fga"
+            "source_info": {
+              "file": "board.fga"
+            }
           },
           "manager":  {
             "directly_related_user_types":  [
@@ -37,7 +43,9 @@
               }
             ],
             "module": "org",
-            "file": "org.fga"
+            "source_info": {
+              "file": "org.fga"
+            }
           },
           "thing":  {
             "directly_related_user_types":  [
@@ -70,7 +78,9 @@
       },
       "metadata": {
         "module": "core",
-        "file": "core.fga",
+        "source_info": {
+          "file": "core.fga"
+        },
         "relations": {
           "second_thing": {
             "directly_related_user_types":  [
@@ -79,15 +89,19 @@
               }
             ],
             "module": "board",
-            "file": "board.fga"
+            "source_info": {
+              "file": "board.fga"
+            }
           }
         }
       }
     },
     {
       "metadata": {
-        "file": "org.fga",
         "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        },
         "relations": {
           "member": {
             "directly_related_user_types": [

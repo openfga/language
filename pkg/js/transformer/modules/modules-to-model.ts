@@ -64,7 +64,9 @@ export const transformModuleFilesToModel = (
           continue;
         }
 
-        typeDef.metadata!.file = name;
+        typeDef.metadata!.source_info = {
+          file: name
+        };
         types.add(typeDef.type);
         typeDefs.push(typeDef);
       }
@@ -84,7 +86,9 @@ export const transformModuleFilesToModel = (
             }));
             continue;
           }
-          condition.metadata!.file = name;
+          condition.metadata!.source_info = {
+            file: name
+          };
           conditions.set(conditionName, condition);
         }
       }
@@ -133,7 +137,9 @@ export const transformModuleFilesToModel = (
 
         // Add the file metadata to any relations metadata that exists
         for (const relationName of Object.keys(original.metadata.relations!)) {
-          original.metadata.relations![relationName].file = filename;
+          original.metadata.relations![relationName].source_info = {
+            file: filename
+          };
         }
 
         typeDefs[originalIndex] = original;
@@ -164,7 +170,9 @@ export const transformModuleFilesToModel = (
         }
 
         const [, meta] = relationsMeta;
-        meta.file = filename;
+        meta.source_info = {
+          file: filename
+        };
         original.relations![name] = relation;
         original.metadata!.relations![name] = meta;
       }

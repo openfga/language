@@ -365,7 +365,7 @@ export default class OpenFGAParser extends Parser {
 			this.state = 94;
 			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 95;
-			localctx._moduleName = this.match(OpenFGAParser.IDENTIFIER);
+			localctx._moduleName = this.identifier();
 			this.state = 97;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
@@ -1735,7 +1735,7 @@ export default class OpenFGAParser extends Parser {
 			{
 			this.state = 376;
 			_la = this._input.LA(1);
-			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 19268608) !== 0))) {
+			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 20382720) !== 0))) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -1857,7 +1857,7 @@ export default class OpenFGAParser extends Parser {
 	22,364,8,22,1,23,1,23,5,23,368,8,23,10,23,12,23,371,9,23,1,23,1,23,3,23,
 	375,8,23,1,24,1,24,1,25,1,25,5,25,381,8,25,10,25,12,25,384,9,25,1,25,0,
 	0,26,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,
-	48,50,0,4,1,0,54,54,4,0,10,10,17,18,21,21,24,24,4,0,3,5,7,10,27,35,37,54,
+	48,50,0,4,1,0,54,54,4,0,10,10,16,18,20,21,24,24,4,0,3,5,7,10,27,35,37,54,
 	1,0,36,36,427,0,53,1,0,0,0,2,78,1,0,0,0,4,91,1,0,0,0,6,102,1,0,0,0,8,107,
 	1,0,0,0,10,128,1,0,0,0,12,143,1,0,0,0,14,148,1,0,0,0,16,155,1,0,0,0,18,
 	189,1,0,0,0,20,191,1,0,0,0,22,193,1,0,0,0,24,212,1,0,0,0,26,231,1,0,0,0,
@@ -1874,7 +1874,7 @@ export default class OpenFGAParser extends Parser {
 	5,18,0,0,83,84,5,9,0,0,84,86,5,19,0,0,85,87,5,9,0,0,86,85,1,0,0,0,86,87,
 	1,0,0,0,87,3,1,0,0,0,88,89,3,46,23,0,89,90,5,54,0,0,90,92,1,0,0,0,91,88,
 	1,0,0,0,91,92,1,0,0,0,92,93,1,0,0,0,93,94,5,16,0,0,94,95,5,9,0,0,95,97,
-	5,10,0,0,96,98,5,9,0,0,97,96,1,0,0,0,97,98,1,0,0,0,98,5,1,0,0,0,99,101,
+	3,48,24,0,96,98,5,9,0,0,97,96,1,0,0,0,97,98,1,0,0,0,98,5,1,0,0,0,99,101,
 	3,8,4,0,100,99,1,0,0,0,101,104,1,0,0,0,102,100,1,0,0,0,102,103,1,0,0,0,
 	103,7,1,0,0,0,104,102,1,0,0,0,105,106,5,54,0,0,106,108,3,46,23,0,107,105,
 	1,0,0,0,107,108,1,0,0,0,108,109,1,0,0,0,109,112,5,54,0,0,110,111,5,20,0,
@@ -2063,7 +2063,7 @@ export class ModelHeaderContext extends ParserRuleContext {
 
 
 export class ModuleHeaderContext extends ParserRuleContext {
-	public _moduleName!: Token;
+	public _moduleName!: IdentifierContext;
 	constructor(parser?: OpenFGAParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
@@ -2077,8 +2077,8 @@ export class ModuleHeaderContext extends ParserRuleContext {
 	public WHITESPACE(i: number): TerminalNode {
 		return this.getToken(OpenFGAParser.WHITESPACE, i);
 	}
-	public IDENTIFIER(): TerminalNode {
-		return this.getToken(OpenFGAParser.IDENTIFIER, 0);
+	public identifier(): IdentifierContext {
+		return this.getTypedRuleContext(IdentifierContext, 0) as IdentifierContext;
 	}
 	public multiLineComment(): MultiLineCommentContext {
 		return this.getTypedRuleContext(MultiLineCommentContext, 0) as MultiLineCommentContext;
@@ -2907,6 +2907,12 @@ export class IdentifierContext extends ParserRuleContext {
 	}
 	public IDENTIFIER(): TerminalNode {
 		return this.getToken(OpenFGAParser.IDENTIFIER, 0);
+	}
+	public MODULE(): TerminalNode {
+		return this.getToken(OpenFGAParser.MODULE, 0);
+	}
+	public EXTEND(): TerminalNode {
+		return this.getToken(OpenFGAParser.EXTEND, 0);
 	}
     public get ruleIndex(): number {
     	return OpenFGAParser.RULE_identifier;

@@ -105,7 +105,7 @@ func openfgaparserParserInit() {
 	23, 371, 9, 23, 1, 23, 1, 23, 3, 23, 375, 8, 23, 1, 24, 1, 24, 1, 25, 1, 
 	25, 5, 25, 381, 8, 25, 10, 25, 12, 25, 384, 9, 25, 1, 25, 0, 0, 26, 0, 
 	2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 
-	40, 42, 44, 46, 48, 50, 0, 4, 1, 0, 54, 54, 4, 0, 10, 10, 17, 18, 21, 21, 
+	40, 42, 44, 46, 48, 50, 0, 4, 1, 0, 54, 54, 4, 0, 10, 10, 16, 18, 20, 21, 
 	24, 24, 4, 0, 3, 5, 7, 10, 27, 35, 37, 54, 1, 0, 36, 36, 427, 0, 53, 1, 
 	0, 0, 0, 2, 78, 1, 0, 0, 0, 4, 91, 1, 0, 0, 0, 6, 102, 1, 0, 0, 0, 8, 107, 
 	1, 0, 0, 0, 10, 128, 1, 0, 0, 0, 12, 143, 1, 0, 0, 0, 14, 148, 1, 0, 0, 
@@ -128,7 +128,7 @@ func openfgaparserParserInit() {
 	0, 0, 84, 86, 5, 19, 0, 0, 85, 87, 5, 9, 0, 0, 86, 85, 1, 0, 0, 0, 86, 
 	87, 1, 0, 0, 0, 87, 3, 1, 0, 0, 0, 88, 89, 3, 46, 23, 0, 89, 90, 5, 54, 
 	0, 0, 90, 92, 1, 0, 0, 0, 91, 88, 1, 0, 0, 0, 91, 92, 1, 0, 0, 0, 92, 93, 
-	1, 0, 0, 0, 93, 94, 5, 16, 0, 0, 94, 95, 5, 9, 0, 0, 95, 97, 5, 10, 0, 
+	1, 0, 0, 0, 93, 94, 5, 16, 0, 0, 94, 95, 5, 9, 0, 0, 95, 97, 3, 48, 24, 
 	0, 96, 98, 5, 9, 0, 0, 97, 96, 1, 0, 0, 0, 97, 98, 1, 0, 0, 0, 98, 5, 1, 
 	0, 0, 0, 99, 101, 3, 8, 4, 0, 100, 99, 1, 0, 0, 0, 101, 104, 1, 0, 0, 0, 
 	102, 100, 1, 0, 0, 0, 102, 103, 1, 0, 0, 0, 103, 7, 1, 0, 0, 0, 104, 102, 
@@ -929,19 +929,19 @@ type IModuleHeaderContext interface {
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
-	// GetModuleName returns the moduleName token.
-	GetModuleName() antlr.Token 
+	// GetModuleName returns the moduleName rule contexts.
+	GetModuleName() IIdentifierContext
 
 
-	// SetModuleName sets the moduleName token.
-	SetModuleName(antlr.Token) 
+	// SetModuleName sets the moduleName rule contexts.
+	SetModuleName(IIdentifierContext)
 
 
 	// Getter signatures
 	MODULE() antlr.TerminalNode
 	AllWHITESPACE() []antlr.TerminalNode
 	WHITESPACE(i int) antlr.TerminalNode
-	IDENTIFIER() antlr.TerminalNode
+	Identifier() IIdentifierContext
 	MultiLineComment() IMultiLineCommentContext
 	NEWLINE() antlr.TerminalNode
 
@@ -952,7 +952,7 @@ type IModuleHeaderContext interface {
 type ModuleHeaderContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
-	moduleName antlr.Token
+	moduleName IIdentifierContext 
 }
 
 func NewEmptyModuleHeaderContext() *ModuleHeaderContext {
@@ -982,10 +982,10 @@ func NewModuleHeaderContext(parser antlr.Parser, parent antlr.ParserRuleContext,
 
 func (s *ModuleHeaderContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *ModuleHeaderContext) GetModuleName() antlr.Token { return s.moduleName }
+func (s *ModuleHeaderContext) GetModuleName() IIdentifierContext { return s.moduleName }
 
 
-func (s *ModuleHeaderContext) SetModuleName(v antlr.Token) { s.moduleName = v }
+func (s *ModuleHeaderContext) SetModuleName(v IIdentifierContext) { s.moduleName = v }
 
 
 func (s *ModuleHeaderContext) MODULE() antlr.TerminalNode {
@@ -1000,8 +1000,20 @@ func (s *ModuleHeaderContext) WHITESPACE(i int) antlr.TerminalNode {
 	return s.GetToken(OpenFGAParserWHITESPACE, i)
 }
 
-func (s *ModuleHeaderContext) IDENTIFIER() antlr.TerminalNode {
-	return s.GetToken(OpenFGAParserIDENTIFIER, 0)
+func (s *ModuleHeaderContext) Identifier() IIdentifierContext {
+	var t antlr.RuleContext;
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IIdentifierContext); ok {
+			t = ctx.(antlr.RuleContext);
+			break
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IIdentifierContext)
 }
 
 func (s *ModuleHeaderContext) MultiLineComment() IMultiLineCommentContext {
@@ -1096,13 +1108,10 @@ func (p *OpenFGAParser) ModuleHeader() (localctx IModuleHeaderContext) {
 	{
 		p.SetState(95)
 
-		var _m = p.Match(OpenFGAParserIDENTIFIER)
+		var _x = p.Identifier()
 
-		localctx.(*ModuleHeaderContext).moduleName = _m
-		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-		}
+
+		localctx.(*ModuleHeaderContext).moduleName = _x
 	}
 	p.SetState(97)
 	p.GetErrorHandler().Sync(p)
@@ -5892,6 +5901,8 @@ type IIdentifierContext interface {
 	TYPE() antlr.TerminalNode
 	RELATION() antlr.TerminalNode
 	IDENTIFIER() antlr.TerminalNode
+	MODULE() antlr.TerminalNode
+	EXTEND() antlr.TerminalNode
 
 	// IsIdentifierContext differentiates from other interfaces.
 	IsIdentifierContext()
@@ -5949,6 +5960,14 @@ func (s *IdentifierContext) IDENTIFIER() antlr.TerminalNode {
 	return s.GetToken(OpenFGAParserIDENTIFIER, 0)
 }
 
+func (s *IdentifierContext) MODULE() antlr.TerminalNode {
+	return s.GetToken(OpenFGAParserMODULE, 0)
+}
+
+func (s *IdentifierContext) EXTEND() antlr.TerminalNode {
+	return s.GetToken(OpenFGAParserEXTEND, 0)
+}
+
 func (s *IdentifierContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -5983,7 +6002,7 @@ func (p *OpenFGAParser) Identifier() (localctx IIdentifierContext) {
 		p.SetState(376)
 		_la = p.GetTokenStream().LA(1)
 
-		if !(((int64(_la) & ^0x3f) == 0 && ((int64(1) << _la) & 19268608) != 0)) {
+		if !(((int64(_la) & ^0x3f) == 0 && ((int64(1) << _la) & 20382720) != 0)) {
 			p.GetErrorHandler().RecoverInline(p)
 		} else {
 			p.GetErrorHandler().ReportMatch(p)

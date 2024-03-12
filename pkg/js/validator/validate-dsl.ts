@@ -723,7 +723,7 @@ function populateRelations(
     if (typeName === Keyword.SELF || typeName === ReservedKeywords.THIS) {
       const lineIndex = getTypeLineNumber(typeName, lines);
       collector.raiseReservedTypeName(typeName, lineIndex, {
-        file: typeDef.metadata?.file,
+        file: typeDef.metadata?.source_info?.file,
         module: typeDef.metadata?.module,
       });
     }
@@ -731,7 +731,7 @@ function populateRelations(
     if (!typeRegex.regex.test(typeName)) {
       const lineIndex = getTypeLineNumber(typeName, lines);
       collector.raiseInvalidName(typeName, typeRegex.rule, undefined, lineIndex, {
-        file: typeDef.metadata?.file,
+        file: typeDef.metadata?.source_info?.file,
         module: typeDef.metadata?.module,
       });
     }
@@ -748,7 +748,7 @@ function populateRelations(
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
         collector.raiseReservedRelationName(relationName, lineIndex, {
-          file: relationMeta?.file,
+          file: relationMeta?.source_info?.file,
           module: relationMeta?.module,
         });
       }
@@ -757,7 +757,7 @@ function populateRelations(
         const typeIndex = getTypeLineNumber(typeName, lines);
         const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
         collector.raiseInvalidName(relationName, relationRegex.rule, typeName, lineIndex, {
-          file: relationMeta?.file,
+          file: relationMeta?.source_info?.file,
           module: relationMeta?.module,
         });
       }

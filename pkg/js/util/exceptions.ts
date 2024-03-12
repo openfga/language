@@ -9,6 +9,8 @@ interface ValidationErrorProps {
     relation?: string;
     typeName?: string;
     conditionName?: string;
+    file?: string;
+    module?: string;
   };
   lines?: string[];
   lineIndex?: number;
@@ -20,10 +22,12 @@ interface BaseProps {
   symbol: string;
   lines?: string[];
   lineIndex?: number;
+  file?: string;
+  module?: string;
 }
 
 const createInvalidName = (props: BaseProps, clause: string, typeName?: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   const errorMessage =
     (typeName ? `relation '${symbol}' of type '${typeName}' ` : `type '${symbol}' `) +
     `does not match naming rule: '${clause}'.`;
@@ -32,31 +36,31 @@ const createInvalidName = (props: BaseProps, clause: string, typeName?: string) 
       message: errorMessage,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.InvalidName },
+      metadata: { symbol, errorType: ValidationError.InvalidName, file, module },
     }),
   );
 };
 
 const createReservedTypeNameError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `a type cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.ReservedTypeKeywords },
+      metadata: { symbol, errorType: ValidationError.ReservedTypeKeywords, file, module },
     }),
   );
 };
 
 const createReservedRelationNameError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `a relation cannot be named '${Keyword.SELF}' or '${ReservedKeywords.THIS}'.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.ReservedRelationKeywords },
+      metadata: { symbol, errorType: ValidationError.ReservedRelationKeywords, file, module },
     }),
   );
 };
@@ -347,8 +351,9 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
     return new ModelValidationSingleError(
       {
         msg: message,
+        file: metadata.file,
       },
-      { symbol: metadata?.symbol, errorType: metadata.errorType },
+      { symbol: metadata?.symbol, errorType: metadata.errorType, module: metadata.module },
     );
   }
 
@@ -370,21 +375,38 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
       line: { start: lineIndex + 1, end: lineIndex + 1 },
       column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
       msg: message,
+      file: metadata.file,
     },
-    { symbol: metadata?.symbol, errorType: metadata.errorType },
+    { symbol: metadata?.symbol, errorType: metadata.errorType, module: metadata.module },
   );
+}
+
+interface Meta {
+  file?: string;
+  module?: string;
 }
 
 export const exceptionCollector = (errors: ModelValidationSingleError[], lines?: string[]) => {
   return {
-    raiseInvalidName(symbol: string, clause: string, typeName?: string, lineIndex?: number) {
-      createInvalidName({ errors, lines, lineIndex, symbol }, clause, typeName);
+    raiseInvalidName(symbol: string, clause: string, typeName?: string, lineIndex?: number, metadata?: Meta) {
+      createInvalidName(
+        { errors, lines, lineIndex, symbol, file: metadata?.file, module: metadata?.module },
+        clause,
+        typeName,
+      );
     },
-    raiseReservedTypeName(symbol: string, lineIndex?: number) {
-      createReservedTypeNameError({ errors, lines, lineIndex, symbol });
+    raiseReservedTypeName(symbol: string, lineIndex?: number, metadata?: Meta) {
+      createReservedTypeNameError({ errors, lines, lineIndex, symbol, file: metadata?.file, module: metadata?.module });
     },
-    raiseReservedRelationName(symbol: string, lineIndex?: number) {
-      createReservedRelationNameError({ errors, lines, lineIndex, symbol });
+    raiseReservedRelationName(symbol: string, lineIndex?: number, metadata?: Meta) {
+      createReservedRelationNameError({
+        errors,
+        lines,
+        lineIndex,
+        symbol,
+        file: metadata?.file,
+        module: metadata?.module,
+      });
     },
     raiseTupleUsersetRequiresDirect(symbol: string, lineIndex?: number) {
       createTupleUsersetRequireDirectError({ errors, lines, lineIndex, symbol });

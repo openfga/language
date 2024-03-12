@@ -5,8 +5,10 @@ import {
   BaseError,
   DSLSyntaxError,
   ModelValidationError,
+  ModelValidationSingleError,
   ModuleTransformationError,
-  ModuleTransformationSingleError
+  ModuleTransformationSingleError,
+  ValidationError
 } from "../../errors";
 import { getTypeLineNumber, getConditionLineNumber, getRelationLineNumber } from "../../util/line-numbers";
 import { constructTransformationError } from "../../util/exceptions";
@@ -179,7 +181,33 @@ export const transformModuleFilesToModel = (files: ModuleFile[]): Omit<Authoriza
     validateJSON(model as AuthorizationModel);
   } catch (error) {
     if (error instanceof ModelValidationError) {
-      errors.push(...error.errors);
+      for (const e of error.errors) {
+        if (!e.file || !e.metadata?.module || !e.metadata.symbol) {
+          errors.push(e);
+          continue;
+        }
+
+        const lines = moduleFiles.get(e.file)?.split("\n");
+        if (!lines) {
+          errors.push(e);
+          continue;
+        }
+
+        const lineIndex = resolveLineIndex(e, lines);
+
+        if (lineIndex === -1) {
+          errors.push(e);
+          continue;
+        }
+
+        const line = lines[lineIndex];
+        const wordIndex = resolveWordIndex(e, line);
+
+        e.line = { start: lineIndex + 1, end: lineIndex + 1 };
+        e.column = { start: wordIndex, end: wordIndex + (e.metadata.symbol?.length || 0) };
+        errors.push(e);
+      }
+
     }
   }
 
@@ -189,3 +217,51 @@ export const transformModuleFilesToModel = (files: ModuleFile[]): Omit<Authoriza
 
   return model;
 };
+
+function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): number {
+  const { metadata } = e;
+  let lineIndex;
+
+  if (!metadata || !lines) {
+    return -1;
+  }
+
+  switch(metadata?.errorType) {
+    case ValidationError.ReservedTypeKeywords:
+      lineIndex = getTypeLineNumber(metadata.symbol, lines);
+     break;
+    case ValidationError.InvalidName:
+      // handle type vs relation, this isn't ideal but no other way to check
+      if (e.message.startsWith("invalid-name error: relation")) {
+        lineIndex =  getRelationLineNumber(metadata.symbol, lines);
+      } else {
+        lineIndex = getTypeLineNumber(metadata.symbol, lines);
+      }
+      break;
+    case ValidationError.ReservedRelationKeywords:
+      lineIndex =  getRelationLineNumber(metadata.symbol, lines);
+      break;
+  }
+
+  if (lineIndex === undefined) {
+    return -1;
+  }
+
+  return lineIndex;
+}
+
+function resolveWordIndex (e: ModelValidationSingleError, line: string): number {
+  const { metadata } = e;
+
+  if (!metadata) {
+    return -1;
+  }
+
+  const re = new RegExp("\\b" + metadata.symbol + "\\b");
+  let wordIdx = line?.search(re) + 1;
+  if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === 0) {
+    wordIdx = 1;
+  }
+
+  return wordIdx;
+}

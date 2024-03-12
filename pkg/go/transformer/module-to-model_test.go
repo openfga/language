@@ -30,7 +30,7 @@ func TestTransformModuleToJSON(t *testing.T) {
 				t.Skip()
 			}
 
-			actual, err := transformer.TransformModuleFilesToModel(testCase.Modules)
+			actual, err := transformer.TransformModuleFilesToModel(testCase.Modules, "1.2")
 			if len(testCase.ExpectedErrors) == 0 {
 				require.NoError(t, err)
 
@@ -85,4 +85,19 @@ func TestTransformModuleToJSON(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSchemaVersion(t *testing.T) {
+	t.Parallel()
+
+	actual, err := transformer.TransformModuleFilesToModel([]transformer.ModuleFile{
+		{
+			Name: "core.fga",
+			Contents: `module core
+  type user`,
+		},
+	}, "1.1")
+
+	require.NoError(t, err)
+	assert.Equal(t, "1.1", actual.GetSchemaVersion())
 }

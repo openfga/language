@@ -10,10 +10,12 @@ describe("transformModuleFilesToModel", () => {
 
         testFn(`transformModuleFilesToModel ${testCase.name}`, () => {
             if (!testCase.expected_errors) {
-                expect(transformModuleFilesToModel(testCase.modules)).toEqual(JSON.parse(testCase.json));
+                expect(transformModuleFilesToModel(testCase.modules, "1.2")).toEqual(
+                    JSON.parse(testCase.json)
+                );
             } else {
                 try {
-                    transformModuleFilesToModel(testCase.modules);
+                    transformModuleFilesToModel(testCase.modules,  "1.2");
                 } catch (error) {
                     expect(error).toBeInstanceOf(ModuleTransformationError);
                     const exception = error as ModuleTransformationError;
@@ -43,5 +45,15 @@ describe("transformModuleFilesToModel", () => {
                 }
             }
         });
+    });
+
+    it("should allow passing a custom schema version", () => {
+        const model = transformModuleFilesToModel([{
+            name: "core.fga",
+            contents: `module core
+  type user`
+        }], "1.1");
+
+        expect(model.schema_version).toEqual("1.1");
     });
 });

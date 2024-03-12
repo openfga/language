@@ -57,9 +57,12 @@ func (e *ModuleValidationMultipleError) Error() string {
 }
 
 // TransformModuleFilesToModel transforms the provided modules into a singular authorization model.
-func TransformModuleFilesToModel(modules []ModuleFile) (*pb.AuthorizationModel, error) { //nolint:funlen,gocognit,cyclop
+func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
+	modules []ModuleFile,
+	schemaVersion string,
+) (*pb.AuthorizationModel, error) {
 	model := &pb.AuthorizationModel{
-		SchemaVersion:   "1.2",
+		SchemaVersion:   schemaVersion,
 		TypeDefinitions: []*pb.TypeDefinition{},
 		Conditions:      map[string]*pb.Condition{},
 	}

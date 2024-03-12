@@ -18,13 +18,12 @@ export interface ModuleFile {
   contents: string;
 }
 
-export const transformModuleFilesToModel = (files: ModuleFile[]): Omit<AuthorizationModel, "id"> => {
-  // Build all the individual models
-  // Validate them (no conflicting names that aren't extensions?)
-  // Copy over any extensions?
-  // Stitch them into the main model
+export const transformModuleFilesToModel = (
+  files: ModuleFile[],
+  schemaVersion: string
+): Omit<AuthorizationModel, "id"> => {
   const model: Omit<AuthorizationModel, "id"> = {
-    schema_version: "1.2",
+    schema_version: schemaVersion,
     type_definitions: [],
     conditions: {}
   };

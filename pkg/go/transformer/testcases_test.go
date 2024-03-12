@@ -24,11 +24,16 @@ type startEnd struct {
 	End   int `json:"end,omitempty"   yaml:"end,omitempty"`
 }
 
+type meta struct {
+	ErrorType string `json:"errorType" yaml:"errorType"` //nolint:tagliatelle
+}
+
 type expectedError struct {
-	Msg    string   `json:"msg"    yaml:"msg"`
-	Line   startEnd `json:"line"   yaml:"line"`
-	Column startEnd `json:"column" yaml:"column"`
-	File   string   `json:"file"   yaml:"file"`
+	Msg      string   `json:"msg"      yaml:"msg"`
+	Line     startEnd `json:"line"     yaml:"line"`
+	Column   startEnd `json:"column"   yaml:"column"`
+	File     string   `json:"file"     yaml:"file"`
+	Metadata meta     `json:"metadata" yaml:"metadata"`
 }
 
 func (testCase *invalidDslSyntaxTestCase) GetErrorString() string {
@@ -237,6 +242,17 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
 			if err != nil {
 				return nil, err //nolint:wrapcheck
 			}
+
+			errors := []expectedError{}
+
+			// Ignore any errors that are from validation performed on the constructed model
+			for _, err := range testCase.ExpectedErrors {
+				if err.Metadata.ErrorType == "" {
+					errors = append(errors, err)
+				}
+			}
+
+			testCase.ExpectedErrors = errors
 		}
 
 		moduleDirectory := filepath.Join(testDataPath, testCase.Name, "module")

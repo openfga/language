@@ -116,7 +116,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			}
 
 			types = append(types, typeDef.GetType())
-			typeDef.Metadata.File = module.Name
+			typeDef.Metadata.SourceInfo = &pb.SourceInfo{
+				File: module.Name,
+			}
 			rawTypeDefs = append(rawTypeDefs, typeDef)
 		}
 
@@ -134,7 +136,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				continue
 			}
 
-			condition.Metadata.File = module.Name
+			condition.Metadata.SourceInfo = &pb.SourceInfo{
+				File: module.Name,
+			}
 			conditions[name] = condition
 		}
 	}
@@ -173,7 +177,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 
 				if original.Metadata.Relations != nil {
 					for name := range original.GetMetadata().GetRelations() {
-						original.Metadata.Relations[name].File = filename
+						original.Metadata.Relations[name].SourceInfo = &pb.SourceInfo{
+							File: filename,
+						}
 					}
 				}
 
@@ -211,7 +217,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 					}
 				}
 
-				relationsMeta.File = filename
+				relationsMeta.SourceInfo = &pb.SourceInfo{
+					File: filename,
+				}
 				original.Relations[name] = relation
 				original.Metadata.Relations[name] = relationsMeta
 			}

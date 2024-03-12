@@ -633,6 +633,12 @@ export default class OpenFGAParser extends Parser {
 				}
 				break;
 			case 10:
+			case 16:
+			case 17:
+			case 18:
+			case 20:
+			case 21:
+			case 24:
 				{
 				this.state = 146;
 				this.relationDefGrouping();
@@ -684,6 +690,12 @@ export default class OpenFGAParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 10:
+			case 16:
+			case 17:
+			case 18:
+			case 20:
+			case 21:
+			case 24:
 				{
 				this.state = 153;
 				this.relationDefGrouping();
@@ -754,6 +766,12 @@ export default class OpenFGAParser extends Parser {
 						this._errHandler.sync(this);
 						switch (this._input.LA(1)) {
 						case 10:
+						case 16:
+						case 17:
+						case 18:
+						case 20:
+						case 21:
+						case 24:
 							{
 							this.state = 163;
 							this.relationDefGrouping();
@@ -801,6 +819,12 @@ export default class OpenFGAParser extends Parser {
 						this._errHandler.sync(this);
 						switch (this._input.LA(1)) {
 						case 10:
+						case 16:
+						case 17:
+						case 18:
+						case 20:
+						case 21:
+						case 24:
 							{
 							this.state = 174;
 							this.relationDefGrouping();
@@ -841,6 +865,12 @@ export default class OpenFGAParser extends Parser {
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 10:
+				case 16:
+				case 17:
+				case 18:
+				case 20:
+				case 21:
+				case 24:
 					{
 					this.state = 185;
 					this.relationDefGrouping();
@@ -1137,7 +1167,7 @@ export default class OpenFGAParser extends Parser {
 			this.enterOuterAlt(localctx, 1);
 			{
 			this.state = 254;
-			localctx._rewriteComputedusersetName = this.match(OpenFGAParser.IDENTIFIER);
+			localctx._rewriteComputedusersetName = this.identifier();
 			this.state = 259;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 39, this._ctx) ) {
@@ -1150,7 +1180,7 @@ export default class OpenFGAParser extends Parser {
 				this.state = 257;
 				this.match(OpenFGAParser.WHITESPACE);
 				this.state = 258;
-				localctx._rewriteTuplesetName = this.match(OpenFGAParser.IDENTIFIER);
+				localctx._rewriteTuplesetName = this.identifier();
 				}
 				break;
 			}
@@ -1248,7 +1278,7 @@ export default class OpenFGAParser extends Parser {
 			this.enterOuterAlt(localctx, 1);
 			{
 			this.state = 276;
-			localctx._relationDefTypeRestrictionType = this.match(OpenFGAParser.IDENTIFIER);
+			localctx._relationDefTypeRestrictionType = this.identifier();
 			this.state = 281;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
@@ -1268,7 +1298,7 @@ export default class OpenFGAParser extends Parser {
 				this.state = 279;
 				this.match(OpenFGAParser.HASH);
 				this.state = 280;
-				localctx._relationDefTypeRestrictionRelation = this.match(OpenFGAParser.IDENTIFIER);
+				localctx._relationDefTypeRestrictionRelation = this.identifier();
 				}
 				}
 				break;
@@ -1916,14 +1946,14 @@ export default class OpenFGAParser extends Parser {
 	240,242,5,9,0,0,241,240,1,0,0,0,241,242,1,0,0,0,242,243,1,0,0,0,243,245,
 	3,30,15,0,244,246,5,9,0,0,245,244,1,0,0,0,245,246,1,0,0,0,246,248,1,0,0,
 	0,247,239,1,0,0,0,248,251,1,0,0,0,249,247,1,0,0,0,249,250,1,0,0,0,250,252,
-	1,0,0,0,251,249,1,0,0,0,252,253,5,34,0,0,253,27,1,0,0,0,254,259,5,10,0,
-	0,255,256,5,9,0,0,256,257,5,15,0,0,257,258,5,9,0,0,258,260,5,10,0,0,259,
+	1,0,0,0,251,249,1,0,0,0,252,253,5,34,0,0,253,27,1,0,0,0,254,259,3,48,24,
+	0,255,256,5,9,0,0,256,257,5,15,0,0,257,258,5,9,0,0,258,260,3,48,24,0,259,
 	255,1,0,0,0,259,260,1,0,0,0,260,29,1,0,0,0,261,263,5,54,0,0,262,261,1,0,
 	0,0,262,263,1,0,0,0,263,271,1,0,0,0,264,272,3,32,16,0,265,266,3,32,16,0,
 	266,267,5,9,0,0,267,268,5,26,0,0,268,269,5,9,0,0,269,270,3,38,19,0,270,
 	272,1,0,0,0,271,264,1,0,0,0,271,265,1,0,0,0,272,274,1,0,0,0,273,275,5,54,
-	0,0,274,273,1,0,0,0,274,275,1,0,0,0,275,31,1,0,0,0,276,281,5,10,0,0,277,
-	278,5,1,0,0,278,282,5,42,0,0,279,280,5,11,0,0,280,282,5,10,0,0,281,277,
+	0,0,274,273,1,0,0,0,274,275,1,0,0,0,275,31,1,0,0,0,276,281,3,48,24,0,277,
+	278,5,1,0,0,278,282,5,42,0,0,279,280,5,11,0,0,280,282,3,48,24,0,281,277,
 	1,0,0,0,281,279,1,0,0,0,281,282,1,0,0,0,282,33,1,0,0,0,283,285,3,36,18,
 	0,284,283,1,0,0,0,285,288,1,0,0,0,286,284,1,0,0,0,286,287,1,0,0,0,287,35,
 	1,0,0,0,288,286,1,0,0,0,289,290,5,54,0,0,290,292,3,46,23,0,291,289,1,0,
@@ -2521,17 +2551,17 @@ export class RelationDefDirectAssignmentContext extends ParserRuleContext {
 
 
 export class RelationDefRewriteContext extends ParserRuleContext {
-	public _rewriteComputedusersetName!: Token;
-	public _rewriteTuplesetName!: Token;
+	public _rewriteComputedusersetName!: IdentifierContext;
+	public _rewriteTuplesetName!: IdentifierContext;
 	constructor(parser?: OpenFGAParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public IDENTIFIER_list(): TerminalNode[] {
-	    	return this.getTokens(OpenFGAParser.IDENTIFIER);
+	public identifier_list(): IdentifierContext[] {
+		return this.getTypedRuleContexts(IdentifierContext) as IdentifierContext[];
 	}
-	public IDENTIFIER(i: number): TerminalNode {
-		return this.getToken(OpenFGAParser.IDENTIFIER, i);
+	public identifier(i: number): IdentifierContext {
+		return this.getTypedRuleContext(IdentifierContext, i) as IdentifierContext;
 	}
 	public WHITESPACE_list(): TerminalNode[] {
 	    	return this.getTokens(OpenFGAParser.WHITESPACE);
@@ -2601,18 +2631,18 @@ export class RelationDefTypeRestrictionContext extends ParserRuleContext {
 
 
 export class RelationDefTypeRestrictionBaseContext extends ParserRuleContext {
-	public _relationDefTypeRestrictionType!: Token;
+	public _relationDefTypeRestrictionType!: IdentifierContext;
 	public _relationDefTypeRestrictionWildcard!: Token;
-	public _relationDefTypeRestrictionRelation!: Token;
+	public _relationDefTypeRestrictionRelation!: IdentifierContext;
 	constructor(parser?: OpenFGAParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public IDENTIFIER_list(): TerminalNode[] {
-	    	return this.getTokens(OpenFGAParser.IDENTIFIER);
+	public identifier_list(): IdentifierContext[] {
+		return this.getTypedRuleContexts(IdentifierContext) as IdentifierContext[];
 	}
-	public IDENTIFIER(i: number): TerminalNode {
-		return this.getToken(OpenFGAParser.IDENTIFIER, i);
+	public identifier(i: number): IdentifierContext {
+		return this.getTypedRuleContext(IdentifierContext, i) as IdentifierContext;
 	}
 	public COLON(): TerminalNode {
 		return this.getToken(OpenFGAParser.COLON, 0);

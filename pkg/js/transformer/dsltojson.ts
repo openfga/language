@@ -238,7 +238,7 @@ class OpenFgaDslListener extends OpenFGAListener {
       return;
     }
 
-    relationRef.type = baseRestriction._relationDefTypeRestrictionType?.text;
+    relationRef.type = baseRestriction._relationDefTypeRestrictionType?.getText();
     const usersetRestriction = baseRestriction._relationDefTypeRestrictionRelation;
     const wildcardRestriction = baseRestriction._relationDefTypeRestrictionWildcard;
 
@@ -247,7 +247,7 @@ class OpenFgaDslListener extends OpenFGAListener {
     }
 
     if (usersetRestriction) {
-      relationRef.relation = usersetRestriction.text;
+      relationRef.relation = usersetRestriction.getText();
     }
 
     if (wildcardRestriction) {
@@ -260,7 +260,7 @@ class OpenFgaDslListener extends OpenFGAListener {
   exitRelationDefRewrite = (ctx: RelationDefRewriteContext) => {
     let partialRewrite: Userset = {
       computedUserset: {
-        relation: ctx._rewriteComputedusersetName.text,
+        relation: ctx._rewriteComputedusersetName.getText(),
       },
     };
 
@@ -269,7 +269,7 @@ class OpenFgaDslListener extends OpenFGAListener {
         tupleToUserset: {
           ...(partialRewrite as { computedUserset: ObjectRelation }),
           tupleset: {
-            relation: ctx._rewriteTuplesetName.text,
+            relation: ctx._rewriteTuplesetName.getText(),
           },
         },
       };

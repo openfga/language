@@ -187,16 +187,16 @@ func openfgaparserParserInit() {
 	0, 0, 0, 245, 246, 1, 0, 0, 0, 246, 248, 1, 0, 0, 0, 247, 239, 1, 0, 0, 
 	0, 248, 251, 1, 0, 0, 0, 249, 247, 1, 0, 0, 0, 249, 250, 1, 0, 0, 0, 250, 
 	252, 1, 0, 0, 0, 251, 249, 1, 0, 0, 0, 252, 253, 5, 34, 0, 0, 253, 27, 
-	1, 0, 0, 0, 254, 259, 5, 10, 0, 0, 255, 256, 5, 9, 0, 0, 256, 257, 5, 15, 
-	0, 0, 257, 258, 5, 9, 0, 0, 258, 260, 5, 10, 0, 0, 259, 255, 1, 0, 0, 0, 
-	259, 260, 1, 0, 0, 0, 260, 29, 1, 0, 0, 0, 261, 263, 5, 54, 0, 0, 262, 
-	261, 1, 0, 0, 0, 262, 263, 1, 0, 0, 0, 263, 271, 1, 0, 0, 0, 264, 272, 
-	3, 32, 16, 0, 265, 266, 3, 32, 16, 0, 266, 267, 5, 9, 0, 0, 267, 268, 5, 
-	26, 0, 0, 268, 269, 5, 9, 0, 0, 269, 270, 3, 38, 19, 0, 270, 272, 1, 0, 
-	0, 0, 271, 264, 1, 0, 0, 0, 271, 265, 1, 0, 0, 0, 272, 274, 1, 0, 0, 0, 
-	273, 275, 5, 54, 0, 0, 274, 273, 1, 0, 0, 0, 274, 275, 1, 0, 0, 0, 275, 
-	31, 1, 0, 0, 0, 276, 281, 5, 10, 0, 0, 277, 278, 5, 1, 0, 0, 278, 282, 
-	5, 42, 0, 0, 279, 280, 5, 11, 0, 0, 280, 282, 5, 10, 0, 0, 281, 277, 1, 
+	1, 0, 0, 0, 254, 259, 3, 48, 24, 0, 255, 256, 5, 9, 0, 0, 256, 257, 5, 
+	15, 0, 0, 257, 258, 5, 9, 0, 0, 258, 260, 3, 48, 24, 0, 259, 255, 1, 0, 
+	0, 0, 259, 260, 1, 0, 0, 0, 260, 29, 1, 0, 0, 0, 261, 263, 5, 54, 0, 0, 
+	262, 261, 1, 0, 0, 0, 262, 263, 1, 0, 0, 0, 263, 271, 1, 0, 0, 0, 264, 
+	272, 3, 32, 16, 0, 265, 266, 3, 32, 16, 0, 266, 267, 5, 9, 0, 0, 267, 268, 
+	5, 26, 0, 0, 268, 269, 5, 9, 0, 0, 269, 270, 3, 38, 19, 0, 270, 272, 1, 
+	0, 0, 0, 271, 264, 1, 0, 0, 0, 271, 265, 1, 0, 0, 0, 272, 274, 1, 0, 0, 
+	0, 273, 275, 5, 54, 0, 0, 274, 273, 1, 0, 0, 0, 274, 275, 1, 0, 0, 0, 275, 
+	31, 1, 0, 0, 0, 276, 281, 3, 48, 24, 0, 277, 278, 5, 1, 0, 0, 278, 282, 
+	5, 42, 0, 0, 279, 280, 5, 11, 0, 0, 280, 282, 3, 48, 24, 0, 281, 277, 1, 
 	0, 0, 0, 281, 279, 1, 0, 0, 0, 281, 282, 1, 0, 0, 0, 282, 33, 1, 0, 0, 
 	0, 283, 285, 3, 36, 18, 0, 284, 283, 1, 0, 0, 0, 285, 288, 1, 0, 0, 0, 
 	286, 284, 1, 0, 0, 0, 286, 287, 1, 0, 0, 0, 287, 35, 1, 0, 0, 0, 288, 286, 
@@ -2207,7 +2207,7 @@ func (p *OpenFGAParser) RelationDef() (localctx IRelationDefContext) {
 		}
 
 
-	case OpenFGAParserIDENTIFIER:
+	case OpenFGAParserIDENTIFIER, OpenFGAParserMODULE, OpenFGAParserMODEL, OpenFGAParserSCHEMA, OpenFGAParserEXTEND, OpenFGAParserTYPE, OpenFGAParserRELATION:
 		{
 			p.SetState(146)
 			p.RelationDefGrouping()
@@ -2387,7 +2387,7 @@ func (p *OpenFGAParser) RelationDefNoDirect() (localctx IRelationDefNoDirectCont
 	}
 
 	switch p.GetTokenStream().LA(1) {
-	case OpenFGAParserIDENTIFIER:
+	case OpenFGAParserIDENTIFIER, OpenFGAParserMODULE, OpenFGAParserMODEL, OpenFGAParserSCHEMA, OpenFGAParserEXTEND, OpenFGAParserTYPE, OpenFGAParserRELATION:
 		{
 			p.SetState(153)
 			p.RelationDefGrouping()
@@ -2680,7 +2680,7 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 					}
 
 					switch p.GetTokenStream().LA(1) {
-					case OpenFGAParserIDENTIFIER:
+					case OpenFGAParserIDENTIFIER, OpenFGAParserMODULE, OpenFGAParserMODEL, OpenFGAParserSCHEMA, OpenFGAParserEXTEND, OpenFGAParserTYPE, OpenFGAParserRELATION:
 						{
 							p.SetState(163)
 							p.RelationDefGrouping()
@@ -2759,7 +2759,7 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 					}
 
 					switch p.GetTokenStream().LA(1) {
-					case OpenFGAParserIDENTIFIER:
+					case OpenFGAParserIDENTIFIER, OpenFGAParserMODULE, OpenFGAParserMODEL, OpenFGAParserSCHEMA, OpenFGAParserEXTEND, OpenFGAParserTYPE, OpenFGAParserRELATION:
 						{
 							p.SetState(174)
 							p.RelationDefGrouping()
@@ -2829,7 +2829,7 @@ func (p *OpenFGAParser) RelationDefPartials() (localctx IRelationDefPartialsCont
 		}
 
 		switch p.GetTokenStream().LA(1) {
-		case OpenFGAParserIDENTIFIER:
+		case OpenFGAParserIDENTIFIER, OpenFGAParserMODULE, OpenFGAParserMODEL, OpenFGAParserSCHEMA, OpenFGAParserEXTEND, OpenFGAParserTYPE, OpenFGAParserRELATION:
 			{
 				p.SetState(185)
 				p.RelationDefGrouping()
@@ -3752,23 +3752,23 @@ type IRelationDefRewriteContext interface {
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
-	// GetRewriteComputedusersetName returns the rewriteComputedusersetName token.
-	GetRewriteComputedusersetName() antlr.Token 
+	// GetRewriteComputedusersetName returns the rewriteComputedusersetName rule contexts.
+	GetRewriteComputedusersetName() IIdentifierContext
 
-	// GetRewriteTuplesetName returns the rewriteTuplesetName token.
-	GetRewriteTuplesetName() antlr.Token 
+	// GetRewriteTuplesetName returns the rewriteTuplesetName rule contexts.
+	GetRewriteTuplesetName() IIdentifierContext
 
 
-	// SetRewriteComputedusersetName sets the rewriteComputedusersetName token.
-	SetRewriteComputedusersetName(antlr.Token) 
+	// SetRewriteComputedusersetName sets the rewriteComputedusersetName rule contexts.
+	SetRewriteComputedusersetName(IIdentifierContext)
 
-	// SetRewriteTuplesetName sets the rewriteTuplesetName token.
-	SetRewriteTuplesetName(antlr.Token) 
+	// SetRewriteTuplesetName sets the rewriteTuplesetName rule contexts.
+	SetRewriteTuplesetName(IIdentifierContext)
 
 
 	// Getter signatures
-	AllIDENTIFIER() []antlr.TerminalNode
-	IDENTIFIER(i int) antlr.TerminalNode
+	AllIdentifier() []IIdentifierContext
+	Identifier(i int) IIdentifierContext
 	AllWHITESPACE() []antlr.TerminalNode
 	WHITESPACE(i int) antlr.TerminalNode
 	FROM() antlr.TerminalNode
@@ -3780,8 +3780,8 @@ type IRelationDefRewriteContext interface {
 type RelationDefRewriteContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
-	rewriteComputedusersetName antlr.Token
-	rewriteTuplesetName antlr.Token
+	rewriteComputedusersetName IIdentifierContext 
+	rewriteTuplesetName IIdentifierContext 
 }
 
 func NewEmptyRelationDefRewriteContext() *RelationDefRewriteContext {
@@ -3811,22 +3811,55 @@ func NewRelationDefRewriteContext(parser antlr.Parser, parent antlr.ParserRuleCo
 
 func (s *RelationDefRewriteContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *RelationDefRewriteContext) GetRewriteComputedusersetName() antlr.Token { return s.rewriteComputedusersetName }
+func (s *RelationDefRewriteContext) GetRewriteComputedusersetName() IIdentifierContext { return s.rewriteComputedusersetName }
 
-func (s *RelationDefRewriteContext) GetRewriteTuplesetName() antlr.Token { return s.rewriteTuplesetName }
-
-
-func (s *RelationDefRewriteContext) SetRewriteComputedusersetName(v antlr.Token) { s.rewriteComputedusersetName = v }
-
-func (s *RelationDefRewriteContext) SetRewriteTuplesetName(v antlr.Token) { s.rewriteTuplesetName = v }
+func (s *RelationDefRewriteContext) GetRewriteTuplesetName() IIdentifierContext { return s.rewriteTuplesetName }
 
 
-func (s *RelationDefRewriteContext) AllIDENTIFIER() []antlr.TerminalNode {
-	return s.GetTokens(OpenFGAParserIDENTIFIER)
+func (s *RelationDefRewriteContext) SetRewriteComputedusersetName(v IIdentifierContext) { s.rewriteComputedusersetName = v }
+
+func (s *RelationDefRewriteContext) SetRewriteTuplesetName(v IIdentifierContext) { s.rewriteTuplesetName = v }
+
+
+func (s *RelationDefRewriteContext) AllIdentifier() []IIdentifierContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IIdentifierContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IIdentifierContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IIdentifierContext); ok {
+			tst[i] = t.(IIdentifierContext)
+			i++
+		}
+	}
+
+	return tst
 }
 
-func (s *RelationDefRewriteContext) IDENTIFIER(i int) antlr.TerminalNode {
-	return s.GetToken(OpenFGAParserIDENTIFIER, i)
+func (s *RelationDefRewriteContext) Identifier(i int) IIdentifierContext {
+	var t antlr.RuleContext;
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IIdentifierContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext);
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IIdentifierContext)
 }
 
 func (s *RelationDefRewriteContext) AllWHITESPACE() []antlr.TerminalNode {
@@ -3872,13 +3905,10 @@ func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContex
 	{
 		p.SetState(254)
 
-		var _m = p.Match(OpenFGAParserIDENTIFIER)
+		var _x = p.Identifier()
 
-		localctx.(*RelationDefRewriteContext).rewriteComputedusersetName = _m
-		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-		}
+
+		localctx.(*RelationDefRewriteContext).rewriteComputedusersetName = _x
 	}
 	p.SetState(259)
 	p.GetErrorHandler().Sync(p)
@@ -3912,13 +3942,10 @@ func (p *OpenFGAParser) RelationDefRewrite() (localctx IRelationDefRewriteContex
 		{
 			p.SetState(258)
 
-			var _m = p.Match(OpenFGAParserIDENTIFIER)
+			var _x = p.Identifier()
 
-			localctx.(*RelationDefRewriteContext).rewriteTuplesetName = _m
-			if p.HasError() {
-					// Recognition error - abort rule
-					goto errorExit
-			}
+
+			localctx.(*RelationDefRewriteContext).rewriteTuplesetName = _x
 		}
 
 		} else if p.HasError() { // JIM
@@ -4189,29 +4216,31 @@ type IRelationDefTypeRestrictionBaseContext interface {
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
-	// GetRelationDefTypeRestrictionType returns the relationDefTypeRestrictionType token.
-	GetRelationDefTypeRestrictionType() antlr.Token 
-
 	// GetRelationDefTypeRestrictionWildcard returns the relationDefTypeRestrictionWildcard token.
 	GetRelationDefTypeRestrictionWildcard() antlr.Token 
 
-	// GetRelationDefTypeRestrictionRelation returns the relationDefTypeRestrictionRelation token.
-	GetRelationDefTypeRestrictionRelation() antlr.Token 
-
-
-	// SetRelationDefTypeRestrictionType sets the relationDefTypeRestrictionType token.
-	SetRelationDefTypeRestrictionType(antlr.Token) 
 
 	// SetRelationDefTypeRestrictionWildcard sets the relationDefTypeRestrictionWildcard token.
 	SetRelationDefTypeRestrictionWildcard(antlr.Token) 
 
-	// SetRelationDefTypeRestrictionRelation sets the relationDefTypeRestrictionRelation token.
-	SetRelationDefTypeRestrictionRelation(antlr.Token) 
+
+	// GetRelationDefTypeRestrictionType returns the relationDefTypeRestrictionType rule contexts.
+	GetRelationDefTypeRestrictionType() IIdentifierContext
+
+	// GetRelationDefTypeRestrictionRelation returns the relationDefTypeRestrictionRelation rule contexts.
+	GetRelationDefTypeRestrictionRelation() IIdentifierContext
+
+
+	// SetRelationDefTypeRestrictionType sets the relationDefTypeRestrictionType rule contexts.
+	SetRelationDefTypeRestrictionType(IIdentifierContext)
+
+	// SetRelationDefTypeRestrictionRelation sets the relationDefTypeRestrictionRelation rule contexts.
+	SetRelationDefTypeRestrictionRelation(IIdentifierContext)
 
 
 	// Getter signatures
-	AllIDENTIFIER() []antlr.TerminalNode
-	IDENTIFIER(i int) antlr.TerminalNode
+	AllIdentifier() []IIdentifierContext
+	Identifier(i int) IIdentifierContext
 	COLON() antlr.TerminalNode
 	HASH() antlr.TerminalNode
 	STAR() antlr.TerminalNode
@@ -4223,9 +4252,9 @@ type IRelationDefTypeRestrictionBaseContext interface {
 type RelationDefTypeRestrictionBaseContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
-	relationDefTypeRestrictionType antlr.Token
+	relationDefTypeRestrictionType IIdentifierContext 
 	relationDefTypeRestrictionWildcard antlr.Token
-	relationDefTypeRestrictionRelation antlr.Token
+	relationDefTypeRestrictionRelation IIdentifierContext 
 }
 
 func NewEmptyRelationDefTypeRestrictionBaseContext() *RelationDefTypeRestrictionBaseContext {
@@ -4255,26 +4284,61 @@ func NewRelationDefTypeRestrictionBaseContext(parser antlr.Parser, parent antlr.
 
 func (s *RelationDefTypeRestrictionBaseContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *RelationDefTypeRestrictionBaseContext) GetRelationDefTypeRestrictionType() antlr.Token { return s.relationDefTypeRestrictionType }
-
 func (s *RelationDefTypeRestrictionBaseContext) GetRelationDefTypeRestrictionWildcard() antlr.Token { return s.relationDefTypeRestrictionWildcard }
 
-func (s *RelationDefTypeRestrictionBaseContext) GetRelationDefTypeRestrictionRelation() antlr.Token { return s.relationDefTypeRestrictionRelation }
-
-
-func (s *RelationDefTypeRestrictionBaseContext) SetRelationDefTypeRestrictionType(v antlr.Token) { s.relationDefTypeRestrictionType = v }
 
 func (s *RelationDefTypeRestrictionBaseContext) SetRelationDefTypeRestrictionWildcard(v antlr.Token) { s.relationDefTypeRestrictionWildcard = v }
 
-func (s *RelationDefTypeRestrictionBaseContext) SetRelationDefTypeRestrictionRelation(v antlr.Token) { s.relationDefTypeRestrictionRelation = v }
+
+func (s *RelationDefTypeRestrictionBaseContext) GetRelationDefTypeRestrictionType() IIdentifierContext { return s.relationDefTypeRestrictionType }
+
+func (s *RelationDefTypeRestrictionBaseContext) GetRelationDefTypeRestrictionRelation() IIdentifierContext { return s.relationDefTypeRestrictionRelation }
 
 
-func (s *RelationDefTypeRestrictionBaseContext) AllIDENTIFIER() []antlr.TerminalNode {
-	return s.GetTokens(OpenFGAParserIDENTIFIER)
+func (s *RelationDefTypeRestrictionBaseContext) SetRelationDefTypeRestrictionType(v IIdentifierContext) { s.relationDefTypeRestrictionType = v }
+
+func (s *RelationDefTypeRestrictionBaseContext) SetRelationDefTypeRestrictionRelation(v IIdentifierContext) { s.relationDefTypeRestrictionRelation = v }
+
+
+func (s *RelationDefTypeRestrictionBaseContext) AllIdentifier() []IIdentifierContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IIdentifierContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IIdentifierContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IIdentifierContext); ok {
+			tst[i] = t.(IIdentifierContext)
+			i++
+		}
+	}
+
+	return tst
 }
 
-func (s *RelationDefTypeRestrictionBaseContext) IDENTIFIER(i int) antlr.TerminalNode {
-	return s.GetToken(OpenFGAParserIDENTIFIER, i)
+func (s *RelationDefTypeRestrictionBaseContext) Identifier(i int) IIdentifierContext {
+	var t antlr.RuleContext;
+	j := 0
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IIdentifierContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext);
+				break
+			}
+			j++
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IIdentifierContext)
 }
 
 func (s *RelationDefTypeRestrictionBaseContext) COLON() antlr.TerminalNode {
@@ -4320,13 +4384,10 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionBase() (localctx IRelationDefT
 	{
 		p.SetState(276)
 
-		var _m = p.Match(OpenFGAParserIDENTIFIER)
+		var _x = p.Identifier()
 
-		localctx.(*RelationDefTypeRestrictionBaseContext).relationDefTypeRestrictionType = _m
-		if p.HasError() {
-				// Recognition error - abort rule
-				goto errorExit
-		}
+
+		localctx.(*RelationDefTypeRestrictionBaseContext).relationDefTypeRestrictionType = _x
 	}
 	p.SetState(281)
 	p.GetErrorHandler().Sync(p)
@@ -4369,13 +4430,10 @@ func (p *OpenFGAParser) RelationDefTypeRestrictionBase() (localctx IRelationDefT
 		{
 			p.SetState(280)
 
-			var _m = p.Match(OpenFGAParserIDENTIFIER)
+			var _x = p.Identifier()
 
-			localctx.(*RelationDefTypeRestrictionBaseContext).relationDefTypeRestrictionRelation = _m
-			if p.HasError() {
-					// Recognition error - abort rule
-					goto errorExit
-			}
+
+			localctx.(*RelationDefTypeRestrictionBaseContext).relationDefTypeRestrictionRelation = _x
 		}
 
 

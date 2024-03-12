@@ -39,15 +39,15 @@ relationRecurseNoDirect:
     ) WHITESPACE* RPAREN;
 
 relationDefDirectAssignment: LBRACKET WHITESPACE? relationDefTypeRestriction WHITESPACE? (COMMA WHITESPACE? relationDefTypeRestriction WHITESPACE?)* RPRACKET;
-relationDefRewrite: rewriteComputedusersetName=IDENTIFIER (WHITESPACE FROM WHITESPACE rewriteTuplesetName=IDENTIFIER)?;
+relationDefRewrite: rewriteComputedusersetName=identifier (WHITESPACE FROM WHITESPACE rewriteTuplesetName=identifier)?;
 
 relationDefTypeRestriction: NEWLINE? (
     relationDefTypeRestrictionBase
     | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE conditionName)
     ) NEWLINE?;
-relationDefTypeRestrictionBase: relationDefTypeRestrictionType=IDENTIFIER
+relationDefTypeRestrictionBase: relationDefTypeRestrictionType=identifier
     ((COLON relationDefTypeRestrictionWildcard=STAR)
-     | (HASH relationDefTypeRestrictionRelation=IDENTIFIER))?;
+     | (HASH relationDefTypeRestrictionRelation=identifier))?;
 
 // Conditions
 conditions: condition*;

@@ -1473,21 +1473,45 @@
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
     type schema
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
     type type
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
     type relation
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
+    type module
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+        define module: [user]
+        define extend: [user]
+    type extend
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+        define module: [user]
+        define extend: [user]

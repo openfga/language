@@ -109,7 +109,7 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   exitModuleHeader = (ctx: ModuleHeaderContext) => {
     this.isModularModel = true;
-    this.moduleName = ctx._moduleName.text;
+    this.moduleName = ctx._moduleName.getText();
   };
 
   exitModelHeader = (ctx: ModelHeaderContext) => {

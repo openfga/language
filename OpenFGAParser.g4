@@ -6,7 +6,7 @@ main: WHITESPACE? NEWLINE? (modelHeader | moduleHeader) NEWLINE? typeDefs NEWLIN
 // Model Header
 modelHeader: (multiLineComment NEWLINE)? MODEL NEWLINE SCHEMA WHITESPACE schemaVersion=SCHEMA_VERSION WHITESPACE?;
 // Module Header
-moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=IDENTIFIER WHITESPACE?;
+moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=identifier WHITESPACE?;
 
 // Type Definitions
 typeDefs: typeDef*;
@@ -64,7 +64,7 @@ parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_
 
 multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
 
-identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER;
+identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER | MODULE | EXTEND;
 
 conditionExpression: ((
 IDENTIFIER |

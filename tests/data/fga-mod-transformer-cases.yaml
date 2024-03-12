@@ -2,7 +2,6 @@
 - name: valid syntax
   modFile: |
     schema: '1.2'
-    module: acme
     contents:
       - core.fga
       - team1/project.fga
@@ -21,24 +20,13 @@
           "end": 14
         }
       },
-      "module":{
-        "value": "acme",
-        "line": {
-          "start": 2,
-          "end": 2
-        },
-        "column": {
-          "start": 9,
-          "end": 13
-        }
-      },
       "contents": {
         "value": [
           {
             "value": "core.fga",
             "line": {
-              "start": 4,
-              "end": 4
+              "start": 3,
+              "end": 3
             },
             "column": {
               "start": 5,
@@ -48,8 +36,8 @@
           {
             "value": "team1/project.fga",
             "line": {
-              "start": 5,
-              "end": 5
+              "start": 4,
+              "end": 4
             },
             "column": {
               "start": 5,
@@ -59,8 +47,8 @@
           {
             "value": "team1/board.fga",
             "line": {
-              "start": 6,
-              "end": 6
+              "start": 5,
+              "end": 5
             },
             "column": {
               "start": 5,
@@ -70,8 +58,8 @@
           {
             "value": "wiki.fga",
             "line": {
-              "start": 7,
-              "end": 7
+              "start": 6,
+              "end": 6
             },
             "column": {
               "start": 5,
@@ -80,8 +68,8 @@
           }
         ],
         "line": {
-          "start": 4,
-          "end": 8
+          "start": 3,
+          "end": 7
         },
         "column": {
           "start": 3,
@@ -91,7 +79,6 @@
     }
 - name: missing schema
   modFile: |
-    module: acme
     contents:
       - core.fga
   expected_errors:
@@ -105,7 +92,6 @@
 - name: invalid schema type
   modFile: |
     schema: true
-    module: acme
     contents:
       - core.fga
   expected_errors:
@@ -119,7 +105,6 @@
 - name: invalid schema version
   modFile: |
     schema: "1.1"
-    module: acme
     contents:
       - core.fga
   expected_errors:
@@ -130,37 +115,9 @@
       column:
         start: 9
         end: 14
-- name: missing module
-  modFile: |
-    schema: "1.2"
-    contents:
-      - core.fga
-  expected_errors:
-    - msg: missing module field
-      line:
-        start: 1
-        end: 1
-      column:
-        start: 1
-        end: 1
-- name: invalid module type
-  modFile: |
-    schema: "1.2"
-    module: true
-    contents:
-      - core.fga
-  expected_errors:
-    - msg: unexpected module type, expected string got value true
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 9
-        end: 13
 - name: missing contents
   modFile: |
     schema: "1.2"
-    module: acme
   expected_errors:
     - msg: missing contents field
       line:
@@ -172,49 +129,46 @@
 - name: invalid contents type
   modFile: |
     schema: "1.2"
-    module: acme
     contents: true
   expected_errors:
     - msg: unexpected contents type, expected list of strings got value true
       line:
-        start: 3
-        end: 3
+        start: 2
+        end: 2
       column:
         start: 11
         end: 15
 - name: contents is not a list of strings
   modFile: |
     schema: "1.2"
-    module: acme
     contents:
       - true
       - 1
   expected_errors:
     - msg: unexpected contents item type, expected string got value true
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
         start: 5
         end: 9
     - msg: unexpected contents item type, expected string got value 1
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 5
         end: 6
 - name: contents item does not end with `.fga`
   modFile: |
     schema: "1.2"
-    module: acme
     contents:
       - core.txt
   expected_errors:
     - msg: contents items should use fga file extension, got core.txt
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
         start: 5
         end: 13

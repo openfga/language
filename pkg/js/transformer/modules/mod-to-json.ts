@@ -38,10 +38,6 @@ export interface ModFile {
    */
   schema: ModFileProperty<string>
   /**
-   * The module name.
-   */
-  module: ModFileProperty<string>
-  /**
    * The individual files that make up the modular model.
    */
   contents: ModFileProperty<ModFileProperty<string>[]>
@@ -146,24 +142,6 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
     parsedModFile.schema = {
       value: schemaNode.value,
       ...getLineAndColumnFromNode(schemaNode, lineCounter)
-    };
-  }
-
-  const moduleNode = yamlDoc.get("module", true) as Scalar<string>;
-  if (!moduleNode) {
-    errors.push(new FGAModFileValidationSingleError({
-      msg: "missing module field",
-      ...getLineAndColumnFromLinePos()
-    }));
-  } else if (typeof moduleNode.value !== "string") {
-    errors.push(new FGAModFileValidationSingleError({
-      msg: `unexpected module type, expected string got value ${moduleNode.value}`,
-      ...getLineAndColumnFromNode(moduleNode, lineCounter)
-    }));
-  } else {
-    parsedModFile.module = {
-      value: moduleNode.value,
-      ...getLineAndColumnFromNode(moduleNode, lineCounter)
     };
   }
 

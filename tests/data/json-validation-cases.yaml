@@ -20,9 +20,6 @@
       metadata:
         symbol: ""
         errorType: schema-version-required
-    - msg: "invalid schema undefined"
-      metadata:
-        errorType: invalid-schema
 
 - name: relation def where this is not in first place
   json: |

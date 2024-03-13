@@ -824,6 +824,8 @@ export function validateJSON(
     case "1.2":
       modelValidation(collector, errors, authorizationModel, lines);
       break;
+    case undefined:
+      break;
     default: {
       const lineIndex = getSchemaLineNumber(schemaVersion, lines);
       collector.raiseInvalidSchemaVersion(schemaVersion, lineIndex);

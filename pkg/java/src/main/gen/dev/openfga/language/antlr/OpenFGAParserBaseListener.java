@@ -41,6 +41,18 @@ public class OpenFGAParserBaseListener implements OpenFGAParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterModuleHeader(OpenFGAParser.ModuleHeaderContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitModuleHeader(OpenFGAParser.ModuleHeaderContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterTypeDefs(OpenFGAParser.TypeDefsContext ctx) { }
 	/**
 	 * {@inheritDoc}

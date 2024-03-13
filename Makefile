@@ -9,16 +9,16 @@ ANTLR_CMD=${docker_binary} run -t --rm -v ${PWD}:/app:Z ${ANTLR_DOCKER_IMAGE}
 all: build
 
 .PHONY: antlr-gen
-antlr-gen: antlr-gen-go antlr-gen-js
+antlr-gen: antlr-gen-go antlr-gen-js antlr-gen-java
 
 .PHONY: build
-build: build-go build-js
+build: build-go build-js build-java
 
 .PHONY: test
-test: test-go test-js
+test: test-go test-js test-java
 
 .PHONY: lint
-lint: lint-go lint-js
+lint: lint-go lint-js lint-java
 
 #### Go #####
 

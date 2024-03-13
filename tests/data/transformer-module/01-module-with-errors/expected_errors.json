@@ -24,6 +24,19 @@
     }
   },
   {
+    "msg": "no viable alternative at input '\\n  define'",
+    "file": "syntax-error.fga",
+    "line": {
+      "start": 4,
+      "end": 4
+    },
+    "column": {
+      "start": 2,
+      "end": 8
+    },
+    "type": "syntax"
+  },
+  {
     "msg": "extended type noexist does not exist",
     "file": "org.fga",
     "line": {

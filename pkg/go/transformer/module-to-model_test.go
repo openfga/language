@@ -2,6 +2,7 @@ package transformer_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	pb "github.com/openfga/api/proto/openfga/v1"
@@ -59,27 +60,22 @@ func TestTransformModuleToJSON(t *testing.T) {
 
 					for i := 0; i < len(testCase.ExpectedErrors); i++ {
 						errorDetails := testCase.ExpectedErrors[i]
-						expected := errors[i]
-						actual := &transformer.ModuleTransformationSingleError{
-							Line: struct {
-								Start int
-								End   int
-							}{
-								Start: errorDetails.Line.Start,
-								End:   errorDetails.Line.End,
-							},
-							Column: struct {
-								Start int
-								End   int
-							}{
-								Start: errorDetails.Column.Start,
-								End:   errorDetails.Column.End,
-							},
-							Msg:  errorDetails.Msg,
-							File: errorDetails.File,
+						actual := errors[i]
+
+						errorType := "transformation"
+						if errorDetails.Type != "" {
+							errorType = errorDetails.Type
 						}
 
-						assert.Equal(t, expected, actual)
+						assert.Equal(t,
+							fmt.Sprintf("%s error at line=%d, column=%d: %s",
+								errorType,
+								errorDetails.Line.Start,
+								errorDetails.Column.Start,
+								errorDetails.Msg,
+							),
+							actual.Error(),
+						)
 					}
 				}
 			}

@@ -34,6 +34,7 @@ type expectedError struct {
 	Column   startEnd `json:"column"   yaml:"column"`
 	File     string   `json:"file"     yaml:"file"`
 	Metadata meta     `json:"metadata" yaml:"metadata"`
+	Type     string   `json:"type"     yaml:"type"`
 }
 
 func (testCase *invalidDslSyntaxTestCase) GetErrorString() string {
@@ -194,10 +195,16 @@ func (testCase *moduleTestCase) GetErrorString() string {
 	}
 
 	errorsString := []string{}
+
 	for _, err := range testCase.ExpectedErrors {
+		errorType := "transformation"
+		if err.Type != "" {
+			errorType = err.Type
+		}
+
 		errorsString = append(
 			errorsString,
-			fmt.Sprintf("transformation error at line=%d, column=%d: %s", err.Line.Start, err.Column.Start, err.Msg),
+			fmt.Sprintf("%s error at line=%d, column=%d: %s", errorType, err.Line.Start, err.Column.Start, err.Msg),
 		)
 	}
 

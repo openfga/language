@@ -94,7 +94,10 @@ export const transformModuleFilesToModel = (
       }
     } catch (error) {
       if (error instanceof DSLSyntaxError) {
-        errors.push(...error.errors);
+        for (const e of error.errors) {
+          e.file = name;
+          errors.push(e);
+        }
       } else if (error instanceof Error) {
         errors.push(error as BaseError);
       }

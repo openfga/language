@@ -1,4 +1,9 @@
-import { ModelValidationSingleError, ModuleTransformationError, ModuleTransformationSingleError } from "../../errors";
+import {
+    DSLSyntaxSingleError,
+    ModelValidationSingleError,
+    ModuleTransformationError,
+    ModuleTransformationSingleError
+} from "../../errors";
 import { transformModuleFilesToModel } from "../../transformer/modules/modules-to-model";
 import { loadModuleTestCases } from "../_testcases";
 
@@ -23,15 +28,17 @@ describe("transformModuleFilesToModel", () => {
                     const errorsCount = testCase.expected_errors.length;
                     expect(exception.message).toEqual(
                         `${errorsCount} error${errorsCount === 1 ? "" : "s"} occurred:\n\t* ${testCase.expected_errors
-                        .map((err: ModelValidationSingleError|ModuleTransformationSingleError) => {
+                        .map((err: ModelValidationSingleError|ModuleTransformationSingleError|DSLSyntaxSingleError) => {
                             let errorType = "transformation-error";
                             if ((err as ModelValidationSingleError).metadata?.errorType) {
                                 errorType = (err as ModelValidationSingleError).metadata!.errorType;
+                            } else if ((err as DSLSyntaxSingleError).type) {
+                                errorType = err.type;
                             }
 
                             let msg = `${errorType} error`;
-                            if (err?.line && !err.metadata) {
-                                msg += ` at line=${err.line.start}, column=${err.column?.start}`;
+                            if (!err.metadata || err.type) {
+                                msg += ` at line=${err.line?.start}, column=${err.column?.start}`;
                             }
                             msg += `: ${err.msg}`;
                             return msg;

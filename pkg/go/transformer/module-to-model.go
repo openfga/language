@@ -81,7 +81,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 
 		mdl, typeDefExtensions, err := TransformModularDSLToProto(module.Contents)
 		if err != nil {
-			var syntaxError *OpenFgaDslSyntaxMultipleError
+			var syntaxError *multierror.Error
 			if errors.As(err, &syntaxError) {
 				transformErrors = multierror.Append(transformErrors, syntaxError.Errors...)
 			}

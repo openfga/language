@@ -54,9 +54,9 @@ public class DslValidator {
             errors.raiseSchemaVersionRequired(0, "");
         }
 
-        if (schemaVersion.equals("1.1")) {
+        if (schemaVersion != null && schemaVersion.equals("1.1")) {
             modelValidation();
-        } else {
+        } else if (schemaVersion != null) {
             var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
             errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);
         }

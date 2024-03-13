@@ -24,7 +24,7 @@ class ValidationErrorsBuilder {
 
         var rawLine = lines[lineIndex];
         var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 0;
+        var wordIdx = 1;
         var matcher = regex.matcher(rawLine);
         if (matcher.find()) {
             wordIdx = matcher.start() + 1;

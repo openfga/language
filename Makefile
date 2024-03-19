@@ -9,16 +9,16 @@ ANTLR_CMD=${docker_binary} run -t --rm -v ${PWD}:/app:Z ${ANTLR_DOCKER_IMAGE}
 all: build
 
 .PHONY: antlr-gen
-antlr-gen: antlr-gen-go antlr-gen-js
+antlr-gen: antlr-gen-go antlr-gen-js antlr-gen-java
 
 .PHONY: build
-build: build-go build-js
+build: build-go build-js build-java
 
 .PHONY: test
-test: test-go test-js
+test: test-go test-js test-java
 
 .PHONY: lint
-lint: lint-go lint-js
+lint: lint-go lint-js lint-java
 
 #### Go #####
 
@@ -95,6 +95,44 @@ format-js: antlr-gen-js
 .PHONY: all-tests-js
 all-tests-js: antlr-gen-js
 	$(MAKE) -C pkg/js all-tests
+
+#### Java #####
+
+.PHONY: antlr-gen-java
+antlr-gen-java: build-antlr-container
+	${ANTLR_CMD} -Dlanguage=Java -o pkg/java/src/main/gen/dev/openfga/language/antlr -package dev.openfga.language.antlr /app/OpenFGALexer.g4 /app/OpenFGAParser.g4
+
+.PHONY: build-java
+build-java: antlr-gen-java
+	$(MAKE) -C pkg/java build
+
+.PHONY: run-java
+run-java: antlr-gen-java
+	$(MAKE) -C pkg/java run
+
+.PHONY: clean-java
+clean-java:
+	$(MAKE) -C pkg/java clean
+
+.PHONY: test-java
+test-java: antlr-gen-java
+	$(MAKE) -C pkg/java test
+
+.PHONY: lint-java
+lint-java: antlr-gen-java
+	$(MAKE) -C pkg/java lint
+
+.PHONY: audit-java
+audit-java: antlr-gen-java
+	$(MAKE) -C pkg/java audit
+
+.PHONY: format-java
+format-java: antlr-gen-java
+	$(MAKE) -C pkg/java format
+
+.PHONY: all-tests-java
+all-tests-java: antlr-gen-java
+	$(MAKE) -C pkg/java all-tests
 
 #### Util ####
 

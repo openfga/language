@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.12
+
+### [v0.2.0-beta.12](https://github.com/openfga/language/compare/323aac545377c0a26486db1323ce26ca5e4e1443...8a7e04f4da52f8be1c9321ff4b125a8fef1e6102) (2024-03-19)
+
+Added:
+- Initial support for [Modular Models](https://github.com/openfga/rfcs/blob/main/20231212-modular-models.md) (#148)
+
 ## v0.2.0-beta.11
 
 ### [v0.2.0-beta.11](https://github.com/openfga/language/releases/tag/vv0.2.0-beta.10...v0.2.0-beta.11) (2024-02-22)

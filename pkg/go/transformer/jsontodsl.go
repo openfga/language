@@ -256,6 +256,13 @@ func parseRelation(
 		occurred: 0,
 	}
 
+	sourceString := constructSourceComment(
+		relationMetadata.GetModule(),
+		relationMetadata.GetSourceInfo().GetFile(),
+		"    ",
+		" extended by:",
+	)
+
 	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
 
 	parseFn := parseSubRelation
@@ -276,7 +283,7 @@ func parseRelation(
 
 	// Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
 	if validator.occurrences() == 0 || (validator.occurrences() == 1 && validator.isFirstPosition(relationDefinition)) {
-		return fmt.Sprintf(`    define %v: %v`, relationName, parsedRelationString), nil
+		return fmt.Sprintf(`%s    define %v: %v`, sourceString, relationName, parsedRelationString), nil
 	}
 
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
@@ -308,7 +315,14 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 
 func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
 	typeName := typeDefinition.GetType()
-	parsedTypeString := fmt.Sprintf(`type %v`, typeName)
+	sourceString := constructSourceComment(
+		typeDefinition.GetMetadata().GetModule(),
+		typeDefinition.GetMetadata().GetSourceInfo().GetFile(),
+		"",
+		"",
+	)
+
+	parsedTypeString := fmt.Sprintf(`%stype %v`, sourceString, typeName)
 	relations := typeDefinition.GetRelations()
 	metadata := typeDefinition.GetMetadata()
 
@@ -377,9 +391,15 @@ func parseCondition(conditionName string, conditionDef *pb.Condition) (string, e
 	}
 
 	paramsString := parseConditionParams(conditionDef.GetParameters())
+	sourceString := constructSourceComment(
+		conditionDef.GetMetadata().GetModule(),
+		conditionDef.GetMetadata().GetSourceInfo().GetFile(),
+		"", "",
+	)
 
 	return fmt.Sprintf(
-		"condition %s(%s) {\n  %s\n}\n",
+		"%scondition %s(%s) {\n  %s\n}\n",
+		sourceString,
 		conditionDef.GetName(),
 		paramsString,
 		conditionDef.GetExpression(),
@@ -416,6 +436,14 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 	}
 
 	return parsedConditionsString, nil
+}
+
+func constructSourceComment(module, file, leadingSpaces, leadingString string) string {
+	if module == "" && file == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s#%s module %s, file %s\n", leadingSpaces, leadingString, module, file)
 }
 
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.

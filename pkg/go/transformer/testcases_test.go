@@ -184,6 +184,7 @@ type moduleTestCase struct {
 	Name           string `json:"name" yaml:"name"`
 	Modules        []transformer.ModuleFile
 	JSON           string `json:"json" yaml:"json"`
+	DSL            string
 	Skip           bool
 	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
 }
@@ -241,6 +242,11 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
 		modelFile := filepath.Join(testDataPath, testCase.Name, "authorization-model.json")
 		if jsonData, err := os.ReadFile(modelFile); err == nil {
 			testCase.JSON = string(jsonData)
+		}
+
+		dslFile := filepath.Join(testDataPath, testCase.Name, "combined.fga")
+		if dslData, err := os.ReadFile(dslFile); err == nil {
+			testCase.DSL = string(dslData)
 		}
 
 		errorsFile := filepath.Join(testDataPath, testCase.Name, "expected_errors.json")

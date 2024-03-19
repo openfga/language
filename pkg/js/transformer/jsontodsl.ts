@@ -1,7 +1,9 @@
 import type {
   AuthorizationModel,
   Condition,
+  ConditionMetadata,
   ConditionParamTypeRef,
+  Metadata,
   RelationMetadata,
   RelationReference,
   TypeDefinition,
@@ -190,7 +192,8 @@ function parseRelation(
 ) {
   const validator = new DirectAssignmentValidator();
 
-  let parsedRelationString = `    define ${relationName}: `;
+  const sourceString = constructSourceComment(relationMetadata, "    ", " extended by:");
+  let parsedRelationString = `${sourceString}    define ${relationName}: `;
   const typeRestrictions: RelationReference[] = relationMetadata.directly_related_user_types || [];
 
   if (relationDefinition.difference != null) {
@@ -226,20 +229,38 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
 
 const parseType = (typeDef: TypeDefinition): string => {
   const typeName = typeDef.type;
-  let parsedTypeString = `\ntype ${typeName}`;
+
+  const sourceString = constructSourceComment(typeDef.metadata);
+  let parsedTypeString = `\n${sourceString}type ${typeName}`;
 
   const relations = typeDef.relations || {};
   const metadata = typeDef.metadata;
 
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
-    for (const relationName in relations) {
-      const parsedRelationString = parseRelation(
-        typeName,
-        relationName,
-        relations[relationName],
-        metadata?.relations?.[relationName],
-      );
+    const sortedRelations = Object.entries(relations).sort(([aName], [bName]) => {
+      const aMetadata = metadata?.relations?.[aName];
+      const bMetadata = metadata?.relations?.[bName];
+
+      if (!aMetadata || !bMetadata) {
+        return aName.localeCompare(bName);
+      }
+
+      // Sort by:
+      // Module name
+      // File name
+      // Relation name
+
+      if (aMetadata.module !== bMetadata.module) {
+        return aMetadata.module!.localeCompare(bMetadata.module!);
+      } else if (aMetadata.source_info?.file !== bMetadata.source_info?.file) {
+        return aMetadata.source_info!.file!.localeCompare(bMetadata.source_info!.file!);
+      }
+
+      return aName.localeCompare(bName);
+    });
+    for (const [name, definition] of sortedRelations) {
+      const parsedRelationString = parseRelation(typeName, name, definition, metadata?.relations?.[name]);
       parsedTypeString += `\n${parsedRelationString}`;
     }
   }
@@ -271,8 +292,9 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
   }
 
   const paramsString = parseConditionParams(conditionDef.parameters || {});
+  const sourceString = constructSourceComment(conditionDef.metadata);
 
-  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
+  return `${sourceString}condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
 };
 
 const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
@@ -282,6 +304,7 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
   }
 
   let parsedConditionsString = "";
+
   Object.keys(conditionsMap)
     .sort()
     .forEach((conditionName) => {
@@ -292,6 +315,16 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
     });
 
   return parsedConditionsString;
+};
+
+const constructSourceComment = (
+  metadata?: ConditionMetadata | Metadata,
+  leadingSpaces = "",
+  leadingString = "",
+): string => {
+  return metadata?.module
+    ? `${leadingSpaces}#${leadingString} module ${metadata.module}, file ${metadata.source_info?.file}\n`
+    : "";
 };
 
 export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {

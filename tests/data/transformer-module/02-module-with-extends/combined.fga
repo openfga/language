@@ -1,0 +1,27 @@
+model
+  schema 1.2
+
+# module core, file core.fga
+type user
+  relations
+    # extended by: module board, file board.fga
+    define another_thing: [user]
+    # extended by: module org, file org.fga
+    define manager: [user]
+    define thing: [other]
+
+# module core, file core.fga
+type other
+  relations
+    # extended by: module board, file board.fga
+    define second_thing: [user]
+
+# module org, file org.fga
+type org
+  relations
+    define member: [user with a_check]
+
+# module org, file org.fga
+condition a_check(val: int) {
+  val <= 10
+}

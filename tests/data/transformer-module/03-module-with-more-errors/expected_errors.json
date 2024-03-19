@@ -1,0 +1,17 @@
+[
+  {
+    "msg": "the relation `missing` does not exist.",
+    "file": "org.fga",
+    "line": {
+      "start": 3,
+      "end": 3
+    },
+    "column": {
+      "start": 6,
+      "end": 10
+    },
+    "metadata": {
+      "errorType": "missing-definition"
+    }
+  }
+]

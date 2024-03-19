@@ -1,0 +1,22 @@
+module core
+
+type user
+
+type org
+  relations
+    define other: missing
+    define has_assigned: admin from user
+    define parent: [unknown]
+    define viewer: [user with missing_condition]
+
+type group
+  relations
+    define group: group from group # cant test because of not doing validation if there are errors
+    define parent: [group] or parent from parent
+    define viewer: [user] or viewer from parent
+    define owner: [group, group:*]
+    define other: [user] or viewer from owner
+
+condition allowed_ip(current_ip: ipaddress) {
+  current_ip.in_cidr("192.168.0.0/24")
+}

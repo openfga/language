@@ -259,7 +259,12 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
 				}
 			}
 
-			testCase.ExpectedErrors = errors
+			// If we have 0 errors after removing the validation errors then just skip the test
+			if len(errors) == 0 {
+				testCase.Skip = true
+			} else {
+				testCase.ExpectedErrors = errors
+			}
 		}
 
 		moduleDirectory := filepath.Join(testDataPath, testCase.Name, "module")

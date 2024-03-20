@@ -1,4 +1,10 @@
-import { ModelValidationSingleError, ModuleTransformationSingleError, ValidationError } from "../errors";
+import {
+  ErrorMetadata,
+  ErrorProperties,
+  ModelValidationSingleError,
+  ModuleTransformationSingleError,
+  ValidationError,
+} from "../errors";
 import { Keyword, ReservedKeywords } from "../validator/keywords";
 
 interface ValidationErrorProps {
@@ -24,6 +30,8 @@ interface BaseProps {
   lineIndex?: number;
   file?: string;
   module?: string;
+  type?: string;
+  relation?: string;
 }
 
 const createInvalidName = (props: BaseProps, clause: string, typeName?: string) => {
@@ -66,7 +74,7 @@ const createReservedRelationNameError = (props: BaseProps) => {
 };
 
 const createTupleUsersetRequireDirectError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module, type, relation } = props;
 
   errors.push(
     constructValidationError({
@@ -78,43 +86,55 @@ const createTupleUsersetRequireDirectError = (props: BaseProps) => {
         wordIdx = clauseStartsAt + rawLine.slice(clauseStartsAt).indexOf(value) + 1;
         return wordIdx;
       },
-      metadata: { symbol, errorType: ValidationError.TuplesetNotDirect },
+      metadata: { symbol, errorType: ValidationError.TuplesetNotDirect, file, module, typeName: type, relation },
     }),
   );
 };
 
 const createNoEntryPointLoopError = (props: BaseProps, typeName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `\`${symbol}\` is an impossible relation for \`${typeName}\` (potential loop).`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.RelationNoEntrypoint, relation: symbol },
+      metadata: { symbol, errorType: ValidationError.RelationNoEntrypoint, relation: symbol, typeName, file, module },
     }),
   );
 };
 
 const createNoEntryPointError = (props: BaseProps, typeName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, module, file } = props;
   errors.push(
     constructValidationError({
       message: `\`${symbol}\` is an impossible relation for \`${typeName}\` (no entrypoint).`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.RelationNoEntrypoint, relation: symbol },
+      metadata: { symbol, errorType: ValidationError.RelationNoEntrypoint, relation: symbol, typeName, module, file },
     }),
   );
 };
-
-const createInvalidTypeRelationError = (props: BaseProps, typeName: string, relationName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+// targetType and targetRelation, typeRestriction
+const createInvalidTypeRelationError = (
+  props: BaseProps,
+  typeName: string,
+  relationName: string,
+  offendingRelation: string,
+) => {
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
-      message: `\`${relationName}\` is not a valid relation for \`${typeName}\`.`,
+      message: `\`${offendingRelation}\` is not a valid relation for \`${typeName}\`.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.InvalidRelationType, relation: relationName, typeName },
+      metadata: {
+        symbol,
+        errorType: ValidationError.InvalidRelationType,
+        relation: relationName,
+        typeName,
+        file,
+        module,
+      },
     }),
   );
 };
@@ -125,7 +145,7 @@ const createInvalidConditionNameInParameterError = (
   relationName: string,
   conditionName: string,
 ) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, module, file } = props;
   // const rawLine = lines[lineIndex];
   // const actualValue = rawLine.includes("[")
   //   ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]") + 1)
@@ -144,31 +164,33 @@ const createInvalidConditionNameInParameterError = (
         errorType: ValidationError.ConditionNotDefined,
         relation: relationName,
         typeName,
+        file,
+        module,
       },
     }),
   );
 };
 
 const createUnusedConditionError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, module, file } = props;
   errors.push(
     constructValidationError({
       message: `\`${symbol}\` condition is not used in the model.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.ConditionNotUsed, conditionName: symbol },
+      metadata: { symbol, errorType: ValidationError.ConditionNotUsed, conditionName: symbol, module, file },
     }),
   );
 };
 
 const createInvalidTypeError = (props: BaseProps, typeName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module, relation } = props;
   errors.push(
     constructValidationError({
-      message: `\`${typeName}\` is not a valid type.`,
+      message: `\`${symbol}\` is not a valid type.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.InvalidType, typeName: typeName },
+      metadata: { symbol, errorType: ValidationError.InvalidType, typeName: typeName, file, module, relation },
     }),
   );
 };
@@ -278,19 +300,26 @@ const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
 };
 
 const createAssignableTypeWildcardRelationError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module, type, relation } = props;
   errors.push(
     constructValidationError({
       message: `type restriction \`${symbol}\` cannot contain both wildcard and relation`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.TypeRestrictionCannotHaveWildcardAndRelation },
+      metadata: {
+        symbol,
+        errorType: ValidationError.TypeRestrictionCannotHaveWildcardAndRelation,
+        relation,
+        typeName: type,
+        module,
+        file,
+      },
     }),
   );
 };
 
 const createInvalidRelationError = (props: BaseProps, validRelations: string[]) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module, type, relation } = props;
   const isInValid = !validRelations?.includes(symbol);
   if (isInValid) {
     errors.push(
@@ -298,7 +327,7 @@ const createInvalidRelationError = (props: BaseProps, validRelations: string[]) 
         message: `the relation \`${symbol}\` does not exist.`,
         lines,
         lineIndex,
-        metadata: { symbol, errorType: ValidationError.MissingDefinition, relation: symbol },
+        metadata: { symbol, errorType: ValidationError.MissingDefinition, relation, file, module, typeName: type },
       }),
     );
   }
@@ -347,38 +376,38 @@ export const createMaximumOneDirectRelationship = (props: BaseProps) => {
 function constructValidationError(props: ValidationErrorProps): ModelValidationSingleError {
   const { message, lines, lineIndex, customResolver, metadata } = props;
 
-  if (!lines?.length || lineIndex === undefined) {
-    return new ModelValidationSingleError(
-      {
-        msg: message,
-        file: metadata.file,
-      },
-      { symbol: metadata?.symbol, errorType: metadata.errorType, module: metadata.module },
-    );
+  const errorProps: ErrorProperties = {
+    msg: message,
+    file: metadata.file,
+  };
+
+  const errorMetadata: ErrorMetadata = {
+    symbol: metadata?.symbol,
+    errorType: metadata.errorType,
+    module: metadata.module,
+    relation: metadata.relation,
+    type: metadata.typeName,
+  };
+
+  if (lines?.length && lineIndex != undefined) {
+    const rawLine = lines[lineIndex];
+
+    const re = new RegExp("\\b" + metadata.symbol + "\\b");
+    let wordIdx = rawLine?.search(re) + 1;
+
+    if (isNaN(wordIdx) || wordIdx === 0) {
+      wordIdx = 1;
+    }
+
+    if (typeof customResolver === "function") {
+      wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
+    }
+
+    errorProps.line = { start: lineIndex + 1, end: lineIndex + 1 };
+    errorProps.column = { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) };
   }
 
-  const rawLine = lines[lineIndex];
-
-  const re = new RegExp("\\b" + metadata.symbol + "\\b");
-  let wordIdx = rawLine?.search(re) + 1;
-
-  if (isNaN(wordIdx) || wordIdx === 0) {
-    wordIdx = 1;
-  }
-
-  if (typeof customResolver === "function") {
-    wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
-  }
-
-  return new ModelValidationSingleError(
-    {
-      line: { start: lineIndex + 1, end: lineIndex + 1 },
-      column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
-      msg: message,
-      file: metadata.file,
-    },
-    { symbol: metadata?.symbol, errorType: metadata.errorType, module: metadata.module },
-  );
+  return new ModelValidationSingleError(errorProps, errorMetadata);
 }
 
 interface Meta {
@@ -422,8 +451,17 @@ export class ExceptionCollector {
     });
   }
 
-  raiseTupleUsersetRequiresDirect(symbol: string, lineIndex?: number) {
-    createTupleUsersetRequireDirectError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  raiseTupleUsersetRequiresDirect(symbol: string, type: string, relation: string, meta: Meta, lineIndex?: number) {
+    createTupleUsersetRequireDirectError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      file: meta.file,
+      module: meta.module,
+      relation,
+      type,
+    });
   }
 
   raiseDuplicateTypeName(symbol: string, lineIndex?: number) {
@@ -442,41 +480,88 @@ export class ExceptionCollector {
     createDuplicateRelationshipDefinitionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
   }
 
-  raiseNoEntryPointLoop(symbol: string, typeName: string, lineIndex?: number) {
-    createNoEntryPointLoopError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  raiseNoEntryPointLoop(symbol: string, typeName: string, meta: Meta, lineIndex?: number) {
+    createNoEntryPointLoopError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, module: meta.module, file: meta.file },
+      typeName,
+    );
   }
 
-  raiseNoEntryPoint(symbol: string, typeName: string, lineIndex?: number) {
-    createNoEntryPointError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  raiseNoEntryPoint(symbol: string, typeName: string, meta: Meta, lineIndex?: number) {
+    createNoEntryPointError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, file: meta.file, module: meta.module },
+      typeName,
+    );
   }
 
-  raiseInvalidTypeRelation(symbol: string, typeName: string, relationName: string, lineIndex?: number) {
+  raiseInvalidTypeRelation(
+    symbol: string,
+    typeName: string,
+    relationName: string,
+    offendingRelation: string,
+    lineIndex?: number,
+    meta?: Meta,
+  ) {
     createInvalidTypeRelationError(
       {
         errors: this.errors,
         lines: this.lines,
         lineIndex,
         symbol,
+        file: meta?.file,
+        module: meta?.module,
       },
       typeName,
       relationName,
+      offendingRelation,
     );
   }
 
-  raiseInvalidType(symbol: string, typeName: string, lineIndex?: number) {
-    createInvalidTypeError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  raiseInvalidType(symbol: string, typeName: string, relation: string, meta: Meta, lineIndex?: number) {
+    createInvalidTypeError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, module: meta.module, file: meta.file, relation },
+      typeName,
+    );
   }
 
   raiseAssignableRelationMustHaveTypes(symbol: string, lineIndex?: number) {
     createAssignableRelationMustHaveTypesError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
   }
 
-  raiseAssignableTypeWildcardRelation(symbol: string, lineIndex?: number) {
-    createAssignableTypeWildcardRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  raiseAssignableTypeWildcardRelation(symbol: string, type: string, relation: string, meta: Meta, lineIndex?: number) {
+    createAssignableTypeWildcardRelationError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      relation,
+      type,
+      module: meta.module,
+      file: meta.file,
+    });
   }
 
-  raiseInvalidRelationError(symbol: string, validRelations: string[], lineIndex?: number) {
-    createInvalidRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, validRelations);
+  raiseInvalidRelationError(
+    symbol: string,
+    type: string,
+    relation: string,
+    validRelations: string[],
+    lineIndex?: number,
+    metadata?: Meta,
+  ) {
+    createInvalidRelationError(
+      {
+        errors: this.errors,
+        lines: this.lines,
+        lineIndex,
+        symbol,
+        file: metadata?.file,
+        module: metadata?.module,
+        type,
+        relation,
+      },
+      validRelations,
+    );
   }
 
   raiseInvalidSchemaVersion(symbol: string, lineIndex?: number) {
@@ -496,18 +581,26 @@ export class ExceptionCollector {
     typeName: string,
     relationName: string,
     conditionName: string,
+    meta: Meta,
     lineIndex?: number,
   ) {
     createInvalidConditionNameInParameterError(
-      { errors: this.errors, lines: this.lines, lineIndex, symbol },
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, module: meta.module, file: meta.file },
       typeName,
       relationName,
       conditionName,
     );
   }
 
-  raiseUnusedCondition(symbol: string, lineIndex?: number) {
-    createUnusedConditionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  raiseUnusedCondition(symbol: string, meta: Meta, lineIndex?: number) {
+    createUnusedConditionError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      module: meta.module,
+      file: meta.file,
+    });
   }
 }
 

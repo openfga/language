@@ -1,3 +1,13 @@
 module org
 
 type other
+
+extend type group
+  relations
+    define other: [user] or viewer from owner
+
+type folder
+  relations
+    define root: [folder]
+    define parent: [folder, folder#parent]
+    define viewer: [user] or viewer from parent

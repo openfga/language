@@ -36,6 +36,15 @@ export interface ErrorProperties {
   file?: string
 }
 
+export interface ErrorMetadata {
+  symbol: string;
+  errorType: ValidationError;
+  module? : string;
+  type?: string;
+  relation?: string;
+  condition?: string;
+}
+
 /**
  * Abstract base class for syntax and validation exceptions
  */
@@ -110,11 +119,7 @@ export class DSLSyntaxError extends Error {
 export class ModelValidationSingleError extends BaseError {
   constructor(
     public properties: ErrorProperties,
-    public metadata?: {
-      symbol: string;
-      errorType: ValidationError;
-      module? : string
-    },
+    public metadata?: ErrorMetadata,
   ) {
     super(properties, metadata?.errorType || "validation");
     this.metadata = metadata;

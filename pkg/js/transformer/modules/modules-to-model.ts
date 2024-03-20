@@ -237,19 +237,36 @@ function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): num
   }
 
   switch(metadata?.errorType) {
+    case ValidationError.ConditionNotUsed:
+      lineIndex = getConditionLineNumber(metadata.symbol, lines);
+      break;
     case ValidationError.ReservedTypeKeywords:
       lineIndex = getTypeLineNumber(metadata.symbol, lines);
      break;
     case ValidationError.InvalidName:
       // handle type vs relation, this isn't ideal but no other way to check
       if (e.message.startsWith("invalid-name error: relation")) {
-        lineIndex =  getRelationLineNumber(metadata.symbol, lines);
+        lineIndex = getRelationLineNumber(metadata.symbol, lines);
       } else {
         lineIndex = getTypeLineNumber(metadata.symbol, lines);
       }
       break;
     case ValidationError.ReservedRelationKeywords:
       lineIndex =  getRelationLineNumber(metadata.symbol, lines);
+      break;
+    case ValidationError.InvalidRelationType:
+    case ValidationError.MissingDefinition:
+    case ValidationError.InvalidType:
+    case ValidationError.ConditionNotDefined:
+    case ValidationError.TuplesetNotDirect:
+    case ValidationError.TypeRestrictionCannotHaveWildcardAndRelation:
+    case ValidationError.RelationNoEntrypoint:
+      let typeIndex = getTypeLineNumber(e.metadata!.type!, lines);
+      if (typeIndex === -1) {
+        typeIndex =  getTypeLineNumber(e.metadata!.type!, lines, undefined, true);
+      }
+
+      lineIndex = getRelationLineNumber(e.metadata!.relation!, lines, typeIndex);
       break;
   }
 
@@ -267,8 +284,20 @@ function resolveWordIndex (e: ModelValidationSingleError, line: string): number 
     return -1;
   }
 
-  const re = new RegExp("\\b" + metadata.symbol + "\\b");
-  let wordIdx = line?.search(re) + 1;
+  let wordIdx;
+  switch (metadata.errorType) {
+    case ValidationError.ConditionNotDefined:
+      wordIdx = line.indexOf(metadata.symbol.substring(1));
+      break;
+    case ValidationError.TuplesetNotDirect:
+      const clauseStartsAt = line.indexOf("from") + "from".length + 1;
+      wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol) + 1;
+      break;
+    default:
+      const re = new RegExp("\\b" + metadata.symbol + "\\b");
+      wordIdx = line?.search(re) + 1;
+  }
+
   if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === 0) {
     wordIdx = 1;
   }

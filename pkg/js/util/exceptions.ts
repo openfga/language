@@ -386,92 +386,130 @@ interface Meta {
   module?: string;
 }
 
-export const exceptionCollector = (errors: ModelValidationSingleError[], lines?: string[]) => {
-  return {
-    raiseInvalidName(symbol: string, clause: string, typeName?: string, lineIndex?: number, metadata?: Meta) {
-      createInvalidName(
-        { errors, lines, lineIndex, symbol, file: metadata?.file, module: metadata?.module },
-        clause,
-        typeName,
-      );
-    },
-    raiseReservedTypeName(symbol: string, lineIndex?: number, metadata?: Meta) {
-      createReservedTypeNameError({ errors, lines, lineIndex, symbol, file: metadata?.file, module: metadata?.module });
-    },
-    raiseReservedRelationName(symbol: string, lineIndex?: number, metadata?: Meta) {
-      createReservedRelationNameError({
-        errors,
-        lines,
+export class ExceptionCollector {
+  constructor(
+    private errors: ModelValidationSingleError[],
+    private lines?: string[],
+  ) {}
+
+  raiseInvalidName(symbol: string, clause: string, typeName?: string, lineIndex?: number, metadata?: Meta) {
+    createInvalidName(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, file: metadata?.file, module: metadata?.module },
+      clause,
+      typeName,
+    );
+  }
+
+  raiseReservedTypeName(symbol: string, lineIndex?: number, metadata?: Meta) {
+    createReservedTypeNameError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      file: metadata?.file,
+      module: metadata?.module,
+    });
+  }
+
+  raiseReservedRelationName(symbol: string, lineIndex?: number, metadata?: Meta) {
+    createReservedRelationNameError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      file: metadata?.file,
+      module: metadata?.module,
+    });
+  }
+
+  raiseTupleUsersetRequiresDirect(symbol: string, lineIndex?: number) {
+    createTupleUsersetRequireDirectError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseDuplicateTypeName(symbol: string, lineIndex?: number) {
+    createDuplicateTypeNameError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseDuplicateTypeRestriction(symbol: string, relationName: string, lineIndex?: number) {
+    createDuplicateTypeRestrictionError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, relationName);
+  }
+
+  raiseDuplicateType(symbol: string, relationName: string, lineIndex?: number) {
+    createDuplicateRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, relationName);
+  }
+
+  raiseDuplicateRelationshipDefinition(symbol: string, lineIndex?: number) {
+    createDuplicateRelationshipDefinitionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseNoEntryPointLoop(symbol: string, typeName: string, lineIndex?: number) {
+    createNoEntryPointLoopError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  }
+
+  raiseNoEntryPoint(symbol: string, typeName: string, lineIndex?: number) {
+    createNoEntryPointError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  }
+
+  raiseInvalidTypeRelation(symbol: string, typeName: string, relationName: string, lineIndex?: number) {
+    createInvalidTypeRelationError(
+      {
+        errors: this.errors,
+        lines: this.lines,
         lineIndex,
         symbol,
-        file: metadata?.file,
-        module: metadata?.module,
-      });
-    },
-    raiseTupleUsersetRequiresDirect(symbol: string, lineIndex?: number) {
-      createTupleUsersetRequireDirectError({ errors, lines, lineIndex, symbol });
-    },
-    raiseDuplicateTypeName(symbol: string, lineIndex?: number) {
-      createDuplicateTypeNameError({ errors, lines, lineIndex, symbol });
-    },
-    raiseDuplicateTypeRestriction(symbol: string, relationName: string, lineIndex?: number) {
-      createDuplicateTypeRestrictionError({ errors, lines, lineIndex, symbol }, relationName);
-    },
-    raiseDuplicateType(symbol: string, relationName: string, lineIndex?: number) {
-      createDuplicateRelationError({ errors, lines, lineIndex, symbol }, relationName);
-    },
-    raiseDuplicateRelationshipDefinition(symbol: string, lineIndex?: number) {
-      createDuplicateRelationshipDefinitionError({ errors, lines, lineIndex, symbol });
-    },
-    raiseNoEntryPointLoop(symbol: string, typeName: string, lineIndex?: number) {
-      createNoEntryPointLoopError({ errors, lines, lineIndex, symbol }, typeName);
-    },
-    raiseNoEntryPoint(symbol: string, typeName: string, lineIndex?: number) {
-      createNoEntryPointError({ errors, lines, lineIndex, symbol }, typeName);
-    },
-    raiseInvalidTypeRelation(symbol: string, typeName: string, relationName: string, lineIndex?: number) {
-      createInvalidTypeRelationError({ errors, lines, lineIndex, symbol }, typeName, relationName);
-    },
-    raiseInvalidType(symbol: string, typeName: string, lineIndex?: number) {
-      createInvalidTypeError({ errors, lines, lineIndex, symbol }, typeName);
-    },
-    raiseAssignableRelationMustHaveTypes(symbol: string, lineIndex?: number) {
-      createAssignableRelationMustHaveTypesError({ errors, lines, lineIndex, symbol });
-    },
-    raiseAssignableTypeWildcardRelation(symbol: string, lineIndex?: number) {
-      createAssignableTypeWildcardRelationError({ errors, lines, lineIndex, symbol });
-    },
-    raiseInvalidRelationError(symbol: string, validRelations: string[], lineIndex?: number) {
-      createInvalidRelationError({ errors, lines, lineIndex, symbol }, validRelations);
-    },
-    raiseInvalidSchemaVersion(symbol: string, lineIndex?: number) {
-      createInvalidSchemaVersionError({ errors, lines, lineIndex, symbol });
-    },
-    raiseSchemaVersionRequired(symbol: string, lineIndex?: number) {
-      createSchemaVersionRequiredError({ errors, lines, lineIndex, symbol });
-    },
-    raiseMaximumOneDirectRelationship(symbol: string, lineIndex?: number) {
-      createMaximumOneDirectRelationship({ errors, lines, lineIndex, symbol });
-    },
-    raiseInvalidConditionNameInParameter(
-      symbol: string,
-      typeName: string,
-      relationName: string,
-      conditionName: string,
-      lineIndex?: number,
-    ) {
-      createInvalidConditionNameInParameterError(
-        { errors, lines, lineIndex, symbol },
-        typeName,
-        relationName,
-        conditionName,
-      );
-    },
-    raiseUnusedCondition(symbol: string, lineIndex?: number) {
-      createUnusedConditionError({ errors, lines, lineIndex, symbol });
-    },
-  };
-};
+      },
+      typeName,
+      relationName,
+    );
+  }
+
+  raiseInvalidType(symbol: string, typeName: string, lineIndex?: number) {
+    createInvalidTypeError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, typeName);
+  }
+
+  raiseAssignableRelationMustHaveTypes(symbol: string, lineIndex?: number) {
+    createAssignableRelationMustHaveTypesError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseAssignableTypeWildcardRelation(symbol: string, lineIndex?: number) {
+    createAssignableTypeWildcardRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseInvalidRelationError(symbol: string, validRelations: string[], lineIndex?: number) {
+    createInvalidRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, validRelations);
+  }
+
+  raiseInvalidSchemaVersion(symbol: string, lineIndex?: number) {
+    createInvalidSchemaVersionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseSchemaVersionRequired(symbol: string, lineIndex?: number) {
+    createSchemaVersionRequiredError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseMaximumOneDirectRelationship(symbol: string, lineIndex?: number) {
+    createMaximumOneDirectRelationship({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseInvalidConditionNameInParameter(
+    symbol: string,
+    typeName: string,
+    relationName: string,
+    conditionName: string,
+    lineIndex?: number,
+  ) {
+    createInvalidConditionNameInParameterError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol },
+      typeName,
+      relationName,
+      conditionName,
+    );
+  }
+
+  raiseUnusedCondition(symbol: string, lineIndex?: number) {
+    createUnusedConditionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+}
 
 interface TransformationErrorProps {
   message: string;

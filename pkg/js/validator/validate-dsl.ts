@@ -2,7 +2,7 @@ import type { AuthorizationModel, RelationReference, RelationMetadata, TypeDefin
 import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
-import { exceptionCollector } from "../util/exceptions";
+import { ExceptionCollector } from "../util/exceptions";
 
 // eslint-disable-next-line no-useless-escape
 const defaultTypeRule = "^[^:#@\\s]{1,254}$";
@@ -360,8 +360,7 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
 };
 
 function checkForDuplicatesTypeNamesInRelation(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   relationDef: RelationMetadata,
   relationName: string,
   lines?: string[],
@@ -381,8 +380,7 @@ function checkForDuplicatesTypeNamesInRelation(
 
 // ensure all the referenced relations are defined
 function checkForDuplicatesInRelation(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   typeDef: TypeDefinition,
   relationName: string,
   lines?: string[],
@@ -427,8 +425,7 @@ function checkForDuplicatesInRelation(
 
 // helper function to ensure all childDefs are defined
 function childDefDefined(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   typeMap: Record<string, TypeDefinition>,
   type: string,
   relation: string,
@@ -569,8 +566,7 @@ function childDefDefined(
 
 // ensure all the referenced relations are defined
 function relationDefined(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   typeMap: Record<string, TypeDefinition>,
   type: string,
   relation: string,
@@ -601,8 +597,7 @@ function relationDefined(
 }
 
 function modelValidation(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   errors: ModelValidationSingleError[],
   authorizationModel: AuthorizationModel,
   //relationsPerType: Record<string, TransformedType>
@@ -709,8 +704,7 @@ function modelValidation(
 }
 
 function populateRelations(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collector: any,
+  collector: ExceptionCollector,
   authorizationModel: AuthorizationModel,
   typeRegex: ValidationRegex,
   relationRegex: ValidationRegex,
@@ -778,7 +772,7 @@ export function validateJSON(
 ): void {
   const lines = dslString?.split("\n");
   const errors: ModelValidationSingleError[] = [];
-  const collector = exceptionCollector(errors, lines);
+  const collector = new ExceptionCollector(errors, lines);
   const typeValidation = options.typeValidation || defaultTypeRule;
   const relationValidation = options.relationValidation || defaultRelationRule;
   const defaultRegex = new RegExp("[a-zA-Z]*");

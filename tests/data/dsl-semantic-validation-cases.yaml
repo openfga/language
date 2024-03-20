@@ -741,16 +741,16 @@
         define parent: [document, document:*]
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: 'type restriction `document:*` cannot contain both wildcard and relation'
+    - msg: '`parent` relation used inside from allows only direct relation.'
       line:
         start: 7
         end: 7
       column:
-        start: 1
-        end: 11
+        start: 42
+        end: 48
       metadata:
-        symbol: "document:*"
-        errorType: type-wildcard-relation
+        symbol: "parent"
+        errorType: tupleuset-not-direct
 - name: duplicate types
   dsl: |
     model

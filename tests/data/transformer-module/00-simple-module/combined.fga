@@ -1,15 +1,16 @@
 model
   schema 1.2
 
-# module core, file core.fga
+# module: core, file: core.fga
 type user
 
-# module org, file org.fga
+# module: org, file: org.fga
 type org
   relations
+    define another: [user]
     define member: [user with a_check]
 
-# module org, file org.fga
+# module: org, file: org.fga
 condition a_check(val: int) {
   val <= 10
 }

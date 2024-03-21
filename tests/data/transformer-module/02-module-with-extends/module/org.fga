@@ -3,6 +3,7 @@ module org
 extend type user
   relations
     define manager: [user]
+    define after: [user]
 
 type org
   relations

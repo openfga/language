@@ -1,7 +1,9 @@
 package transformer
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -313,7 +315,7 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 	return usersets
 }
 
-func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
+func parseType(typeDefinition *pb.TypeDefinition, isModularModel bool) (string, error) {
 	typeName := typeDefinition.GetType()
 	sourceString := constructSourceComment(
 		typeDefinition.GetMetadata().GetModule(),
@@ -336,7 +338,20 @@ func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
 
 		// We are doing this in two loops (and sorting in between)
 		// to make sure we have a deterministic behaviour that matches the API
-		sort.Strings(relationsList)
+		if isModularModel {
+			slices.SortStableFunc(relationsList, func(aName, bName string) int {
+				aMeta := metadata.GetRelations()[aName]
+				bMeta := metadata.GetRelations()[bName]
+
+				return sortByModule(
+					aName, bName,
+					aMeta.GetModule(), bMeta.GetModule(),
+					aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+				)
+			})
+		} else {
+			sort.Strings(relationsList)
+		}
 
 		for index := 0; index < len(relationsList); index++ {
 			relationName := relationsList[index]
@@ -419,9 +434,16 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 		conditionNames = append(conditionNames, conditionName)
 	}
 
-	// We are doing this in two loops (and sorting in between)
-	// to make sure we have a deterministic behaviour that matches the API
-	sort.Strings(conditionNames)
+	slices.SortStableFunc(conditionNames, func(aName, bName string) int {
+		aMeta := conditionsMap[aName].GetMetadata()
+		bMeta := conditionsMap[bName].GetMetadata()
+
+		return sortByModule(
+			aName, bName,
+			aMeta.GetModule(), bMeta.GetModule(),
+			aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+		)
+	})
 
 	for index := 0; index < len(conditionNames); index++ {
 		conditionName := conditionNames[index]
@@ -443,7 +465,7 @@ func constructSourceComment(module, file, leadingSpaces, leadingString string) s
 		return ""
 	}
 
-	return fmt.Sprintf("%s#%s module %s, file %s\n", leadingSpaces, leadingString, module, file)
+	return fmt.Sprintf("%s#%s module: %s, file: %s\n", leadingSpaces, leadingString, module, file)
 }
 
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.
@@ -452,11 +474,32 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 
 	typeDefinitions := []string{}
 	typeDefs := model.GetTypeDefinitions()
+	isModularModel := false
 
 	for index := 0; index < len(typeDefs); index++ {
 		typeDef := typeDefs[index]
 
-		parsedType, err := parseType(typeDef)
+		if typeDef.GetMetadata().GetModule() != "" {
+			isModularModel = true
+
+			break
+		}
+	}
+
+	if isModularModel {
+		slices.SortStableFunc(typeDefs, func(a, b *pb.TypeDefinition) int {
+			return sortByModule(
+				a.GetType(), b.GetType(),
+				a.GetMetadata().GetModule(), b.GetMetadata().GetModule(),
+				a.GetMetadata().GetSourceInfo().GetFile(), b.GetMetadata().GetSourceInfo().GetFile(),
+			)
+		})
+	}
+
+	for index := 0; index < len(typeDefs); index++ {
+		typeDef := typeDefs[index]
+
+		parsedType, err := parseType(typeDef, isModularModel)
 		if err != nil {
 			return "", err
 		}
@@ -507,4 +550,26 @@ func TransformJSONStringToDSL(modelString string) (*string, error) {
 	}
 
 	return &dsl, nil
+}
+
+func sortByModule(aName, bName, aModule, bModule, aFile, bFile string) int {
+	if aModule == "" && bModule == "" {
+		return cmp.Compare(aName, bName)
+	}
+
+	if aModule == "" {
+		return -1
+	}
+
+	if bModule == "" {
+		return 1
+	}
+
+	if aModule != bModule {
+		return cmp.Compare(aModule, bModule)
+	} else if aFile != bFile {
+		return cmp.Compare(aFile, bFile)
+	}
+
+	return cmp.Compare(aName, bName)
 }

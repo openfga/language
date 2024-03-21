@@ -227,7 +227,7 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
   return usersets;
 };
 
-const parseType = (typeDef: TypeDefinition): string => {
+const parseType = (typeDef: TypeDefinition, isModularModel: boolean): string => {
   const typeName = typeDef.type;
 
   const sourceString = constructSourceComment(typeDef.metadata);
@@ -239,25 +239,13 @@ const parseType = (typeDef: TypeDefinition): string => {
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
     const sortedRelations = Object.entries(relations).sort(([aName], [bName]) => {
-      const aMetadata = metadata?.relations?.[aName];
-      const bMetadata = metadata?.relations?.[bName];
-
-      if (!aMetadata || !bMetadata) {
-        return aName.localeCompare(bName);
+      if (!isModularModel) {
+        return 0;
       }
+      const aMetadata = metadata?.relations?.[aName] || {};
+      const bMetadata = metadata?.relations?.[bName] || {};
 
-      // Sort by:
-      // Module name
-      // File name
-      // Relation name
-
-      if (aMetadata.module !== bMetadata.module) {
-        return aMetadata.module!.localeCompare(bMetadata.module!);
-      } else if (aMetadata.source_info?.file !== bMetadata.source_info?.file) {
-        return aMetadata.source_info!.file!.localeCompare(bMetadata.source_info!.file!);
-      }
-
-      return aName.localeCompare(bName);
+      return sortByModule(aName, bName, aMetadata, bMetadata);
     });
     for (const [name, definition] of sortedRelations) {
       const parsedRelationString = parseRelation(typeName, name, definition, metadata?.relations?.[name]);
@@ -297,7 +285,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition): string 
   return `${sourceString}condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
 };
 
-const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
+const parseConditions = (model: Omit<AuthorizationModel, "id">, isModularModel: boolean): string => {
   const conditionsMap = model.conditions || {};
   if (!Object.keys(conditionsMap).length) {
     return "";
@@ -305,10 +293,14 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
 
   let parsedConditionsString = "";
 
-  Object.keys(conditionsMap)
-    .sort()
-    .forEach((conditionName) => {
-      const condition = conditionsMap[conditionName];
+  Object.entries(conditionsMap)
+    .sort(([aName, aCondition], [bName, bCondition]) => {
+      if (!isModularModel) {
+        return aName.localeCompare(bName);
+      }
+      return sortByModule(aName, bName, aCondition.metadata, bCondition.metadata);
+    })
+    .forEach(([conditionName, condition]) => {
       const parsedConditionString = parseCondition(conditionName, condition);
 
       parsedConditionsString += `\n${parsedConditionString}`;
@@ -323,14 +315,20 @@ const constructSourceComment = (
   leadingString = "",
 ): string => {
   return metadata?.module
-    ? `${leadingSpaces}#${leadingString} module ${metadata.module}, file ${metadata.source_info?.file}\n`
+    ? `${leadingSpaces}#${leadingString} module: ${metadata.module}, file: ${metadata.source_info?.file}\n`
     : "";
 };
 
 export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {
   const schemaVersion = model?.schema_version || "1.1";
-  const typeDefinitions = model?.type_definitions?.map((typeDef) => parseType(typeDef));
-  const parsedConditionsString = parseConditions(model);
+  const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
+
+  const typeDefinitions = (
+    isModularModel
+      ? model?.type_definitions.sort((a, b) => sortByModule(a.type, b.type, a.metadata, b.metadata))
+      : model?.type_definitions
+  )?.map((typeDef) => parseType(typeDef, isModularModel));
+  const parsedConditionsString = parseConditions(model, isModularModel);
 
   return `model
   schema ${schemaVersion}
@@ -342,3 +340,31 @@ export const transformJSONStringToDSL = (modelString: string): string => {
 
   return transformJSONToDSL(model);
 };
+
+function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Metadata) {
+  // If we have no module information for both, sort by name
+  if (!aMeta?.module && !bMeta?.module) {
+    return aName.localeCompare(bName);
+  }
+  // If there is no module then it belongs to the same file as the type so sort it at the top
+  if (aMeta?.module == undefined) {
+    return -1;
+  }
+
+  if (bMeta?.module === undefined) {
+    return 1;
+  }
+
+  // First we sort by module name
+  if (aMeta.module !== bMeta.module) {
+    return aMeta.module!.localeCompare(bMeta.module!);
+  }
+
+  // If the module name is the same then sort by file name
+  if (aMeta.source_info?.file !== bMeta.source_info?.file) {
+    return aMeta.source_info!.file!.localeCompare(bMeta.source_info!.file!);
+  }
+
+  // If the module name and file name are the same then sort based on name
+  return aName.localeCompare(bName);
+}

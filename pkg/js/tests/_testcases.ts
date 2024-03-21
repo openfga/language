@@ -56,6 +56,7 @@ interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
 
 interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
+  dslWithSourceInfo?: string;
   expected_errors?: BaseError[];
 }
 
@@ -168,6 +169,12 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     if (fs.existsSync(dslPath)) {
       const dsl = fs.readFileSync(dslPath);
       testCase.dsl = dsl.toString("utf8");
+    }
+
+    const dslWithSourceInfoPath = path.join(testDataPath, testCase.name!, "combined-sourceinfo.fga");
+    if (fs.existsSync(dslWithSourceInfoPath)) {
+      const dsl = fs.readFileSync(dslWithSourceInfoPath);
+      testCase.dslWithSourceInfo = dsl.toString("utf8");
     }
 
     const modules: ModuleFile[] = [];

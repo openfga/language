@@ -181,12 +181,13 @@ func loadModFileTestCases() ([]fgdModFileTestCase, error) {
 }
 
 type moduleTestCase struct {
-	Name           string `json:"name" yaml:"name"`
-	Modules        []transformer.ModuleFile
-	JSON           string `json:"json" yaml:"json"`
-	DSL            string
-	Skip           bool
-	ExpectedErrors []expectedError `json:"expected_errors" yaml:"expected_errors"`
+	Name              string `json:"name" yaml:"name"`
+	Modules           []transformer.ModuleFile
+	JSON              string `json:"json" yaml:"json"`
+	DSL               string
+	DSLWithSourceInfo string
+	Skip              bool
+	ExpectedErrors    []expectedError `json:"expected_errors" yaml:"expected_errors"`
 }
 
 func (testCase *moduleTestCase) GetErrorString() string {
@@ -217,7 +218,7 @@ func (testCase *moduleTestCase) GetErrorString() string {
 	)
 }
 
-func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
+func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop,gocognit
 	testDataPath := filepath.Join("../../../tests", "data", "transformer-module")
 
 	entries, err := os.ReadDir(testDataPath)
@@ -247,6 +248,11 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
 		dslFile := filepath.Join(testDataPath, testCase.Name, "combined.fga")
 		if dslData, err := os.ReadFile(dslFile); err == nil {
 			testCase.DSL = string(dslData)
+		}
+
+		dslWithSourceInfoFile := filepath.Join(testDataPath, testCase.Name, "combined-sourceinfo.fga")
+		if dslWithSourceInfoData, err := os.ReadFile(dslWithSourceInfoFile); err == nil {
+			testCase.DSLWithSourceInfo = string(dslWithSourceInfoData)
 		}
 
 		errorsFile := filepath.Join(testDataPath, testCase.Name, "expected_errors.json")

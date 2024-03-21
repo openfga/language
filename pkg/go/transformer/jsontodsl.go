@@ -253,6 +253,7 @@ func parseRelation(
 	relationName string,
 	relationDefinition *pb.Userset,
 	relationMetadata *pb.RelationMetadata,
+	includeSourceInformation bool,
 ) (string, error) {
 	validator := DirectAssignmentValidator{
 		occurred: 0,
@@ -261,8 +262,8 @@ func parseRelation(
 	sourceString := constructSourceComment(
 		relationMetadata.GetModule(),
 		relationMetadata.GetSourceInfo().GetFile(),
-		"    ",
 		" extended by:",
+		includeSourceInformation,
 	)
 
 	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
@@ -285,7 +286,7 @@ func parseRelation(
 
 	// Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
 	if validator.occurrences() == 0 || (validator.occurrences() == 1 && validator.isFirstPosition(relationDefinition)) {
-		return fmt.Sprintf(`%s    define %v: %v`, sourceString, relationName, parsedRelationString), nil
+		return fmt.Sprintf(`    define %v: %v%s`, relationName, parsedRelationString, sourceString), nil
 	}
 
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
@@ -315,16 +316,16 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 	return usersets
 }
 
-func parseType(typeDefinition *pb.TypeDefinition, isModularModel bool) (string, error) {
+func parseType(typeDefinition *pb.TypeDefinition, isModularModel, includeSourceInformation bool) (string, error) {
 	typeName := typeDefinition.GetType()
 	sourceString := constructSourceComment(
 		typeDefinition.GetMetadata().GetModule(),
 		typeDefinition.GetMetadata().GetSourceInfo().GetFile(),
 		"",
-		"",
+		includeSourceInformation,
 	)
 
-	parsedTypeString := fmt.Sprintf(`%stype %v`, sourceString, typeName)
+	parsedTypeString := fmt.Sprintf(`type %v%s`, typeName, sourceString)
 	relations := typeDefinition.GetRelations()
 	metadata := typeDefinition.GetMetadata()
 
@@ -358,7 +359,7 @@ func parseType(typeDefinition *pb.TypeDefinition, isModularModel bool) (string, 
 			userset := relations[relationName]
 			meta := metadata.GetRelations()[relationName]
 
-			parsedRelationString, err := parseRelation(typeName, relationName, userset, meta)
+			parsedRelationString, err := parseRelation(typeName, relationName, userset, meta, includeSourceInformation)
 			if err != nil {
 				return "", err
 			}
@@ -400,7 +401,7 @@ func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) str
 	return strings.Join(parametersStringArray, ", ")
 }
 
-func parseCondition(conditionName string, conditionDef *pb.Condition) (string, error) {
+func parseCondition(conditionName string, conditionDef *pb.Condition, includeSourceInformation bool) (string, error) {
 	if conditionName != conditionDef.GetName() {
 		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
 	}
@@ -409,19 +410,19 @@ func parseCondition(conditionName string, conditionDef *pb.Condition) (string, e
 	sourceString := constructSourceComment(
 		conditionDef.GetMetadata().GetModule(),
 		conditionDef.GetMetadata().GetSourceInfo().GetFile(),
-		"", "",
+		"", includeSourceInformation,
 	)
 
 	return fmt.Sprintf(
-		"%scondition %s(%s) {\n  %s\n}\n",
-		sourceString,
+		"condition %s(%s) {\n  %s\n}%s\n",
 		conditionDef.GetName(),
 		paramsString,
 		conditionDef.GetExpression(),
+		sourceString,
 	), nil
 }
 
-func parseConditions(model *pb.AuthorizationModel) (string, error) {
+func parseConditions(model *pb.AuthorizationModel, includeSourceInformation bool) (string, error) {
 	conditionsMap := model.GetConditions()
 	if len(conditionsMap) == 0 {
 		return "", nil
@@ -449,7 +450,7 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 		conditionName := conditionNames[index]
 		condition := conditionsMap[conditionName]
 
-		parsedConditionString, err := parseCondition(conditionName, condition)
+		parsedConditionString, err := parseCondition(conditionName, condition, includeSourceInformation)
 		if err != nil {
 			return "", err
 		}
@@ -460,17 +461,39 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 	return parsedConditionsString, nil
 }
 
-func constructSourceComment(module, file, leadingSpaces, leadingString string) string {
-	if module == "" && file == "" {
+func constructSourceComment(module, file, leadingString string, includeSourceInformation bool) string {
+	if (module == "" && file == "") || !includeSourceInformation {
 		return ""
 	}
 
-	return fmt.Sprintf("%s#%s module: %s, file: %s\n", leadingSpaces, leadingString, module, file)
+	return fmt.Sprintf(" #%s module: %s, file: %s", leadingString, module, file)
+}
+
+type transformOptions struct {
+	includeSourceInformation bool
+}
+
+type TransformOption func(t *transformOptions)
+
+// WithIncludeSourceInformation - Configures whether to append file and module information to types,
+// relations, and conditions.
+func WithIncludeSourceInformation(includeSourceInformation bool) TransformOption {
+	return func(t *transformOptions) {
+		t.includeSourceInformation = includeSourceInformation
+	}
 }
 
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.
-func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
+func TransformJSONProtoToDSL(model *pb.AuthorizationModel, opts ...TransformOption) (string, error) {
 	schemaVersion := model.GetSchemaVersion()
+
+	transformOpts := &transformOptions{
+		includeSourceInformation: false,
+	}
+
+	for _, opt := range opts {
+		opt(transformOpts)
+	}
 
 	typeDefinitions := []string{}
 	typeDefs := model.GetTypeDefinitions()
@@ -499,7 +522,7 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 	for index := 0; index < len(typeDefs); index++ {
 		typeDef := typeDefs[index]
 
-		parsedType, err := parseType(typeDef, isModularModel)
+		parsedType, err := parseType(typeDef, isModularModel, transformOpts.includeSourceInformation)
 		if err != nil {
 			return "", err
 		}
@@ -512,7 +535,7 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 		typeDefsString += "\n"
 	}
 
-	parsedConditionsString, err := parseConditions(model)
+	parsedConditionsString, err := parseConditions(model, transformOpts.includeSourceInformation)
 	if err != nil {
 		return "", err
 	}
@@ -538,13 +561,13 @@ func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
 }
 
 // TransformJSONStringToDSL - Converts models authored in OpenFGA JSON syntax to the DSL syntax.
-func TransformJSONStringToDSL(modelString string) (*string, error) {
+func TransformJSONStringToDSL(modelString string, opts ...TransformOption) (*string, error) {
 	model, err := LoadJSONStringToProto(modelString)
 	if err != nil {
 		return nil, err
 	}
 
-	dsl, err := TransformJSONProtoToDSL(model)
+	dsl, err := TransformJSONProtoToDSL(model, opts...)
 	if err != nil {
 		return nil, err
 	}

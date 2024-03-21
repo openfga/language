@@ -189,11 +189,11 @@ function parseRelation(
   relationName: string,
   relationDefinition: Userset = {},
   relationMetadata: RelationMetadata = {},
+  includeSourceInformation = false,
 ) {
   const validator = new DirectAssignmentValidator();
 
-  const sourceString = constructSourceComment(relationMetadata, "    ", " extended by:");
-  let parsedRelationString = `${sourceString}    define ${relationName}: `;
+  let parsedRelationString = `    define ${relationName}: `;
   const typeRestrictions: RelationReference[] = relationMetadata.directly_related_user_types || [];
 
   if (relationDefinition.difference != null) {
@@ -205,6 +205,8 @@ function parseRelation(
   } else {
     parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions, validator);
   }
+
+  parsedRelationString += constructSourceComment(relationMetadata, " extended by:", includeSourceInformation);
 
   // Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
   if (!validator.occured || (validator.occured === 1 && validator.isFirstPosition(relationDefinition))) {
@@ -227,11 +229,11 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
   return usersets;
 };
 
-const parseType = (typeDef: TypeDefinition, isModularModel: boolean): string => {
+const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSourceInformation = false): string => {
   const typeName = typeDef.type;
 
-  const sourceString = constructSourceComment(typeDef.metadata);
-  let parsedTypeString = `\n${sourceString}type ${typeName}`;
+  const sourceString = constructSourceComment(typeDef.metadata, "", includeSourceInformation);
+  let parsedTypeString = `\ntype ${typeName}${sourceString}`;
 
   const relations = typeDef.relations || {};
   const metadata = typeDef.metadata;
@@ -248,7 +250,13 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean): string => 
       return sortByModule(aName, bName, aMetadata, bMetadata);
     });
     for (const [name, definition] of sortedRelations) {
-      const parsedRelationString = parseRelation(typeName, name, definition, metadata?.relations?.[name]);
+      const parsedRelationString = parseRelation(
+        typeName,
+        name,
+        definition,
+        metadata?.relations?.[name],
+        includeSourceInformation,
+      );
       parsedTypeString += `\n${parsedRelationString}`;
     }
   }
@@ -274,18 +282,22 @@ const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef
   return parametersStringArray.join(", ");
 };
 
-const parseCondition = (conditionName: string, conditionDef: Condition): string => {
+const parseCondition = (conditionName: string, conditionDef: Condition, includeSourceInformation = false): string => {
   if (conditionName != conditionDef.name) {
     throw new ConditionNameDoesntMatchError(conditionName, conditionDef.name);
   }
 
   const paramsString = parseConditionParams(conditionDef.parameters || {});
-  const sourceString = constructSourceComment(conditionDef.metadata);
+  const sourceString = constructSourceComment(conditionDef.metadata, "", includeSourceInformation);
 
-  return `${sourceString}condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
+  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}${sourceString}\n`;
 };
 
-const parseConditions = (model: Omit<AuthorizationModel, "id">, isModularModel: boolean): string => {
+const parseConditions = (
+  model: Omit<AuthorizationModel, "id">,
+  isModularModel: boolean,
+  includeSourceInformation = false,
+): string => {
   const conditionsMap = model.conditions || {};
   if (!Object.keys(conditionsMap).length) {
     return "";
@@ -301,7 +313,7 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">, isModularModel: 
       return sortByModule(aName, bName, aCondition.metadata, bCondition.metadata);
     })
     .forEach(([conditionName, condition]) => {
-      const parsedConditionString = parseCondition(conditionName, condition);
+      const parsedConditionString = parseCondition(conditionName, condition, includeSourceInformation);
 
       parsedConditionsString += `\n${parsedConditionString}`;
     });
@@ -311,15 +323,25 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">, isModularModel: 
 
 const constructSourceComment = (
   metadata?: ConditionMetadata | Metadata,
-  leadingSpaces = "",
   leadingString = "",
+  includeSourceInformation = false,
 ): string => {
-  return metadata?.module
-    ? `${leadingSpaces}#${leadingString} module: ${metadata.module}, file: ${metadata.source_info?.file}\n`
+  return metadata?.module && includeSourceInformation
+    ? ` #${leadingString} module: ${metadata.module}, file: ${metadata.source_info?.file}`
     : "";
 };
 
-export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {
+/**
+ * Configuration options for printing the DSL.
+ */
+export interface TransformOptions {
+  /**
+   * If true, comments are appended to types, relations, and conditions with file and module information.
+   */
+  includeSourceInformation?: boolean;
+}
+
+export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, options?: TransformOptions): string => {
   const schemaVersion = model?.schema_version || "1.1";
   const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
 
@@ -327,18 +349,18 @@ export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): strin
     isModularModel
       ? model?.type_definitions.sort((a, b) => sortByModule(a.type, b.type, a.metadata, b.metadata))
       : model?.type_definitions
-  )?.map((typeDef) => parseType(typeDef, isModularModel));
-  const parsedConditionsString = parseConditions(model, isModularModel);
+  )?.map((typeDef) => parseType(typeDef, isModularModel, options?.includeSourceInformation));
+  const parsedConditionsString = parseConditions(model, isModularModel, options?.includeSourceInformation);
 
   return `model
   schema ${schemaVersion}
 ${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;
 };
 
-export const transformJSONStringToDSL = (modelString: string): string => {
+export const transformJSONStringToDSL = (modelString: string, options?: TransformOptions): string => {
   const model = JSON.parse(modelString);
 
-  return transformJSONToDSL(model);
+  return transformJSONToDSL(model, options);
 };
 
 function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Metadata) {

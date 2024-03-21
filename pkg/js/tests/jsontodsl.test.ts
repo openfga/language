@@ -33,9 +33,14 @@ describe("jsonToDSL", () => {
     }
     const testFn = testCase.skip ? it.skip : it;
 
-    testFn(`should transform ${testCase.name} from JSON to DSL with comments`, () => {
+    testFn(`should transform ${testCase.name} from JSON to DSL without source info`, () => {
       const dslSyntax = transformJSONStringToDSL(testCase.json);
       expect(dslSyntax).toEqual(testCase.dsl);
+    });
+
+    testFn(`should transform ${testCase.name} from JSON to DSL with source info`, () => {
+      const dslSyntax = transformJSONStringToDSL(testCase.json, { includeSourceInformation: true });
+      expect(dslSyntax).toEqual(testCase.dslWithSourceInfo);
     });
   });
 });

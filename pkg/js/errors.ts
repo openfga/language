@@ -21,6 +21,7 @@ export enum ValidationError {
   TypeRestrictionCannotHaveWildcardAndRelation = "type-wildcard-relation",
   ConditionNotDefined = "condition-not-defined",
   ConditionNotUsed = "condition-not-used",
+  DifferentNestedConditionName = "different-nested-condition-name"
 }
 
 export interface ErrorProperties {

@@ -146,10 +146,6 @@ const createInvalidConditionNameInParameterError = (
   conditionName: string,
 ) => {
   const { errors, lines, lineIndex, symbol, module, file } = props;
-  // const rawLine = lines[lineIndex];
-  // const actualValue = rawLine.includes("[")
-  //   ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]") + 1)
-  //   : "self";
   errors.push(
     constructValidationError({
       message: `\`${conditionName}\` is not a defined condition in the model.`,
@@ -369,6 +365,16 @@ export const createMaximumOneDirectRelationship = (props: BaseProps) => {
         wordIdx = rawLine.indexOf(symbol.substring(1));
         return wordIdx;
       },
+    }),
+  );
+};
+
+const createDifferentNestedConditionNameError = (props: BaseProps, condition: string, nestedConditionName: string) => {
+  const { errors } = props;
+  errors.push(
+    constructValidationError({
+      message: `condition key is \`${condition}\` but nested name property is ${nestedConditionName}`,
+      metadata: { symbol: nestedConditionName, errorType: ValidationError.DifferentNestedConditionName },
     }),
   );
 };
@@ -601,6 +607,13 @@ export class ExceptionCollector {
       module: meta.module,
       file: meta.file,
     });
+  }
+
+  raiseDifferentNestedConditionName(condition: string, nestedConditionName: string) {
+    createDifferentNestedConditionNameError({
+      errors: this.errors,
+      symbol: condition,
+    }, condition, nestedConditionName);
   }
 }
 

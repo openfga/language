@@ -705,13 +705,10 @@ function modelValidation(
 
   if (authorizationModel.conditions) {
     for (const [conditionName, condition] of Object.entries(authorizationModel.conditions)) {
-      // const condition = authorizationModel.conditions[conditionName];
       // Ensure that the nested condition name matches
-      // TODO: This does not make sense for the DSL, and is a JSON only error
-      // if (conditionName != condition.name) {
-      //   const conditionIndex = geConditionLineNumber(conditionName, lines);
-      //   collector.raiseDifferentNestedConditionName(conditionIndex, conditionName);
-      // }
+      if (conditionName != condition.name) {
+        collector.raiseDifferentNestedConditionName(conditionName, condition.name);
+      }
 
       // Ensure that the condition has been used
       if (!usedConditionNamesSet.has(conditionName)) {

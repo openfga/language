@@ -610,10 +610,14 @@ export class ExceptionCollector {
   }
 
   raiseDifferentNestedConditionName(condition: string, nestedConditionName: string) {
-    createDifferentNestedConditionNameError({
-      errors: this.errors,
-      symbol: condition,
-    }, condition, nestedConditionName);
+    createDifferentNestedConditionNameError(
+      {
+        errors: this.errors,
+        symbol: condition,
+      },
+      condition,
+      nestedConditionName,
+    );
   }
 }
 

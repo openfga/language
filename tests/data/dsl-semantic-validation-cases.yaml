@@ -397,7 +397,7 @@
         end: 50
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
     - msg: '`parent` relation used inside from allows only direct relation.'
       line:
         start: 7
@@ -407,7 +407,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: parent relation used inside viewer contains a write
   dsl: |
     model
@@ -428,7 +428,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: from is another tuple to userset
   dsl: |
     model
@@ -449,7 +449,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: model 1.1 one of the intersection relation is not valid
   dsl: |
     model
@@ -750,7 +750,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: duplicate types
   dsl: |
     model

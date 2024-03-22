@@ -11,7 +11,7 @@ export enum ValidationError {
   InvalidRelationType = "invalid-relation-type",
   InvalidType = "invalid-type",
   RelationNoEntrypoint = "relation-no-entry-point",
-  TuplesetNotDirect = "tupleuset-not-direct",
+  TuplesetNotDirect = "tupleuserset-not-direct",
   DuplicatedError = "duplicated-error",
   RequireSchema1_0 = "allowed-type-schema-10",
   AssignableRelationsMustHaveType = "assignable-relation-must-have-type",

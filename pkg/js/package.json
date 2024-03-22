@@ -36,7 +36,7 @@
   "devDependencies": {
     "@openfga/sdk": "^0.3.5",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.29",
+    "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "eslint": "^8.57.0",
@@ -46,7 +46,7 @@
     "jest-html-reporter": "^3.10.2",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.3"
   },
   "files": [
     "README.md",

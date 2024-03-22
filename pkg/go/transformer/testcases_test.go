@@ -216,7 +216,7 @@ func (testCase *moduleTestCase) GetErrorString() string {
 	)
 }
 
-func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop
+func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop,gocognit
 	testDataPath := filepath.Join("../../../tests", "data", "transformer-module")
 
 	entries, err := os.ReadDir(testDataPath)

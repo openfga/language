@@ -9,6 +9,7 @@ export enum ValidationError {
   InvalidName = "invalid-name",
   MissingDefinition = "missing-definition",
   InvalidRelationType = "invalid-relation-type",
+  InvalidRelationOnTupleset = "invalid-relation-on-tupleset",
   InvalidType = "invalid-type",
   RelationNoEntrypoint = "relation-no-entry-point",
   TuplesetNotDirect = "tupleuserset-not-direct",
@@ -21,7 +22,7 @@ export enum ValidationError {
   TypeRestrictionCannotHaveWildcardAndRelation = "type-wildcard-relation",
   ConditionNotDefined = "condition-not-defined",
   ConditionNotUsed = "condition-not-used",
-  DifferentNestedConditionName = "different-nested-condition-name"
+  DifferentNestedConditionName = "different-nested-condition-name",
 }
 
 export interface ErrorProperties {
@@ -34,13 +35,13 @@ export interface ErrorProperties {
     end: number;
   };
   msg: string;
-  file?: string
+  file?: string;
 }
 
 export interface ErrorMetadata {
   symbol: string;
   errorType: ValidationError;
-  module? : string;
+  module?: string;
   type?: string;
   relation?: string;
   condition?: string;
@@ -52,7 +53,7 @@ export interface ErrorMetadata {
 export abstract class BaseError extends Error {
   public line: { start: number; end: number } | undefined;
   public column: { start: number; end: number } | undefined;
-  public file: string|undefined;
+  public file: string | undefined;
   public msg: string;
 
   constructor(
@@ -180,15 +181,12 @@ export class ConditionNameDoesntMatchError extends Error {
   }
 }
 
-
 /**
  * Represents an individual error returned during validation of `fga.mod`.
  * Line and column numbers returned as part of this are one based.
  */
 export class FGAModFileValidationSingleError extends BaseError {
-  constructor(
-    public properties: ErrorProperties,
-  ) {
+  constructor(public properties: ErrorProperties) {
     super(properties, "validation");
   }
 
@@ -212,9 +210,9 @@ export class FGAModFileValidationError extends Error {
 }
 
 /*
-* Represents an individual error returned during transformation of a module.
-* Line and column numbers returned as part of this are one based.
-*/
+ * Represents an individual error returned during transformation of a module.
+ * Line and column numbers returned as part of this are one based.
+ */
 export class ModuleTransformationSingleError extends BaseError {
   constructor(
     public properties: ErrorProperties,
@@ -227,7 +225,7 @@ export class ModuleTransformationSingleError extends BaseError {
   }
 
   toString() {
-      return this.message;
+    return this.message;
   }
 }
 
@@ -242,5 +240,5 @@ export class ModuleTransformationError extends Error {
 
   toString() {
     return this.message;
-}
+  }
 }

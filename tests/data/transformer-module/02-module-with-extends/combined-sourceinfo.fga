@@ -1,0 +1,31 @@
+model
+  schema 1.2
+
+type other # module: core, file: core.fga
+  relations
+    define second_thing: [user with other_check] # extended by: module: board, file: board.fga
+
+type user # module: core, file: core.fga
+  relations
+    define aardvark: [user]
+    define thing: [other]
+    define another_thing: [user] # extended by: module: board, file: board.fga
+    define abother_thing: [user with another_check] # extended by: module: board, file: otherboard.fga
+    define after: [user] # extended by: module: org, file: org.fga
+    define manager: [user] # extended by: module: org, file: org.fga
+
+type org # module: org, file: org.fga
+  relations
+    define member: [user with a_check]
+
+condition other_check(other: int) {
+  other <= 10
+} # module: board, file: board.fga
+
+condition another_check(another: int) {
+  another <= 10
+} # module: board, file: otherboard.fga
+
+condition a_check(val: int) {
+  val <= 10
+} # module: org, file: org.fga

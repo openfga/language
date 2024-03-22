@@ -1,12 +1,11 @@
-module org
+model
+  schema 1.2
 
-extend type user
-  relations
-    define manager: [user]
-    define after: [user]
+type user
 
 type org
   relations
+    define another: [user]
     define member: [user with a_check]
 
 condition a_check(val: int) {

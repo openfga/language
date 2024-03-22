@@ -11,7 +11,7 @@ export enum ValidationError {
   InvalidRelationType = "invalid-relation-type",
   InvalidType = "invalid-type",
   RelationNoEntrypoint = "relation-no-entry-point",
-  TuplesetNotDirect = "tupleuset-not-direct",
+  TuplesetNotDirect = "tupleuserset-not-direct",
   DuplicatedError = "duplicated-error",
   RequireSchema1_0 = "allowed-type-schema-10",
   AssignableRelationsMustHaveType = "assignable-relation-must-have-type",
@@ -21,6 +21,7 @@ export enum ValidationError {
   TypeRestrictionCannotHaveWildcardAndRelation = "type-wildcard-relation",
   ConditionNotDefined = "condition-not-defined",
   ConditionNotUsed = "condition-not-used",
+  DifferentNestedConditionName = "different-nested-condition-name"
 }
 
 export interface ErrorProperties {
@@ -34,6 +35,15 @@ export interface ErrorProperties {
   };
   msg: string;
   file?: string
+}
+
+export interface ErrorMetadata {
+  symbol: string;
+  errorType: ValidationError;
+  module? : string;
+  type?: string;
+  relation?: string;
+  condition?: string;
 }
 
 /**
@@ -110,11 +120,7 @@ export class DSLSyntaxError extends Error {
 export class ModelValidationSingleError extends BaseError {
   constructor(
     public properties: ErrorProperties,
-    public metadata?: {
-      symbol: string;
-      errorType: ValidationError;
-      module? : string
-    },
+    public metadata?: ErrorMetadata,
   ) {
     super(properties, metadata?.errorType || "validation");
     this.metadata = metadata;

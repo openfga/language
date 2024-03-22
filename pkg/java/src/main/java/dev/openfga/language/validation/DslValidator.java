@@ -342,12 +342,8 @@ public class DslValidator {
                                 var type = DestructuredTupleToUserset.from(item);
                                 var decodedType = type.getDecodedType();
                                 var decodedRelation = type.getDecodedRelation();
-                                var isWilcard = type.isWildcard();
-                                if (isWilcard) {
-                                    var typeIndex = dsl.getTypeLineNumber(typeName);
-                                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
-                                    errors.raiseAssignableTypeWildcardRelation(lineIndex, item);
-                                } else if (decodedRelation != null) {
+                                var isWildcard = type.isWildcard();
+                                if (isWildcard || decodedRelation != null) {
                                     var typeIndex = dsl.getTypeLineNumber(typeName);
                                     var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                                     errors.raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());

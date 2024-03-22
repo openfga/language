@@ -439,6 +439,15 @@ function childDefDefined(
   }
 
   const currentRelationMetadata = typeMap[type].metadata?.relations![relation];
+  let file = currentRelationMetadata?.source_info?.file;
+  if (!file) {
+    file = typeMap[type].metadata?.source_info?.file;
+  }
+
+  let module = currentRelationMetadata?.module;
+  if (!module) {
+    module = typeMap[type].metadata?.module;
+  }
 
   switch (childDef.rewrite) {
     case RewriteType.Direct: {
@@ -455,7 +464,7 @@ function childDefDefined(
           // type is not defined
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-          collector.raiseInvalidType(`${decodedType}`, decodedType, lineIndex);
+          collector.raiseInvalidType(decodedType, type, relation, { file, module }, lineIndex);
         }
 
         if (decodedConditionName && !conditions[decodedConditionName]) {
@@ -467,6 +476,7 @@ function childDefDefined(
             type,
             relation,
             decodedConditionName,
+            { file, module },
             lineIndex,
           );
         }
@@ -475,7 +485,7 @@ function childDefDefined(
           // we cannot have both wild carded and relation at the same time
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-          collector.raiseAssignableTypeWildcardRelation(item, lineIndex);
+          collector.raiseAssignableTypeWildcardRelation(item, type, relation, { file, module }, lineIndex);
         } else if (decodedRelation) {
           if (!typeMap[decodedType] || !typeMap[decodedType].relations![decodedRelation]) {
             // type/relation is not defined
@@ -484,8 +494,10 @@ function childDefDefined(
             collector.raiseInvalidTypeRelation(
               `${decodedType}#${decodedRelation}`,
               decodedType,
+              relation,
               decodedRelation,
               lineIndex,
+              { file, module },
             );
           }
         }
@@ -497,7 +509,11 @@ function childDefDefined(
         const typeIndex = getTypeLineNumber(type, lines);
         const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
         const value = childDef.target;
-        collector.raiseInvalidRelationError(value, Object.keys(relations), lineIndex);
+
+        collector.raiseInvalidRelationError(value, type, relation, Object.keys(relations), lineIndex, {
+          file,
+          module,
+        });
       }
       break;
     }
@@ -506,13 +522,15 @@ function childDefDefined(
       if (childDef.from && childDef.target) {
         // First, check to see if the childDef.from exists
         if (!relations[childDef.from]) {
-          const typeIndex = getTypeLineNumber(type, lines);
-          const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
+          const typeIndex = getTypeLineNumber(type, lines); // org
+          const lineIndex = getRelationLineNumber(relation, lines, typeIndex); // has_assigned
           collector.raiseInvalidTypeRelation(
             `${childDef.target} from ${childDef.from}`,
             type,
+            relation,
             childDef.from,
             lineIndex,
+            { file, module },
           );
         } else {
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
@@ -520,15 +538,11 @@ function childDefDefined(
             const childRelationNotValid = [];
             for (const item of fromTypes) {
               const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(item);
-              if (isWildcard) {
-                // we cannot have both wild carded and relation at the same time
+              if (isWildcard || decodedRelation) {
+                // we cannot have both wildcard or decoded relation and relation at the same time
                 const typeIndex = getTypeLineNumber(type, lines);
                 const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-                collector.raiseAssignableTypeWildcardRelation(item, lineIndex);
-              } else if (decodedRelation) {
-                const typeIndex = getTypeLineNumber(type, lines);
-                const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-                collector.raiseTupleUsersetRequiresDirect(childDef.from, lineIndex);
+                collector.raiseTupleUsersetRequiresDirect(childDef.from, type, relation, { file, module }, lineIndex);
               } else {
                 // check to see if the relation is defined in any children
                 if (!typeMap[decodedType] || !typeMap[decodedType].relations![childDef.target]) {
@@ -548,14 +562,14 @@ function childDefDefined(
             if (childRelationNotValid.length === fromTypes.length) {
               for (const item of childRelationNotValid) {
                 const { lineIndex, symbol, typeName, relationName } = item;
-                collector.raiseInvalidTypeRelation(symbol, typeName, relationName, lineIndex);
+                collector.raiseInvalidTypeRelation(symbol, typeName, relation, relationName, lineIndex);
               }
             }
           } else {
             // the from is not allowed.  Only direct assignable types are allowed.
             const typeIndex = getTypeLineNumber(type, lines);
             const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
-            collector.raiseTupleUsersetRequiresDirect(childDef.from, lineIndex);
+            collector.raiseTupleUsersetRequiresDirect(childDef.from, type, relation, { module, file }, lineIndex);
           }
         }
       }
@@ -674,31 +688,35 @@ function modelValidation(
           {},
         );
         if (!hasEntry) {
-          const typeIndex = getTypeLineNumber(typeName, lines);
-          const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
+          const file = typeDef.metadata?.source_info?.file;
+          const module = typeDef.metadata?.module;
+
+          const typeIndex = getTypeLineNumber(typeName, lines); //team 3, group 7,
+          const lineIndex = getRelationLineNumber(relationName, lines, typeIndex); //viewer 6, viewer 10
           if (loop) {
-            collector.raiseNoEntryPointLoop(relationName, typeName, lineIndex);
+            collector.raiseNoEntryPointLoop(relationName, typeName, { file, module }, lineIndex);
           } else {
-            collector.raiseNoEntryPoint(relationName, typeName, lineIndex);
+            collector.raiseNoEntryPoint(relationName, typeName, { file, module }, lineIndex);
           }
         }
       }
     });
   }
 
-  for (const conditionName in authorizationModel.conditions) {
-    // const condition = authorizationModel.conditions[conditionName];
-    // Ensure that the nested condition name matches
-    // TODO: This does not make sense for the DSL, and is a JSON only error
-    // if (conditionName != condition.name) {
-    //   const conditionIndex = geConditionLineNumber(conditionName, lines);
-    //   collector.raiseDifferentNestedConditionName(conditionIndex, conditionName);
-    // }
+  if (authorizationModel.conditions) {
+    for (const [conditionName, condition] of Object.entries(authorizationModel.conditions)) {
+      // Ensure that the nested condition name matches
+      if (conditionName != condition.name) {
+        collector.raiseDifferentNestedConditionName(conditionName, condition.name);
+      }
 
-    // Ensure that the condition has been used
-    if (!usedConditionNamesSet.has(conditionName)) {
-      const conditionIndex = geConditionLineNumber(conditionName, lines);
-      collector.raiseUnusedCondition(conditionName, conditionIndex);
+      // Ensure that the condition has been used
+      if (!usedConditionNamesSet.has(conditionName)) {
+        const conditionIndex = geConditionLineNumber(conditionName, lines);
+        const module = condition.metadata?.module;
+        const file = condition.metadata?.source_info?.file;
+        collector.raiseUnusedCondition(conditionName, { module, file }, conditionIndex);
+      }
     }
   }
 }

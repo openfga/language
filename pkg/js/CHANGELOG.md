@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0-beta.13
+
+### [v0.2.0-beta.12](https://github.com/openfga/language/compare/152c063895fb866f0e8da9d4c3707f8c0d01e28c...3d05a4fde617d54129c1c9f8eed1c9541b261096) (2024-03-22)
+
+Added:
+- Expose better validation and transformation for [Modular Models](https://github.com/openfga/rfcs/blob/main/20231212-modular-models.md)
+
 ## v0.2.0-beta.12
 
 ### [v0.2.0-beta.12](https://github.com/openfga/language/compare/323aac545377c0a26486db1323ce26ca5e4e1443...8a7e04f4da52f8be1c9321ff4b125a8fef1e6102) (2024-03-19)

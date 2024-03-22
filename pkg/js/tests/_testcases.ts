@@ -54,8 +54,9 @@ interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
   expected_errors?: FGAModFileValidationSingleError[];
 }
 
-interface ModuleTestCase extends Omit<ValidTestCase, "dsl"> {
+interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
+  dslWithSourceInfo?: string;
   expected_errors?: BaseError[];
 }
 
@@ -162,6 +163,18 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     if (fs.existsSync(errorsPath)) {
       const expectedErrors = fs.readFileSync(errorsPath);
       testCase.expected_errors = JSON.parse(expectedErrors.toString("utf8"));
+    }
+
+    const dslPath = path.join(testDataPath, testCase.name!, "combined.fga");
+    if (fs.existsSync(dslPath)) {
+      const dsl = fs.readFileSync(dslPath);
+      testCase.dsl = dsl.toString("utf8");
+    }
+
+    const dslWithSourceInfoPath = path.join(testDataPath, testCase.name!, "combined-sourceinfo.fga");
+    if (fs.existsSync(dslWithSourceInfoPath)) {
+      const dsl = fs.readFileSync(dslWithSourceInfoPath);
+      testCase.dslWithSourceInfo = dsl.toString("utf8");
     }
 
     const modules: ModuleFile[] = [];

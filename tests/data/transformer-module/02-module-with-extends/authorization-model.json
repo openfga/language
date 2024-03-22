@@ -15,6 +15,36 @@
           "type_name": "TYPE_NAME_INT"
         }
       }
+    },
+    "other_check": {
+      "expression": "other <= 10",
+      "metadata": {
+        "module": "board",
+        "source_info": {
+          "file": "board.fga"
+        }
+      },
+      "name": "other_check",
+      "parameters": {
+        "other": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    },
+    "another_check": {
+      "expression": "another <= 10",
+      "metadata": {
+        "module": "board",
+        "source_info": {
+          "file": "otherboard.fga"
+        }
+      },
+      "name": "another_check",
+      "parameters": {
+        "another": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
     }
   },
   "type_definitions": [
@@ -53,6 +83,36 @@
                 "type": "other"
               }
             ]
+          },
+          "after":  {
+            "directly_related_user_types":  [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "org",
+            "source_info": {
+              "file": "org.fga"
+            }
+          },
+          "aardvark":  {
+            "directly_related_user_types":  [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "abother_thing":  {
+            "directly_related_user_types":  [
+              {
+                "condition": "another_check",
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "source_info": {
+              "file": "otherboard.fga"
+            }
           }
         }
       },
@@ -64,6 +124,15 @@
           "this": {}
         },
         "manager": {
+          "this": {}
+        },
+        "after": {
+          "this": {}
+        },
+        "aardvark": {
+          "this": {}
+        },
+        "abother_thing": {
           "this": {}
         }
       },
@@ -85,6 +154,7 @@
           "second_thing": {
             "directly_related_user_types":  [
               {
+                "condition": "other_check",
                 "type": "user"
               }
             ],

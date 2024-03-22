@@ -6,4 +6,8 @@ extend type user
 
 extend type other
   relations
-    define second_thing: [user]
+    define second_thing: [user with other_check]
+
+condition other_check(other: int) {
+  other <= 10
+} 

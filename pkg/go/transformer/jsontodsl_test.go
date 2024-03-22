@@ -56,3 +56,49 @@ func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
 		})
 	}
 }
+
+func TestJSONToDSLTransformerForModularModelCases(t *testing.T) {
+	t.Parallel()
+
+	testCases, err := loadModuleTestCases()
+	require.NoError(t, err)
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		if testCase.DSL == "" {
+			continue
+		}
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
+			dsl, err := language.TransformJSONStringToDSL(testCase.JSON)
+			require.NoError(t, err)
+
+			require.Equal(t, testCase.DSL, *dsl)
+		})
+	}
+}
+
+func TestJSONToDSLTransformerForModularModelCasesWithSourceInfo(t *testing.T) {
+	t.Parallel()
+
+	testCases, err := loadModuleTestCases()
+	require.NoError(t, err)
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		if testCase.DSLWithSourceInfo == "" {
+			continue
+		}
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
+			dsl, err := language.TransformJSONStringToDSL(testCase.JSON, language.WithIncludeSourceInformation(true))
+			require.NoError(t, err)
+
+			require.Equal(t, testCase.DSLWithSourceInfo, *dsl)
+		})
+	}
+}

@@ -35,6 +35,13 @@
           "file": "org.fga"
         },
         "relations": {
+          "another": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
           "member": {
             "directly_related_user_types": [
               {
@@ -46,6 +53,9 @@
         }
       },
       "relations": {
+        "another": {
+          "this": {}
+        },
         "member": {
           "this": {}
         }

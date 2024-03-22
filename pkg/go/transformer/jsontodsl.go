@@ -1,7 +1,9 @@
 package transformer
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -251,10 +253,18 @@ func parseRelation(
 	relationName string,
 	relationDefinition *pb.Userset,
 	relationMetadata *pb.RelationMetadata,
+	includeSourceInformation bool,
 ) (string, error) {
 	validator := DirectAssignmentValidator{
 		occurred: 0,
 	}
+
+	sourceString := constructSourceComment(
+		relationMetadata.GetModule(),
+		relationMetadata.GetSourceInfo().GetFile(),
+		" extended by:",
+		includeSourceInformation,
+	)
 
 	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
 
@@ -276,7 +286,7 @@ func parseRelation(
 
 	// Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
 	if validator.occurrences() == 0 || (validator.occurrences() == 1 && validator.isFirstPosition(relationDefinition)) {
-		return fmt.Sprintf(`    define %v: %v`, relationName, parsedRelationString), nil
+		return fmt.Sprintf(`    define %v: %v%s`, relationName, parsedRelationString, sourceString), nil
 	}
 
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
@@ -306,9 +316,16 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 	return usersets
 }
 
-func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
+func parseType(typeDefinition *pb.TypeDefinition, isModularModel, includeSourceInformation bool) (string, error) {
 	typeName := typeDefinition.GetType()
-	parsedTypeString := fmt.Sprintf(`type %v`, typeName)
+	sourceString := constructSourceComment(
+		typeDefinition.GetMetadata().GetModule(),
+		typeDefinition.GetMetadata().GetSourceInfo().GetFile(),
+		"",
+		includeSourceInformation,
+	)
+
+	parsedTypeString := fmt.Sprintf(`type %v%s`, typeName, sourceString)
 	relations := typeDefinition.GetRelations()
 	metadata := typeDefinition.GetMetadata()
 
@@ -322,14 +339,27 @@ func parseType(typeDefinition *pb.TypeDefinition) (string, error) {
 
 		// We are doing this in two loops (and sorting in between)
 		// to make sure we have a deterministic behaviour that matches the API
-		sort.Strings(relationsList)
+		if isModularModel {
+			slices.SortStableFunc(relationsList, func(aName, bName string) int {
+				aMeta := metadata.GetRelations()[aName]
+				bMeta := metadata.GetRelations()[bName]
+
+				return sortByModule(
+					aName, bName,
+					aMeta.GetModule(), bMeta.GetModule(),
+					aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+				)
+			})
+		} else {
+			sort.Strings(relationsList)
+		}
 
 		for index := 0; index < len(relationsList); index++ {
 			relationName := relationsList[index]
 			userset := relations[relationName]
 			meta := metadata.GetRelations()[relationName]
 
-			parsedRelationString, err := parseRelation(typeName, relationName, userset, meta)
+			parsedRelationString, err := parseRelation(typeName, relationName, userset, meta, includeSourceInformation)
 			if err != nil {
 				return "", err
 			}
@@ -371,22 +401,28 @@ func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) str
 	return strings.Join(parametersStringArray, ", ")
 }
 
-func parseCondition(conditionName string, conditionDef *pb.Condition) (string, error) {
+func parseCondition(conditionName string, conditionDef *pb.Condition, includeSourceInformation bool) (string, error) {
 	if conditionName != conditionDef.GetName() {
 		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
 	}
 
 	paramsString := parseConditionParams(conditionDef.GetParameters())
+	sourceString := constructSourceComment(
+		conditionDef.GetMetadata().GetModule(),
+		conditionDef.GetMetadata().GetSourceInfo().GetFile(),
+		"", includeSourceInformation,
+	)
 
 	return fmt.Sprintf(
-		"condition %s(%s) {\n  %s\n}\n",
+		"condition %s(%s) {\n  %s\n}%s\n",
 		conditionDef.GetName(),
 		paramsString,
 		conditionDef.GetExpression(),
+		sourceString,
 	), nil
 }
 
-func parseConditions(model *pb.AuthorizationModel) (string, error) {
+func parseConditions(model *pb.AuthorizationModel, includeSourceInformation bool) (string, error) {
 	conditionsMap := model.GetConditions()
 	if len(conditionsMap) == 0 {
 		return "", nil
@@ -399,15 +435,22 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 		conditionNames = append(conditionNames, conditionName)
 	}
 
-	// We are doing this in two loops (and sorting in between)
-	// to make sure we have a deterministic behaviour that matches the API
-	sort.Strings(conditionNames)
+	slices.SortStableFunc(conditionNames, func(aName, bName string) int {
+		aMeta := conditionsMap[aName].GetMetadata()
+		bMeta := conditionsMap[bName].GetMetadata()
+
+		return sortByModule(
+			aName, bName,
+			aMeta.GetModule(), bMeta.GetModule(),
+			aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+		)
+	})
 
 	for index := 0; index < len(conditionNames); index++ {
 		conditionName := conditionNames[index]
 		condition := conditionsMap[conditionName]
 
-		parsedConditionString, err := parseCondition(conditionName, condition)
+		parsedConditionString, err := parseCondition(conditionName, condition, includeSourceInformation)
 		if err != nil {
 			return "", err
 		}
@@ -418,17 +461,68 @@ func parseConditions(model *pb.AuthorizationModel) (string, error) {
 	return parsedConditionsString, nil
 }
 
+func constructSourceComment(module, file, leadingString string, includeSourceInformation bool) string {
+	if (module == "" && file == "") || !includeSourceInformation {
+		return ""
+	}
+
+	return fmt.Sprintf(" #%s module: %s, file: %s", leadingString, module, file)
+}
+
+type transformOptions struct {
+	includeSourceInformation bool
+}
+
+type TransformOption func(t *transformOptions)
+
+// WithIncludeSourceInformation - Configures whether to append file and module information to types,
+// relations, and conditions.
+func WithIncludeSourceInformation(includeSourceInformation bool) TransformOption {
+	return func(t *transformOptions) {
+		t.includeSourceInformation = includeSourceInformation
+	}
+}
+
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.
-func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
+func TransformJSONProtoToDSL(model *pb.AuthorizationModel, opts ...TransformOption) (string, error) {
 	schemaVersion := model.GetSchemaVersion()
+
+	transformOpts := &transformOptions{
+		includeSourceInformation: false,
+	}
+
+	for _, opt := range opts {
+		opt(transformOpts)
+	}
 
 	typeDefinitions := []string{}
 	typeDefs := model.GetTypeDefinitions()
+	isModularModel := false
 
 	for index := 0; index < len(typeDefs); index++ {
 		typeDef := typeDefs[index]
 
-		parsedType, err := parseType(typeDef)
+		if typeDef.GetMetadata().GetModule() != "" {
+			isModularModel = true
+
+			break
+		}
+	}
+
+	if isModularModel {
+		slices.SortStableFunc(typeDefs, func(a, b *pb.TypeDefinition) int {
+			return sortByModule(
+				a.GetType(), b.GetType(),
+				a.GetMetadata().GetModule(), b.GetMetadata().GetModule(),
+				a.GetMetadata().GetSourceInfo().GetFile(), b.GetMetadata().GetSourceInfo().GetFile(),
+			)
+		})
+	}
+
+	for index := 0; index < len(typeDefs); index++ {
+		typeDef := typeDefs[index]
+
+		parsedType, err := parseType(typeDef, isModularModel, transformOpts.includeSourceInformation)
 		if err != nil {
 			return "", err
 		}
@@ -441,7 +535,7 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel) (string, error) {
 		typeDefsString += "\n"
 	}
 
-	parsedConditionsString, err := parseConditions(model)
+	parsedConditionsString, err := parseConditions(model, transformOpts.includeSourceInformation)
 	if err != nil {
 		return "", err
 	}
@@ -467,16 +561,38 @@ func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
 }
 
 // TransformJSONStringToDSL - Converts models authored in OpenFGA JSON syntax to the DSL syntax.
-func TransformJSONStringToDSL(modelString string) (*string, error) {
+func TransformJSONStringToDSL(modelString string, opts ...TransformOption) (*string, error) {
 	model, err := LoadJSONStringToProto(modelString)
 	if err != nil {
 		return nil, err
 	}
 
-	dsl, err := TransformJSONProtoToDSL(model)
+	dsl, err := TransformJSONProtoToDSL(model, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &dsl, nil
+}
+
+func sortByModule(aName, bName, aModule, bModule, aFile, bFile string) int {
+	if aModule == "" && bModule == "" {
+		return cmp.Compare(aName, bName)
+	}
+
+	if aModule == "" {
+		return -1
+	}
+
+	if bModule == "" {
+		return 1
+	}
+
+	if aModule != bModule {
+		return cmp.Compare(aModule, bModule)
+	} else if aFile != bFile {
+		return cmp.Compare(aFile, bFile)
+	}
+
+	return cmp.Compare(aName, bName)
 }

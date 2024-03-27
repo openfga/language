@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@jest/globals";
 import { loadValidTransformerTestCases, loadInvalidJSONSyntaxTestCases, loadModuleTestCases } from "./_testcases";
 import { transformJSONStringToDSL } from "../transformer";
 

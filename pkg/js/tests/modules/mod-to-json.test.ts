@@ -28,6 +28,8 @@ describe("modFileToJSON", () => {
                         );
 
                         for (let index = 0; index < errorsCount; index++) {
+              // We're asserting an error type against an JSON object here, it works but isn't type correct
+              // @ts-expect-error
                           expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
                         }
                       }

@@ -79,6 +79,20 @@ export abstract class BaseError extends Error {
 }
 
 /**
+ * Abstract base class for errors that collate other errors.
+ */
+export abstract class BaseMultiError<T = BaseError> extends Error {
+  constructor(public errors: Array<T>) {
+    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
+    this.errors = errors;
+  }
+
+  toString() {
+    return this.message;
+  }
+}
+
+/**
  * Added to listener during syntax parsing, when syntax errors are encountered
  */
 export class DSLSyntaxSingleError extends BaseError {
@@ -104,16 +118,7 @@ export class DSLSyntaxSingleError extends BaseError {
 /**
  * Thrown at the end of syntax parsing, collecting all Syntax errors encountered during parsing
  */
-export class DSLSyntaxError extends Error {
-  constructor(public errors: DSLSyntaxSingleError[]) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
+export class DSLSyntaxError extends BaseMultiError<DSLSyntaxSingleError> {}
 
 /**
  * Added to reporter as the JSON transformation is being parsed and validated
@@ -135,16 +140,7 @@ export class ModelValidationSingleError extends BaseError {
 /**
  * Thrown at end of checkDSL validation, collecting all encountered validation errors
  */
-export class ModelValidationError extends Error {
-  constructor(public errors: ModelValidationSingleError[]) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
+export class ModelValidationError extends BaseMultiError<ModelValidationSingleError> {}
 
 /**
  * Thrown when improper values are passed.
@@ -198,16 +194,7 @@ export class FGAModFileValidationSingleError extends BaseError {
 /**
  * Thrown when an `fga.mod` file is invalid.
  */
-export class FGAModFileValidationError extends Error {
-  constructor(public errors: FGAModFileValidationSingleError[]) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
+export class FGAModFileValidationError extends BaseMultiError {}
 
 /*
  * Represents an individual error returned during transformation of a module.
@@ -232,13 +219,4 @@ export class ModuleTransformationSingleError extends BaseError {
 /**
  * Thrown when a module is invalid.
  */
-export class ModuleTransformationError extends Error {
-  constructor(public errors: Array<BaseError>) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
+export class ModuleTransformationError extends BaseMultiError {}

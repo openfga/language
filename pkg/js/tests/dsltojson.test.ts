@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@jest/globals";
 import { loadDSLSyntaxErrorTestCases, loadValidTransformerTestCases } from "./_testcases";
 import { transformDSLToJSON, transformDSLToJSONObject } from "../transformer";
 

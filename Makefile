@@ -18,7 +18,7 @@ build: build-go build-js build-java
 test: test-go test-js test-java
 
 .PHONY: lint
-lint: lint-go lint-js lint-java
+lint: lint-go lint-js lint-java lint-test
 
 #### Go #####
 
@@ -133,6 +133,18 @@ format-java: antlr-gen-java
 .PHONY: all-tests-java
 all-tests-java: antlr-gen-java
 	$(MAKE) -C pkg/java all-tests
+
+#### Test data #####
+
+.PHONE: lint-tests
+lint-tests:
+	cd pkg/js; \
+	npx prettier --check ${PWD}/tests/**/{*.json,*.yaml}
+
+.PHONE: format-tests
+format-tests:
+	cd pkg/js; \
+	npx prettier --write ${PWD}/tests/**/{*.json,*.yaml}
 
 #### Util ####
 

@@ -56,7 +56,7 @@
         },
         "relations": {
           "another_thing": {
-            "directly_related_user_types":  [
+            "directly_related_user_types": [
               {
                 "type": "user"
               }
@@ -66,8 +66,8 @@
               "file": "board.fga"
             }
           },
-          "manager":  {
-            "directly_related_user_types":  [
+          "manager": {
+            "directly_related_user_types": [
               {
                 "type": "user"
               }
@@ -77,15 +77,15 @@
               "file": "org.fga"
             }
           },
-          "thing":  {
-            "directly_related_user_types":  [
+          "thing": {
+            "directly_related_user_types": [
               {
                 "type": "other"
               }
             ]
           },
-          "after":  {
-            "directly_related_user_types":  [
+          "after": {
+            "directly_related_user_types": [
               {
                 "type": "user"
               }
@@ -95,15 +95,15 @@
               "file": "org.fga"
             }
           },
-          "aardvark":  {
-            "directly_related_user_types":  [
+          "aardvark": {
+            "directly_related_user_types": [
               {
                 "type": "user"
               }
             ]
           },
-          "abother_thing":  {
-            "directly_related_user_types":  [
+          "abother_thing": {
+            "directly_related_user_types": [
               {
                 "condition": "another_check",
                 "type": "user"
@@ -118,7 +118,7 @@
       },
       "relations": {
         "thing": {
-         "this": {}
+          "this": {}
         },
         "another_thing": {
           "this": {}
@@ -152,7 +152,7 @@
         },
         "relations": {
           "second_thing": {
-            "directly_related_user_types":  [
+            "directly_related_user_types": [
               {
                 "condition": "other_check",
                 "type": "user"

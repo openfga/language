@@ -17,8 +17,8 @@
     "typecheck": "tsc  --skipLibCheck",
     "lint": "eslint . -c .eslintrc.js --ext .ts",
     "lint:fix": "npm run lint -- --fix",
-    "format:check": "prettier --check **/*.ts",
-    "format:fix": "prettier --write **/*.ts"
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "keywords": [
     "openfga",
@@ -34,6 +34,7 @@
     "yaml": "^2.4.1"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@openfga/sdk": "^0.3.5",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.30",

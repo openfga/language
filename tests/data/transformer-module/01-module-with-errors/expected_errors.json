@@ -71,7 +71,7 @@
       "start": 12,
       "end": 112
     },
-    "metadata" :{
+    "metadata": {
       "errorType": "invalid-name"
     }
   },
@@ -86,7 +86,7 @@
       "start": 6,
       "end": 10
     },
-    "metadata" :{
+    "metadata": {
       "errorType": "reserved-type-keywords"
     }
   },
@@ -101,7 +101,7 @@
       "start": 12,
       "end": 16
     },
-    "metadata" :{
+    "metadata": {
       "errorType": "reserved-relation-keywords"
     }
   },
@@ -116,7 +116,7 @@
       "start": 6,
       "end": 350
     },
-    "metadata" :{
+    "metadata": {
       "errorType": "invalid-name"
     }
   }

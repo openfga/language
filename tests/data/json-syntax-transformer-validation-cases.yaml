@@ -1,5 +1,5 @@
 - name: mixed operators
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [
@@ -78,7 +78,7 @@
     }
 
 - name: mixed operators with direct assignment 1
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [
@@ -122,7 +122,7 @@
   error_message: the 'rel2' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: mixed operators with direct assignment 2
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [
@@ -200,7 +200,7 @@
   error_message: the 'rel1' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: mixed operators with direct assignment 3
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [
@@ -290,7 +290,7 @@
   error_message: the 'rel4' relation definition under the 'user' type is not supported by the OpenFGA DSL syntax yet
 
 - name: relation def where this is not in first place (union)
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [
@@ -339,7 +339,7 @@
   valid: true
 
 - name: relation def where this is not in first place (intersection)
-  json: >-2
+  json: >2-
     {
       "schema_version": "1.1",
       "type_definitions": [

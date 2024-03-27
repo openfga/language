@@ -118,16 +118,7 @@ export class DSLSyntaxSingleError extends BaseError {
 /**
  * Thrown at the end of syntax parsing, collecting all Syntax errors encountered during parsing
  */
-export class DSLSyntaxError extends Error {
-  constructor(public errors: DSLSyntaxSingleError[]) {
-    super(`${errors.length} error${errors.length > 1 ? "s" : ""} occurred:\n\t* ${errors.join("\n\t* ")}\n\n`);
-    this.errors = errors;
-  }
-
-  toString() {
-    return this.message;
-  }
-}
+export class DSLSyntaxError extends BaseMultiError<DSLSyntaxSingleError> {}
 
 /**
  * Added to reporter as the JSON transformation is being parsed and validated

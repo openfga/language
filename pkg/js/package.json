@@ -17,8 +17,8 @@
     "typecheck": "tsc  --skipLibCheck",
     "lint": "eslint . -c .eslintrc.js --ext .ts",
     "lint:fix": "npm run lint -- --fix",
-    "format:check": "prettier --check **/*.ts",
-    "format:fix": "prettier --write **/*.ts"
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "keywords": [
     "openfga",

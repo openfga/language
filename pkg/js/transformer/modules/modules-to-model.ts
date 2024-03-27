@@ -1,4 +1,4 @@
-import { AuthorizationModel, Condition , TypeDefinition } from "@openfga/sdk";
+import { AuthorizationModel, Condition, TypeDefinition } from "@openfga/sdk";
 import { validateJSON } from "../../validator";
 import { transformModularDSLToJSONObject } from "../dsltojson";
 import {
@@ -8,7 +8,7 @@ import {
   ModelValidationSingleError,
   ModuleTransformationError,
   ModuleTransformationSingleError,
-  ValidationError
+  ValidationError,
 } from "../../errors";
 import { getTypeLineNumber, getConditionLineNumber, getRelationLineNumber } from "../../util/line-numbers";
 import { constructTransformationError } from "../../util/exceptions";
@@ -20,12 +20,12 @@ export interface ModuleFile {
 
 export const transformModuleFilesToModel = (
   files: ModuleFile[],
-  schemaVersion: string
+  schemaVersion: string,
 ): Omit<AuthorizationModel, "id"> => {
   const model: Omit<AuthorizationModel, "id"> = {
     schema_version: schemaVersion,
     type_definitions: [],
-    conditions: {}
+    conditions: {},
   };
 
   const typeDefs: TypeDefinition[] = [];
@@ -33,7 +33,7 @@ export const transformModuleFilesToModel = (
   const extendedTypeDefs: Record<string, TypeDefinition[]> = {};
   const conditions = new Map<string, Condition>();
   const errors: BaseError[] = [];
-  const moduleFiles = new Map(files.map(file => [file.name, file.contents]));
+  const moduleFiles = new Map(files.map((file) => [file.name, file.contents]));
 
   for (const { name, contents } of files) {
     try {
@@ -44,14 +44,17 @@ export const transformModuleFilesToModel = (
         // Check if we've already seen this type and it's not marked as an extension
         if (types.has(typeDef.type) && !typeDefExtensions.has(typeDef.type)) {
           const lineIndex = getTypeLineNumber(typeDef.type, lines);
-          errors.push(constructTransformationError({
-            message: `duplicate type definition ${typeDef.type}`,
-            lines, lineIndex,
-            metadata: {
-              symbol: typeDef.type,
-              file: name,
-            }
-          }));
+          errors.push(
+            constructTransformationError({
+              message: `duplicate type definition ${typeDef.type}`,
+              lines,
+              lineIndex,
+              metadata: {
+                symbol: typeDef.type,
+                file: name,
+              },
+            }),
+          );
           continue;
         }
 
@@ -65,7 +68,7 @@ export const transformModuleFilesToModel = (
         }
 
         typeDef.metadata!.source_info = {
-          file: name
+          file: name,
         };
         types.add(typeDef.type);
         typeDefs.push(typeDef);
@@ -76,18 +79,21 @@ export const transformModuleFilesToModel = (
           // If we have already seen a condition with this name mark it as duplicate
           if (conditions.has(conditionName)) {
             const lineIndex = getConditionLineNumber(conditionName, lines);
-            errors.push(constructTransformationError({
-              message: `duplicate condition ${conditionName}`,
-              lines, lineIndex,
-              metadata: {
-                symbol: conditionName,
-                file: name,
-              }
-            }));
+            errors.push(
+              constructTransformationError({
+                message: `duplicate condition ${conditionName}`,
+                lines,
+                lineIndex,
+                metadata: {
+                  symbol: conditionName,
+                  file: name,
+                },
+              }),
+            );
             continue;
           }
           condition.metadata!.source_info = {
-            file: name
+            file: name,
           };
           conditions.set(conditionName, condition);
         }
@@ -107,7 +113,6 @@ export const transformModuleFilesToModel = (
   for (const [filename, extended] of Object.entries(extendedTypeDefs)) {
     const lines = moduleFiles.get(filename)?.split("\n");
     for (const typeDef of extended) {
-
       if (!typeDef.relations) {
         // TODO: Maybe should be an error case or at least a warning?
         continue;
@@ -118,14 +123,17 @@ export const transformModuleFilesToModel = (
 
       if (!original) {
         const lineIndex = getTypeLineNumber(typeDef.type, lines, 0, true);
-        errors.push(constructTransformationError({
-          message: `extended type ${typeDef.type} does not exist`,
-          lines, lineIndex,
-          metadata: {
-            symbol: typeDef.type,
-            file: filename
-          }
-        }));
+        errors.push(
+          constructTransformationError({
+            message: `extended type ${typeDef.type} does not exist`,
+            lines,
+            lineIndex,
+            metadata: {
+              symbol: typeDef.type,
+              file: filename,
+            },
+          }),
+        );
         continue;
       }
 
@@ -141,7 +149,7 @@ export const transformModuleFilesToModel = (
         // Add the file metadata to any relations metadata that exists
         for (const relationName of Object.keys(original.metadata.relations!)) {
           original.metadata.relations![relationName].source_info = {
-            file: filename
+            file: filename,
           };
         }
 
@@ -152,29 +160,34 @@ export const transformModuleFilesToModel = (
       for (const [name, relation] of Object.entries(typeDef.relations)) {
         if (existingRelationNames.includes(name)) {
           const lineIndex = getRelationLineNumber(name, lines);
-          errors.push(constructTransformationError({
-            message: `relation ${name} already exists on type ${typeDef.type}`,
-            lines, lineIndex,
-            metadata: {
-              symbol: name,
-              file: filename,
-            }
-          }));
+          errors.push(
+            constructTransformationError({
+              message: `relation ${name} already exists on type ${typeDef.type}`,
+              lines,
+              lineIndex,
+              metadata: {
+                symbol: name,
+                file: filename,
+              },
+            }),
+          );
           continue;
         }
 
         const relationsMeta = Object.entries(typeDef.metadata?.relations || {}).find(([n]) => n === name);
 
         if (!relationsMeta) {
-          errors.push(new ModuleTransformationSingleError({
-            msg: `unable to find relation metadata for ${name}`
-          }));
+          errors.push(
+            new ModuleTransformationSingleError({
+              msg: `unable to find relation metadata for ${name}`,
+            }),
+          );
           continue;
         }
 
         const [, meta] = relationsMeta;
         meta.source_info = {
-          file: filename
+          file: filename,
         };
         original.relations![name] = relation;
         original.metadata!.relations![name] = meta;
@@ -217,7 +230,6 @@ export const transformModuleFilesToModel = (
         e.column = { start: wordIndex, end: wordIndex + (e.metadata.symbol?.length || 0) };
         errors.push(e);
       }
-
     }
   }
 
@@ -228,7 +240,7 @@ export const transformModuleFilesToModel = (
   return model;
 };
 
-function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): number {
+function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): number {
   const { metadata } = e;
   let lineIndex;
 
@@ -236,13 +248,13 @@ function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): num
     return -1;
   }
 
-  switch(metadata?.errorType) {
+  switch (metadata?.errorType) {
     case ValidationError.ConditionNotUsed:
       lineIndex = getConditionLineNumber(metadata.symbol, lines);
       break;
     case ValidationError.ReservedTypeKeywords:
       lineIndex = getTypeLineNumber(metadata.symbol, lines);
-     break;
+      break;
     case ValidationError.InvalidName:
       // handle type vs relation, this isn't ideal but no other way to check
       if (e.message.startsWith("invalid-name error: relation")) {
@@ -252,8 +264,9 @@ function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): num
       }
       break;
     case ValidationError.ReservedRelationKeywords:
-      lineIndex =  getRelationLineNumber(metadata.symbol, lines);
+      lineIndex = getRelationLineNumber(metadata.symbol, lines);
       break;
+    case ValidationError.InvalidRelationOnTupleset:
     case ValidationError.InvalidRelationType:
     case ValidationError.MissingDefinition:
     case ValidationError.InvalidType:
@@ -263,7 +276,7 @@ function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): num
     case ValidationError.RelationNoEntrypoint:
       let typeIndex = getTypeLineNumber(e.metadata!.type!, lines);
       if (typeIndex === -1) {
-        typeIndex =  getTypeLineNumber(e.metadata!.type!, lines, undefined, true);
+        typeIndex = getTypeLineNumber(e.metadata!.type!, lines, undefined, true);
       }
 
       lineIndex = getRelationLineNumber(e.metadata!.relation!, lines, typeIndex);
@@ -277,7 +290,7 @@ function resolveLineIndex (e: ModelValidationSingleError, lines?: string[]): num
   return lineIndex;
 }
 
-function resolveWordIndex (e: ModelValidationSingleError, line: string): number {
+function resolveWordIndex(e: ModelValidationSingleError, line: string): number {
   const { metadata } = e;
 
   if (!metadata) {

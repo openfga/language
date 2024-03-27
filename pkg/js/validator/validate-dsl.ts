@@ -552,6 +552,7 @@ function childDefDefined(
                     symbol: `${childDef.target} from ${childDef.from}`,
                     typeName: decodedType,
                     relationName: childDef.target,
+                    parent: childDef.from,
                     lineIndex,
                   });
                 }
@@ -561,8 +562,20 @@ function childDefDefined(
             // otherwise, the relation is defined in at least 1 child and should be considered valid
             if (childRelationNotValid.length === fromTypes.length) {
               for (const item of childRelationNotValid) {
-                const { lineIndex, symbol, typeName, relationName } = item;
-                collector.raiseInvalidTypeRelation(symbol, typeName, relation, relationName, lineIndex);
+                const { lineIndex, symbol, typeName, relationName, parent } = item;
+                collector.raiseInvalidRelationOnTupleset(
+                  symbol,
+                  typeName,
+                  type,
+                  relation,
+                  relationName,
+                  parent,
+                  lineIndex,
+                  {
+                    module,
+                    file,
+                  },
+                );
               }
             }
           } else {

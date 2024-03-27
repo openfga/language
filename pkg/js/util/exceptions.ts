@@ -139,6 +139,32 @@ const createInvalidTypeRelationError = (
   );
 };
 
+const createInvalidRelationOnTuplesetError = (
+  props: BaseProps,
+  typeName: string,
+  typeDef: string,
+  relationName: string,
+  offendingRelation: string,
+  parent: string,
+) => {
+  const { errors, lines, lineIndex, symbol, file, module } = props;
+  errors.push(
+    constructValidationError({
+      message: `the \`${offendingRelation}\` relation definition on type \`${typeDef}\` is not valid: \`${offendingRelation}\` does not exist on \`${parent}\`, which is of type \`${typeName}\`.`,
+      lines,
+      lineIndex,
+      metadata: {
+        symbol,
+        errorType: ValidationError.InvalidRelationOnTupleset,
+        relation: relationName,
+        typeName: typeDef,
+        file,
+        module,
+      },
+    }),
+  );
+};
+
 const createInvalidConditionNameInParameterError = (
   props: BaseProps,
   typeName: string,
@@ -497,6 +523,33 @@ export class ExceptionCollector {
     createNoEntryPointError(
       { errors: this.errors, lines: this.lines, lineIndex, symbol, file: meta.file, module: meta.module },
       typeName,
+    );
+  }
+
+  raiseInvalidRelationOnTupleset(
+    symbol: string,
+    typeName: string,
+    typeDef: string,
+    relationName: string,
+    offendingRelation: string,
+    parent: string,
+    lineIndex?: number,
+    meta?: Meta,
+  ) {
+    createInvalidRelationOnTuplesetError(
+      {
+        errors: this.errors,
+        lines: this.lines,
+        lineIndex,
+        symbol,
+        file: meta?.file,
+        module: meta?.module,
+      },
+      typeName,
+      typeDef,
+      relationName,
+      offendingRelation,
+      parent,
     );
   }
 

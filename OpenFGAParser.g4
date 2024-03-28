@@ -1,14 +1,16 @@
 parser grammar OpenFGAParser;
 options { tokenVocab=OpenFGALexer; }
 
-main: WHITESPACE? NEWLINE? modelHeader NEWLINE? typeDefs NEWLINE? conditions NEWLINE? EOF;
+main: WHITESPACE? NEWLINE? (modelHeader | moduleHeader) NEWLINE? typeDefs NEWLINE? conditions NEWLINE? EOF;
 
 // Model Header
 modelHeader: (multiLineComment NEWLINE)? MODEL NEWLINE SCHEMA WHITESPACE schemaVersion=SCHEMA_VERSION WHITESPACE?;
+// Module Header
+moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=identifier WHITESPACE?;
 
 // Type Definitions
 typeDefs: typeDef*;
-typeDef:  (NEWLINE multiLineComment)? NEWLINE TYPE WHITESPACE typeName=identifier (NEWLINE RELATIONS relationDeclaration+)?;
+typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=identifier (NEWLINE RELATIONS relationDeclaration+)?;
 
 // Relation definitions
 relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
@@ -37,15 +39,15 @@ relationRecurseNoDirect:
     ) WHITESPACE* RPAREN;
 
 relationDefDirectAssignment: LBRACKET WHITESPACE? relationDefTypeRestriction WHITESPACE? (COMMA WHITESPACE? relationDefTypeRestriction WHITESPACE?)* RPRACKET;
-relationDefRewrite: rewriteComputedusersetName=IDENTIFIER (WHITESPACE FROM WHITESPACE rewriteTuplesetName=IDENTIFIER)?;
+relationDefRewrite: rewriteComputedusersetName=identifier (WHITESPACE FROM WHITESPACE rewriteTuplesetName=identifier)?;
 
 relationDefTypeRestriction: NEWLINE? (
     relationDefTypeRestrictionBase
     | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE conditionName)
     ) NEWLINE?;
-relationDefTypeRestrictionBase: relationDefTypeRestrictionType=IDENTIFIER
+relationDefTypeRestrictionBase: relationDefTypeRestrictionType=identifier
     ((COLON relationDefTypeRestrictionWildcard=STAR)
-     | (HASH relationDefTypeRestrictionRelation=IDENTIFIER))?;
+     | (HASH relationDefTypeRestrictionRelation=identifier))?;
 
 // Conditions
 conditions: condition*;
@@ -62,7 +64,7 @@ parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_
 
 multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
 
-identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER;
+identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER | MODULE | EXTEND;
 
 conditionExpression: ((
 IDENTIFIER |

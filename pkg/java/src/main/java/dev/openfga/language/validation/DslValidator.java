@@ -54,9 +54,9 @@ public class DslValidator {
             errors.raiseSchemaVersionRequired(0, "");
         }
 
-        if (schemaVersion.equals("1.1")) {
+        if (schemaVersion != null && schemaVersion.equals("1.1")) {
             modelValidation();
-        } else {
+        } else if (schemaVersion != null) {
             var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
             errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);
         }
@@ -342,12 +342,8 @@ public class DslValidator {
                                 var type = DestructuredTupleToUserset.from(item);
                                 var decodedType = type.getDecodedType();
                                 var decodedRelation = type.getDecodedRelation();
-                                var isWilcard = type.isWildcard();
-                                if (isWilcard) {
-                                    var typeIndex = dsl.getTypeLineNumber(typeName);
-                                    var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
-                                    errors.raiseAssignableTypeWildcardRelation(lineIndex, item);
-                                } else if (decodedRelation != null) {
+                                var isWildcard = type.isWildcard();
+                                if (isWildcard || decodedRelation != null) {
                                     var typeIndex = dsl.getTypeLineNumber(typeName);
                                     var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                                     errors.raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
@@ -359,18 +355,22 @@ public class DslValidator {
                                                 lineIndex,
                                                 childDef.getTarget() + " from " + childDef.getFrom(),
                                                 decodedType,
-                                                childDef.getTarget()));
+                                                childDef.getTarget(),
+                                                childDef.getFrom()));
                                     }
                                 }
                             }
 
                             if (childRelationNotValid.size() == fromTypes.size()) {
                                 for (var item : childRelationNotValid) {
-                                    errors.raiseInvalidTypeRelation(
+                                    errors.raiseInvalidRelationOnTupleset(
                                             item.getLineIndex(),
                                             item.getSymbol(),
                                             item.getTypeName(),
-                                            item.getRelationName());
+                                            typeName,
+                                            relationName,
+                                            item.getRelationName(),
+                                            item.getParent());
                                 }
                             }
                         } else {

@@ -1,0 +1,16 @@
+module core
+
+type user
+type team
+    relations
+    define parent: [group]
+    define viewer: viewer from parent
+type group
+    relations
+    define parent: [team]
+    define viewer: viewer from parent
+
+type document
+    relations
+    define reader: writer
+    define writer: reader

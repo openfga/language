@@ -20,9 +20,6 @@
       metadata:
         symbol: ""
         errorType: schema-version-required
-    - msg: "invalid schema undefined"
-      metadata:
-        errorType: invalid-schema
 
 - name: relation def where this is not in first place
   json: |
@@ -72,3 +69,57 @@
       ]
     }
   expected_errors:
+
+- name: condition key and name property differ
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions":[
+        {
+          "relations": {},
+          "type": "user"
+        },
+        {
+          "metadata": {
+            "relations": {
+              "member": {
+                "directly_related_user_types": [
+                  {
+                    "condition": "name",
+                    "type": "user"
+                  }
+                ]
+              }
+            }
+          },
+          "relations": {
+            "member": {
+              "this": {}
+            }
+          },
+          "type": "org"
+        }
+      ],
+      "conditions": {
+        "name": {
+          "expression": "val <= 10",
+          "metadata": {
+            "module": "org",
+            "source_info": {
+              "file": "org.fga"
+            }
+          },
+          "name": "different_name",
+          "parameters": {
+            "val": {
+              "type_name": "TYPE_NAME_INT"
+            }
+          }
+        }
+      }
+    }
+  expected_errors:
+    - msg: "condition key is `name` but nested name property is different_name"
+      metadata:
+        symbol: "different_name"
+        errorType: different-nested-condition-name

@@ -1,0 +1,10 @@
+module org
+
+type org
+  relations
+    define member: [user with a_check]
+    define another: [user]
+
+condition a_check(val: int) {
+  val <= 10
+}

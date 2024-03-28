@@ -1,0 +1,13 @@
+module board
+
+extend type user
+  relations
+    define another_thing: [user]
+
+extend type other
+  relations
+    define second_thing: [user with other_check]
+
+condition other_check(other: int) {
+  other <= 10
+} 

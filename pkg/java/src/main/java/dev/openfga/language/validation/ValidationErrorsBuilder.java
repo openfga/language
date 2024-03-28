@@ -24,7 +24,7 @@ class ValidationErrorsBuilder {
 
         var rawLine = lines[lineIndex];
         var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 0;
+        var wordIdx = 1;
         var matcher = regex.matcher(rawLine);
         if (matcher.find()) {
             wordIdx = matcher.start() + 1;
@@ -126,6 +126,13 @@ class ValidationErrorsBuilder {
         var message = "`" + relationName + "` is not a valid relation for `" + typeName + "`.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    public void raiseInvalidRelationOnTupleset(int lineIndex, String symbol, String typeName, String typeDef, String relationName, String offendingRelation, String parent) {
+        var message = "the `" + offendingRelation + "` relation definition on type `" + typeDef + "` is not valid: `" + offendingRelation + "` does not exist on `" + parent + "`, which is of type `" + typeName + "`.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationOnTupleset, relationName, typeName, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

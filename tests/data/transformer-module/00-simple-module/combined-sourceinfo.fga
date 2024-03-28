@@ -1,0 +1,13 @@
+model
+  schema 1.2
+
+type user # module: core, file: core.fga
+
+type org # module: org, file: org.fga
+  relations
+    define another: [user]
+    define member: [user with a_check]
+
+condition a_check(val: int) {
+  val <= 10
+} # module: org, file: org.fga

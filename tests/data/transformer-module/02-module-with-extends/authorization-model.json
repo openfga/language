@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.2",
+  "conditions": {
+    "a_check": {
+      "expression": "val <= 10",
+      "metadata": {
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        }
+      },
+      "name": "a_check",
+      "parameters": {
+        "val": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    },
+    "other_check": {
+      "expression": "other <= 10",
+      "metadata": {
+        "module": "board",
+        "source_info": {
+          "file": "board.fga"
+        }
+      },
+      "name": "other_check",
+      "parameters": {
+        "other": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    },
+    "another_check": {
+      "expression": "another <= 10",
+      "metadata": {
+        "module": "board",
+        "source_info": {
+          "file": "otherboard.fga"
+        }
+      },
+      "name": "another_check",
+      "parameters": {
+        "another": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    }
+  },
+  "type_definitions": [
+    {
+      "metadata": {
+        "module": "core",
+        "source_info": {
+          "file": "core.fga"
+        },
+        "relations": {
+          "another_thing": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "source_info": {
+              "file": "board.fga"
+            }
+          },
+          "manager": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "org",
+            "source_info": {
+              "file": "org.fga"
+            }
+          },
+          "thing": {
+            "directly_related_user_types": [
+              {
+                "type": "other"
+              }
+            ]
+          },
+          "after": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "module": "org",
+            "source_info": {
+              "file": "org.fga"
+            }
+          },
+          "aardvark": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "abother_thing": {
+            "directly_related_user_types": [
+              {
+                "condition": "another_check",
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "source_info": {
+              "file": "otherboard.fga"
+            }
+          }
+        }
+      },
+      "relations": {
+        "thing": {
+          "this": {}
+        },
+        "another_thing": {
+          "this": {}
+        },
+        "manager": {
+          "this": {}
+        },
+        "after": {
+          "this": {}
+        },
+        "aardvark": {
+          "this": {}
+        },
+        "abother_thing": {
+          "this": {}
+        }
+      },
+      "type": "user"
+    },
+    {
+      "type": "other",
+      "relations": {
+        "second_thing": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "module": "core",
+        "source_info": {
+          "file": "core.fga"
+        },
+        "relations": {
+          "second_thing": {
+            "directly_related_user_types": [
+              {
+                "condition": "other_check",
+                "type": "user"
+              }
+            ],
+            "module": "board",
+            "source_info": {
+              "file": "board.fga"
+            }
+          }
+        }
+      }
+    },
+    {
+      "metadata": {
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        },
+        "relations": {
+          "member": {
+            "directly_related_user_types": [
+              {
+                "condition": "a_check",
+                "type": "user"
+              }
+            ]
+          }
+        }
+      },
+      "relations": {
+        "member": {
+          "this": {}
+        }
+      },
+      "type": "org"
+    }
+  ]
+}

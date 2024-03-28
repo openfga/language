@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feat/148-support-modular-models
     tags:
       - 'v*'
   merge_group:
@@ -12,13 +13,13 @@ on:
       - 'pkg/go/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
-      - 'tests'
+      - 'tests/**'
   pull_request:
     paths:
       - 'pkg/go/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
-      - 'tests'
+      - 'tests/**'
 
 permissions:
   contents: read

@@ -40,14 +40,14 @@ This repo contains everything needed to interact with the OpenFGA Authorization 
 | Feature    | Implemented in ANTLR |
 |------------|----------------------|
 | Basic DSL  | ✅                    |
-| Nesting    | ✅ (partial, see #113 |
+| Nesting    | ✅ (partial, see [#113](https://github.com/openfga/language/issues/113)) |
 | Conditions | ✅                    |
 
-| Feature                                               | Go                   | JS          | Java                  |
-|-------------------------------------------------------|----------------------|-------------|-----------------------|
-| Transformer from the DSL to JSON and from JSON to DSL | ✅                    | ✅           | ❌ (planned, see #139) |
-| Syntactic Model Validations                           | ✅                    | ✅           | ❌ (planned, see #139) |
-| Semantic Model Validations                            | ❌ (planned, see #99) | ✅           | ❌ (planned, see #139) |
+| Feature                                               | Go                   | JS           | Java                  |
+|-------------------------------------------------------|----------------------|--------------|-----------------------|
+| Transformer from the DSL to JSON and from JSON to DSL | ✅                    | ✅           | ✅                    |
+| Syntactic Model Validations                           | ✅                    | ✅           | ✅                    |
+| Semantic Model Validations                            | ❌ (planned, see [#99](https://github.com/openfga/language/issues/99)) | ✅      | ✅ |
 | Graphing & Utility Methods                            | ❌ (planned)          | ❌ (planned) | ❌ (planned)           |
 
 
@@ -59,7 +59,7 @@ go get github.com/openfga/language/pkg/go
 
 ### Node
 ```bash
-npm install @openfga/syntax-transformer@v0.2.0-language
+npm install @openfga/syntax-transformer@beta
 ```
 
 ## Usage
@@ -78,10 +78,10 @@ type folder
     define viewer: [user]`
 
 // Transform from DSL to a JSON string
-jsonStringModel, err := transformer.TransformDSLToJSON(dslString)
+generatedJsonString, err := transformer.TransformDSLToJSONString(dslString)
 
 // Transform from a JSON string to DSL
-dslString, err = transformer.TransformJSONStringToDSL(jsonStringModel)
+generatedDsl, err := transformer.TransformJSONStringToDSL(generatedJsonString)
 ```
 
 #### Node
@@ -96,11 +96,31 @@ type folder
     define viewer: [user]`;
 
 // Transform from DSL to a JSON string
-const jsonStringModel = transformer.transformDSLToJSON(dslString)
+const generatedJsonString = transformer.transformDSLToJSONString(dslString)
 
 // Transform from a JSON string to DSL
-dslString = transformer.transformJSONStringToDSL(jsonString)
+const generatedDsl = transformer.transformJSONStringToDSL(generatedJsonString)
 ```
+
+#### Java
+```java
+import dev.openfga.language.DslToJsonTransformer;
+import dev.openfga.language.JsonToDslTransformer;
+
+var dslString = """model
+  schema 1.1
+type user
+type folder
+  relations
+    define viewer: [user]""";
+
+// Transform from DSL to a JSON string
+var generatedJsonString = new DslToJsonTransformer().transform(dslString);
+
+// Transform from a JSON string to DSL
+var generatedDsl = new JsonToDslTransformer().transform(generatedJsonString);
+```
+
 
 ## CLI
 

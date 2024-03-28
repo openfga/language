@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@jest/globals";
 import {
   loadDSLSyntaxErrorTestCases,
   loadDSLValidationErrorTestCases,
@@ -5,7 +6,7 @@ import {
 } from "./_testcases";
 import { DSLSyntaxError, DSLSyntaxSingleError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { validateDSL, validateJSON } from "../validator";
-import { transformDSLToJSON, transformDSLToJSONObject } from "../transformer";
+import { transformDSLToJSONObject } from "../transformer";
 import { AuthorizationModel } from "@openfga/sdk";
 
 describe("validateDSL", () => {
@@ -37,6 +38,8 @@ describe("validateDSL", () => {
           );
 
           for (let index = 0; index < errorsCount; index++) {
+            // We're asserting an error type against an JSON object here, it works but isn't type correct
+            // @ts-expect-error
             expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
           }
         }
@@ -72,6 +75,8 @@ describe("validateDSL", () => {
           );
 
           for (let index = 0; index < errorsCount; index++) {
+            // We're asserting an error type against an JSON object here, it works but isn't type correct
+            // @ts-expect-error
             expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
           }
         }
@@ -112,6 +117,8 @@ describe("validateJSON", () => {
           );
 
           for (let index = 0; index < errorsCount; index++) {
+            // We're asserting an error type against an JSON object here, it works but isn't type correct
+            // @ts-expect-error
             expect(exception.errors[index]).toMatchObject(testCase.expected_errors[index]);
           }
         }
@@ -151,6 +158,8 @@ describe("validateJSON", () => {
 
           for (let index = 0; index < errorsCount; index++) {
             expect(exception.errors[index].msg === testCase.expected_errors[index].msg);
+            // We're asserting an error type against an JSON object here, it works but isn't type correct
+            // @ts-expect-error
             expect(exception.errors[index].metadata).toMatchObject(testCase.expected_errors[index].metadata!);
           }
         }

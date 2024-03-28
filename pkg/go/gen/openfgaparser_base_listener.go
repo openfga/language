@@ -33,6 +33,12 @@ func (s *BaseOpenFGAParserListener) EnterModelHeader(ctx *ModelHeaderContext) {}
 // ExitModelHeader is called when production modelHeader is exited.
 func (s *BaseOpenFGAParserListener) ExitModelHeader(ctx *ModelHeaderContext) {}
 
+// EnterModuleHeader is called when production moduleHeader is entered.
+func (s *BaseOpenFGAParserListener) EnterModuleHeader(ctx *ModuleHeaderContext) {}
+
+// ExitModuleHeader is called when production moduleHeader is exited.
+func (s *BaseOpenFGAParserListener) ExitModuleHeader(ctx *ModuleHeaderContext) {}
+
 // EnterTypeDefs is called when production typeDefs is entered.
 func (s *BaseOpenFGAParserListener) EnterTypeDefs(ctx *TypeDefsContext) {}
 

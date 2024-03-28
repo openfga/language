@@ -3,18 +3,24 @@ package transformer_test
 import (
 	"testing"
 
-	language "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
+
+	language "github.com/openfga/language/pkg/go/transformer"
 )
 
 func TestJSONToDSLTransformer(t *testing.T) {
+	t.Parallel()
+
 	testCases, err := loadValidTransformerTestCases()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {
+		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
 			if testCase.Skip {
 				t.Skip()
 			}
@@ -28,13 +34,18 @@ func TestJSONToDSLTransformer(t *testing.T) {
 }
 
 func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
-	testCases, err := loadInvalidJsonSyntaxTestCases()
+	t.Parallel()
+
+	testCases, err := loadInvalidJSONSyntaxTestCases()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, testCase := range testCases {
+		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := language.TransformJSONStringToDSL(testCase.JSON)
 
 			if testCase.ErrorMessage == "" {
@@ -42,6 +53,52 @@ func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
 			} else {
 				require.EqualErrorf(t, err, testCase.ErrorMessage, "")
 			}
+		})
+	}
+}
+
+func TestJSONToDSLTransformerForModularModelCases(t *testing.T) {
+	t.Parallel()
+
+	testCases, err := loadModuleTestCases()
+	require.NoError(t, err)
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		if testCase.DSL == "" {
+			continue
+		}
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
+			dsl, err := language.TransformJSONStringToDSL(testCase.JSON)
+			require.NoError(t, err)
+
+			require.Equal(t, testCase.DSL, *dsl)
+		})
+	}
+}
+
+func TestJSONToDSLTransformerForModularModelCasesWithSourceInfo(t *testing.T) {
+	t.Parallel()
+
+	testCases, err := loadModuleTestCases()
+	require.NoError(t, err)
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		if testCase.DSLWithSourceInfo == "" {
+			continue
+		}
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+
+			dsl, err := language.TransformJSONStringToDSL(testCase.JSON, language.WithIncludeSourceInformation(true))
+			require.NoError(t, err)
+
+			require.Equal(t, testCase.DSLWithSourceInfo, *dsl)
 		})
 	}
 }

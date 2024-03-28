@@ -1,0 +1,6 @@
+module employee
+
+type employe
+  relations
+    define can_manage: manager or can_manage from manager
+    define manager: [employee]

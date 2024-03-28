@@ -1,0 +1,31 @@
+model
+  schema 1.2
+
+type other
+  relations
+    define second_thing: [user with other_check]
+
+type user
+  relations
+    define aardvark: [user]
+    define thing: [other]
+    define another_thing: [user]
+    define abother_thing: [user with another_check]
+    define after: [user]
+    define manager: [user]
+
+type org
+  relations
+    define member: [user with a_check]
+
+condition other_check(other: int) {
+  other <= 10
+}
+
+condition another_check(another: int) {
+  another <= 10
+}
+
+condition a_check(val: int) {
+  val <= 10
+}

@@ -5,6 +5,7 @@ import {ParseTreeListener} from "antlr4";
 
 import { MainContext } from "./OpenFGAParser";
 import { ModelHeaderContext } from "./OpenFGAParser";
+import { ModuleHeaderContext } from "./OpenFGAParser";
 import { TypeDefsContext } from "./OpenFGAParser";
 import { TypeDefContext } from "./OpenFGAParser";
 import { RelationDeclarationContext } from "./OpenFGAParser";
@@ -55,6 +56,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitModelHeader?: (ctx: ModelHeaderContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.moduleHeader`.
+	 * @param ctx the parse tree
+	 */
+	enterModuleHeader?: (ctx: ModuleHeaderContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.moduleHeader`.
+	 * @param ctx the parse tree
+	 */
+	exitModuleHeader?: (ctx: ModuleHeaderContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.typeDefs`.
 	 * @param ctx the parse tree

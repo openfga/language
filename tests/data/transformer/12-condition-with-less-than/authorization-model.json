@@ -1,10 +1,10 @@
 {
-  "schema_version":"1.1",
+  "schema_version": "1.1",
   "type_definitions": [
     {
-      "type":"user",
-       "relations": {},
-       "metadata": null
+      "type": "user",
+      "relations": {},
+      "metadata": null
     },
     {
       "metadata": {
@@ -12,8 +12,8 @@
           "viewer": {
             "directly_related_user_types": [
               {
-                "condition":"conditionX",
-                "type":"user"
+                "condition": "conditionX",
+                "type": "user"
               }
             ]
           }
@@ -24,16 +24,16 @@
           "this": {}
         }
       },
-      "type":"document"
+      "type": "document"
     }
   ],
   "conditions": {
     "conditionX": {
-      "expression":"x<100",
-      "name":"conditionX",
+      "expression": "x<100",
+      "name": "conditionX",
       "parameters": {
         "x": {
-          "type_name":"TYPE_NAME_INT"
+          "type_name": "TYPE_NAME_INT"
         }
       }
     }

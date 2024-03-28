@@ -28,6 +28,16 @@ public interface OpenFGAParserListener extends ParseTreeListener {
 	 */
 	void exitModelHeader(OpenFGAParser.ModelHeaderContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link OpenFGAParser#moduleHeader}.
+	 * @param ctx the parse tree
+	 */
+	void enterModuleHeader(OpenFGAParser.ModuleHeaderContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link OpenFGAParser#moduleHeader}.
+	 * @param ctx the parse tree
+	 */
+	void exitModuleHeader(OpenFGAParser.ModuleHeaderContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link OpenFGAParser#typeDefs}.
 	 * @param ctx the parse tree
 	 */

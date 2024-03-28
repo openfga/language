@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feat/148-support-modular-models
     tags:
       - 'v*'
   merge_group:
@@ -18,7 +19,7 @@ on:
       - 'pkg/js/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
-      - 'tests'
+      - 'tests/**'
 
 permissions:
   contents: read

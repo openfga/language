@@ -1,0 +1,4 @@
+module syntax-error
+
+type another
+  define foo: [user]

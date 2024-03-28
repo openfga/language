@@ -16,6 +16,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     private TypeDefinition currentTypeDef = null;
     private Relation currentRelation = null;
     private Condition currentCondition = null;
+    private boolean isModularModel = false;
 
     private Deque<StackRelation> rewriteStack = null;
 
@@ -63,6 +64,11 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     }
 
     @Override
+    public void exitModuleHeader(OpenFGAParser.ModuleHeaderContext ctx) {
+        this.isModularModel = true;
+    }
+
+    @Override
     public void enterTypeDefs(OpenFGAParser.TypeDefsContext ctx) {
         this.authorizationModel.setTypeDefinitions(new ArrayList<>());
     }
@@ -71,6 +77,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     public void enterTypeDef(OpenFGAParser.TypeDefContext ctx) {
         if (ctx.typeName == null) {
             return;
+        }
+
+        if (ctx.EXTEND() != null && !this.isModularModel) {
+            parser.notifyErrorListeners(ctx.typeName.start, "extend can only be used in a modular model", null);
         }
 
         currentTypeDef = new TypeDefinition()

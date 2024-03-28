@@ -302,10 +302,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "org"
+                    "relation": "org"
                   },
                   "computedUserset": {
-                      "relation": "asset_creator"
+                    "relation": "asset_creator"
                   }
                 }
               }
@@ -326,10 +326,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "org"
+                    "relation": "org"
                   },
                   "computedUserset": {
-                      "relation": "asset_commenter"
+                    "relation": "asset_commenter"
                   }
                 }
               }
@@ -345,10 +345,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "org"
+                    "relation": "org"
                   },
                   "computedUserset": {
-                      "relation": "asset_editor"
+                    "relation": "asset_editor"
                   }
                 }
               }
@@ -372,10 +372,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "org"
+                    "relation": "org"
                   },
                   "computedUserset": {
-                      "relation": "asset_viewer"
+                    "relation": "asset_viewer"
                   }
                 }
               }
@@ -447,10 +447,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "category"
+                    "relation": "category"
                   },
                   "computedUserset": {
-                      "relation": "commenter"
+                    "relation": "commenter"
                   }
                 }
               }
@@ -466,10 +466,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "category"
+                    "relation": "category"
                   },
                   "computedUserset": {
-                      "relation": "editor"
+                    "relation": "editor"
                   }
                 }
               }
@@ -490,10 +490,10 @@
               {
                 "tupleToUserset": {
                   "tupleset": {
-                      "relation": "category"
+                    "relation": "category"
                   },
                   "computedUserset": {
-                      "relation": "viewer"
+                    "relation": "viewer"
                   }
                 }
               }

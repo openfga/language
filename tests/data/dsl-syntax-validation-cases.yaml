@@ -25,7 +25,7 @@
   dsl: |
     type user
   expected_errors:
-    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -34,7 +34,7 @@
         end: 4
       metadata:
         symbol: "type"
-    - msg: "extraneous input 'user' expecting {'#', 'model', NEWLINE}"
+    - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -43,7 +43,7 @@
         end: 9
       metadata:
         symbol: "user"
-    - msg: "mismatched input '<EOF>' expecting {'#', 'model'}"
+    - msg: "mismatched input '<EOF>' expecting {'#', 'module', 'model'}"
       line:
         start: 2
         end: 2
@@ -85,7 +85,7 @@
     model
       schema 11
   expected_errors:
-    - msg: "mismatched input '11' expecting '1.1'"
+    - msg: "mismatched input '11' expecting SCHEMA_VERSION"
       line:
         start: 2
         end: 2
@@ -99,7 +99,7 @@
     model
       schema a.b
   expected_errors:
-    - msg: "mismatched input 'a' expecting '1.1'"
+    - msg: "mismatched input 'a' expecting SCHEMA_VERSION"
       line:
         start: 2
         end: 2
@@ -355,7 +355,7 @@
         define member: [ ]
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {IDENTIFIER, NEWLINE}"
+    - msg: "extraneous input ']' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
       line:
         start: 6
         end: 6
@@ -364,7 +364,7 @@
         end: 22
       metadata:
         symbol: "]"
-    - msg: "mismatched input 'define' expecting IDENTIFIER"
+    - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -392,7 +392,7 @@
         define member: []
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, NEWLINE}"
+    - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
       line:
         start: 6
         end: 6
@@ -401,7 +401,7 @@
         end: 21
       metadata:
         symbol: "]"
-    - msg: "mismatched input 'define' expecting IDENTIFIER"
+    - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -419,24 +419,6 @@
         end: 17
       metadata:
         symbol: "reader"
-- name: unsupported schema version should yield error
-  dsl: |
-    model
-      schema 0.9
-    type user
-    type org
-      relations
-        define member: [user]
-  expected_errors:
-    - msg: "mismatched input '0.9' expecting '1.1'"
-      line:
-        start: 2
-        end: 2
-      column:
-        start: 9
-        end: 12
-      metadata:
-        symbol: "0.9"
 - name: model 1.1 has no directly allowed types in viewer
   dsl: |
     model
@@ -502,7 +484,7 @@
       relations
         define group: [user] as self
   expected_errors:
-    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'model', NEWLINE}"
+    - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -511,7 +493,7 @@
         end: 4
       metadata:
         symbol: "type"
-    - msg: "extraneous input 'user' expecting {'#', 'model', NEWLINE}"
+    - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
         start: 1
         end: 1
@@ -520,7 +502,7 @@
         end: 9
       metadata:
         symbol: "user"
-    - msg: "mismatched input 'type' expecting {'#', 'model'}"
+    - msg: "mismatched input 'type' expecting {'#', 'module', 'model'}"
       line:
         start: 2
         end: 2
@@ -557,7 +539,7 @@
         define editor: [user]
         define viewer: editor but not [document#viewer]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -584,7 +566,7 @@
         define viewer: [document#viewer] or [document#editor]
         define editor: [document#viewer] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 5
         end: 5
@@ -612,7 +594,7 @@
         define editor: [user]
         define viewer: [user] and [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -640,7 +622,7 @@
         define editor: [user]
         define viewer: [document#editor] but not [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -668,7 +650,7 @@
         define editor: [user]
         define viewer: [user] but not [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -696,7 +678,7 @@
         define editor: [user]
         define viewer: [user] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 7
         end: 7
@@ -1228,7 +1210,7 @@
       relations
         define viewer: [user] or [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 5
         end: 5
@@ -1298,7 +1280,7 @@
         define rel1: [user]
         define rel2: but not rel1
   expected_errors:
-    - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER}"
+    - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 6
         end: 6
@@ -1317,7 +1299,7 @@
         define rel1: [user]
         define rel2: or rel1
   expected_errors:
-    - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER}"
+    - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 6
         end: 6
@@ -1336,7 +1318,7 @@
         define rel1: [user]
         define rel2: and rel1
   expected_errors:
-    - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER}"
+    - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 6
         end: 6
@@ -1355,7 +1337,7 @@
         define rel1: [user]
         define rel2: rel1 and [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 6
         end: 6
@@ -1385,7 +1367,7 @@
         define rel3: [user]
         define relation: rel3 or ((rel1 and rel2) but not [user])
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
         start: 8
         end: 8
@@ -1449,6 +1431,37 @@
     type list
     type map
 
+- name: does not allow module and model
+  dsl: |
+    model
+      schema 1.1
+    module foo
+
+    type user
+  expected_errors:
+    - msg: no viable alternative at input '\nmodule'
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 0
+        end: 6
+
+- name: does not allow extend in model
+  dsl: |
+    model
+      schema 1.1
+
+    extend type foo
+  expected_errors:
+    - msg: extend can only be used in a modular model
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 12
+        end: 15
+
 - name: a valid model with type names doesn't conflict with built-in keywords
   dsl: |
     model
@@ -1460,21 +1473,57 @@
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend
     type schema
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend
     type type
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend
     type relation
       relations
         define model: [user]
         define schema: [user]
         define type: [user]
         define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend
+    type module
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend
+    type extend
+      relations
+        define model: [user]
+        define schema: [user]
+        define type: [user]
+        define relation: [user]
+        define module: [user]
+        define extend: [user]
+        define other: [model,schema,type,relation,module,extend]
+        define another: model or schema or type or relation or module or extend

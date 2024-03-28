@@ -1,13 +1,13 @@
 ---
 - name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
   dsl: |
-   model
-     schema 1.1
-   type user
-   type group
-     relations
-       define member: [user]
-       define reader   : member   but not   allowed
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user]
+        define reader   : member   but not   allowed
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
@@ -155,7 +155,7 @@
         define parent: [team]
         define viewer: viewer from parent
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `team` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `team` (no entrypoint)."
       line:
         start: 7
         end: 7
@@ -165,7 +165,7 @@
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
-    - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
         start: 11
         end: 11
@@ -184,16 +184,16 @@
       relations
         define group: group from group
   expected_errors:
-  - msg: '`group` is an impossible relation for `group` (no entrypoint).'
-    line:
-      start: 6
-      end: 6
-    column:
-      start: 12
-      end: 17
-    metadata:
-      symbol: "group"
-      errorType: relation-no-entry-point
+    - msg: "`group` is an impossible relation for `group` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 12
+        end: 17
+      metadata:
+        symbol: "group"
+        errorType: relation-no-entry-point
 - name: no entry point for single type multiple relations
   dsl: |
     model
@@ -204,7 +204,7 @@
         define parent: [group]
         define viewer: viewer from parent
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
         start: 7
         end: 7
@@ -222,7 +222,7 @@
       relations
         define viewer: [group#viewer]
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
         start: 5
         end: 5
@@ -242,7 +242,7 @@
         define parent: [group]
         define viewer: reader from parent
   expected_errors:
-    - msg: '`reader` is not a valid relation for `group`.'
+    - msg: "the `reader` relation definition on type `group` is not valid: `reader` does not exist on `parent`, which is of type `group`."
       line:
         start: 7
         end: 7
@@ -251,7 +251,7 @@
         end: 38
       metadata:
         symbol: "reader from parent"
-        errorType: invalid-relation-type
+        errorType: invalid-relation-on-tupleset
 - name: invalid type is used
   dsl: |
     model
@@ -261,7 +261,7 @@
       relations
         define parent: [unknown]
   expected_errors:
-    - msg: '`unknown` is not a valid type.'
+    - msg: "`unknown` is not a valid type."
       line:
         start: 6
         end: 6
@@ -281,7 +281,7 @@
         define parent: [group]
         define viewer: viewer from org
   expected_errors:
-    - msg: '`org` is not a valid relation for `group`.'
+    - msg: "`org` is not a valid relation for `group`."
       line:
         start: 8
         end: 8
@@ -301,7 +301,7 @@
         define parent: [group]
         define viewer: org from parent
   expected_errors:
-    - msg: '`org` is not a valid relation for `group`.'
+    - msg: "the `org` relation definition on type `group` is not valid: `org` does not exist on `parent`, which is of type `group`."
       line:
         start: 8
         end: 8
@@ -309,7 +309,7 @@
         start: 20
         end: 35
       metadata:
-        errorType: invalid-relation-type
+        errorType: invalid-relation-on-tupleset
 - name: direct relation assignment not found
   dsl: |
     model
@@ -320,7 +320,7 @@
       relations
         define parent: [group, group#org]
   expected_errors:
-    - msg: '`org` is not a valid relation for `group`.'
+    - msg: "`org` is not a valid relation for `group`."
       line:
         start: 7
         end: 7
@@ -342,7 +342,7 @@
         define parent: [group]
         define viewer: viewer from parent
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `group` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
         start: 10
         end: 10
@@ -360,7 +360,7 @@
         define reader: writer
         define writer: reader
   expected_errors:
-    - msg: '`reader` is an impossible relation for `document` (potential loop).'
+    - msg: "`reader` is an impossible relation for `document` (potential loop)."
       line:
         start: 5
         end: 5
@@ -369,7 +369,7 @@
         end: 18
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`writer` is an impossible relation for `document` (potential loop).'
+    - msg: "`writer` is an impossible relation for `document` (potential loop)."
       line:
         start: 6
         end: 6
@@ -388,7 +388,7 @@
         define parent: [folder] or parent from parent
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: '`parent` relation used inside from allows only direct relation.'
+    - msg: "`parent` relation used inside from allows only direct relation."
       line:
         start: 6
         end: 6
@@ -397,8 +397,8 @@
         end: 50
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
-    - msg: '`parent` relation used inside from allows only direct relation.'
+        errorType: tupleuserset-not-direct
+    - msg: "`parent` relation used inside from allows only direct relation."
       line:
         start: 7
         end: 7
@@ -407,7 +407,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: parent relation used inside viewer contains a write
   dsl: |
     model
@@ -419,7 +419,7 @@
         define parent: [folder] or root
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: '`parent` relation used inside from allows only direct relation.'
+    - msg: "`parent` relation used inside from allows only direct relation."
       line:
         start: 8
         end: 8
@@ -428,7 +428,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: from is another tuple to userset
   dsl: |
     model
@@ -440,7 +440,7 @@
         define parent: [folder, folder#parent]
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: '`parent` relation used inside from allows only direct relation.'
+    - msg: "`parent` relation used inside from allows only direct relation."
       line:
         start: 8
         end: 8
@@ -449,7 +449,7 @@
         end: 48
       metadata:
         symbol: "parent"
-        errorType: tupleuset-not-direct
+        errorType: tupleuserset-not-direct
 - name: model 1.1 one of the intersection relation is not valid
   dsl: |
     model
@@ -542,7 +542,7 @@
         define action2: admin and action3 and action1
         define action3: admin and action1 and action2
   expected_errors:
-    - msg: '`action1` is an impossible relation for `doc` (potential loop).'
+    - msg: "`action1` is an impossible relation for `doc` (potential loop)."
       line:
         start: 7
         end: 7
@@ -551,7 +551,7 @@
         end: 19
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`action2` is an impossible relation for `doc` (potential loop).'
+    - msg: "`action2` is an impossible relation for `doc` (potential loop)."
       line:
         start: 8
         end: 8
@@ -560,7 +560,7 @@
         end: 19
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`action3` is an impossible relation for `doc` (potential loop).'
+    - msg: "`action3` is an impossible relation for `doc` (potential loop)."
       line:
         start: 9
         end: 9
@@ -581,33 +581,33 @@
         define action2: admin but not action3
         define action3: admin but not action1
   expected_errors:
-  - msg: '`action1` is an impossible relation for `doc` (potential loop).'
-    line:
-      start: 7
-      end: 7
-    column:
-      start: 12
-      end: 19
-    metadata:
-      errorType: relation-no-entry-point
-  - msg: '`action2` is an impossible relation for `doc` (potential loop).'
-    line:
-      start: 8
-      end: 8
-    column:
-      start: 12
-      end: 19
-    metadata:
-      errorType: relation-no-entry-point
-  - msg: '`action3` is an impossible relation for `doc` (potential loop).'
-    line:
-      start: 9
-      end: 9
-    column:
-      start: 12
-      end: 19
-    metadata:
-      errorType: relation-no-entry-point
+    - msg: "`action1` is an impossible relation for `doc` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 12
+        end: 19
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action2` is an impossible relation for `doc` (potential loop)."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 12
+        end: 19
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action3` is an impossible relation for `doc` (potential loop)."
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 12
+        end: 19
+      metadata:
+        errorType: relation-no-entry-point
 - name: intersection child not allow to reference itself in TTU
   dsl: |
     model
@@ -618,7 +618,7 @@
         define editor: [user]
         define viewer: [document#viewer] and editor
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
         start: 7
         end: 7
@@ -637,7 +637,7 @@
         define editor: [user]
         define viewer: [document#viewer] but not editor
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
         start: 7
         end: 7
@@ -659,7 +659,7 @@
         define parent: [folder]
         define viewer: viewer from parent
   expected_errors:
-    - msg: '`viewer` is an impossible relation for `folder` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `folder` (no entrypoint)."
       line:
         start: 6
         end: 6
@@ -668,7 +668,7 @@
         end: 18
       metadata:
         errorType: relation-no-entry-point
-    - msg: '`viewer` is an impossible relation for `document` (no entrypoint).'
+    - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
         start: 10
         end: 10
@@ -695,7 +695,7 @@
         define u4: role
     type user
   expected_errors:
-    - msg: '`u3` is not a valid relation for `child1`.'
+    - msg: "the `u3` relation definition on type `final` is not valid: `u3` does not exist on `children`, which is of type `child1`."
       line:
         start: 6
         end: 6
@@ -703,8 +703,8 @@
         start: 26
         end: 42
       metadata:
-        errorType: invalid-relation-type
-    - msg: '`u3` is not a valid relation for `child2`.'
+        errorType: invalid-relation-on-tupleset
+    - msg: "the `u3` relation definition on type `final` is not valid: `u3` does not exist on `children`, which is of type `child2`."
       line:
         start: 6
         end: 6
@@ -712,8 +712,8 @@
         start: 26
         end: 42
       metadata:
-        errorType: invalid-relation-type
-    - msg: '`u2` is not a valid relation for `child1`.'
+        errorType: invalid-relation-on-tupleset
+    - msg: "the `u2` relation definition on type `final` is not valid: `u2` does not exist on `children`, which is of type `child1`."
       line:
         start: 6
         end: 6
@@ -721,8 +721,8 @@
         start: 46
         end: 62
       metadata:
-        errorType: invalid-relation-type
-    - msg: '`u2` is not a valid relation for `child2`.'
+        errorType: invalid-relation-on-tupleset
+    - msg: "the `u2` relation definition on type `final` is not valid: `u2` does not exist on `children`, which is of type `child2`."
       line:
         start: 6
         end: 6
@@ -730,7 +730,7 @@
         start: 46
         end: 62
       metadata:
-        errorType: invalid-relation-type
+        errorType: invalid-relation-on-tupleset
 - name: self reference with wildcard
   dsl: |
     model
@@ -741,16 +741,16 @@
         define parent: [document, document:*]
         define viewer: [user] or viewer from parent
   expected_errors:
-    - msg: 'type restriction `document:*` cannot contain both wildcard and relation'
+    - msg: "`parent` relation used inside from allows only direct relation."
       line:
         start: 7
         end: 7
       column:
-        start: 0
-        end: 10
+        start: 42
+        end: 48
       metadata:
-        symbol: "document:*"
-        errorType: type-wildcard-relation
+        symbol: "parent"
+        errorType: tupleuserset-not-direct
 - name: duplicate types
   dsl: |
     model
@@ -1152,7 +1152,54 @@
       metadata:
         symbol: "allowed_ip"
         errorType: condition-not-used
+- name: unsupported schema version should yield error
+  dsl: |
+    model
+      schema 0.9
+    type user
+    type org
+      relations
+        define member: [user]
+  expected_errors:
+    - msg: "invalid schema 0.9"
+      line:
+        start: 2
+        end: 2
+      column:
+        start: 10
+        end: 13
+      metadata:
+        errorType: invalid-schema
+- name: supports parsing a modular model but throws schema required error
+  dsl: |
+    module foo
+    type user
+  expected_errors:
+    - msg: schema version required
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: schema-version-required
 
+- name: allows extend in modular model
+  dsl: |
+    module foo
+
+    extend type bar
+  expected_errors:
+    - msg: schema version required
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 1
+        end: 1
+      metadata:
+        errorType: schema-version-required
 #- name: invalid cel expression
 #  dsl: |
 #    model

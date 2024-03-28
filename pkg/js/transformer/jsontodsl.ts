@@ -1,12 +1,13 @@
 import type {
   AuthorizationModel,
   Condition,
+  ConditionMetadata,
   ConditionParamTypeRef,
+  Metadata,
   RelationMetadata,
   RelationReference,
   TypeDefinition,
   Userset,
-  Usersets,
 } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
 
@@ -188,6 +189,7 @@ function parseRelation(
   relationName: string,
   relationDefinition: Userset = {},
   relationMetadata: RelationMetadata = {},
+  includeSourceInformation = false,
 ) {
   const validator = new DirectAssignmentValidator();
 
@@ -203,6 +205,8 @@ function parseRelation(
   } else {
     parsedRelationString += parseSubRelation(typeName, relationName, relationDefinition, typeRestrictions, validator);
   }
+
+  parsedRelationString += constructSourceComment(relationMetadata, " extended by:", includeSourceInformation);
 
   // Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
   if (!validator.occured || (validator.occured === 1 && validator.isFirstPosition(relationDefinition))) {
@@ -225,21 +229,33 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
   return usersets;
 };
 
-const parseType = (typeDef: TypeDefinition): string => {
+const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSourceInformation = false): string => {
   const typeName = typeDef.type;
-  let parsedTypeString = `\ntype ${typeName}`;
+
+  const sourceString = constructSourceComment(typeDef.metadata, "", includeSourceInformation);
+  let parsedTypeString = `\ntype ${typeName}${sourceString}`;
 
   const relations = typeDef.relations || {};
   const metadata = typeDef.metadata;
 
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
-    for (const relationName in relations) {
+    const sortedRelations = Object.entries(relations).sort(([aName], [bName]) => {
+      if (!isModularModel) {
+        return 0;
+      }
+      const aMetadata = metadata?.relations?.[aName] || {};
+      const bMetadata = metadata?.relations?.[bName] || {};
+
+      return sortByModule(aName, bName, aMetadata, bMetadata);
+    });
+    for (const [name, definition] of sortedRelations) {
       const parsedRelationString = parseRelation(
         typeName,
-        relationName,
-        relations[relationName],
-        metadata?.relations?.[relationName],
+        name,
+        definition,
+        metadata?.relations?.[name],
+        includeSourceInformation,
       );
       parsedTypeString += `\n${parsedRelationString}`;
     }
@@ -266,28 +282,38 @@ const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef
   return parametersStringArray.join(", ");
 };
 
-const parseCondition = (conditionName: string, conditionDef: Condition): string => {
+const parseCondition = (conditionName: string, conditionDef: Condition, includeSourceInformation = false): string => {
   if (conditionName != conditionDef.name) {
     throw new ConditionNameDoesntMatchError(conditionName, conditionDef.name);
   }
 
   const paramsString = parseConditionParams(conditionDef.parameters || {});
+  const sourceString = constructSourceComment(conditionDef.metadata, "", includeSourceInformation);
 
-  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}\n`;
+  return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}${sourceString}\n`;
 };
 
-const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
+const parseConditions = (
+  model: Omit<AuthorizationModel, "id">,
+  isModularModel: boolean,
+  includeSourceInformation = false,
+): string => {
   const conditionsMap = model.conditions || {};
   if (!Object.keys(conditionsMap).length) {
     return "";
   }
 
   let parsedConditionsString = "";
-  Object.keys(conditionsMap)
-    .sort()
-    .forEach((conditionName) => {
-      const condition = conditionsMap[conditionName];
-      const parsedConditionString = parseCondition(conditionName, condition);
+
+  Object.entries(conditionsMap)
+    .sort(([aName, aCondition], [bName, bCondition]) => {
+      if (!isModularModel) {
+        return aName.localeCompare(bName);
+      }
+      return sortByModule(aName, bName, aCondition.metadata, bCondition.metadata);
+    })
+    .forEach(([conditionName, condition]) => {
+      const parsedConditionString = parseCondition(conditionName, condition, includeSourceInformation);
 
       parsedConditionsString += `\n${parsedConditionString}`;
     });
@@ -295,18 +321,72 @@ const parseConditions = (model: Omit<AuthorizationModel, "id">): string => {
   return parsedConditionsString;
 };
 
-export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">): string => {
+const constructSourceComment = (
+  metadata?: ConditionMetadata | Metadata,
+  leadingString = "",
+  includeSourceInformation = false,
+): string => {
+  return metadata?.module && includeSourceInformation
+    ? ` #${leadingString} module: ${metadata.module}, file: ${metadata.source_info?.file}`
+    : "";
+};
+
+/**
+ * Configuration options for printing the DSL.
+ */
+export interface TransformOptions {
+  /**
+   * If true, comments are appended to types, relations, and conditions with file and module information.
+   */
+  includeSourceInformation?: boolean;
+}
+
+export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, options?: TransformOptions): string => {
   const schemaVersion = model?.schema_version || "1.1";
-  const typeDefinitions = model?.type_definitions?.map((typeDef) => parseType(typeDef));
-  const parsedConditionsString = parseConditions(model);
+  const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
+
+  const typeDefinitions = (
+    isModularModel
+      ? model?.type_definitions.sort((a, b) => sortByModule(a.type, b.type, a.metadata, b.metadata))
+      : model?.type_definitions
+  )?.map((typeDef) => parseType(typeDef, isModularModel, options?.includeSourceInformation));
+  const parsedConditionsString = parseConditions(model, isModularModel, options?.includeSourceInformation);
 
   return `model
   schema ${schemaVersion}
 ${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;
 };
 
-export const transformJSONStringToDSL = (modelString: string): string => {
+export const transformJSONStringToDSL = (modelString: string, options?: TransformOptions): string => {
   const model = JSON.parse(modelString);
 
-  return transformJSONToDSL(model);
+  return transformJSONToDSL(model, options);
 };
+
+function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Metadata) {
+  // If we have no module information for both, sort by name
+  if (!aMeta?.module && !bMeta?.module) {
+    return aName.localeCompare(bName);
+  }
+  // If there is no module then it belongs to the same file as the type so sort it at the top
+  if (aMeta?.module == undefined) {
+    return -1;
+  }
+
+  if (bMeta?.module === undefined) {
+    return 1;
+  }
+
+  // First we sort by module name
+  if (aMeta.module !== bMeta.module) {
+    return aMeta.module!.localeCompare(bMeta.module!);
+  }
+
+  // If the module name is the same then sort by file name
+  if (aMeta.source_info?.file !== bMeta.source_info?.file) {
+    return aMeta.source_info!.file!.localeCompare(bMeta.source_info!.file!);
+  }
+
+  // If the module name and file name are the same then sort based on name
+  return aName.localeCompare(bName);
+}

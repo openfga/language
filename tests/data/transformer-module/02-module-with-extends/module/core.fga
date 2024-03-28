@@ -1,0 +1,8 @@
+module core
+
+type user
+  relations
+    define aardvark: [user]
+    define thing: [other]
+
+type other

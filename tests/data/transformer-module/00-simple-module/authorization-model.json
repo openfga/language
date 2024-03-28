@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.2",
+  "conditions": {
+    "a_check": {
+      "expression": "val <= 10",
+      "metadata": {
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        }
+      },
+      "name": "a_check",
+      "parameters": {
+        "val": {
+          "type_name": "TYPE_NAME_INT"
+        }
+      }
+    }
+  },
+  "type_definitions": [
+    {
+      "metadata": {
+        "module": "core",
+        "source_info": {
+          "file": "core.fga"
+        }
+      },
+      "relations": {},
+      "type": "user"
+    },
+    {
+      "metadata": {
+        "module": "org",
+        "source_info": {
+          "file": "org.fga"
+        },
+        "relations": {
+          "another": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "member": {
+            "directly_related_user_types": [
+              {
+                "condition": "a_check",
+                "type": "user"
+              }
+            ]
+          }
+        }
+      },
+      "relations": {
+        "another": {
+          "this": {}
+        },
+        "member": {
+          "this": {}
+        }
+      },
+      "type": "org"
+    }
+  ]
+}

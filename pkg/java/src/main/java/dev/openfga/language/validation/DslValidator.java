@@ -355,18 +355,22 @@ public class DslValidator {
                                                 lineIndex,
                                                 childDef.getTarget() + " from " + childDef.getFrom(),
                                                 decodedType,
-                                                childDef.getTarget()));
+                                                childDef.getTarget(),
+                                                childDef.getFrom()));
                                     }
                                 }
                             }
 
                             if (childRelationNotValid.size() == fromTypes.size()) {
                                 for (var item : childRelationNotValid) {
-                                    errors.raiseInvalidTypeRelation(
+                                    errors.raiseInvalidRelationOnTupleset(
                                             item.getLineIndex(),
                                             item.getSymbol(),
                                             item.getTypeName(),
-                                            item.getRelationName());
+                                            typeName,
+                                            relationName,
+                                            item.getRelationName(),
+                                            item.getParent());
                                 }
                             }
                         } else {

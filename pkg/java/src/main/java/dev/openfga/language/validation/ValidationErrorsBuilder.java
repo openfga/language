@@ -129,6 +129,13 @@ class ValidationErrorsBuilder {
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
+    public void raiseInvalidRelationOnTupleset(int lineIndex, String symbol, String typeName, String typeDef, String relationName, String offendingRelation, String parent) {
+        var message = "the `" + offendingRelation + "` relation definition on type `" + typeDef + "` is not valid: `" + offendingRelation + "` does not exist on `" + parent + "`, which is of type `" + typeName + "`.";
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationOnTupleset, relationName, typeName, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
     public void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
         var message = "`" + symbol + "` relation used inside from allows only direct relation.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {

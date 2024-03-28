@@ -22,7 +22,8 @@ public enum ValidationError {
     SchemaVersionUnsupported("schema-version-unsupported"),
     SelfError("self-error"),
     TuplesetNotDirect("tupleuserset-not-direct"),
-    TypeRestrictionCannotHaveWildcardAndRelation("type-wildcard-relation");
+    TypeRestrictionCannotHaveWildcardAndRelation("type-wildcard-relation"),
+    InvalidRelationOnTupleset("invalid-relation-on-tupleset");
 
     private final String value;
 

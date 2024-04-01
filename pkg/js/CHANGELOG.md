@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.0-beta.15
+
+### [v0.2.0-beta.15](https://github.com/openfga/language/compare/78ce3fed297528d1ef8083b4bef1500b26dada78...5ead374fcd3d6c0678303d9020ff5eacc4f7ed63) (2024-04-01)
+
+Fixed:
+
+- Incorrect range for 'condition-not-defined' (https://github.com/openfga/language/pull/219)
+
 ## v0.2.0-beta.14
 
 ### [v0.2.0-beta.14](https://github.com/openfga/language/compare/9974b568edcc3e2c5bdde5143b5a4a13b45c7968...f9816aad7efa32a6ab0b9f004c7831628906de18) (2024-03-27)

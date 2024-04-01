@@ -1088,6 +1088,27 @@
         symbol: "account"
         errorType: duplicated-error
 ## Conditions
+- name: condition not defined - single character
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define viewer: [user with c]
+  expected_errors:
+    - msg: "`c` is not a defined condition in the model."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 31
+        end: 32
+      metadata:
+        symbol: "c"
+        errorType: condition-not-defined
 - name: condition not defined
   dsl: |
     model

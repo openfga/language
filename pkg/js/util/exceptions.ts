@@ -177,10 +177,6 @@ const createInvalidConditionNameInParameterError = (
       message: `\`${conditionName}\` is not a defined condition in the model.`,
       lines,
       lineIndex,
-      customResolver: (wordIdx, rawLine, symbol) => {
-        wordIdx = rawLine.indexOf(symbol.substring(1));
-        return wordIdx;
-      },
       metadata: {
         symbol,
         errorType: ValidationError.ConditionNotDefined,

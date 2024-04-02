@@ -23,6 +23,8 @@ public class OpenFgaDslErrorListener implements ANTLRErrorListener {
     }
 
     @Override
+    // line is one based, i.e. the first line will be 1
+    // column is one based, i.e. the first column will 0
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int column, String message, RecognitionException e) {
         Metadata metadata = null;
         var columnOffset = 0;

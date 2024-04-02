@@ -11,11 +11,11 @@
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 42
-        end: 49
+        start: 41
+        end: 48
       metadata:
         symbol: "allowed"
         errorType: missing-definition
@@ -30,11 +30,11 @@
   expected_errors:
     - msg: "a type cannot be named 'self' or 'this'."
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
-        start: 6
-        end: 10
+        start: 5
+        end: 9
       metadata:
         symbol: "self"
         errorType: reserved-type-keywords
@@ -49,11 +49,11 @@
   expected_errors:
     - msg: "a type cannot be named 'self' or 'this'."
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
-        start: 6
-        end: 10
+        start: 5
+        end: 9
       metadata:
         symbol: "this"
         errorType: reserved-type-keywords
@@ -68,11 +68,11 @@
   expected_errors:
     - msg: "a relation cannot be named 'self' or 'this'."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 16
+        start: 11
+        end: 15
       metadata:
         symbol: "self"
         errorType: reserved-relation-keywords
@@ -87,11 +87,11 @@
   expected_errors:
     - msg: "a relation cannot be named 'self' or 'this'."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 16
+        start: 11
+        end: 15
       metadata:
         symbol: "this"
         errorType: reserved-relation-keywords
@@ -111,11 +111,11 @@
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         does not match naming rule: '^[^:#@\s]{1,254}$'.
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
-        start: 6
-        end: 350
+        start: 5
+        end: 349
       metadata:
         symbol: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         errorType: invalid-name
@@ -133,11 +133,11 @@
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         of type 'org' does not match naming rule: '^[^:#@\s]{1,50}$'.
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 112
+        start: 11
+        end: 111
       metadata:
         symbol: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         errorType: invalid-name
@@ -157,21 +157,21 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `team` (no entrypoint)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
     - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
-        start: 11
-        end: 11
+        start: 10
+        end: 10
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
@@ -186,11 +186,11 @@
   expected_errors:
     - msg: "`group` is an impossible relation for `group` (no entrypoint)."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 17
+        start: 11
+        end: 16
       metadata:
         symbol: "group"
         errorType: relation-no-entry-point
@@ -206,11 +206,11 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
@@ -224,11 +224,11 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
@@ -244,11 +244,11 @@
   expected_errors:
     - msg: "the `reader` relation definition on type `group` is not valid: `reader` does not exist on `parent`, which is of type `group`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 38
+        start: 19
+        end: 37
       metadata:
         symbol: "reader from parent"
         errorType: invalid-relation-on-tupleset
@@ -263,11 +263,11 @@
   expected_errors:
     - msg: "`unknown` is not a valid type."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 21
-        end: 28
+        start: 20
+        end: 27
       metadata:
         errorType: invalid-type
 - name: from target relation is not a valid relation for the from child
@@ -283,11 +283,11 @@
   expected_errors:
     - msg: "`org` is not a valid relation for `group`."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 20
-        end: 35
+        start: 19
+        end: 34
       metadata:
         errorType: invalid-relation-type
 - name: org is not a relation for group
@@ -301,13 +301,14 @@
         define parent: [group]
         define viewer: org from parent
   expected_errors:
-    - msg: "the `org` relation definition on type `group` is not valid: `org` does not exist on `parent`, which is of type `group`."
+    - msg: "the `org` relation definition on type `group` is not valid: `org` does not
+        exist on `parent`, which is of type `group`."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 20
-        end: 35
+        start: 19
+        end: 34
       metadata:
         errorType: invalid-relation-on-tupleset
 - name: direct relation assignment not found
@@ -322,11 +323,11 @@
   expected_errors:
     - msg: "`org` is not a valid relation for `group`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 28
-        end: 37
+        start: 27
+        end: 36
       metadata:
         errorType: invalid-relation-type
 - name: group viewer no entry point
@@ -344,11 +345,11 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `group` (no entrypoint)."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
 - name: cyclic loop
@@ -362,20 +363,20 @@
   expected_errors:
     - msg: "`reader` is an impossible relation for `document` (potential loop)."
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
     - msg: "`writer` is an impossible relation for `document` (potential loop)."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
 - name: parent relation used inside contains a write
@@ -390,21 +391,21 @@
   expected_errors:
     - msg: "`parent` relation used inside from allows only direct relation."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 44
-        end: 50
+        start: 43
+        end: 49
       metadata:
-        symbol: "parent"
+        symbol: parent
         errorType: tupleuserset-not-direct
     - msg: "`parent` relation used inside from allows only direct relation."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 42
-        end: 48
+        start: 41
+        end: 47
       metadata:
         symbol: "parent"
         errorType: tupleuserset-not-direct
@@ -421,11 +422,11 @@
   expected_errors:
     - msg: "`parent` relation used inside from allows only direct relation."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 42
-        end: 48
+        start: 41
+        end: 47
       metadata:
         symbol: "parent"
         errorType: tupleuserset-not-direct
@@ -442,11 +443,11 @@
   expected_errors:
     - msg: "`parent` relation used inside from allows only direct relation."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 42
-        end: 48
+        start: 41
+        end: 47
       metadata:
         symbol: "parent"
         errorType: tupleuserset-not-direct
@@ -462,11 +463,11 @@
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 31
-        end: 38
+        start: 30
+        end: 37
       metadata:
         symbol: "allowed"
         errorType: missing-definition
@@ -482,11 +483,11 @@
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 30
-        end: 37
+        start: 29
+        end: 36
       metadata:
         symbol: "allowed"
         errorType: missing-definition
@@ -502,11 +503,11 @@
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 27
+        start: 19
+        end: 26
       metadata:
         symbol: "allowed"
         errorType: missing-definition
@@ -522,11 +523,11 @@
   expected_errors:
     - msg: "the relation `allowed` does not exist."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 35
-        end: 42
+        start: 34
+        end: 41
       metadata:
         symbol: "allowed"
         errorType: missing-definition
@@ -544,29 +545,29 @@
   expected_errors:
     - msg: "`action1` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
     - msg: "`action2` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
     - msg: "`action3` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
 - name: no entry point exclusion that relates to itself
@@ -583,29 +584,29 @@
   expected_errors:
     - msg: "`action1` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
     - msg: "`action2` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
     - msg: "`action3` is an impossible relation for `doc` (potential loop)."
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
-        start: 12
-        end: 19
+        start: 11
+        end: 18
       metadata:
         errorType: relation-no-entry-point
 - name: intersection child not allow to reference itself in TTU
@@ -620,11 +621,11 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
 - name: exclusion base not allow to reference itself in TTU
@@ -639,11 +640,11 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
 - name: detect loop in TTU dependency
@@ -661,20 +662,20 @@
   expected_errors:
     - msg: "`viewer` is an impossible relation for `folder` (no entrypoint)."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
     - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 12
-        end: 18
+        start: 11
+        end: 17
       metadata:
         errorType: relation-no-entry-point
 - name: model 1.1 should raise error if none of the children has such relation
@@ -697,38 +698,38 @@
   expected_errors:
     - msg: "the `u3` relation definition on type `final` is not valid: `u3` does not exist on `children`, which is of type `child1`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 26
-        end: 42
+        start: 25
+        end: 41
       metadata:
         errorType: invalid-relation-on-tupleset
     - msg: "the `u3` relation definition on type `final` is not valid: `u3` does not exist on `children`, which is of type `child2`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 26
-        end: 42
+        start: 25
+        end: 41
       metadata:
         errorType: invalid-relation-on-tupleset
     - msg: "the `u2` relation definition on type `final` is not valid: `u2` does not exist on `children`, which is of type `child1`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 46
-        end: 62
+        start: 45
+        end: 61
       metadata:
         errorType: invalid-relation-on-tupleset
     - msg: "the `u2` relation definition on type `final` is not valid: `u2` does not exist on `children`, which is of type `child2`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 46
-        end: 62
+        start: 45
+        end: 61
       metadata:
         errorType: invalid-relation-on-tupleset
 - name: self reference with wildcard
@@ -743,11 +744,11 @@
   expected_errors:
     - msg: "`parent` relation used inside from allows only direct relation."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 42
-        end: 48
+        start: 41
+        end: 47
       metadata:
         symbol: "parent"
         errorType: tupleuserset-not-direct
@@ -760,15 +761,14 @@
   expected_errors:
     - msg: "the type `user` is a duplicate."
       line:
-        start: 3
-        end: 3
+        start: 2
+        end: 2
       column:
-        start: 6
-        end: 10
+        start: 5
+        end: 9
       metadata:
         symbol: "user"
         errorType: duplicated-error
-
 - name: duplicate type in relations
   dsl: |
     model
@@ -780,11 +780,11 @@
   expected_errors:
     - msg: "the type restriction `user` is a duplicate in the relation `viewer`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 21
-        end: 25
+        start: 20
+        end: 24
       metadata:
         symbol: "user"
         errorType: duplicated-error
@@ -802,11 +802,11 @@
   expected_errors:
     - msg: "the type restriction `group#member` is a duplicate in the relation `viewer`."
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
-        start: 21
-        end: 33
+        start: 20
+        end: 32
       metadata:
         symbol: "group#member"
         errorType: duplicated-error
@@ -821,11 +821,11 @@
   expected_errors:
     - msg: "the type restriction `user:*` is a duplicate in the relation `viewer`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 21
-        end: 27
+        start: 20
+        end: 26
       metadata:
         symbol: "user:*"
         errorType: duplicated-error
@@ -841,11 +841,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -861,11 +861,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -881,11 +881,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `editor`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -900,11 +900,11 @@
   expected_errors:
     - msg: "the type restriction `user` is a duplicate in the relation `member`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 21
-        end: 25
+        start: 20
+        end: 24
       metadata:
         symbol: "user"
         errorType: duplicated-error
@@ -919,11 +919,11 @@
   expected_errors:
     - msg: "the type restriction `user:*` is a duplicate in the relation `member`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 21
-        end: 27
+        start: 20
+        end: 26
       metadata:
         symbol: "user:*"
         errorType: duplicated-error
@@ -939,11 +939,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -959,11 +959,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -979,11 +979,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer` is a duplicate in the relation `member`."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 20
-        end: 26
+        start: 19
+        end: 25
       metadata:
         symbol: "viewer"
         errorType: duplicated-error
@@ -1002,11 +1002,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 20
-        end: 38
+        start: 19
+        end: 37
       metadata:
         symbol: "viewer from parent"
         errorType: duplicated-error
@@ -1025,11 +1025,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 20
-        end: 38
+        start: 19
+        end: 37
       metadata:
         symbol: "viewer from parent"
         errorType: duplicated-error
@@ -1048,11 +1048,11 @@
   expected_errors:
     - msg: "the partial relation definition `viewer from parent` is a duplicate in the relation `viewer`."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 20
-        end: 38
+        start: 19
+        end: 37
       metadata:
         symbol: "viewer from parent"
         errorType: duplicated-error
@@ -1079,15 +1079,14 @@
   expected_errors:
     - msg: "the type `account` is a duplicate."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 6
-        end: 13
+        start: 5
+        end: 12
       metadata:
         symbol: "account"
         errorType: duplicated-error
-## Conditions
 - name: condition not defined - single character
   dsl: |
     model
@@ -1101,11 +1100,11 @@
   expected_errors:
     - msg: "`c` is not a defined condition in the model."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 31
-        end: 32
+        start: 30
+        end: 31
       metadata:
         symbol: "c"
         errorType: condition-not-defined
@@ -1120,11 +1119,11 @@
   expected_errors:
     - msg: "`allowed_ip` is not a defined condition in the model."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 31
-        end: 41
+        start: 30
+        end: 40
       metadata:
         symbol: "allowed_ip"
         errorType: condition-not-defined
@@ -1143,11 +1142,11 @@
   expected_errors:
     - msg: "`allowed_ip` is not a defined condition in the model."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 31
-        end: 41
+        start: 30
+        end: 40
       metadata:
         symbol: "allowed_ip"
         errorType: condition-not-defined
@@ -1165,11 +1164,11 @@
   expected_errors:
     - msg: "`allowed_ip` condition is not used in the model."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 11
-        end: 21
+        start: 10
+        end: 20
       metadata:
         symbol: "allowed_ip"
         errorType: condition-not-used
@@ -1184,11 +1183,11 @@
   expected_errors:
     - msg: "invalid schema 0.9"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
-        start: 10
-        end: 13
+        start: 9
+        end: 12
       metadata:
         errorType: invalid-schema
 - name: supports parsing a modular model but throws schema required error
@@ -1198,14 +1197,13 @@
   expected_errors:
     - msg: schema version required
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       metadata:
         errorType: schema-version-required
-
 - name: allows extend in modular model
   dsl: |
     module foo
@@ -1214,11 +1212,11 @@
   expected_errors:
     - msg: schema version required
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       metadata:
         errorType: schema-version-required
 #- name: invalid cel expression

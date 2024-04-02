@@ -20,15 +20,14 @@
         define viewer: [user]   
           
         define can_view: viewer or admin
-
 - name: no model header
   dsl: |
     type user
   expected_errors:
     - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
         start: 0
         end: 4
@@ -36,8 +35,8 @@
         symbol: "type"
     - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
         start: 5
         end: 9
@@ -45,8 +44,8 @@
         symbol: "user"
     - msg: "mismatched input '<EOF>' expecting {'#', 'module', 'model'}"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 0
         end: 5
@@ -59,8 +58,8 @@
   expected_errors:
     - msg: "mismatched input 'type' expecting 'schema'"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 0
         end: 4
@@ -73,8 +72,8 @@
   expected_errors:
     - msg: "mismatched input 'schema1' expecting 'schema'"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 2
         end: 9
@@ -87,8 +86,8 @@
   expected_errors:
     - msg: "mismatched input '11' expecting SCHEMA_VERSION"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 9
         end: 11
@@ -101,8 +100,8 @@
   expected_errors:
     - msg: "mismatched input 'a' expecting SCHEMA_VERSION"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 9
         end: 10
@@ -118,8 +117,8 @@
   expected_errors:
     - msg: "no viable alternative at input '\\n  define'"
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 2
         end: 8
@@ -138,8 +137,8 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 38
         end: 39
@@ -158,8 +157,8 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 56
         end: 57
@@ -178,8 +177,8 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 56
         end: 57
@@ -199,8 +198,8 @@
   expected_errors:
     - msg: "extraneous input 'but not' expecting {')', WHITESPACE}"
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
         start: 91
         end: 98
@@ -208,8 +207,8 @@
         symbol: "but not"
     - msg: "extraneous input 'baz' expecting {')', WHITESPACE}"
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
         start: 99
         end: 102
@@ -228,8 +227,8 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 38
         end: 39
@@ -248,8 +247,8 @@
   expected_errors:
     - msg: "extraneous input 'but not' expecting {')', WHITESPACE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 56
         end: 63
@@ -257,8 +256,8 @@
         symbol: "but not"
     - msg: "extraneous input 'restricted' expecting {')', WHITESPACE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 64
         end: 74
@@ -275,8 +274,8 @@
   expected_errors:
     - msg: "no viable alternative at input '\\n    defne'"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 4
         end: 9
@@ -307,8 +306,8 @@
   expected_errors:
     - msg: "'viewer' is already defined in 'document'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 11
         end: 17
@@ -329,8 +328,8 @@
   expected_errors:
     - msg: "missing ':' at 'as'"
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
         start: 18
         end: 20
@@ -338,8 +337,8 @@
         symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
         start: 20
         end: 21
@@ -357,17 +356,18 @@
   expected_errors:
     - msg: "extraneous input ']' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 21
         end: 22
       metadata:
         symbol: "]"
-    - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: mismatched input 'define' expecting {IDENTIFIER, 'module', 'model',
+        'schema', 'extend', 'type', 'relation'}
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 4
         end: 10
@@ -375,13 +375,13 @@
         symbol: "define"
     - msg: "mismatched input 'reader' expecting {',', ']'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 11
         end: 17
       metadata:
-        symbol: "reader"
+        symbol: reader
 - name: empty directly assignable relations without spaces should yield error
   dsl: |
     model
@@ -394,8 +394,8 @@
   expected_errors:
     - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 20
         end: 21
@@ -403,8 +403,8 @@
         symbol: "]"
     - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 4
         end: 10
@@ -412,8 +412,8 @@
         symbol: "define"
     - msg: "mismatched input 'reader' expecting {',', ']'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 11
         end: 17
@@ -431,8 +431,8 @@
   expected_errors:
     - msg: "missing ':' at 'as'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 18
         end: 20
@@ -440,8 +440,8 @@
         symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 20
         end: 21
@@ -461,8 +461,8 @@
   expected_errors:
     - msg: "missing ':' at 'as'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 18
         end: 20
@@ -470,8 +470,8 @@
         symbol: "as"
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 20
         end: 21
@@ -486,8 +486,8 @@
   expected_errors:
     - msg: "extraneous input 'type' expecting {WHITESPACE, '#', 'module', 'model', NEWLINE}"
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
         start: 0
         end: 4
@@ -495,8 +495,8 @@
         symbol: "type"
     - msg: "extraneous input 'user' expecting {'#', 'module', 'model', NEWLINE}"
       line:
-        start: 1
-        end: 1
+        start: 0
+        end: 0
       column:
         start: 5
         end: 9
@@ -504,8 +504,8 @@
         symbol: "user"
     - msg: "mismatched input 'type' expecting {'#', 'module', 'model'}"
       line:
-        start: 2
-        end: 2
+        start: 1
+        end: 1
       column:
         start: 0
         end: 4
@@ -522,8 +522,8 @@
   expected_errors:
     - msg: "mismatched input ':' expecting {',', WHITESPACE, ']'}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 32
         end: 33
@@ -541,8 +541,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 34
         end: 35
@@ -550,8 +550,8 @@
         symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 43
         end: 44
@@ -568,8 +568,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 40
         end: 41
@@ -577,8 +577,8 @@
         symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 49
         end: 50
@@ -596,8 +596,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 30
         end: 31
@@ -605,8 +605,8 @@
         symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 39
         end: 40
@@ -624,8 +624,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 45
         end: 46
@@ -633,8 +633,8 @@
         symbol: "["
     - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 50
         end: 51
@@ -652,8 +652,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 34
         end: 35
@@ -661,8 +661,8 @@
         symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 43
         end: 44
@@ -680,8 +680,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 29
         end: 30
@@ -689,8 +689,8 @@
         symbol: "["
     - msg: "mismatched input '#' expecting {<EOF>, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 38
         end: 39
@@ -710,8 +710,8 @@
   expected_errors:
     - msg: "mismatched input ':' expecting {',', WHITESPACE, ']'}"
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
         start: 49
         end: 50
@@ -754,7 +754,6 @@
         define viewer: [user, org#member] or writer
   expected_errors: []
 - name: should allow directly assigned as last item
-
   dsl: |
     model
       schema 1.1
@@ -971,8 +970,8 @@
   expected_errors:
     - msg: "mismatched input 'map' expecting CONDITION_PARAM_TYPE"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 37
         end: 40
@@ -992,8 +991,8 @@
   expected_errors:
     - msg: "mismatched input 'map' expecting CONDITION_PARAM_TYPE"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 38
         end: 41
@@ -1013,8 +1012,8 @@
   expected_errors:
     - msg: "mismatched input 'list' expecting CONDITION_PARAM_TYPE"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 37
         end: 41
@@ -1034,8 +1033,8 @@
   expected_errors:
     - msg: "mismatched input 'list' expecting CONDITION_PARAM_TYPE"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 38
         end: 42
@@ -1055,8 +1054,8 @@
   expected_errors:
     - msg: "mismatched input ')' expecting '<'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 37
         end: 38
@@ -1076,8 +1075,8 @@
   expected_errors:
     - msg: "mismatched input ')' expecting '<'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 36
         end: 37
@@ -1097,8 +1096,8 @@
   expected_errors:
     - msg: "mismatched input 'string' expecting {WHITESPACE, IDENTIFIER, NEWLINE}"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 25
         end: 31
@@ -1106,8 +1105,8 @@
         symbol: "string"
     - msg: "mismatched input 'status' expecting <EOF>"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 2
         end: 8
@@ -1130,8 +1129,8 @@
   expected_errors:
     - msg: "condition 'is_not_deleted' is already defined in the model"
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
         start: 10
         end: 24
@@ -1151,8 +1150,8 @@
   expected_errors:
     - msg: "parameter 'status' is already defined in the condition 'is_not_deleted'"
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
         start: 41
         end: 47
@@ -1212,8 +1211,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 29
         end: 30
@@ -1221,14 +1220,13 @@
         symbol: "["
     - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
       line:
-        start: 5
-        end: 5
+        start: 4
+        end: 4
       column:
         start: 34
         end: 35
       metadata:
         symbol: "]"
-
 - name: an invalid model with confusing but not references
   dsl: |
     model
@@ -1242,14 +1240,13 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 34
         end: 35
       metadata:
         symbol: " "
-
 - name: an invalid model with mixed operators
   dsl: |
     model
@@ -1263,14 +1260,13 @@
   expected_errors:
     - msg: "mismatched input ' ' expecting {<EOF>, NEWLINE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 30
         end: 31
       metadata:
         symbol: " "
-
 - name: an invalid model x1
   dsl: |
     model
@@ -1282,8 +1278,8 @@
   expected_errors:
     - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 17
         end: 24
@@ -1301,8 +1297,8 @@
   expected_errors:
     - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 17
         end: 19
@@ -1320,8 +1316,8 @@
   expected_errors:
     - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 17
         end: 20
@@ -1339,8 +1335,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 26
         end: 27
@@ -1348,8 +1344,8 @@
         symbol: "["
     - msg: "extraneous input ']' expecting {<EOF>, NEWLINE}"
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
         start: 31
         end: 32
@@ -1369,8 +1365,8 @@
   expected_errors:
     - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 54
         end: 55
@@ -1378,8 +1374,8 @@
         symbol: "["
     - msg: "extraneous input ']' expecting {')', WHITESPACE}"
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
         start: 59
         end: 60
@@ -1441,12 +1437,11 @@
   expected_errors:
     - msg: no viable alternative at input '\nmodule'
       line:
-        start: 3
-        end: 3
+        start: 2
+        end: 2
       column:
         start: 0
         end: 6
-
 - name: does not allow extend in model
   dsl: |
     model
@@ -1456,12 +1451,11 @@
   expected_errors:
     - msg: extend can only be used in a modular model
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
         start: 12
         end: 15
-
 - name: a valid model with type names doesn't conflict with built-in keywords
   dsl: |
     model

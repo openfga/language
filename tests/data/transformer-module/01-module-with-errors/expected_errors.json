@@ -3,32 +3,32 @@
     "msg": "duplicate type definition user",
     "file": "org.fga",
     "line": {
-      "start": 3,
-      "end": 3
+      "start": 2,
+      "end": 2
     },
     "column": {
-      "start": 6,
-      "end": 10
+      "start": 5,
+      "end": 9
     }
   },
   {
     "msg": "duplicate condition a_check",
     "file": "org.fga",
     "line": {
-      "start": 15,
-      "end": 15
+      "start": 14,
+      "end": 14
     },
     "column": {
-      "start": 11,
-      "end": 18
+      "start": 10,
+      "end": 17
     }
   },
   {
     "msg": "no viable alternative at input '\\n  define'",
     "file": "syntax-error.fga",
     "line": {
-      "start": 4,
-      "end": 4
+      "start": 3,
+      "end": 3
     },
     "column": {
       "start": 2,
@@ -40,36 +40,36 @@
     "msg": "extended type noexist does not exist",
     "file": "org.fga",
     "line": {
-      "start": 9,
-      "end": 9
+      "start": 8,
+      "end": 8
     },
     "column": {
-      "start": 13,
-      "end": 20
+      "start": 12,
+      "end": 19
     }
   },
   {
     "msg": "relation foo already exists on type other",
     "file": "org.fga",
     "line": {
-      "start": 13,
-      "end": 13
+      "start": 12,
+      "end": 12
     },
     "column": {
-      "start": 12,
-      "end": 15
+      "start": 11,
+      "end": 14
     }
   },
   {
     "msg": "relation 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' of type 'other' does not match naming rule: '^[^:#@\\s]{1,50}$'.",
     "file": "core.fga",
     "line": {
-      "start": 8,
-      "end": 8
+      "start": 7,
+      "end": 7
     },
     "column": {
-      "start": 12,
-      "end": 112
+      "start": 11,
+      "end": 111
     },
     "metadata": {
       "errorType": "invalid-name"
@@ -79,12 +79,12 @@
     "msg": "a type cannot be named 'self' or 'this'.",
     "file": "core.fga",
     "line": {
-      "start": 10,
-      "end": 10
+      "start": 9,
+      "end": 9
     },
     "column": {
-      "start": 6,
-      "end": 10
+      "start": 5,
+      "end": 9
     },
     "metadata": {
       "errorType": "reserved-type-keywords"
@@ -94,12 +94,12 @@
     "msg": "a relation cannot be named 'self' or 'this'.",
     "file": "core.fga",
     "line": {
-      "start": 12,
-      "end": 12
+      "start": 11,
+      "end": 11
     },
     "column": {
-      "start": 12,
-      "end": 16
+      "start": 11,
+      "end": 15
     },
     "metadata": {
       "errorType": "reserved-relation-keywords"
@@ -109,12 +109,12 @@
     "msg": "type 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' does not match naming rule: '^[^:#@\\s]{1,254}$'.",
     "file": "core.fga",
     "line": {
-      "start": 14,
-      "end": 14
+      "start": 13,
+      "end": 13
     },
     "column": {
-      "start": 6,
-      "end": 350
+      "start": 5,
+      "end": 349
     },
     "metadata": {
       "errorType": "invalid-name"

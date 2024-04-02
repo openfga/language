@@ -481,7 +481,7 @@ func (c *OpenFgaDslErrorListener) SyntaxError(
 	}
 
 	c.Errors = multierror.Append(c.Errors, &OpenFgaDslSyntaxError{
-		line:     line,
+		line:     line - 1,
 		column:   column,
 		msg:      msg,
 		metadata: metadata,

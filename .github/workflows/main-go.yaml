@@ -9,11 +9,7 @@ on:
     tags:
       - 'v*'
   merge_group:
-    paths:
-      - 'pkg/go/**'
-      - 'OpenFGAParser.g4'
-      - 'OpenFGALexer.g4'
-      - 'tests/**'
+    types: [checks_requested]
   pull_request:
     paths:
       - 'pkg/go/**'

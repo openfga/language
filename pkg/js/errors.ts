@@ -48,7 +48,8 @@ export interface ErrorMetadata {
 }
 
 /**
- * Abstract base class for syntax and validation exceptions
+ * Abstract base class for syntax and validation exceptions.
+ * Line and column numbers returned as part of this are zero based.
  */
 export abstract class BaseError extends Error {
   public line: { start: number; end: number } | undefined;
@@ -93,7 +94,8 @@ export abstract class BaseMultiError<T = BaseError> extends Error {
 }
 
 /**
- * Added to listener during syntax parsing, when syntax errors are encountered
+ * Added to listener during syntax parsing, when syntax errors are encountered.
+ * Line and column numbers returned as part of this are zero based.
  */
 export class DSLSyntaxSingleError extends BaseError {
   constructor(
@@ -122,6 +124,7 @@ export class DSLSyntaxError extends BaseMultiError<DSLSyntaxSingleError> {}
 
 /**
  * Added to reporter as the JSON transformation is being parsed and validated
+ * Line and column numbers returned as part of this are zero based.
  */
 export class ModelValidationSingleError extends BaseError {
   constructor(
@@ -179,7 +182,7 @@ export class ConditionNameDoesntMatchError extends Error {
 
 /**
  * Represents an individual error returned during validation of `fga.mod`.
- * Line and column numbers returned as part of this are one based.
+ * Line and column numbers returned as part of this are zero based.
  */
 export class FGAModFileValidationSingleError extends BaseError {
   constructor(public properties: ErrorProperties) {
@@ -198,7 +201,7 @@ export class FGAModFileValidationError extends BaseMultiError {}
 
 /*
  * Represents an individual error returned during transformation of a module.
- * Line and column numbers returned as part of this are one based.
+ * Line and column numbers returned as part of this are zero based.
  */
 export class ModuleTransformationSingleError extends BaseError {
   constructor(

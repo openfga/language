@@ -418,7 +418,7 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
     this.errors.push(
       new DSLSyntaxSingleError(
         {
-          line: { start: line, end: line },
+          line: { start: line - 1, end: line - 1 },
           column: { start: column, end: column + columnOffset },
           msg,
         },

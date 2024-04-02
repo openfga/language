@@ -1,7 +1,5 @@
 module org
 
-type user
-
 type org
   relations
     define member: [user with a_check]

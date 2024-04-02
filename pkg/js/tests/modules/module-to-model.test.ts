@@ -123,7 +123,3 @@ describe("transformModuleFilesToModel - module test cases", () => {
     expect(model.schema_version).toEqual("1.1");
   });
 });
-
-describe("transformModuleFilesToModel - semantic validation test cases", () => {
-  
-});

@@ -363,6 +363,9 @@ function checkForDuplicatesTypeNamesInRelation(
   collector: ExceptionCollector,
   relationDef: RelationMetadata,
   relationName: string,
+  typeName: string,
+  typeDefFile?: string,
+  typeDefModule?: string,
   lines?: string[],
 ) {
   const typeNameSet = new Set();
@@ -372,7 +375,10 @@ function checkForDuplicatesTypeNamesInRelation(
     if (typeNameSet.has(typeDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateTypeRestriction(typeDefName, relationName, lineIndex);
+      const file = relationDef.source_info?.file || typeDefFile;
+      const module = relationDef.module || typeDefModule;
+
+      collector.raiseDuplicateTypeRestriction(typeDefName, relationName, typeName, { file, module }, lineIndex);
     }
     typeNameSet.add(typeDefName);
   });
@@ -386,6 +392,8 @@ function checkForDuplicatesInRelation(
   lines?: string[],
 ) {
   const relationDef = typeDef.relations![relationName];
+  const file = typeDef.metadata?.source_info?.file;
+  const module = typeDef.metadata?.module;
 
   // Union
   const relationUnionNameSet = new Set();
@@ -394,7 +402,7 @@ function checkForDuplicatesInRelation(
     if (relationDefName && relationUnionNameSet.has(relationDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(relationDefName, relationName, lineIndex);
+      collector.raiseDuplicateType(relationDefName, relationName, typeDef.type, { file, module }, lineIndex);
     }
     relationUnionNameSet.add(relationDefName);
   });
@@ -406,7 +414,7 @@ function checkForDuplicatesInRelation(
     if (relationDefName && relationIntersectionNameSet.has(relationDefName)) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(relationDefName, relationName, lineIndex);
+      collector.raiseDuplicateType(relationDefName, relationName, typeDef.type, { file, module }, lineIndex);
     }
     relationIntersectionNameSet.add(relationDefName);
   });
@@ -418,7 +426,7 @@ function checkForDuplicatesInRelation(
     if (baseName && baseName === subtractName) {
       const typeIndex = getTypeLineNumber(typeDef.type, lines);
       const lineIndex = getRelationLineNumber(relationName, lines, typeIndex);
-      collector.raiseDuplicateType(baseName, relationName, lineIndex);
+      collector.raiseDuplicateType(baseName, relationName, typeDef.type, { file, module }, lineIndex);
     }
   }
 }
@@ -664,10 +672,12 @@ function modelValidation(
     const typeSet = new Set();
     authorizationModel.type_definitions?.forEach((typeDef) => {
       const typeName = typeDef.type;
+      const file = typeDef.metadata?.source_info?.file;
+      const module = typeDef.metadata?.module;
       // check for duplicate types
       if (typeSet.has(typeName)) {
         const typeIndex = getTypeLineNumber(typeName, lines);
-        collector.raiseDuplicateTypeName(typeName, typeIndex);
+        collector.raiseDuplicateTypeName(typeName, { file, module }, typeIndex);
       }
       typeSet.add(typeDef.type);
 
@@ -677,6 +687,9 @@ function modelValidation(
           collector,
           typeDef.metadata?.relations[relationDefKey],
           relationDefKey,
+          typeName,
+          file,
+          module,
           lines,
         );
         // check for duplicate relations

@@ -3,12 +3,12 @@
     "msg": "the `can_manage` relation definition on type `employe` is not valid: `can_manage` does not exist on `manager`, which is of type `employee`.",
     "file": "employee.fga",
     "line": {
-      "start": 5,
-      "end": 5
+      "start": 4,
+      "end": 4
     },
     "column": {
-      "start": 35,
-      "end": 58
+      "start": 34,
+      "end": 57
     },
     "metadata": {
       "errorType": "invalid-relation-on-tupleset"
@@ -18,12 +18,12 @@
     "msg": "`employee` is not a valid type.",
     "file": "employee.fga",
     "line": {
-      "start": 6,
-      "end": 6
+      "start": 5,
+      "end": 5
     },
     "column": {
-      "start": 22,
-      "end": 30
+      "start": 21,
+      "end": 29
     },
     "metadata": {
       "errorType": "invalid-type"

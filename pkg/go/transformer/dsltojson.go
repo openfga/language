@@ -463,7 +463,8 @@ func newOpenFgaDslErrorListener() *OpenFgaDslErrorListener {
 func (c *OpenFgaDslErrorListener) SyntaxError(
 	_ antlr.Recognizer,
 	offendingSymbol interface{},
-	line, column int,
+	line, // line is one based, i.e. the first line will be 1
+	column int, // column is zero based, i.e. the first column will be 0
 	msg string,
 	_ antlr.RecognitionException,
 ) {
@@ -481,7 +482,7 @@ func (c *OpenFgaDslErrorListener) SyntaxError(
 	}
 
 	c.Errors = multierror.Append(c.Errors, &OpenFgaDslSyntaxError{
-		line:     line,
+		line:     line - 1,
 		column:   column,
 		msg:      msg,
 		metadata: metadata,

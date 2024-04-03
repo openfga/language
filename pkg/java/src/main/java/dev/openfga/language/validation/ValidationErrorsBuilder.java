@@ -24,17 +24,17 @@ class ValidationErrorsBuilder {
 
         var rawLine = lines[lineIndex];
         var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 1;
+        var wordIdx = 0;
         var matcher = regex.matcher(rawLine);
         if (matcher.find()) {
-            wordIdx = matcher.start() + 1;
+            wordIdx = matcher.start();
         }
 
         if (wordResolver != null) {
             wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
         }
 
-        var line = new StartEnd(lineIndex + 1, lineIndex + 1);
+        var line = new StartEnd(lineIndex, lineIndex);
         var column = new StartEnd(wordIdx, wordIdx + symbol.length());
         return new ErrorProperties(line, column, message);
     }
@@ -139,8 +139,8 @@ class ValidationErrorsBuilder {
     public void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
         var message = "`" + symbol + "` relation used inside from allows only direct relation.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {
-            var clauseStartsAt = rawLine.indexOf("from") + "from".length() + 1;
-            wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value) + 1;
+            var clauseStartsAt = rawLine.indexOf("from") + "from".length() ;
+            wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value);
             return wordIndex;
         });
         var metadata = new ValidationMetadata(symbol, ValidationError.TuplesetNotDirect);

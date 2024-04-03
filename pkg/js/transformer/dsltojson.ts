@@ -400,8 +400,8 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
   syntaxError(
     _recognizer: Recognizer<T>,
     offendingSymbol: T,
-    line: number,
-    column: number,
+    line: number, // line is one based, i.e. the first line will be 1
+    column: number, // column is zero based, i.e. the first column will be 0
     msg: string,
     e: RecognitionException | undefined,
   ) {
@@ -418,7 +418,7 @@ class OpenFgaDslErrorListener<T> extends ErrorListener<T> {
     this.errors.push(
       new DSLSyntaxSingleError(
         {
-          line: { start: line, end: line },
+          line: { start: line - 1, end: line - 1 },
           column: { start: column, end: column + columnOffset },
           msg,
         },

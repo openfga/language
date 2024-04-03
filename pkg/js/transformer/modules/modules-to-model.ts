@@ -226,7 +226,7 @@ export const transformModuleFilesToModel = (
         const line = lines[lineIndex];
         const wordIndex = resolveWordIndex(e, line);
 
-        e.line = { start: lineIndex + 1, end: lineIndex + 1 };
+        e.line = { start: lineIndex, end: lineIndex };
         e.column = { start: wordIndex, end: wordIndex + (e.metadata.symbol?.length || 0) };
         errors.push(e);
       }
@@ -299,20 +299,17 @@ function resolveWordIndex(e: ModelValidationSingleError, line: string): number {
 
   let wordIdx;
   switch (metadata.errorType) {
-    case ValidationError.ConditionNotDefined:
-      wordIdx = line.indexOf(metadata.symbol.substring(1));
-      break;
     case ValidationError.TuplesetNotDirect:
-      const clauseStartsAt = line.indexOf("from") + "from".length + 1;
-      wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol) + 1;
+      const clauseStartsAt = line.indexOf("from") + "from".length;
+      wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol);
       break;
     default:
       const re = new RegExp("\\b" + metadata.symbol + "\\b");
-      wordIdx = line?.search(re) + 1;
+      wordIdx = line?.search(re);
   }
 
-  if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === 0) {
-    wordIdx = 1;
+  if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === -1) {
+    wordIdx = 0;
   }
 
   return wordIdx;

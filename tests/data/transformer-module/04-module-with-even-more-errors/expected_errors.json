@@ -3,12 +3,12 @@
     "msg": "`viewer` is an impossible relation for `team` (no entrypoint).",
     "file": "core.fga",
     "line": {
-      "start": 7,
-      "end": 7
+      "start": 6,
+      "end": 6
     },
     "column": {
-      "start": 12,
-      "end": 18
+      "start": 11,
+      "end": 17
     },
     "metadata": {
       "errorType": "relation-no-entry-point"
@@ -18,12 +18,12 @@
     "msg": "`viewer` is an impossible relation for `group` (no entrypoint).",
     "file": "core.fga",
     "line": {
-      "start": 11,
-      "end": 11
+      "start": 10,
+      "end": 10
     },
     "column": {
-      "start": 12,
-      "end": 18
+      "start": 11,
+      "end": 17
     },
     "metadata": {
       "errorType": "relation-no-entry-point"
@@ -33,12 +33,12 @@
     "msg": "`reader` is an impossible relation for `document` (potential loop).",
     "file": "core.fga",
     "line": {
-      "start": 15,
-      "end": 15
+      "start": 14,
+      "end": 14
     },
     "column": {
-      "start": 12,
-      "end": 18
+      "start": 11,
+      "end": 17
     },
     "metadata": {
       "errorType": "relation-no-entry-point"
@@ -48,12 +48,12 @@
     "msg": "`writer` is an impossible relation for `document` (potential loop).",
     "file": "core.fga",
     "line": {
-      "start": 16,
-      "end": 16
+      "start": 15,
+      "end": 15
     },
     "column": {
-      "start": 12,
-      "end": 18
+      "start": 11,
+      "end": 17
     },
     "metadata": {
       "errorType": "relation-no-entry-point"

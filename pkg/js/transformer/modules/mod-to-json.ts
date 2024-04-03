@@ -53,7 +53,7 @@ function getLineAndColumnFromLinePos(linePos?: [LinePos] | [LinePos, LinePos]): 
   column: { start: number; end: number };
 } {
   if (linePos === undefined) {
-    return { line: { start: 1, end: 1 }, column: { start: 1, end: 1 } };
+    return { line: { start: 0, end: 0 }, column: { start: 0, end: 0 } };
   }
   // eslint-disable-next-line prefer-const
   let [start, end] = linePos;
@@ -83,19 +83,19 @@ function getLineAndColumnFromNode(
   counter: LineCounter,
 ): { line: { start: number; end: number }; column: { start: number; end: number } } {
   if (!isNode(node) || !node.range) {
-    return { line: { start: 1, end: 1 }, column: { start: 1, end: 1 } };
+    return { line: { start: 0, end: 0 }, column: { start: 0, end: 0 } };
   }
 
   const start = counter.linePos(node.range[0]);
   const end = counter.linePos(node.range[1]);
   return {
     line: {
-      start: start.line,
-      end: end.line,
+      start: start.line - 1,
+      end: end.line - 1,
     },
     column: {
-      start: start.col,
-      end: end.col,
+      start: start.col - 1,
+      end: end.col - 1,
     },
   };
 }

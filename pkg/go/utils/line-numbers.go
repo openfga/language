@@ -48,15 +48,15 @@ func ConstructLineAndColumnData(lines []string, lineIndex int, symbol string) (S
 
 	rawLine := lines[lineIndex]
 
-	wordIdx := strings.Index(rawLine, symbol) + 1
+	wordIdx := strings.Index(rawLine, symbol)
 
-	if wordIdx == 0 {
-		wordIdx = 1
+	if wordIdx == -1 {
+		wordIdx = 0
 	}
 
 	return StartEnd{
-			Start: lineIndex + 1,
-			End:   lineIndex + 1,
+			Start: lineIndex,
+			End:   lineIndex,
 		},
 		StartEnd{
 			Start: wordIdx,

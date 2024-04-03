@@ -82,26 +82,26 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Schema.IsZero():
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "missing schema field",
-			Line:   1,
-			Column: 1,
+			Line:   0,
+			Column: 0,
 		})
 	case yamlModFile.Schema.Tag != stringNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "unexpected schema type, expected string got value " + yamlModFile.Schema.Value,
-			Line:   yamlModFile.Schema.Line,
-			Column: yamlModFile.Schema.Column,
+			Line:   yamlModFile.Schema.Line - 1,
+			Column: yamlModFile.Schema.Column - 1,
 		})
 	case yamlModFile.Schema.Value != "1.2":
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "unsupported schema version, fga.mod only supported in version `1.2`",
-			Line:   yamlModFile.Schema.Line,
-			Column: yamlModFile.Schema.Column,
+			Line:   yamlModFile.Schema.Line - 1,
+			Column: yamlModFile.Schema.Column - 1,
 		})
 	default:
 		modFile.Schema = ModFileStringProperty{
 			Value:  yamlModFile.Schema.Value,
-			Line:   yamlModFile.Schema.Line,
-			Column: yamlModFile.Schema.Column,
+			Line:   yamlModFile.Schema.Line - 1,
+			Column: yamlModFile.Schema.Column - 1,
 		}
 	}
 
@@ -109,14 +109,14 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	case yamlModFile.Contents.IsZero():
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "missing contents field",
-			Line:   1,
-			Column: 1,
+			Line:   0,
+			Column: 0,
 		})
 	case yamlModFile.Contents.Tag != seqNode:
 		errors = multierror.Append(errors, &ModFileValidationError{
 			Msg:    "unexpected contents type, expected list of strings got value " + yamlModFile.Contents.Value,
-			Line:   yamlModFile.Contents.Line,
-			Column: yamlModFile.Contents.Column,
+			Line:   yamlModFile.Contents.Line - 1,
+			Column: yamlModFile.Contents.Column - 1,
 		})
 	default:
 		contents := []ModFileStringProperty{}
@@ -125,28 +125,28 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			if file.Tag != stringNode {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg:    "unexpected contents item type, expected string got value " + file.Value,
-					Line:   file.Line,
-					Column: file.Column,
+					Line:   file.Line - 1,
+					Column: file.Column - 1,
 				})
 			} else if !strings.HasSuffix(file.Value, ".fga") {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg:    "contents items should use fga file extension, got " + file.Value,
-					Line:   file.Line,
-					Column: file.Column,
+					Line:   file.Line - 1,
+					Column: file.Column - 1,
 				})
 			}
 
 			contents = append(contents, ModFileStringProperty{
 				Value:  file.Value,
-				Line:   file.Line,
-				Column: file.Column,
+				Line:   file.Line - 1,
+				Column: file.Column - 1,
 			})
 		}
 
 		modFile.Contents = ModFileArrayProperty{
 			Value:  contents,
-			Line:   yamlModFile.Contents.Line,
-			Column: yamlModFile.Contents.Column,
+			Line:   yamlModFile.Contents.Line - 1,
+			Column: yamlModFile.Contents.Column - 1,
 		}
 	}
 

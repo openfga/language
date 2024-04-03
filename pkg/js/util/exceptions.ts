@@ -82,8 +82,8 @@ const createTupleUsersetRequireDirectError = (props: BaseProps) => {
       lines,
       lineIndex,
       customResolver: (wordIdx, rawLine, value) => {
-        const clauseStartsAt = rawLine.indexOf("from") + "from".length + 1;
-        wordIdx = clauseStartsAt + rawLine.slice(clauseStartsAt).indexOf(value) + 1;
+        const clauseStartsAt = rawLine.indexOf("from") + "from".length;
+        wordIdx = clauseStartsAt + rawLine.slice(clauseStartsAt).indexOf(value);
         return wordIdx;
       },
       metadata: { symbol, errorType: ValidationError.TuplesetNotDirect, file, module, typeName: type, relation },
@@ -228,9 +228,7 @@ const createAssignableRelationMustHaveTypesError = (props: BaseProps) => {
   }
 
   const rawLine = lines[lineIndex];
-  const actualValue = rawLine.includes("[")
-    ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]") + 1)
-    : "self";
+  const actualValue = rawLine.includes("[") ? rawLine.slice(rawLine.indexOf("["), rawLine.lastIndexOf("]")) : "self";
 
   errors.push(
     constructValidationError({
@@ -304,12 +302,12 @@ const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
       {
         msg: `duplicate relationship definition \`${symbol}\`.`,
         line: {
-          start: lineIndex + 1,
-          end: lineIndex + 1,
+          start: lineIndex,
+          end: lineIndex,
         },
         column: {
-          start: rawLine.indexOf(Keyword.DEFINE) + 1,
-          end: rawLine.length + 1,
+          start: rawLine.indexOf(Keyword.DEFINE),
+          end: rawLine.length,
         },
       },
       { symbol, errorType: ValidationError.DuplicatedError },
@@ -421,17 +419,17 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
     const rawLine = lines[lineIndex];
 
     const re = new RegExp("\\b" + metadata.symbol + "\\b");
-    let wordIdx = rawLine?.search(re) + 1;
+    let wordIdx = rawLine?.search(re);
 
-    if (isNaN(wordIdx) || wordIdx === 0) {
-      wordIdx = 1;
+    if (isNaN(wordIdx) || wordIdx === -1) {
+      wordIdx = 0;
     }
 
     if (typeof customResolver === "function") {
       wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
     }
 
-    errorProps.line = { start: lineIndex + 1, end: lineIndex + 1 };
+    errorProps.line = { start: lineIndex, end: lineIndex };
     errorProps.column = { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) };
   }
 
@@ -699,15 +697,15 @@ export function constructTransformationError(props: TransformationErrorProps) {
   const rawLine = lines[lineIndex];
 
   const re = new RegExp("\\b" + metadata.symbol + "\\b");
-  let wordIdx = rawLine?.search(re) + 1;
+  let wordIdx = rawLine?.search(re);
 
-  if (isNaN(wordIdx) || wordIdx === 0) {
-    wordIdx = 1;
+  if (isNaN(wordIdx) || wordIdx === -1) {
+    wordIdx = 0;
   }
 
   return new ModuleTransformationSingleError(
     {
-      line: { start: lineIndex + 1, end: lineIndex + 1 },
+      line: { start: lineIndex, end: lineIndex },
       column: { start: wordIdx, end: wordIdx + (metadata.symbol?.length || 0) },
       msg: message,
       file: metadata.file,

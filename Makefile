@@ -18,7 +18,7 @@ build: build-go build-js build-java
 test: test-go test-js test-java
 
 .PHONY: lint
-lint: lint-go lint-js lint-java lint-test
+lint: lint-go lint-js lint-java lint-tests
 
 #### Go #####
 

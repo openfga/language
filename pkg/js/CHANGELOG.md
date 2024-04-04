@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.0-beta.16
+
+### [v0.2.0-beta.16](https://github.com/openfga/language/compare/0a0d96a126f87daf34d00514cc9c7ceb8a959993...7484f693f40aeed47ca1e2a2c6109758876a4ae3) (2024-04-04)
+
+Refactor:
+
+- Make line and column numbers zero based (https://github.com/openfga/language/pull/223)
+
 ## v0.2.0-beta.15
 
 ### [v0.2.0-beta.15](https://github.com/openfga/language/compare/78ce3fed297528d1ef8083b4bef1500b26dada78...5ead374fcd3d6c0678303d9020ff5eacc4f7ed63) (2024-04-01)

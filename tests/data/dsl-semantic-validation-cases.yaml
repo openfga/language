@@ -1238,47 +1238,47 @@
   expected_errors:
     - msg: "`u` is not a valid type."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 18
-        end: 19
+        start: 17
+        end: 18
       metadata:
         errorType: invalid-type
     - msg: "`z` is not a valid relation for `t`."
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
-        start: 18
-        end: 21
+        start: 17
+        end: 20
       metadata:
         errorType: invalid-relation-type
     - msg: "`z` is not a valid relation for `x`."
       line:
-        start: 10
-        end: 10
+        start: 9
+        end: 9
       column:
-        start: 17
-        end: 25
+        start: 16
+        end: 24
       metadata:
         errorType: invalid-relation-type
     - msg: "the `z` relation definition on type `x` is not valid: `z` does not exist on `d`, which is of type `t`."
       line:
-        start: 12
-        end: 12
+        start: 11
+        end: 11
       column:
-        start: 17
-        end: 25
+        start: 16
+        end: 24
       metadata:
         errorType: invalid-relation-on-tupleset
     - msg: "the relation `z` does not exist."
       line:
-        start: 13
-        end: 13
+        start: 12
+        end: 12
       column:
-        start: 27
-        end: 28
+        start: 26
+        end: 27
       metadata:
         errorType: missing-definition
 
@@ -1298,29 +1298,29 @@
   expected_errors:
     - msg: "the type restriction `t` is a duplicate in the relation `a`."
       line:
-        start: 6
-        end: 6
+        start: 5
+        end: 5
       column:
-        start: 16
-        end: 17
+        start: 15
+        end: 16
       metadata:
         errorType: duplicated-error
     - msg: "the type `t` is a duplicate."
       line:
-        start: 4
-        end: 4
+        start: 3
+        end: 3
       column:
-        start: 6
-        end: 7
+        start: 5
+        end: 6
       metadata:
         errorType: duplicated-error
     - msg: "`c` condition is not used in the model."
       line:
-        start: 9
-        end: 9
+        start: 8
+        end: 8
       column:
-        start: 11
-        end: 12
+        start: 10
+        end: 11
       metadata:
         errorType: condition-not-used
 
@@ -1340,20 +1340,20 @@
   expected_errors:
     - msg: "`v` is an impossible relation for `x` (no entrypoint)."
       line:
-        start: 7
-        end: 7
+        start: 6
+        end: 6
       column:
-        start: 12
-        end: 13
+        start: 11
+        end: 12
       metadata:
         errorType: relation-no-entry-point
     - msg: "`v` is an impossible relation for `y` (no entrypoint)."
       line:
-        start: 11
-        end: 11
+        start: 10
+        end: 10
       column:
-        start: 12
-        end: 13
+        start: 11
+        end: 12
       metadata:
         errorType: relation-no-entry-point
 
@@ -1370,11 +1370,11 @@
   expected_errors:
     - msg: "`p` relation used inside from allows only direct relation."
       line:
-        start: 8
-        end: 8
+        start: 7
+        end: 7
       column:
-        start: 29
-        end: 30
+        start: 28
+        end: 29
       metadata:
         errorType: tupleuserset-not-direct
 #- name: invalid cel expression

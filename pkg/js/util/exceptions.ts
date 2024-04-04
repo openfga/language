@@ -245,51 +245,52 @@ const createAssignableRelationMustHaveTypesError = (props: BaseProps) => {
 };
 
 const createDuplicateTypeNameError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `the type \`${symbol}\` is a duplicate.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.DuplicatedError },
+      metadata: { symbol, errorType: ValidationError.DuplicatedError, typeName: symbol, file, module },
     }),
   );
 };
 
-const createDuplicateTypeRestrictionError = (props: BaseProps, relationName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+const createDuplicateTypeRestrictionError = (props: BaseProps, relationName: string, typeName: string) => {
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `the type restriction \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: symbol },
+      metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: relationName, typeName, file, module },
     }),
   );
 };
 
-const createDuplicateRelationError = (props: BaseProps, relationName: string) => {
-  const { errors, lines, lineIndex, symbol } = props;
+const createDuplicateRelationError = (props: BaseProps, relationName: string, typeName: string) => {
+  const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
       message: `the partial relation definition \`${symbol}\` is a duplicate in the relation \`${relationName}\`.`,
       lines,
       lineIndex,
-      metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: symbol },
+      metadata: { symbol, errorType: ValidationError.DuplicatedError, relation: relationName, typeName, file, module },
     }),
   );
 };
 
 const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
-  const { errors, lines, lineIndex, symbol } = props;
+  const { errors, lines, lineIndex, symbol, file, module } = props;
 
   if (!lines?.length || lineIndex === undefined) {
     errors.push(
       new ModelValidationSingleError(
         {
           msg: `duplicate relationship definition \`${symbol}\`.`,
+          file,
         },
-        { symbol, errorType: ValidationError.DuplicatedError },
+        { symbol, errorType: ValidationError.DuplicatedError, module },
       ),
     );
     return;
@@ -309,8 +310,9 @@ const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
           start: rawLine.indexOf(Keyword.DEFINE),
           end: rawLine.length,
         },
+        file,
       },
-      { symbol, errorType: ValidationError.DuplicatedError },
+      { symbol, errorType: ValidationError.DuplicatedError, module },
     ),
   );
 };
@@ -490,20 +492,48 @@ export class ExceptionCollector {
     });
   }
 
-  raiseDuplicateTypeName(symbol: string, lineIndex?: number) {
-    createDuplicateTypeNameError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  raiseDuplicateTypeName(symbol: string, meta: Meta, lineIndex?: number) {
+    createDuplicateTypeNameError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      module: meta.module,
+      file: meta.file,
+    });
   }
 
-  raiseDuplicateTypeRestriction(symbol: string, relationName: string, lineIndex?: number) {
-    createDuplicateTypeRestrictionError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, relationName);
+  raiseDuplicateTypeRestriction(
+    symbol: string,
+    relationName: string,
+    typeName: string,
+    meta: Meta,
+    lineIndex?: number,
+  ) {
+    createDuplicateTypeRestrictionError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, module: meta.module, file: meta.file },
+      relationName,
+      typeName,
+    );
   }
 
-  raiseDuplicateType(symbol: string, relationName: string, lineIndex?: number) {
-    createDuplicateRelationError({ errors: this.errors, lines: this.lines, lineIndex, symbol }, relationName);
+  raiseDuplicateType(symbol: string, relationName: string, typeName: string, meta: Meta, lineIndex?: number) {
+    createDuplicateRelationError(
+      { errors: this.errors, lines: this.lines, lineIndex, symbol, module: meta.module, file: meta.file },
+      relationName,
+      typeName,
+    );
   }
 
-  raiseDuplicateRelationshipDefinition(symbol: string, lineIndex?: number) {
-    createDuplicateRelationshipDefinitionError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  raiseDuplicateRelationshipDefinition(symbol: string, meta: Meta, lineIndex?: number) {
+    createDuplicateRelationshipDefinitionError({
+      errors: this.errors,
+      lines: this.lines,
+      lineIndex,
+      symbol,
+      module: meta.module,
+      file: meta.file,
+    });
   }
 
   raiseNoEntryPointLoop(symbol: string, typeName: string, meta: Meta, lineIndex?: number) {

@@ -41,23 +41,6 @@ export const transformModuleFilesToModel = (
       const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
       for (const typeDef of authorizationModel.type_definitions) {
-        // Check if we've already seen this type and it's not marked as an extension
-        if (types.has(typeDef.type) && !typeDefExtensions.has(typeDef.type)) {
-          const lineIndex = getTypeLineNumber(typeDef.type, lines);
-          errors.push(
-            constructTransformationError({
-              message: `duplicate type definition ${typeDef.type}`,
-              lines,
-              lineIndex,
-              metadata: {
-                symbol: typeDef.type,
-                file: name,
-              },
-            }),
-          );
-          continue;
-        }
-
         // If this is an extension mark it to be merged later
         if (typeDefExtensions.has(typeDef.type)) {
           if (!extendedTypeDefs[name]) {
@@ -274,12 +257,19 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
     case ValidationError.TuplesetNotDirect:
     case ValidationError.TypeRestrictionCannotHaveWildcardAndRelation:
     case ValidationError.RelationNoEntrypoint:
-      let typeIndex = getTypeLineNumber(e.metadata!.type!, lines);
+    case ValidationError.DuplicatedError:
+      let typeIndex = getTypeLineNumber(metadata.type!, lines);
       if (typeIndex === -1) {
-        typeIndex = getTypeLineNumber(e.metadata!.type!, lines, undefined, true);
+        typeIndex = getTypeLineNumber(metadata.type!, lines, undefined, true);
       }
 
-      lineIndex = getRelationLineNumber(e.metadata!.relation!, lines, typeIndex);
+      // If we don't have a relation then we just want the type index to be the line index
+      if (!metadata.relation) {
+        lineIndex = typeIndex;
+        break;
+      }
+
+      lineIndex = getRelationLineNumber(metadata.relation!, lines, typeIndex);
       break;
   }
 

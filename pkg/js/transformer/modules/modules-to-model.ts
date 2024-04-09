@@ -1,5 +1,5 @@
 import { AuthorizationModel, Condition, TypeDefinition } from "@openfga/sdk";
-import { validateJSON } from "../../validator";
+import { validateJSON } from "../../validator/validate-dsl";
 import { transformModularDSLToJSONObject } from "../dsltojson";
 import {
   BaseError,

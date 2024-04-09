@@ -1,6 +1,6 @@
 import type { AuthorizationModel, RelationReference, RelationMetadata, TypeDefinition, Userset } from "@openfga/sdk";
 import { Keyword, ReservedKeywords } from "./keywords";
-import { parseDSL } from "../transformer";
+import { parseDSL } from "../transformer/dsltojson";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { ExceptionCollector } from "../util/exceptions";
 

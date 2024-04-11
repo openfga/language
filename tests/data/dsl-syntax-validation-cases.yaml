@@ -107,6 +107,33 @@
         end: 10
       metadata:
         symbol: "a"
+- name: a module with missing name
+  dsl: |
+    module
+
+    type user
+  expected_errors:
+    - msg: "mismatched input '\\n\\n' expecting WHITESPACE"
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 6
+        end: 8
+      metadata:
+        symbol: "\n\n"
+- name: a module with missing name with whitespace
+  dsl: "module     \n\ntype user"
+  expected_errors:
+    - msg: "mismatched input '\\n\\n' expecting WHITESPACE"
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 6
+        end: 8
+      metadata:
+        symbol: "\n\n"
 - name: no relations keyword
   dsl: |
     model

@@ -108,6 +108,10 @@ class OpenFgaDslListener extends OpenFGAListener {
   private rewriteStack: StackRelation[] = [];
 
   exitModuleHeader = (ctx: ModuleHeaderContext) => {
+    if (!ctx._moduleName) {
+      return;
+    }
+
     this.isModularModel = true;
     this.moduleName = ctx._moduleName.getText();
   };

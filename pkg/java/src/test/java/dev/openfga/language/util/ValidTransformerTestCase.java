@@ -31,12 +31,10 @@ public final class ValidTransformerTestCase {
 
     @Override
     public String toString() {
-        return "TransformerTestCase[" +
-                "name=" + name + ", " +
-                "dsl=" + dsl + ", " +
-                "json=" + json + ", " +
-                "skip=" + skip + ']';
+        return "TransformerTestCase[" + "name="
+                + name + ", " + "dsl="
+                + dsl + ", " + "json="
+                + json + ", " + "skip="
+                + skip + ']';
     }
-
 }
-

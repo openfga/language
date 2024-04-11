@@ -1,9 +1,9 @@
 package dev.openfga.language.errors;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.Collection;
 import java.util.List;
-
-import static java.util.stream.Collectors.joining;
 
 public abstract class Errors<T> extends SimpleError {
 
@@ -23,8 +23,6 @@ public abstract class Errors<T> extends SimpleError {
         var errorsPlural = errors.size() > 1 ? "s" : "";
         var prefix = String.format("%d error%s occurred:%s", errors.size(), errorsPlural, delimiter);
         var suffix = "\n\n";
-        return errors.stream()
-                .map(Object::toString)
-                .collect(joining("\n\t* ", prefix, suffix));
+        return errors.stream().map(Object::toString).collect(joining("\n\t* ", prefix, suffix));
     }
 }

@@ -7,13 +7,14 @@ public class ValidationMetadata extends Metadata {
     private String conditionName;
 
     // Needed for Jackson deserialization
-    public ValidationMetadata() {
-    }
+    public ValidationMetadata() {}
 
     public ValidationMetadata(String symbol, ValidationError errorType) {
         this(symbol, errorType, null, null, null);
     }
-    public ValidationMetadata(String symbol, ValidationError errorType, String relation, String typeName, String conditionName) {
+
+    public ValidationMetadata(
+            String symbol, ValidationError errorType, String relation, String typeName, String conditionName) {
         super(symbol);
         this.errorType = errorType;
         this.relation = relation;

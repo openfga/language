@@ -1,7 +1,8 @@
 package dev.openfga.language.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import static java.util.Collections.unmodifiableList;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -10,14 +11,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.unmodifiableList;
-
 public class TestsData {
 
     public static final String TRANSFORMER_CASES_FOLDER = "../../tests/data/transformer";
     public static final String DSL_SYNTAX_CASES_FILE = "../../tests/data/dsl-syntax-validation-cases.yaml";
     public static final String DSL_SEMANTIC_CASES_FILE = "../../tests/data/dsl-semantic-validation-cases.yaml";
-    public static final String JSON_SYNTAX_TRANSFORMER_CASES_FILE = "../../tests/data/json-syntax-transformer-validation-cases.yaml";
+    public static final String JSON_SYNTAX_TRANSFORMER_CASES_FILE =
+            "../../tests/data/json-syntax-transformer-validation-cases.yaml";
     public static final String SKIP_FILE = "test.skip";
     public static final String AUTHORIZATION_MODEL_JSON_FILE = "authorization-model.json";
     public static final String AUTHORIZATION_MODEL_DSL_FILE = "authorization-model.fga";
@@ -43,10 +43,7 @@ public class TestsData {
                 var dslFile = path.resolve(AUTHORIZATION_MODEL_DSL_FILE);
 
                 cases.add(new ValidTransformerTestCase(
-                        name,
-                        Files.readString(dslFile),
-                        Files.readString(jsonFile),
-                        Files.exists(skipFile)));
+                        name, Files.readString(dslFile), Files.readString(jsonFile), Files.exists(skipFile)));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -64,6 +61,7 @@ public class TestsData {
             throw new RuntimeException(e);
         }
     }
+
     private static List<MultipleInvalidDslSyntaxTestCase> loadDslValidationTestCases() {
         var dslSyntaxCasesFile = Paths.get(DSL_SEMANTIC_CASES_FILE);
         try {
@@ -73,6 +71,7 @@ public class TestsData {
             throw new RuntimeException(e);
         }
     }
+
     private static List<JsonSyntaxTestCase> loadJsonSyntaxTestCases() {
         var dslSyntaxCasesFile = Paths.get(JSON_SYNTAX_TRANSFORMER_CASES_FILE);
         try {

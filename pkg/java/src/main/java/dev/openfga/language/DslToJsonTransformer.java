@@ -1,20 +1,19 @@
 package dev.openfga.language;
 
+import static java.util.stream.Collectors.joining;
+
 import dev.openfga.language.antlr.OpenFGALexer;
 import dev.openfga.language.antlr.OpenFGAParser;
 import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.language.errors.SyntaxError;
 import dev.openfga.sdk.api.model.AuthorizationModel;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import static java.util.stream.Collectors.joining;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 public class DslToJsonTransformer {
     public String transform(String dsl) throws IOException, DslErrorsException {
@@ -32,8 +31,9 @@ public class DslToJsonTransformer {
 
     private static final Pattern SPACES_LINE_PATTERN = Pattern.compile("^\\s*$");
     private static final Pattern COMMENTED_LINE_PATTERN = Pattern.compile("^\\s*#.*$");
+
     private String cleanLine(String line) {
-        if(SPACES_LINE_PATTERN.matcher(line).matches()
+        if (SPACES_LINE_PATTERN.matcher(line).matches()
                 || COMMENTED_LINE_PATTERN.matcher(line).matches()) {
             return "";
         }
@@ -42,10 +42,7 @@ public class DslToJsonTransformer {
     }
 
     public Result parseDsl(String dsl) {
-        var cleanedDsl = Arrays.stream(dsl.split("\n"))
-                .map(this::cleanLine)
-                .collect(joining("\n"));
-
+        var cleanedDsl = Arrays.stream(dsl.split("\n")).map(this::cleanLine).collect(joining("\n"));
 
         var antlrStream = CharStreams.fromString(cleanedDsl);
         var errorListener = new OpenFgaDslErrorListener();

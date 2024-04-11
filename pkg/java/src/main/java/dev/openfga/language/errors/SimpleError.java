@@ -7,8 +7,7 @@ public abstract class SimpleError {
     @JsonProperty("msg")
     private String message;
 
-    public SimpleError() {
-    }
+    public SimpleError() {}
 
     public SimpleError(String message) {
         this.message = message;

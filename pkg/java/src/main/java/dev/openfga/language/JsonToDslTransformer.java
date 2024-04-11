@@ -1,15 +1,14 @@
 package dev.openfga.language;
 
+import static java.util.Objects.requireNonNullElseGet;
+import static java.util.stream.Collectors.joining;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.openfga.language.errors.UnsupportedDSLNestingException;
 import dev.openfga.sdk.api.model.*;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
-
-import static java.util.Objects.requireNonNullElseGet;
-import static java.util.stream.Collectors.joining;
 
 public class JsonToDslTransformer {
 
@@ -20,7 +19,6 @@ public class JsonToDslTransformer {
         var model = JSON.parse(json, AuthorizationModel.class);
 
         return transformJSONToDSL(model);
-
     }
 
     private String transformJSONToDSL(AuthorizationModel model) {
@@ -38,9 +36,7 @@ public class JsonToDslTransformer {
 
         var fomattedConditions = formatConditions(model);
 
-        return "model" + EOL + "  schema " + schemaVersion + EOL +
-                formattedTypeDefinitions +
-                fomattedConditions;
+        return "model" + EOL + "  schema " + schemaVersion + EOL + formattedTypeDefinitions + fomattedConditions;
     }
 
     private String formatType(TypeDefinition typeDef) {
@@ -56,15 +52,13 @@ public class JsonToDslTransformer {
         }
 
         if (!relations.isEmpty()) {
-            formatedTypeBuilder
-                    .append(EOL)
-                    .append("  relations");
-            for (var relationEntry :
-                    relations.entrySet()) {
+            formatedTypeBuilder.append(EOL).append("  relations");
+            for (var relationEntry : relations.entrySet()) {
                 var relationName = relationEntry.getKey();
                 var relationDefinition = relationEntry.getValue();
                 metadataRelations.get(relationName);
-                var formattedRelationString = formatRelation(typeName, relationName, relationDefinition, metadataRelations.get(relationName));
+                var formattedRelationString =
+                        formatRelation(typeName, relationName, relationDefinition, metadataRelations.get(relationName));
                 formatedTypeBuilder.append(EOL).append(formattedRelationString);
             }
         }
@@ -72,10 +66,12 @@ public class JsonToDslTransformer {
         return formatedTypeBuilder.toString();
     }
 
-    private String formatRelation(String typeName, String relationName, Userset relationDefinition, RelationMetadata relationMetadata) {
+    private String formatRelation(
+            String typeName, String relationName, Userset relationDefinition, RelationMetadata relationMetadata) {
         var validator = new DirectAssignmentValidator();
 
-        var typeRestrictions = requireNonNullElseGet(relationMetadata.getDirectlyRelatedUserTypes(), ArrayList<RelationReference>::new);
+        var typeRestrictions = requireNonNullElseGet(
+                relationMetadata.getDirectlyRelatedUserTypes(), ArrayList<RelationReference>::new);
 
         RelationFormatter formatter = this::formatSubRelation;
 
@@ -87,32 +83,67 @@ public class JsonToDslTransformer {
             formatter = this::formatIntersection;
         }
 
-        var formattedRelation = formatter.format(typeName, relationName, relationDefinition, typeRestrictions, validator);
-        if (validator.occurences() == 0 || (validator.occurences() == 1 && validator.isFirstPosition(relationDefinition))) {
+        var formattedRelation =
+                formatter.format(typeName, relationName, relationDefinition, typeRestrictions, validator);
+        if (validator.occurences() == 0
+                || (validator.occurences() == 1 && validator.isFirstPosition(relationDefinition))) {
             return "    define " + relationName + ": " + formattedRelation;
         }
 
         throw new UnsupportedDSLNestingException(typeName, relationName);
     }
 
-    private StringBuilder formatDifference(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
-        var base = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getBase(), typeRestrictions, validator);
-        var difference = formatSubRelation(typeName, relationName, relationDefinition.getDifference().getSubtract(), typeRestrictions, validator);
+    private StringBuilder formatDifference(
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            List<RelationReference> typeRestrictions,
+            DirectAssignmentValidator validator) {
+        var base = formatSubRelation(
+                typeName, relationName, relationDefinition.getDifference().getBase(), typeRestrictions, validator);
+        var difference = formatSubRelation(
+                typeName, relationName, relationDefinition.getDifference().getSubtract(), typeRestrictions, validator);
         return new StringBuilder(base).append(" but not ").append(difference);
     }
 
-    private StringBuilder formatUnion(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
-        return joinChildren(Userset::getUnion, "or", typeName, relationName, relationDefinition, typeRestrictions, validator);
+    private StringBuilder formatUnion(
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            List<RelationReference> typeRestrictions,
+            DirectAssignmentValidator validator) {
+        return joinChildren(
+                Userset::getUnion, "or", typeName, relationName, relationDefinition, typeRestrictions, validator);
     }
 
-    private StringBuilder formatIntersection(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
-        return joinChildren(Userset::getIntersection, "and", typeName, relationName, relationDefinition, typeRestrictions, validator);
+    private StringBuilder formatIntersection(
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            List<RelationReference> typeRestrictions,
+            DirectAssignmentValidator validator) {
+        return joinChildren(
+                Userset::getIntersection,
+                "and",
+                typeName,
+                relationName,
+                relationDefinition,
+                typeRestrictions,
+                validator);
     }
 
-    private StringBuilder joinChildren(Function<Userset, Usersets> childrenAccessor, String operator, String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
+    private StringBuilder joinChildren(
+            Function<Userset, Usersets> childrenAccessor,
+            String operator,
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            List<RelationReference> typeRestrictions,
+            DirectAssignmentValidator validator) {
         List<Userset> children = null;
         if (relationDefinition != null && childrenAccessor.apply(relationDefinition) != null) {
-            children = prioritizeDirectAssignment(childrenAccessor.apply(relationDefinition).getChild());
+            children = prioritizeDirectAssignment(
+                    childrenAccessor.apply(relationDefinition).getChild());
         }
         children = requireNonNullElseGet(children, ArrayList::new);
 
@@ -130,7 +161,7 @@ public class JsonToDslTransformer {
         return formattedUnion;
     }
 
-private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) {
+    private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) {
         if (usersets != null && !usersets.isEmpty()) {
             var thisPosition = IntStream.range(0, usersets.size())
                     .filter(i -> usersets.get(i).getThis() != null)
@@ -143,7 +174,8 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
         }
 
         return usersets;
-    };
+    }
+    ;
 
     private static class DirectAssignmentValidator {
         private int occured = 0;
@@ -157,12 +189,12 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
         }
 
         public boolean isFirstPosition(Userset userset) {
-            if(userset.getThis() != null) {
+            if (userset.getThis() != null) {
                 return true;
             }
 
-            if(userset.getDifference() != null && userset.getDifference().getBase() != null) {
-                if(userset.getDifference().getBase().getThis() != null) {
+            if (userset.getDifference() != null && userset.getDifference().getBase() != null) {
+                if (userset.getDifference().getBase().getThis() != null) {
                     return true;
                 } else {
                     return isFirstPosition(userset.getDifference().getBase());
@@ -170,13 +202,14 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
             } else if (userset.getIntersection() != null
                     && userset.getIntersection().getChild() != null
                     && !userset.getIntersection().getChild().isEmpty()) {
-                if(userset.getIntersection().getChild().get(0).getThis() != null) {
+                if (userset.getIntersection().getChild().get(0).getThis() != null) {
                     return true;
                 } else {
                     return isFirstPosition(userset.getIntersection().getChild().get(0));
                 }
-            } else if (userset.getUnion() != null && !userset.getUnion().getChild().isEmpty()) {
-                if(userset.getUnion().getChild().get(0).getThis() != null) {
+            } else if (userset.getUnion() != null
+                    && !userset.getUnion().getChild().isEmpty()) {
+                if (userset.getUnion().getChild().get(0).getThis() != null) {
                     return true;
                 } else {
                     return isFirstPosition(userset.getUnion().getChild().get(0));
@@ -186,7 +219,12 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
         }
     }
 
-    private CharSequence formatSubRelation(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator) {
+    private CharSequence formatSubRelation(
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            List<RelationReference> typeRestrictions,
+            DirectAssignmentValidator validator) {
         if (relationDefinition.getThis() != null) {
             validator.incr();
             return formatThis(typeRestrictions);
@@ -222,8 +260,7 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
     }
 
     private CharSequence formatThis(List<RelationReference> typeRestrictions) {
-        return requireNonNullElseGet(typeRestrictions, ArrayList<RelationReference>::new)
-                .stream()
+        return requireNonNullElseGet(typeRestrictions, ArrayList<RelationReference>::new).stream()
                 .map(this::formatTypeRestriction)
                 .collect(joining(", ", "[", "]"));
     }
@@ -259,7 +296,10 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
         String tupleset = "";
         if (relationDefinition != null && relationDefinition.getTupleToUserset() != null) {
             if (relationDefinition.getTupleToUserset().getComputedUserset() != null) {
-                computedUserset = relationDefinition.getTupleToUserset().getComputedUserset().getRelation();
+                computedUserset = relationDefinition
+                        .getTupleToUserset()
+                        .getComputedUserset()
+                        .getRelation();
             }
             if (relationDefinition.getTupleToUserset().getTupleset() != null) {
                 tupleset = relationDefinition.getTupleToUserset().getTupleset().getRelation();
@@ -312,26 +352,37 @@ private static List<Userset> prioritizeDirectAssignment(List<Userset> usersets) 
             return "";
         }
 
-        return new TreeMap<>(parameters).entrySet().stream()
-                .map(entry -> {
-                    var parameterName = entry.getKey();
-                    var parameterType = entry.getValue();
-                    var formattedParameterType = parameterType.getTypeName().getValue()
-                            .replace("TYPE_NAME_", "")
-                            .toLowerCase();
-                    if (formattedParameterType.equals("list") || formattedParameterType.equals("map")) {
-                        var genericTypeString = parameterType.getGenericTypes().get(0).getTypeName().getValue()
-                                .replace("TYPE_NAME_", "")
-                                .toLowerCase();
-                        formattedParameterType = formattedParameterType + "<" + genericTypeString + ">";
-                    }
-                    return new StringBuilder(parameterName).append(": ").append(formattedParameterType);
-                })
-                .collect(joining(", "));
+        return new TreeMap<>(parameters)
+                .entrySet().stream()
+                        .map(entry -> {
+                            var parameterName = entry.getKey();
+                            var parameterType = entry.getValue();
+                            var formattedParameterType = parameterType
+                                    .getTypeName()
+                                    .getValue()
+                                    .replace("TYPE_NAME_", "")
+                                    .toLowerCase();
+                            if (formattedParameterType.equals("list") || formattedParameterType.equals("map")) {
+                                var genericTypeString = parameterType
+                                        .getGenericTypes()
+                                        .get(0)
+                                        .getTypeName()
+                                        .getValue()
+                                        .replace("TYPE_NAME_", "")
+                                        .toLowerCase();
+                                formattedParameterType = formattedParameterType + "<" + genericTypeString + ">";
+                            }
+                            return new StringBuilder(parameterName).append(": ").append(formattedParameterType);
+                        })
+                        .collect(joining(", "));
     }
 
     private interface RelationFormatter {
-        CharSequence format(String typeName, String relationName, Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator);
+        CharSequence format(
+                String typeName,
+                String relationName,
+                Userset relationDefinition,
+                List<RelationReference> typeRestrictions,
+                DirectAssignmentValidator validator);
     }
-
 }

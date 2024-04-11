@@ -1,7 +1,6 @@
 package dev.openfga.language;
 
 import dev.openfga.sdk.api.model.Userset;
-
 import java.util.List;
 
 public class StackRelation {

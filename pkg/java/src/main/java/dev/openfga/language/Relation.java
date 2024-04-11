@@ -2,7 +2,6 @@ package dev.openfga.language;
 
 import dev.openfga.sdk.api.model.RelationMetadata;
 import dev.openfga.sdk.api.model.Userset;
-
 import java.util.List;
 
 final class Relation {

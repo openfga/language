@@ -13,12 +13,12 @@ test:
 	./gradlew check
 
 lint:
-	echo "java lint Not implemented"
+	./gradlew lint
 
 audit:
 	echo "java audit Not implemented"
 
 format:
-	echo "java format Not implemented"
+	./gradlew fmt
 
 all-tests: build audit lint test

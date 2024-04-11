@@ -10,8 +10,7 @@ public abstract class ParsingError extends SimpleError {
 
     private String fullMessage;
 
-    public ParsingError() {
-    }
+    public ParsingError() {}
 
     public ParsingError(String type, ErrorProperties properties) {
         super(properties.getMessage());

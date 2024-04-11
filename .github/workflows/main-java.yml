@@ -20,30 +20,51 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint Java
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          fetch-depth: 0
 
-    build:
-      name: Build and Test Java
-      runs-on: ubuntu-latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      - name: Set up JDK
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        with:
+          java-version: 20
+          distribution: 'temurin'
+          cache: gradle
+          cache-dependency-path: | 
+            ./pkg/java/*.gradle*
+            ./pkg/java/**/gradle-wrapper.properties
+      - name: Lint Java source
+        run: make lint-java
 
-      strategy:
-        matrix:
-          java: [ '11', '17', '20' ]
+  test:
+    name: Test Java
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-          with:
-            fetch-depth: 0
+    strategy:
+      matrix:
+        java: [ '11', '17', '20' ]
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-        - name: Set up JDK
-          uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
-          with:
-            java-version: ${{ matrix.java }}
-            distribution: 'temurin'
-            cache: gradle
-            cache-dependency-path: | 
-              ./pkg/java/*.gradle*
-              ./pkg/java/**/gradle-wrapper.properties
-        - name: Test and Build with Gradle
-          run: make all-tests-java
+    steps:
+      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      - name: Set up JDK
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: gradle
+          cache-dependency-path: | 
+            ./pkg/java/*.gradle*
+            ./pkg/java/**/gradle-wrapper.properties
+      - name: Test and Build with Gradle
+        run: make test-java

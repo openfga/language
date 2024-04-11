@@ -36,5 +36,3 @@ class ValidationRegex {
         return regex.matcher(input).matches();
     }
 }
-
-

@@ -3,7 +3,6 @@ package dev.openfga.language;
 import dev.openfga.language.antlr.OpenFGAParser;
 import dev.openfga.language.antlr.OpenFGAParserBaseListener;
 import dev.openfga.sdk.api.model.*;
-
 import java.util.*;
 
 public class OpenFgaDslListener extends OpenFGAParserBaseListener {
@@ -45,7 +44,8 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
                 relationDef = new Userset().intersection(new Usersets().child(rewrites));
                 break;
             case RELATION_DEFINITION_OPERATOR_BUT_NOT:
-                relationDef = new Userset().difference(new Difference().base(rewrites.get(0)).subtract(rewrites.get(1)));
+                relationDef = new Userset()
+                        .difference(new Difference().base(rewrites.get(0)).subtract(rewrites.get(1)));
                 break;
         }
         return relationDef;
@@ -87,7 +87,6 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
                 .type(ctx.typeName.getText())
                 .relations(new HashMap<>())
                 .metadata(new Metadata().relations(new HashMap<>()));
-
     }
 
     @Override
@@ -107,10 +106,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
             parser.notifyErrorListeners(ctx.conditionName().start, message, null);
         }
 
-        currentCondition = new Condition()
-                .name(conditionName)
-                .expression("")
-                .parameters(new HashMap<>());
+        currentCondition = new Condition().name(conditionName).expression("").parameters(new HashMap<>());
     }
 
     @Override
@@ -121,7 +117,9 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
         var parameterName = ctx.parameterName().getText();
         if (currentCondition.getParameters().containsKey(parameterName)) {
-            var message = String.format("parameter '%s' is already defined in the condition '%s'", parameterName, currentCondition.getName());
+            var message = String.format(
+                    "parameter '%s' is already defined in the condition '%s'",
+                    parameterName, currentCondition.getName());
             parser.notifyErrorListeners(ctx.parameterName().start, message, null);
         }
 
@@ -132,15 +130,15 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
             typeName = paramContainer.getText();
             conditionParamTypeRef.setTypeName(parseTypeName(paramContainer.getText()));
             if (ctx.parameterType().CONDITION_PARAM_TYPE() != null) {
-                var genericTypeName = parseTypeName(ctx.parameterType().CONDITION_PARAM_TYPE().getText());
+                var genericTypeName =
+                        parseTypeName(ctx.parameterType().CONDITION_PARAM_TYPE().getText());
                 if (genericTypeName != TypeName.UNKNOWN_DEFAULT_OPEN_API) {
-                    conditionParamTypeRef.setGenericTypes(
-                            new ArrayList<>() {{
-                                add(new ConditionParamTypeRef().typeName(genericTypeName));
-                            }}
-                    );
+                    conditionParamTypeRef.setGenericTypes(new ArrayList<>() {
+                        {
+                            add(new ConditionParamTypeRef().typeName(genericTypeName));
+                        }
+                    });
                 }
-
             }
         }
         conditionParamTypeRef.setTypeName(parseTypeName(typeName));
@@ -151,6 +149,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     private TypeName parseTypeName(String typeName) {
         return TypeName.fromValue("TYPE_NAME_" + typeName.toUpperCase());
     }
+
     @Override
     public void exitConditionExpression(OpenFGAParser.ConditionExpressionContext ctx) {
         currentCondition.setExpression(ctx.getText().trim());
@@ -187,10 +186,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     @Override
     public void enterRelationDeclaration(OpenFGAParser.RelationDeclarationContext ctx) {
         currentRelation = new Relation(
-                null,
-                new ArrayList<>(),
-                null,
-                new RelationMetadata().directlyRelatedUserTypes(new ArrayList<>()));
+                null, new ArrayList<>(), null, new RelationMetadata().directlyRelatedUserTypes(new ArrayList<>()));
         rewriteStack = new ArrayDeque<>();
     }
 
@@ -203,7 +199,7 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         var relationName = ctx.relationName().getText();
 
         var relationDef = parseExpression(currentRelation.getRewrites(), currentRelation.getOperator());
-        if(relationDef != null) {
+        if (relationDef != null) {
             if (this.currentTypeDef.getRelations().get(relationName) != null) {
                 var message = String.format("'%s' is already defined in '%s'", relationName, currentTypeDef.getType());
                 parser.notifyErrorListeners(ctx.relationName().start, message, null);
@@ -211,7 +207,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
             currentTypeDef.getRelations().put(relationName, relationDef);
             var directlyRelatedUserTypes = currentRelation.getTypeInfo().getDirectlyRelatedUserTypes();
-            currentTypeDef.getMetadata().getRelations().put(relationName, new RelationMetadata().directlyRelatedUserTypes(directlyRelatedUserTypes));
+            currentTypeDef
+                    .getMetadata()
+                    .getRelations()
+                    .put(relationName, new RelationMetadata().directlyRelatedUserTypes(directlyRelatedUserTypes));
         }
 
         currentRelation = null;
@@ -246,15 +245,15 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
             relationRef.setType(_type.getText());
         }
 
-        if(conditionName != null) {
+        if (conditionName != null) {
             relationRef.setCondition(conditionName.getText());
         }
 
-        if(usersetRestriction != null) {
+        if (usersetRestriction != null) {
             relationRef.setRelation(usersetRestriction.getText());
         }
 
-        if(wildcardRestriction != null) {
+        if (wildcardRestriction != null) {
             relationRef.setWildcard(new HashMap<>());
         }
 
@@ -267,10 +266,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
         var partialRewrite = ctx.rewriteTuplesetName == null
                 ? new Userset().computedUserset(computedUserset)
-                : new Userset().tupleToUserset(new TupleToUserset()
-                .computedUserset(computedUserset)
-                .tupleset(new ObjectRelation().relation(ctx.rewriteTuplesetName.getText()))
-        );
+                : new Userset()
+                        .tupleToUserset(new TupleToUserset()
+                                .computedUserset(computedUserset)
+                                .tupleset(new ObjectRelation().relation(ctx.rewriteTuplesetName.getText())));
 
         currentRelation.getRewrites().add(partialRewrite);
     }
@@ -284,9 +283,11 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         var relationDef = parseExpression(currentRelation.getRewrites(), currentRelation.getOperator());
 
         if (relationDef != null) {
-            currentRelation.setRewrites(new ArrayList<>() {{
-                add(relationDef);
-            }});
+            currentRelation.setRewrites(new ArrayList<>() {
+                {
+                    add(relationDef);
+                }
+            });
         }
     }
 
@@ -310,9 +311,11 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         var relationDef = parseExpression(currentRelation.getRewrites(), currentRelation.getOperator());
         if (relationDef != null) {
             currentRelation.setOperator(popped.getOperator());
-            currentRelation.setRewrites(new ArrayList<>(popped.getRewrites()) {{
-                add(relationDef);
-            }});
+            currentRelation.setRewrites(new ArrayList<>(popped.getRewrites()) {
+                {
+                    add(relationDef);
+                }
+            });
         }
     }
 

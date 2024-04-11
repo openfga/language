@@ -5,8 +5,7 @@ public class ModelValidationSingleError extends ParsingError {
     private ValidationMetadata metadata;
 
     // Needed for Jackson deserialization
-    public ModelValidationSingleError() {
-    }
+    public ModelValidationSingleError() {}
 
     public ModelValidationSingleError(ErrorProperties properties, ValidationMetadata metadata) {
         super("syntax", properties);

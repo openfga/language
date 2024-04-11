@@ -6,6 +6,7 @@ import dev.openfga.language.errors.StartEnd;
 public final class ExpectedError {
     @JsonProperty("msg")
     private String message;
+
     private StartEnd line;
     private StartEnd column;
 

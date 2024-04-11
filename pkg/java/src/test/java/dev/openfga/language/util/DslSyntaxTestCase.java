@@ -3,7 +3,6 @@ package dev.openfga.language.util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.openfga.language.errors.ModelValidationSingleError;
-
 import java.util.ArrayList;
 import java.util.List;
 

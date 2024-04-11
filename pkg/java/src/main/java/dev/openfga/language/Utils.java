@@ -26,6 +26,5 @@ public class Utils {
         return copy;
     }
 
-    private Utils() {
-    }
+    private Utils() {}
 }

@@ -166,8 +166,16 @@ class OpenFgaDslListener extends OpenFGAListener {
 
     this.authorizationModel.type_definitions?.push(this.currentTypeDef as TypeDefinition);
 
-    if (ctx.EXTEND()) {
-      this.typeDefExtensions.set(this.currentTypeDef.type, this.currentTypeDef as TypeDefinition);
+    if (ctx.EXTEND() && this.isModularModel) {
+      if (this.typeDefExtensions.has(this.currentTypeDef.type)) {
+        ctx.parser?.notifyErrorListeners(
+          `'${this.currentTypeDef.type}' is already extended in file.`,
+          ctx._typeName.start,
+          undefined,
+        );
+      } else {
+        this.typeDefExtensions.set(this.currentTypeDef.type, this.currentTypeDef as TypeDefinition);
+      }
     }
 
     this.currentTypeDef = undefined;

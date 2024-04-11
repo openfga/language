@@ -1521,3 +1521,28 @@
         define extend: [user]
         define other: [model,schema,type,relation,module,extend]
         define another: model or schema or type or relation or module or extend
+
+- name: disallows multiple extends for same type
+  dsl: |
+    module foo
+
+    extend type bar
+
+    extend type bar
+
+    extend type bar
+  expected_errors:
+    - msg: "'bar' is already extended in file."
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 12
+        end: 15
+    - msg: "'bar' is already extended in file."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 12
+        end: 15

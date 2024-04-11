@@ -301,7 +301,8 @@
         define parent: [group]
         define viewer: org from parent
   expected_errors:
-    - msg: "the `org` relation definition on type `group` is not valid: `org` does not
+    - msg:
+        "the `org` relation definition on type `group` is not valid: `org` does not
         exist on `parent`, which is of type `group`."
       line:
         start: 7

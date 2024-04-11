@@ -401,6 +401,16 @@ const createDifferentNestedConditionNameError = (props: BaseProps, condition: st
   );
 };
 
+function createMultipleModuleInSingleFileError(props: BaseProps, file: string, modules: string[]) {
+  const { errors } = props;
+  errors.push(
+    constructValidationError({
+      message: `file ${file} would contain multiple module definitions (${modules.join(", ")}) when transforming to DSL. Only one module can be defined per file.`,
+      metadata: { symbol: file, errorType: ValidationError.MultipleModulesInFile },
+    }),
+  );
+}
+
 function constructValidationError(props: ValidationErrorProps): ModelValidationSingleError {
   const { message, lines, lineIndex, customResolver, metadata } = props;
 
@@ -694,6 +704,18 @@ export class ExceptionCollector {
       },
       condition,
       nestedConditionName,
+    );
+  }
+
+  raiseMultipleModulesInSingleFile(file: string, modules: Set<string>) {
+    createMultipleModuleInSingleFileError(
+      {
+        errors: this.errors,
+        lines: this.lines,
+        symbol: file,
+      },
+      file,
+      Array.from(modules),
     );
   }
 }

@@ -23,6 +23,7 @@ export enum ValidationError {
   ConditionNotDefined = "condition-not-defined",
   ConditionNotUsed = "condition-not-used",
   DifferentNestedConditionName = "different-nested-condition-name",
+  MultipleModulesInFile = "multiple-modules-in-file",
 }
 
 export interface ErrorProperties {

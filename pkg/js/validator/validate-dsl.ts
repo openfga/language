@@ -635,6 +635,7 @@ function modelValidation(
   collector: ExceptionCollector,
   errors: ModelValidationSingleError[],
   authorizationModel: AuthorizationModel,
+  fileToModuleMap: Record<string, Set<string>>,
   //relationsPerType: Record<string, TransformedType>
   lines?: string[],
 ) {
@@ -706,6 +707,26 @@ function modelValidation(
       // parse through each of the relations to do validation
       for (const relationName in typeDef.relations) {
         const currentRelation = typeMap[typeName].relations;
+        const currentRelationMetadata = typeDef.metadata?.relations![relationName];
+
+        let file = currentRelationMetadata?.source_info?.file;
+        if (!file) {
+          file = typeDef.metadata?.source_info?.file;
+        }
+
+        let module = currentRelationMetadata?.module;
+        if (!module) {
+          module = typeDef.metadata?.module;
+        }
+
+        // Track the modules defined per file
+        if (file && module) {
+          if (!fileToModuleMap[file]) {
+            fileToModuleMap[file] = new Set();
+          }
+          fileToModuleMap[file].add(module);
+        }
+
         const [hasEntry, loop] = hasEntryPointOrLoop(
           typeMap,
           typeName,
@@ -714,9 +735,6 @@ function modelValidation(
           {},
         );
         if (!hasEntry) {
-          const file = typeDef.metadata?.source_info?.file;
-          const module = typeDef.metadata?.module;
-
           const typeIndex = getTypeLineNumber(typeName, lines); //team 3, group 7,
           const lineIndex = getRelationLineNumber(relationName, lines, typeIndex); //viewer 6, viewer 10
           if (loop) {
@@ -731,6 +749,16 @@ function modelValidation(
 
   if (authorizationModel.conditions) {
     for (const [conditionName, condition] of Object.entries(authorizationModel.conditions)) {
+      const module = condition.metadata?.module;
+      const file = condition.metadata?.source_info?.file;
+      // Track the modules defined per file
+      if (file && module) {
+        if (!fileToModuleMap[file]) {
+          fileToModuleMap[file] = new Set();
+        }
+        fileToModuleMap[file].add(module);
+      }
+
       // Ensure that the nested condition name matches
       if (conditionName != condition.name) {
         collector.raiseDifferentNestedConditionName(conditionName, condition.name);
@@ -739,8 +767,6 @@ function modelValidation(
       // Ensure that the condition has been used
       if (!usedConditionNamesSet.has(conditionName)) {
         const conditionIndex = geConditionLineNumber(conditionName, lines);
-        const module = condition.metadata?.module;
-        const file = condition.metadata?.source_info?.file;
         collector.raiseUnusedCondition(conditionName, { module, file }, conditionIndex);
       }
     }
@@ -752,11 +778,22 @@ function populateRelations(
   authorizationModel: AuthorizationModel,
   typeRegex: ValidationRegex,
   relationRegex: ValidationRegex,
+  fileToModuleMap: Record<string, Set<string>>,
   lines?: string[],
 ) {
   // Looking at the types
   authorizationModel.type_definitions?.forEach((typeDef) => {
     const typeName = typeDef.type;
+    const file = typeDef.metadata?.source_info?.file;
+    const module = typeDef.metadata?.module;
+
+    // Track the modules defined per file
+    if (file && module) {
+      if (!fileToModuleMap[file]) {
+        fileToModuleMap[file] = new Set();
+      }
+      fileToModuleMap[file].add(module);
+    }
 
     if (typeName === Keyword.SELF || typeName === ReservedKeywords.THIS) {
       const lineIndex = getTypeLineNumber(typeName, lines);
@@ -820,6 +857,7 @@ export function validateJSON(
   const typeValidation = options.typeValidation || defaultTypeRule;
   const relationValidation = options.relationValidation || defaultRelationRule;
   const defaultRegex = new RegExp("[a-zA-Z]*");
+  const fileToModuleMap: Record<string, Set<string>> = {};
 
   let typeRegex: ValidationRegex = {
     regex: defaultRegex,
@@ -849,7 +887,7 @@ export function validateJSON(
     throw new ConfigurationError(`Incorrect relation regex specification for ${relationValidation}`, e);
   }
 
-  populateRelations(collector, authorizationModel, typeRegex, relationRegex, lines);
+  populateRelations(collector, authorizationModel, typeRegex, relationRegex, fileToModuleMap, lines);
 
   const schemaVersion = authorizationModel.schema_version;
 
@@ -860,7 +898,7 @@ export function validateJSON(
   switch (schemaVersion) {
     case "1.1":
     case "1.2":
-      modelValidation(collector, errors, authorizationModel, lines);
+      modelValidation(collector, errors, authorizationModel, fileToModuleMap, lines);
       break;
     case undefined:
       break;
@@ -869,6 +907,14 @@ export function validateJSON(
       collector.raiseInvalidSchemaVersion(schemaVersion, lineIndex);
       break;
     }
+  }
+
+  for (const [file, modules] of Object.entries(fileToModuleMap)) {
+    if (modules.size === 1) {
+      continue;
+    }
+
+    collector.raiseMultipleModulesInSingleFile(file, modules);
   }
 
   if (errors.length) {

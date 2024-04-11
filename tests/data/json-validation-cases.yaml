@@ -123,3 +123,71 @@
       metadata:
         symbol: "different_name"
         errorType: different-nested-condition-name
+
+- name: file can only include one module
+  json: |
+    {
+      "schema_version": "1.2",
+      "type_definitions": [
+        {
+          "metadata": {
+            "module": "core",
+            "source_info": {
+              "file": "core.fga"
+            }
+          },
+          "relations": {},
+          "type": "user"
+        },
+        {
+          "metadata": {
+            "module": "other",
+            "source_info": {
+              "file": "core.fga"
+            },
+            "relations": {
+              "member": {
+                "directly_related_user_types": [
+                  {
+                    "condition": "name",
+                    "type": "user"
+                  }
+                ],
+                "module": "relationmodule",
+                "source_info": {
+                  "file": "core.fga"
+                }
+              }
+            }
+          },
+          "relations": {
+            "member": {
+              "this": {}
+            }
+          },
+          "type": "org"
+        }
+      ],
+      "conditions": {
+        "name": {
+          "expression": "val <= 10",
+          "metadata": {
+            "module": "conditionmodule",
+            "source_info": {
+              "file": "core.fga"
+            }
+          },
+          "name": "name",
+          "parameters": {
+            "val": {
+              "type_name": "TYPE_NAME_INT"
+            }
+          }
+        }
+      }
+    }
+  expected_errors:
+    - msg: "file core.fga would contain multiple module definitions (core, other, relationmodule, conditionmodule) when transforming to DSL. Only one module can be defined per file."
+      metadata:
+        symbol: "core.fga"
+        errorType: multiple-modules-in-file

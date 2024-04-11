@@ -185,7 +185,23 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
         continue;
       }
 
-      if (!file.value.endsWith(".fga")) {
+      // Replace URI encoded characters to handle different path variants
+      let filename = file.value.replace(/%2e/gi, ".");
+      filename = filename.replace(/%2f/gi, "/");
+      filename = filename.replace(/%5c/gi, "\\");
+
+      // Check for directory traversal patterns or absolute paths
+      if (filename.includes("../") || filename.includes("..\\") || filename.startsWith("/")) {
+        errors.push(
+          new FGAModFileValidationSingleError({
+            msg: `invalid contents item ${file.value}`,
+            ...getLineAndColumnFromNode(file, lineCounter),
+          }),
+        );
+        continue;
+      }
+
+      if (!filename.endsWith(".fga")) {
         errors.push(
           new FGAModFileValidationSingleError({
             msg: `contents items should use fga file extension, got ${file.value}`,
@@ -196,7 +212,7 @@ export const transformModFileToJSON = (modFile: string): ModFile => {
       }
 
       contentsValue.push({
-        value: file.value,
+        value: filename,
         ...getLineAndColumnFromNode(file, lineCounter),
       });
     }

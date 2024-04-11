@@ -2,6 +2,7 @@ package transformer
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -128,16 +129,47 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 					Line:   file.Line - 1,
 					Column: file.Column - 1,
 				})
-			} else if !strings.HasSuffix(file.Value, ".fga") {
+
+				continue
+			}
+			// Decode URI components
+			decodedValue, err := url.QueryUnescape(file.Value)
+			if err != nil {
+				errors = multierror.Append(errors, &ModFileValidationError{
+					Msg:    "failed to decode path: " + file.Value,
+					Line:   file.Line - 1,
+					Column: file.Column - 1,
+				})
+
+				continue
+			}
+
+			// Normalize path separators (Windows -> Unix)
+			normalizedPath := strings.ReplaceAll(decodedValue, "\\", "/")
+
+			// Check for directory traversal patterns or absolute paths
+			if strings.Contains(normalizedPath, "../") || strings.HasPrefix(normalizedPath, "/") {
+				errors = multierror.Append(errors, &ModFileValidationError{
+					Msg:    "invalid contents item " + file.Value,
+					Line:   file.Line - 1,
+					Column: file.Column - 1,
+				})
+
+				continue
+			}
+
+			if !strings.HasSuffix(normalizedPath, ".fga") {
 				errors = multierror.Append(errors, &ModFileValidationError{
 					Msg:    "contents items should use fga file extension, got " + file.Value,
 					Line:   file.Line - 1,
 					Column: file.Column - 1,
 				})
+
+				continue
 			}
 
 			contents = append(contents, ModFileStringProperty{
-				Value:  file.Value,
+				Value:  normalizedPath,
 				Line:   file.Line - 1,
 				Column: file.Column - 1,
 			})

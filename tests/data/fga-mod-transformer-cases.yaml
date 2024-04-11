@@ -172,3 +172,58 @@
       column:
         start: 4
         end: 12
+- name: contents path contains dot-dot-slash sequence and other invalid paths
+  modFile: |
+    schema: "1.2"
+    contents:
+      - core.fga
+      - ../team1/project.fga
+      - team2/../team3/board.fga
+      - team2\\..\\team3\\board.fga
+      - /absolute/path.fga
+      - "%2e%2e%2fteam4%2fproject.fga"
+      - "%2e%2e%5cteam4%5cproject.fga"
+      - wiki.fga
+  expected_errors:
+    - msg: invalid contents item ../team1/project.fga
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 4
+        end: 24
+    - msg: invalid contents item team2/../team3/board.fga
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 4
+        end: 28
+    - msg: invalid contents item team2\\..\\team3\\board.fga
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 4
+        end: 31
+    - msg: invalid contents item /absolute/path.fga
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 4
+        end: 22
+    - msg: invalid contents item %2e%2e%2fteam4%2fproject.fga
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 4
+        end: 34
+    - msg: invalid contents item %2e%2e%5cteam4%5cproject.fga
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 4
+        end: 34

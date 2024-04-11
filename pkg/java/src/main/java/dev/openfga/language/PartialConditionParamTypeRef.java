@@ -2,7 +2,6 @@ package dev.openfga.language;
 
 import dev.openfga.sdk.api.model.ConditionParamTypeRef;
 import dev.openfga.sdk.api.model.TypeName;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +10,7 @@ public class PartialConditionParamTypeRef {
     private List<ConditionParamTypeRef> genericTypes = new ArrayList<>();
 
     public ConditionParamTypeRef asConditionParamTypeRef() {
-        return new ConditionParamTypeRef()
-                .typeName(typeName)
-                .genericTypes(genericTypes);
+        return new ConditionParamTypeRef().typeName(typeName).genericTypes(genericTypes);
     }
 
     public TypeName getTypeName() {

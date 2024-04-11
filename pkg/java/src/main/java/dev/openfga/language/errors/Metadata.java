@@ -3,8 +3,7 @@ package dev.openfga.language.errors;
 public class Metadata {
     private String symbol;
 
-    public Metadata() {
-    }
+    public Metadata() {}
 
     public Metadata(String symbol) {
         this.symbol = symbol;

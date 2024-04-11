@@ -1,7 +1,6 @@
 package dev.openfga.language.validation;
 
 public enum RewriteType {
-
     Direct("direct"),
     ComputedUserset("computed_userset"),
     TupleToUserset("tuple_to_userset");

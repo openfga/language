@@ -7,8 +7,7 @@ public final class StartEnd {
     private int end;
 
     // Needed for Jackson deserialization
-    public StartEnd() {
-    }
+    public StartEnd() {}
 
     public StartEnd(int start, int end) {
         this.start = start;

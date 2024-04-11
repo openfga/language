@@ -1,7 +1,6 @@
 package dev.openfga.language.validation;
 
 import dev.openfga.language.errors.*;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +19,8 @@ class ValidationErrorsBuilder {
         return buildErrorProperties(message, lineIndex, symbol, null);
     }
 
-    private ErrorProperties buildErrorProperties(String message, int lineIndex, String symbol, WordResolver wordResolver) {
+    private ErrorProperties buildErrorProperties(
+            String message, int lineIndex, String symbol, WordResolver wordResolver) {
 
         var rawLine = lines[lineIndex];
         var regex = Pattern.compile("\\b" + symbol + "\\b");
@@ -52,7 +52,8 @@ class ValidationErrorsBuilder {
     }
 
     public void raiseReservedTypeName(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("a type cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
+        var errorProperties = buildErrorProperties(
+                "a type cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.ReservedTypeKeywords);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
@@ -62,9 +63,8 @@ class ValidationErrorsBuilder {
     }
 
     public void raiseInvalidName(int lineIndex, String symbol, String clause, String typeName) {
-        var messageStart = typeName != null
-                ? "relation '" + symbol + "' of type '" + typeName + "'"
-                : "type '" + symbol + "'";
+        var messageStart =
+                typeName != null ? "relation '" + symbol + "' of type '" + typeName + "'" : "type '" + symbol + "'";
         var message = messageStart + " does not match naming rule: '" + clause + "'.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.InvalidName);
@@ -72,13 +72,13 @@ class ValidationErrorsBuilder {
     }
 
     public void raiseReservedRelationName(int lineIndex, String symbol) {
-        var errorProperties = buildErrorProperties("a relation cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
+        var errorProperties = buildErrorProperties(
+                "a relation cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.ReservedRelationKeywords);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
-    public void raiseDuplicateRelationName(int lineIndex, String symbol) {
-    }
+    public void raiseDuplicateRelationName(int lineIndex, String symbol) {}
 
     public void raiseInvalidRelationError(int lineIndex, String symbol, Collection<String> validRelations) {
         var invalid = !validRelations.contains(symbol);
@@ -92,9 +92,8 @@ class ValidationErrorsBuilder {
 
     public void raiseAssignableRelationMustHaveTypes(int lineIndex, String symbol) {
         var rawLine = lines[lineIndex];
-        var actualValue = rawLine.contains("[")
-                ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1)
-                : "self";
+        var actualValue =
+                rawLine.contains("[") ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1) : "self";
         var message = "assignable relation '" + actualValue + "' must have types";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.AssignableRelationsMustHaveType);
@@ -108,10 +107,12 @@ class ValidationErrorsBuilder {
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
-    public void raiseInvalidConditionNameInParameter(int lineIndex, String symbol, String typeName, String relationName, String conditionName) {
+    public void raiseInvalidConditionNameInParameter(
+            int lineIndex, String symbol, String typeName, String relationName, String conditionName) {
         var message = "`" + conditionName + "` is not a defined condition in the model.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotDefined, relationName, typeName, null);
+        var metadata =
+                new ValidationMetadata(symbol, ValidationError.ConditionNotDefined, relationName, typeName, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
@@ -125,21 +126,31 @@ class ValidationErrorsBuilder {
     public void raiseInvalidTypeRelation(int lineIndex, String symbol, String typeName, String relationName) {
         var message = "`" + relationName + "` is not a valid relation for `" + typeName + "`.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
+        var metadata =
+                new ValidationMetadata(symbol, ValidationError.InvalidRelationType, relationName, typeName, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
-    public void raiseInvalidRelationOnTupleset(int lineIndex, String symbol, String typeName, String typeDef, String relationName, String offendingRelation, String parent) {
-        var message = "the `" + offendingRelation + "` relation definition on type `" + typeDef + "` is not valid: `" + offendingRelation + "` does not exist on `" + parent + "`, which is of type `" + typeName + "`.";
+    public void raiseInvalidRelationOnTupleset(
+            int lineIndex,
+            String symbol,
+            String typeName,
+            String typeDef,
+            String relationName,
+            String offendingRelation,
+            String parent) {
+        var message = "the `" + offendingRelation + "` relation definition on type `" + typeDef + "` is not valid: `"
+                + offendingRelation + "` does not exist on `" + parent + "`, which is of type `" + typeName + "`.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
-        var metadata = new ValidationMetadata(symbol, ValidationError.InvalidRelationOnTupleset, relationName, typeName, null);
+        var metadata =
+                new ValidationMetadata(symbol, ValidationError.InvalidRelationOnTupleset, relationName, typeName, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
     public void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
         var message = "`" + symbol + "` relation used inside from allows only direct relation.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {
-            var clauseStartsAt = rawLine.indexOf("from") + "from".length() ;
+            var clauseStartsAt = rawLine.indexOf("from") + "from".length();
             wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value);
             return wordIndex;
         });
@@ -162,7 +173,8 @@ class ValidationErrorsBuilder {
     }
 
     public void raiseDuplicateType(int lineIndex, String symbol, String relationName) {
-        var message = "the partial relation definition `" + symbol + "` is a duplicate in the relation `" + relationName + "`.";
+        var message = "the partial relation definition `" + symbol + "` is a duplicate in the relation `" + relationName
+                + "`.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));

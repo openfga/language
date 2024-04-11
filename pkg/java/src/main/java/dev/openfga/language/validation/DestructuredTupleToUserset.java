@@ -6,8 +6,8 @@ class DestructuredTupleToUserset {
     private final boolean wildcard;
     private final String decodedConditionName;
 
-
-    public DestructuredTupleToUserset(String decodedType, String decodedRelation, boolean wildcard, String decodedConditionName) {
+    public DestructuredTupleToUserset(
+            String decodedType, String decodedRelation, boolean wildcard, String decodedConditionName) {
         this.decodedType = decodedType;
         this.decodedRelation = decodedRelation;
         this.wildcard = wildcard;
@@ -37,10 +37,6 @@ class DestructuredTupleToUserset {
         var isWildcard = tupleString.contains(":*");
         var splittedWords = tupleString.replace(":*", "").split("#");
         return new DestructuredTupleToUserset(
-                splittedWords[0],
-                splittedWords.length > 1 ? splittedWords[1] : null,
-                isWildcard,
-                decodedConditionName);
+                splittedWords[0], splittedWords.length > 1 ? splittedWords[1] : null, isWildcard, decodedConditionName);
     }
-
 }

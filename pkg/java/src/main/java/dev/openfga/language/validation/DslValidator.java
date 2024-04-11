@@ -1,15 +1,14 @@
 package dev.openfga.language.validation;
 
-import dev.openfga.language.DslToJsonTransformer;
-import dev.openfga.language.errors.DslErrorsException;
-import dev.openfga.sdk.api.model.*;
-
-import java.io.IOException;
-import java.util.*;
-
 import static dev.openfga.language.Utils.getNullSafeList;
 import static dev.openfga.language.validation.Dsl.*;
 import static java.util.Collections.emptyList;
+
+import dev.openfga.language.DslToJsonTransformer;
+import dev.openfga.language.errors.DslErrorsException;
+import dev.openfga.sdk.api.model.*;
+import java.io.IOException;
+import java.util.*;
 
 public class DslValidator {
 
@@ -78,9 +77,11 @@ public class DslValidator {
                 errors.raiseInvalidName(lineIndex, typeName, typeRegex.getRule());
             }
 
-            var encounteredRelationsInType = new HashSet<String>() {{
-                add(Keyword.SELF);
-            }};
+            var encounteredRelationsInType = new HashSet<String>() {
+                {
+                    add(Keyword.SELF);
+                }
+            };
             typeDef.getRelations().forEach((relationName, relation) -> {
                 if (relationName.equals(Keyword.SELF) || relationName.equals(Keyword.THIS)) {
                     var typeIndex = dsl.getTypeLineNumber(typeName);
@@ -142,8 +143,10 @@ public class DslValidator {
                 typeSet.add(typeName);
 
                 if (typeDef.getMetadata() != null) {
-                    for (var relationDefKey : typeDef.getMetadata().getRelations().keySet()) {
-                        checkForDuplicatesTypeNamesInRelation(typeDef.getMetadata().getRelations().get(relationDefKey), relationDefKey);
+                    for (var relationDefKey :
+                            typeDef.getMetadata().getRelations().keySet()) {
+                        checkForDuplicatesTypeNamesInRelation(
+                                typeDef.getMetadata().getRelations().get(relationDefKey), relationDefKey);
                         checkForDuplicatesInRelation(typeDef, relationDefKey);
                     }
                 }
@@ -157,7 +160,8 @@ public class DslValidator {
                 var typeName = typeDef.getType();
                 for (var relationName : typeDef.getRelations().keySet()) {
                     var currentRelations = typeMap.get(typeName).getRelations();
-                    var result = EntryPointOrLoop.compute(typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
+                    var result = EntryPointOrLoop.compute(
+                            typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
                     if (!result.hasEntry()) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
@@ -238,16 +242,20 @@ public class DslValidator {
         }
 
         var currentRelation = relations.get(relationName);
-        var children = new ArrayList<Userset>() {{
-            add(currentRelation);
-        }};
+        var children = new ArrayList<Userset>() {
+            {
+                add(currentRelation);
+            }
+        };
         while (!children.isEmpty()) {
             var child = children.remove(0);
             if (child.getUnion() != null) {
                 children.addAll(child.getUnion().getChild());
             } else if (child.getIntersection() != null) {
                 children.addAll(child.getIntersection().getChild());
-            } else if (child.getDifference() != null && child.getDifference().getBase() != null && child.getDifference().getSubtract() != null) {
+            } else if (child.getDifference() != null
+                    && child.getDifference().getBase() != null
+                    && child.getDifference().getSubtract() != null) {
                 children.add(child.getDifference().getBase());
                 children.add(child.getDifference().getSubtract());
             } else {
@@ -256,7 +264,11 @@ public class DslValidator {
         }
     }
 
-    private void childDefDefined(Map<String, TypeDefinition> typeMap, String typeName, String relationName, RelationTargetParserResult childDef) {
+    private void childDefDefined(
+            Map<String, TypeDefinition> typeMap,
+            String typeName,
+            String relationName,
+            RelationTargetParserResult childDef) {
         var relations = typeMap.get(typeName).getRelations();
         if (relations == null || relations.isEmpty() || !relations.containsKey(relationName)) {
             return;
@@ -264,7 +276,8 @@ public class DslValidator {
 
         RelationMetadata currentRelationMetadata = null;
         if (typeMap.get(typeName).getMetadata() != null) {
-            currentRelationMetadata = typeMap.get(typeName).getMetadata().getRelations().get(relationName);
+            currentRelationMetadata =
+                    typeMap.get(typeName).getMetadata().getRelations().get(relationName);
         }
 
         switch (childDef.getRewrite()) {
@@ -288,10 +301,12 @@ public class DslValidator {
                     }
 
                     var decodedConditionName = type.getDecodedConditionName();
-                    if (decodedConditionName != null && !authorizationModel.getConditions().containsKey(decodedConditionName)) {
+                    if (decodedConditionName != null
+                            && !authorizationModel.getConditions().containsKey(decodedConditionName)) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
-                        errors.raiseInvalidConditionNameInParameter(lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
+                        errors.raiseInvalidConditionNameInParameter(
+                                lineIndex, decodedConditionName, typeName, relationName, decodedConditionName);
                     }
 
                     var decodedRelation = type.getDecodedRelation();
@@ -300,14 +315,12 @@ public class DslValidator {
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                         errors.raiseAssignableTypeWildcardRelation(lineIndex, item);
                     } else if (decodedRelation != null) {
-                        if (typeMap.get(decodedType) == null || !typeMap.get(decodedType).getRelations().containsKey(decodedRelation)) {
+                        if (typeMap.get(decodedType) == null
+                                || !typeMap.get(decodedType).getRelations().containsKey(decodedRelation)) {
                             var typeIndex = dsl.getTypeLineNumber(typeName);
                             var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                             errors.raiseInvalidTypeRelation(
-                                    lineIndex,
-                                    decodedType + "#" + decodedRelation,
-                                    decodedType,
-                                    decodedRelation);
+                                    lineIndex, decodedType + "#" + decodedRelation, decodedType, decodedRelation);
                         }
                     }
                 }
@@ -331,8 +344,7 @@ public class DslValidator {
                                 lineIndex,
                                 childDef.getTarget() + " from " + childDef.getFrom(),
                                 typeName,
-                                childDef.getFrom()
-                        );
+                                childDef.getFrom());
                     } else {
                         var allowableTypesResult = allowableTypes(typeMap, typeName, childDef.getFrom());
                         if (allowableTypesResult.isValid()) {
@@ -348,7 +360,10 @@ public class DslValidator {
                                     var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                                     errors.raiseTupleUsersetRequiresDirect(lineIndex, childDef.getFrom());
                                 } else {
-                                    if (typeMap.get(decodedType) != null && !typeMap.get(decodedType).getRelations().containsKey(childDef.getTarget())) {
+                                    if (typeMap.get(decodedType) != null
+                                            && !typeMap.get(decodedType)
+                                                    .getRelations()
+                                                    .containsKey(childDef.getTarget())) {
                                         var typeIndex = dsl.getTypeLineNumber(typeName);
                                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
                                         childRelationNotValid.add(new InvalidChildRelationMetadata(
@@ -383,17 +398,16 @@ public class DslValidator {
                 break;
             }
         }
-
     }
 
-    private static AllowableTypesResult allowableTypes(Map<String, TypeDefinition> typeMap, String typeName, String relation) {
+    private static AllowableTypesResult allowableTypes(
+            Map<String, TypeDefinition> typeMap, String typeName, String relation) {
         var allowedTypes = new ArrayList<String>();
         var typeDefinition = typeMap.get(typeName);
         var currentRelation = typeDefinition.getRelations().get(relation);
         var metadata = typeDefinition.getMetadata();
-        Collection<RelationReference> relatedTypes = metadata != null
-                ? metadata.getRelations().get(relation).getDirectlyRelatedUserTypes()
-                : emptyList();
+        Collection<RelationReference> relatedTypes =
+                metadata != null ? metadata.getRelations().get(relation).getDirectlyRelatedUserTypes() : emptyList();
         var currentRelationMetadata = getTypeRestrictions(relatedTypes);
         var isValid = isRelationSingle(currentRelation);
         if (isValid) {
@@ -410,5 +424,4 @@ public class DslValidator {
                 && currentRelation.getIntersection() == null
                 && currentRelation.getDifference() == null;
     }
-
 }

@@ -20,6 +20,5 @@ class JSON {
         return mapper.writeValueAsString(object);
     }
 
-    private JSON() {
-    }
+    private JSON() {}
 }

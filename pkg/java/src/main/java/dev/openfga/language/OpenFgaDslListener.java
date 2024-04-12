@@ -182,8 +182,11 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         }
 
         if (ctx.EXTEND() != null && this.isModularModel) {
-            if (typeDefExtensions.get(currentTypeDef.getType()) != null ) {
-                parser.notifyErrorListeners(ctx.typeName.getStart(), String.format("'%s' is already extended in file.",currentTypeDef.getType()), null);
+            if (typeDefExtensions.get(currentTypeDef.getType()) != null) {
+                parser.notifyErrorListeners(
+                        ctx.typeName.getStart(),
+                        String.format("'%s' is already extended in file.", currentTypeDef.getType()),
+                        null);
             } else {
                 typeDefExtensions.put(currentTypeDef.getType(), currentTypeDef);
             }

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.0-beta.17
+
+### [v0.2.0-beta.17](https://github.com/openfga/language/compare/f45e80a9f169370f7cbeb5da9d147e5ff0e7305e...7b0b7f08393b13d8c53509447ff6e3847542eefc) (2024-04-12)
+
+Fixes:
+
+- Throw syntax error for missing module name (#233)
+- Validate that only one module is defined per file in json (#232)
+- Only allow a type to be extended once per file (#232)
+- Restrict contents items to be underneath or alongside fga.mod file (#228) - thanks @Siddhant-K-code
+- Remove circular dependency (#229)
+
 ## v0.2.0-beta.16
 
 ### [v0.2.0-beta.16](https://github.com/openfga/language/compare/0a0d96a126f87daf34d00514cc9c7ceb8a959993...7484f693f40aeed47ca1e2a2c6109758876a4ae3) (2024-04-04)

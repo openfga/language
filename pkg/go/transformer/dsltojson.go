@@ -245,7 +245,15 @@ func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
 	l.authorizationModel.TypeDefinitions = append(l.authorizationModel.TypeDefinitions, l.currentTypeDef)
 
 	if ctx.EXTEND() != nil && l.isModularModel {
-		l.typeDefExtensions[l.currentTypeDef.GetType()] = l.currentTypeDef
+		if typeDefExists := l.typeDefExtensions[l.currentTypeDef.GetType()]; typeDefExists != nil {
+			ctx.GetParser().NotifyErrorListeners(
+				fmt.Sprintf("'%s' is already extended in file.", l.currentTypeDef.GetType()),
+				ctx.GetTypeName().GetStart(),
+				nil,
+			)
+		} else {
+			l.typeDefExtensions[l.currentTypeDef.GetType()] = l.currentTypeDef
+		}
 	}
 
 	l.currentTypeDef = nil

@@ -5,22 +5,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.openfga.language.errors.DslErrorsException;
 import dev.openfga.language.errors.ModelValidationSingleError;
 import dev.openfga.language.errors.ParsingError;
 import dev.openfga.language.util.TestsData;
 import dev.openfga.language.validation.ModelValidator;
 import dev.openfga.sdk.api.model.AuthorizationModel;
-
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ModelValidatorShould {
 
@@ -85,7 +83,7 @@ public class ModelValidatorShould {
 
         var formattedErrors = expectedErrors.stream()
                 .map(error -> String.format(
-                        "syntax error at line=%d, column=%d: %s",
+                        "validation error at line=%d, column=%d: %s",
                         error.getLine().getStart(), error.getColumn().getStart(), error.getMessage()))
                 .collect(joining("\n\t* "));
 
@@ -105,8 +103,8 @@ public class ModelValidatorShould {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("jsonValidationTestCases")
-    public void verifyJsonValidation(
-            String name, String json, List<ModelValidationSingleError> expectedErrors) throws JsonProcessingException {
+    public void verifyJsonValidation(String name, String json, List<ModelValidationSingleError> expectedErrors)
+            throws JsonProcessingException {
         var model = new ObjectMapper().readValue(json, AuthorizationModel.class);
 
         var thrown = catchThrowable(() -> ModelValidator.validateJson(model));
@@ -121,9 +119,7 @@ public class ModelValidatorShould {
         var errorsCount = expectedErrors.size();
 
         var formattedErrors = expectedErrors.stream()
-                .map(error -> String.format(
-                        "validation error: %s",
-                        error.getMessage()))
+                .map(error -> String.format("validation error: %s", error.getMessage()))
                 .collect(joining("\n\t* "));
 
         var expectedMessage = String.format(
@@ -187,7 +183,6 @@ public class ModelValidatorShould {
 
     private static Stream<Arguments> jsonValidationTestCases() {
         return TestsData.JSON_VALIDATION_TEST_CASES.stream()
-                .map(testCase -> arguments(
-                        testCase.getName(), testCase.getJson(), testCase.getExpectedErrors()));
+                .map(testCase -> arguments(testCase.getName(), testCase.getJson(), testCase.getExpectedErrors()));
     }
 }

@@ -1,12 +1,10 @@
 package dev.openfga.language.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import dev.openfga.language.errors.ModelValidationSingleError;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JsonValidationTestCase {
     @JsonProperty("name")
@@ -20,8 +18,6 @@ public class JsonValidationTestCase {
     @JsonProperty("expected_errors")
     @JsonInclude(JsonInclude.Include.USE_DEFAULTS)
     private List<ModelValidationSingleError> expectedErrors = new ArrayList<>();
-
-
 
     public String getName() {
         return name;

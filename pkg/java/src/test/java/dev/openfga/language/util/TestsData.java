@@ -19,7 +19,7 @@ public class TestsData {
     public static final String JSON_SYNTAX_TRANSFORMER_CASES_FILE =
             "../../tests/data/json-syntax-transformer-validation-cases.yaml";
     public static final String FGA_MOD_CASES_FILE = "../../tests/data/fga-mod-transformer-cases.yaml";
-    public static final String JSON_VALIDATION_CASES_FILE= "../../tests/data/json-validation-cases.yaml";
+    public static final String JSON_VALIDATION_CASES_FILE = "../../tests/data/json-validation-cases.yaml";
     public static final String SKIP_FILE = "test.skip";
     public static final String AUTHORIZATION_MODEL_JSON_FILE = "authorization-model.json";
     public static final String AUTHORIZATION_MODEL_DSL_FILE = "authorization-model.fga";

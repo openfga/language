@@ -16,10 +16,10 @@ public class ErrorProperties {
 
     String getFullMessage(String type) {
         if (line != null && column != null) {
-            return String.format("%s error at line=%d, column=%d: %s", type, line.getStart(), column.getStart(), message);
+            return String.format(
+                    "%s error at line=%d, column=%d: %s", type, line.getStart(), column.getStart(), message);
         } else {
             return String.format("%s error: %s", type, message);
-
         }
     }
 

@@ -22,21 +22,26 @@ class ValidationErrorsBuilder {
     private ErrorProperties buildErrorProperties(
             String message, int lineIndex, String symbol, WordResolver wordResolver) {
 
-        var rawLine = lines[lineIndex];
-        var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 0;
-        var matcher = regex.matcher(rawLine);
-        if (matcher.find()) {
-            wordIdx = matcher.start();
+        var properties = new ErrorProperties(null, null, message);
+
+        if (lines != null) {
+            var rawLine = lines[lineIndex];
+            var regex = Pattern.compile("\\b" + symbol + "\\b");
+            var wordIdx = 0;
+            var matcher = regex.matcher(rawLine);
+            if (matcher.find()) {
+                wordIdx = matcher.start();
+            }
+    
+            if (wordResolver != null) {
+                wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
+            }
+    
+            properties.setLine(new StartEnd(lineIndex, lineIndex));
+            properties.setColumn(new StartEnd(wordIdx, wordIdx + symbol.length()));
         }
 
-        if (wordResolver != null) {
-            wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
-        }
-
-        var line = new StartEnd(lineIndex, lineIndex);
-        var column = new StartEnd(wordIdx, wordIdx + symbol.length());
-        return new ErrorProperties(line, column, message);
+        return properties;
     }
 
     public void raiseSchemaVersionRequired(int lineIndex, String symbol) {

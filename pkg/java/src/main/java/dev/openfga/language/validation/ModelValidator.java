@@ -10,7 +10,7 @@ import dev.openfga.sdk.api.model.*;
 import java.io.IOException;
 import java.util.*;
 
-public class DslValidator {
+public class ModelValidator {
 
     private final ValidationOptions options;
     private final AuthorizationModel authorizationModel;
@@ -19,18 +19,26 @@ public class DslValidator {
     private ValidationRegex typeRegex;
     private ValidationRegex relationRegex;
 
-    public DslValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
+    public ModelValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
         this.options = options;
         this.authorizationModel = authorizationModel;
         dsl = new Dsl(lines);
         errors = new ValidationErrorsBuilder(lines);
     }
 
-    public static void validate(String dsl) throws DslErrorsException, IOException {
-        validate(dsl, new ValidationOptions());
+    public static void validateJson(AuthorizationModel authorizationModel)throws DslErrorsException {
+        validateJson(authorizationModel, new ValidationOptions());
     }
 
-    public static void validate(String dsl, ValidationOptions options) throws DslErrorsException {
+    public static void validateJson(AuthorizationModel authorizationModel, ValidationOptions options)throws DslErrorsException {
+        new ModelValidator(options, authorizationModel, null).validate();
+    }
+
+    public static void validateDsl(String dsl) throws DslErrorsException, IOException {
+        validateDsl(dsl, new ValidationOptions());
+    }
+
+    public static void validateDsl(String dsl, ValidationOptions options) throws DslErrorsException {
         var transformer = new DslToJsonTransformer();
         var result = transformer.parseDsl(dsl);
         if (result.IsFailure()) {
@@ -39,7 +47,7 @@ public class DslValidator {
         var authorizationModel = result.getAuthorizationModel();
         var lines = dsl.split("\n");
 
-        new DslValidator(options, authorizationModel, lines).validate();
+        new ModelValidator(options, authorizationModel, lines).validate();
     }
 
     private void validate() throws DslErrorsException {

@@ -19,6 +19,7 @@ public class TestsData {
     public static final String JSON_SYNTAX_TRANSFORMER_CASES_FILE =
             "../../tests/data/json-syntax-transformer-validation-cases.yaml";
     public static final String FGA_MOD_CASES_FILE = "../../tests/data/fga-mod-transformer-cases.yaml";
+    public static final String JSON_VALIDATION_CASES_FILE= "../../tests/data/json-validation-cases.yaml";
     public static final String SKIP_FILE = "test.skip";
     public static final String AUTHORIZATION_MODEL_JSON_FILE = "authorization-model.json";
     public static final String AUTHORIZATION_MODEL_DSL_FILE = "authorization-model.fga";
@@ -28,6 +29,7 @@ public class TestsData {
     public static final List<MultipleInvalidDslSyntaxTestCase> DSL_VALIDATION_TEST_CASES = loadDslValidationTestCases();
     public static final List<JsonSyntaxTestCase> JSON_SYNTAX_TEST_CASES = loadJsonSyntaxTestCases();
     public static final List<FgaModTestCase> FGA_MOD_TRANSFORM_TEST_CASES = loadFgaModTransformTestCases();
+    public static final List<JsonValidationTestCase> JSON_VALIDATION_TEST_CASES = loadJsonValidationTestCases();
 
     private static List<ValidTransformerTestCase> loadValidTransformerTestCases() {
         var transformerCasesFolder = Paths.get(TRANSFORMER_CASES_FOLDER);
@@ -69,6 +71,16 @@ public class TestsData {
         try {
             var json = Files.readString(dslSyntaxCasesFile);
             return YAML.parseList(json, new TypeReference<>() {});
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<JsonValidationTestCase> loadJsonValidationTestCases() {
+        var jsonValidationCasesFile = Paths.get(JSON_VALIDATION_CASES_FILE);
+        try {
+            var yaml = Files.readString(jsonValidationCasesFile);
+            return YAML.parseList(yaml, new TypeReference<>() {});
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

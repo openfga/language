@@ -75,9 +75,9 @@ dependencies {
     implementation 'org.antlr:antlr4:4.13.1'
     implementation 'dev.openfga:openfga-sdk:0.3.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testImplementation 'org.assertj:assertj-core:3.24.2'
-    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
 }
 
 spotless {

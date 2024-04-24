@@ -18,4 +18,3 @@ public class ModuleTransformationSingleError extends ParsingError {
         this.metadata = metadata;
     }
 }
-

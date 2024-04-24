@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-class Dsl {
+public class Dsl {
 
     private final String[] lines;
 
-    Dsl(String[] lines) {
+    public Dsl(String[] lines) {
         this.lines = lines;
     }
 
@@ -28,6 +28,10 @@ class Dsl {
                 .filter(index -> predicate.test(lines[index]))
                 .findFirst()
                 .orElse(-1);
+    }
+
+    public String getLine(int lineIndex) {
+        return lines[lineIndex];
     }
 
     public int getConditionLineNumber(String conditionName) {
@@ -52,6 +56,14 @@ class Dsl {
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
         return findLine(line -> line.trim().matches("type " + typeName), skipIndex);
+    }
+
+    public int getExtendedTypeLineNumber(String typeName) {
+        return getExtendedTypeLineNumber(typeName, 0);
+    }
+
+    public int getExtendedTypeLineNumber(String typeName, int skipIndex) {
+        return findLine(line -> line.trim().startsWith("extend type " + typeName), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

@@ -16,7 +16,8 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     private Relation currentRelation = null;
     private Condition currentCondition = null;
     private boolean isModularModel = false;
-    private HashMap<String, TypeDefinition> typeDefExtensions = new HashMap<String, TypeDefinition>();
+    private String moduleName;
+    private Map<String, TypeDefinition> typeDefExtensions = new HashMap<>();
 
     private Deque<StackRelation> rewriteStack = null;
 
@@ -26,6 +27,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
     public AuthorizationModel getAuthorizationModel() {
         return authorizationModel;
+    }
+
+    public Map<String, TypeDefinition> getTypeDefExtensions() {
+        return typeDefExtensions;
     }
 
     private Userset parseExpression(List<Userset> rewrites, String operator) {
@@ -67,6 +72,9 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     @Override
     public void exitModuleHeader(OpenFGAParser.ModuleHeaderContext ctx) {
         this.isModularModel = true;
+        if (ctx.moduleName != null) {
+            this.moduleName = ctx.moduleName.getText();
+        }
     }
 
     @Override
@@ -88,6 +96,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
                 .type(ctx.typeName.getText())
                 .relations(new HashMap<>())
                 .metadata(new Metadata().relations(new HashMap<>()));
+
+        if (this.isModularModel) {
+            currentTypeDef.getMetadata().module(moduleName);
+        }
     }
 
     @Override
@@ -108,6 +120,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         }
 
         currentCondition = new Condition().name(conditionName).expression("").parameters(new HashMap<>());
+
+        if (this.isModularModel) {
+            currentCondition.setMetadata(new ConditionMetadata().module(moduleName));
+        }
     }
 
     @Override
@@ -170,10 +186,16 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
             return;
         }
 
-        if (currentTypeDef.getMetadata() != null
+        if (!this.isModularModel
+                && currentTypeDef.getMetadata() != null
                 && currentTypeDef.getMetadata().getRelations() != null
                 && currentTypeDef.getMetadata().getRelations().isEmpty()) {
             currentTypeDef.setMetadata(null);
+        } else if (this.isModularModel
+                && currentTypeDef.getMetadata() != null
+                && currentTypeDef.getMetadata().getRelations() != null
+                && currentTypeDef.getMetadata().getRelations().isEmpty()) {
+            currentTypeDef.getMetadata().setRelations(new HashMap<>());
         }
 
         var typeDefinitions = authorizationModel.getTypeDefinitions();
@@ -223,6 +245,22 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
                     .getMetadata()
                     .getRelations()
                     .put(relationName, new RelationMetadata().directlyRelatedUserTypes(directlyRelatedUserTypes));
+
+            if (isModularModel) {
+                OpenFGAParser.TypeDefContext parentCtx = (OpenFGAParser.TypeDefContext) ctx.getParent();
+                if (parentCtx.EXTEND() != null) {
+                    currentTypeDef
+                            .getMetadata()
+                            .getRelations()
+                            .put(
+                                    relationName,
+                                    currentTypeDef
+                                            .getMetadata()
+                                            .getRelations()
+                                            .get(relationName)
+                                            .module(moduleName));
+                }
+            }
         }
 
         currentRelation = null;

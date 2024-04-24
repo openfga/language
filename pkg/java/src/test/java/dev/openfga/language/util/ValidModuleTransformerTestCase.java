@@ -1,18 +1,23 @@
 package dev.openfga.language.util;
 
-import java.util.ArrayList;
-
 import dev.openfga.language.ModulesToModelTransformer.ModuleFile;
+import java.util.ArrayList;
 
 public class ValidModuleTransformerTestCase {
     private final String name;
-    private final ArrayList<ModuleFile>  modules;
+    private final ArrayList<ModuleFile> modules;
     private final String json;
     private final String combinedDsl;
     private final String combinedDslWithSourceInfo;
     private final boolean skip;
 
-    public ValidModuleTransformerTestCase(String name, ArrayList<ModuleFile> modules, String json, String combinedDsl, String combinedDslWithSourceInfo, boolean skip) {
+    public ValidModuleTransformerTestCase(
+            String name,
+            ArrayList<ModuleFile> modules,
+            String json,
+            String combinedDsl,
+            String combinedDslWithSourceInfo,
+            boolean skip) {
         this.name = name;
         this.modules = modules;
         this.json = json;
@@ -25,7 +30,7 @@ public class ValidModuleTransformerTestCase {
         return name;
     }
 
-    public ArrayList<ModuleFile>  getModules() {
+    public ArrayList<ModuleFile> getModules() {
         return modules;
     }
 

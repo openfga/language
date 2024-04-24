@@ -8,7 +8,11 @@ public abstract class ParsingError extends SimpleError {
 
     private StartEnd column;
 
+    private String file;
+
     private String fullMessage;
+
+    private String type;
 
     public ParsingError() {}
 
@@ -17,6 +21,8 @@ public abstract class ParsingError extends SimpleError {
         line = properties.getLine();
         column = properties.getColumn();
         fullMessage = properties.getFullMessage(type);
+        file = properties.getFile();
+        this.type = type;
     }
 
     public StartEnd getLine() {
@@ -59,5 +65,21 @@ public abstract class ParsingError extends SimpleError {
 
     public String toString() {
         return Objects.requireNonNullElseGet(fullMessage, this::getMessage);
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
+    }
+
+    public String getType() {
+        return file;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

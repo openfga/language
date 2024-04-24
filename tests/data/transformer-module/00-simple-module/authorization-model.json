@@ -20,6 +20,7 @@
   "type_definitions": [
     {
       "metadata": {
+        "relations": {},
         "module": "core",
         "source_info": {
           "file": "core.fga"

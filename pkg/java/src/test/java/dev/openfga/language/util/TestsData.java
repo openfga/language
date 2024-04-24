@@ -3,15 +3,15 @@ package dev.openfga.language.util;
 import static java.util.Collections.unmodifiableList;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import dev.openfga.language.ModulesToModelTransformer.ModuleFile;
-
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class TestsData {
@@ -29,9 +29,8 @@ public class TestsData {
     public static final String AUTHORIZATION_MODEL_JSON_FILE = "authorization-model.json";
     public static final String AUTHORIZATION_MODEL_DSL_FILE = "authorization-model.fga";
     public static final String EXPECTED_ERRORS_JSON_FILE = "expected_errors.json";
-    public static final String COMBINED_MODULE_FILE ="combined.fga";
-    public static final String COMBINED_MODULE_WITH_SOURCEINFO_FILE ="combined-sourceinfo.fga";
-    
+    public static final String COMBINED_MODULE_FILE = "combined.fga";
+    public static final String COMBINED_MODULE_WITH_SOURCEINFO_FILE = "combined-sourceinfo.fga";
 
     public static final List<ValidTransformerTestCase> VALID_TRANSFORMER_TEST_CASES = loadValidTransformerTestCases();
     public static final List<DslSyntaxTestCase> DSL_SYNTAX_TEST_CASES = loadDslSyntaxTestCases();
@@ -39,8 +38,10 @@ public class TestsData {
     public static final List<JsonSyntaxTestCase> JSON_SYNTAX_TEST_CASES = loadJsonSyntaxTestCases();
     public static final List<FgaModTestCase> FGA_MOD_TRANSFORM_TEST_CASES = loadFgaModTransformTestCases();
     public static final List<JsonValidationTestCase> JSON_VALIDATION_TEST_CASES = loadJsonValidationTestCases();
-    public static final List<ValidModuleTransformerTestCase> VALID_MODULE_TRANSFORMER_TESTS_CASES = loadValidModuleTransformerTestCases();
-    public static final List<InvalidModuleTransformerTestCases> INVALID_MODULE_TRANSFORMER_TESTS_CASES = loadInvalidModuleTransformerTestCases();
+    public static final List<ValidModuleTransformerTestCase> VALID_MODULE_TRANSFORMER_TESTS_CASES =
+            loadValidModuleTransformerTestCases();
+    public static final List<InvalidModuleTransformerTestCases> INVALID_MODULE_TRANSFORMER_TESTS_CASES =
+            loadInvalidModuleTransformerTestCases();
 
     private static List<ValidTransformerTestCase> loadValidTransformerTestCases() {
         var transformerCasesFolder = Paths.get(TRANSFORMER_CASES_FOLDER);
@@ -93,12 +94,17 @@ public class TestsData {
                             continue;
                         }
 
-                        modules.add(new ModuleFile(modulePath.toString(), Files.readString(modulePath)));
+                        modules.add(new ModuleFile(modulePath.getFileName().toString(), Files.readString(modulePath)));
                     }
                 }
 
                 cases.add(new ValidModuleTransformerTestCase(
-                        name, modules, Files.readString(jsonFile), Files.readString(combinedFile), Files.readString(combinedWithSourceInfoFile), Files.exists(skipFile)));
+                        name,
+                        modules,
+                        Files.readString(jsonFile),
+                        Files.readString(combinedFile),
+                        Files.readString(combinedWithSourceInfoFile),
+                        Files.exists(skipFile)));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

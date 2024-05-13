@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/openfga/api/proto v0.0.0-20240318145204-66b9e5cb403c
 	github.com/stretchr/testify v1.9.0
-	google.golang.org/protobuf v1.34.0
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 

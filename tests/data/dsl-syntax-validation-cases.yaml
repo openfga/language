@@ -20,6 +20,20 @@
         define viewer: [user]   
           
         define can_view: viewer or admin
+- name: "valid syntax (4): extended identifiers"
+  dsl: |
+    model
+      schema 1.1
+    type a
+    type _a
+    type __a__
+    type a/b
+    type _.a_/_b._
+    type a.bc/def
+    type a.b
+      relations
+        define a.b.c: [a/b]
+        define a.b/c: [_.a_/_b._]
 - name: no model header
   dsl: |
     type user
@@ -70,15 +84,15 @@
     model
       schema1.1
   expected_errors:
-    - msg: "mismatched input 'schema1' expecting 'schema'"
+    - msg: "mismatched input 'schema1.1' expecting 'schema'"
       line:
         start: 1
         end: 1
       column:
         start: 2
-        end: 9
+        end: 11
       metadata:
-        symbol: "schema1"
+        symbol: "schema1.1"
 - name: schema 1.1 required
   dsl: |
     model
@@ -98,15 +112,15 @@
     model
       schema a.b
   expected_errors:
-    - msg: "mismatched input 'a' expecting SCHEMA_VERSION"
+    - msg: "mismatched input 'a.b' expecting SCHEMA_VERSION"
       line:
         start: 1
         end: 1
       column:
         start: 9
-        end: 10
+        end: 12
       metadata:
-        symbol: "a"
+        symbol: "a.b"
 - name: a module with missing name
   dsl: |
     module
@@ -381,7 +395,7 @@
         define member: [ ]
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
+    - msg: "extraneous input ']' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER, NEWLINE}"
       line:
         start: 5
         end: 5
@@ -391,7 +405,7 @@
       metadata:
         symbol: "]"
     - msg: mismatched input 'define' expecting {IDENTIFIER, 'module', 'model',
-        'schema', 'extend', 'type', 'relation'}
+        'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}
       line:
         start: 6
         end: 6
@@ -419,7 +433,7 @@
         define member: []
         define reader: [user]
   expected_errors:
-    - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', NEWLINE}"
+    - msg: "extraneous input ']' expecting {WHITESPACE, IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER, NEWLINE}"
       line:
         start: 5
         end: 5
@@ -428,7 +442,7 @@
         end: 21
       metadata:
         symbol: "]"
-    - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "mismatched input 'define' expecting {IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -566,7 +580,7 @@
         define editor: [user]
         define viewer: editor but not [document#viewer]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -593,7 +607,7 @@
         define viewer: [document#viewer] or [document#editor]
         define editor: [document#viewer] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 4
         end: 4
@@ -621,7 +635,7 @@
         define editor: [user]
         define viewer: [user] and [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -649,7 +663,7 @@
         define editor: [user]
         define viewer: [document#editor] but not [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -677,7 +691,7 @@
         define editor: [user]
         define viewer: [user] but not [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -705,7 +719,7 @@
         define editor: [user]
         define viewer: [user] or [document#editor]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 6
         end: 6
@@ -840,7 +854,7 @@
     type org
 
       relations
-        define member: [user]    
+        define member: [user]
 
     type group
       relations
@@ -1190,8 +1204,8 @@
     model
       schema 1.1
     type user
-      relations      
-        define follower: [user, user:*, user#follower, user with is_not_hidden, user:* with is_not_hidden, user#follower with is_not_hidden]  
+      relations
+        define follower: [user, user:*, user#follower, user with is_not_hidden, user:* with is_not_hidden, user#follower with is_not_hidden]
     condition is_not_hidden(status: string) {
       status != "hidden"
     }
@@ -1236,7 +1250,7 @@
       relations
         define viewer: [user] or [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 4
         end: 4
@@ -1303,7 +1317,7 @@
         define rel1: [user]
         define rel2: but not rel1
   expected_errors:
-    - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "mismatched input 'but not' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 5
         end: 5
@@ -1322,7 +1336,7 @@
         define rel1: [user]
         define rel2: or rel1
   expected_errors:
-    - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "mismatched input 'or' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 5
         end: 5
@@ -1341,7 +1355,7 @@
         define rel1: [user]
         define rel2: and rel1
   expected_errors:
-    - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "mismatched input 'and' expecting {'[', '(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 5
         end: 5
@@ -1360,7 +1374,7 @@
         define rel1: [user]
         define rel2: rel1 and [user]
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 5
         end: 5
@@ -1390,7 +1404,7 @@
         define rel3: [user]
         define relation: rel3 or ((rel1 and rel2) but not [user])
   expected_errors:
-    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation'}"
+    - msg: "extraneous input '[' expecting {'(', IDENTIFIER, 'module', 'model', 'schema', 'extend', 'type', 'relation', EXTENDED_IDENTIFIER}"
       line:
         start: 7
         end: 7

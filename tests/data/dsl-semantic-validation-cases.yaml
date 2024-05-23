@@ -1378,6 +1378,40 @@
         end: 29
       metadata:
         errorType: tupleuserset-not-direct
+
+- name: relations definitions that are substrings map correctly
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type role
+      relations
+        define assigne: [user]
+    type asset-category
+      relations
+        define a1: [role#assignee]
+    type asset
+      relations
+        define a1: [role#assignee]
+  expected_errors:
+    - msg: "`assignee` is not a valid relation for `role`."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 16
+        end: 29
+      metadata:
+        errorType: invalid-relation-type
+    - msg: "`assignee` is not a valid relation for `role`."
+      line:
+        start: 11
+        end: 11
+      column:
+        start: 16
+        end: 29
+      metadata:
+        errorType: invalid-relation-type
 #- name: invalid cel expression
 #  dsl: |
 #    model

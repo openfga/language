@@ -46,6 +46,7 @@ export interface ErrorMetadata {
   type?: string;
   relation?: string;
   condition?: string;
+  offendingType?: string;
 }
 
 /**

@@ -327,7 +327,7 @@ const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: numbe
   if (!lines) {
     return undefined;
   }
-  return lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`type ${typeName}`)) + skipIndex;
+  return lines.slice(skipIndex).findIndex((line: string) => line.trim().match(`^type ${typeName}$`)) + skipIndex;
 };
 
 const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: number) => {
@@ -340,7 +340,7 @@ const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: n
   return (
     lines
       .slice(skipIndex)
-      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`define ${relation}`)) + skipIndex
+      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`)) + skipIndex
   );
 };
 
@@ -349,7 +349,7 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
     return undefined;
   }
 
-  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
+  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^schema ${schema}$`));
 
   // As findIndex returns -1 when it doesn't find the line, we want to return 0 instead
   if (index >= 1) {
@@ -504,6 +504,7 @@ function childDefDefined(
               decodedType,
               relation,
               decodedRelation,
+              type,
               lineIndex,
               { file, module },
             );
@@ -537,6 +538,7 @@ function childDefDefined(
             type,
             relation,
             childDef.from,
+            type,
             lineIndex,
             { file, module },
           );

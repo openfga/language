@@ -17,6 +17,7 @@ interface ValidationErrorProps {
     conditionName?: string;
     file?: string;
     module?: string;
+    offendingType?: string;
   };
   lines?: string[];
   lineIndex?: number;
@@ -120,6 +121,7 @@ const createInvalidTypeRelationError = (
   typeName: string,
   relationName: string,
   offendingRelation: string,
+  offendingType: string,
 ) => {
   const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
@@ -134,6 +136,7 @@ const createInvalidTypeRelationError = (
         typeName,
         file,
         module,
+        offendingType,
       },
     }),
   );
@@ -425,6 +428,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
     module: metadata.module,
     relation: metadata.relation,
     type: metadata.typeName,
+    offendingType: metadata.offendingType,
   };
 
   if (lines?.length && lineIndex != undefined) {
@@ -592,6 +596,7 @@ export class ExceptionCollector {
     typeName: string,
     relationName: string,
     offendingRelation: string,
+    offendingType: string,
     lineIndex?: number,
     meta?: Meta,
   ) {
@@ -607,6 +612,7 @@ export class ExceptionCollector {
       typeName,
       relationName,
       offendingRelation,
+      offendingType,
     );
   }
 

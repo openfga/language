@@ -20,7 +20,7 @@ export const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?
   return (
     lines
       .slice(skipIndex)
-      .findIndex((line: string) => line.trim().startsWith(`${extension ? "extend " : ""}type ${typeName}`)) + skipIndex
+      .findIndex((line: string) => line.trim().match(`^${extension ? "extend " : ""}type ${typeName}$`)) + skipIndex
   );
 };
 
@@ -34,6 +34,6 @@ export const getRelationLineNumber = (relation: string, lines?: string[], skipIn
   return (
     lines
       .slice(skipIndex)
-      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`define ${relation}`)) + skipIndex
+      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`)) + skipIndex
   );
 };

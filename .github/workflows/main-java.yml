@@ -14,7 +14,7 @@ on:
       - 'pkg/java/**'
       - 'OpenFGAParser.g4'
       - 'OpenFGALexer.g4'
-      - tests/**'
+      - 'tests/**'
 
 permissions:
   contents: read

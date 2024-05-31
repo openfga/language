@@ -1,0 +1,19 @@
+name: PR (JS)
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    paths:
+      - "pkg/js/**"
+      - "OpenFGAParser.g4"
+      - "OpenFGALexer.g4"
+      - "tests/**"
+      - ".github/workflows/pkg-js-pr.yaml"
+      - ".github/workflows/pkg-js-build.yaml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/pkg-js-build.yaml
+    secrets: inherit

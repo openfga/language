@@ -1,0 +1,19 @@
+name: PR (Java)
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    paths:
+      - "pkg/java/**"
+      - "OpenFGAParser.g4"
+      - "OpenFGALexer.g4"
+      - "tests/**"
+      - ".github/workflows/pkg-java-pr.yaml"
+      - ".github/workflows/pkg-java-build.yaml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/pkg-java-build.yaml
+    secrets: inherit

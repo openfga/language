@@ -1,58 +1,46 @@
-name: Build and Test (JS)
+name: Test (JS)
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  merge_group:
-    types: [checks_requested]
-  pull_request:
-    paths:
-      - 'pkg/js/**'
-      - 'OpenFGAParser.g4'
-      - 'OpenFGALexer.g4'
-      - 'tests/**'
+  workflow_call:
 
 permissions:
   contents: read
-
+    
 jobs:
   lint:
     runs-on: ubuntu-latest
-
+    
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
-
+    
       - name: Set up node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: ./pkg/js/package-lock.json  
-      
+          
       - name: Audit dependencies
         run: make audit-js
-
+    
       - name: Run eslint and prettier
         run: make lint-js
 
   build:
     runs-on: ubuntu-latest
-
+    
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x]
-
+    
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           fetch-depth: 0
-
+    
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      
       - name: Set up node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
@@ -62,6 +50,7 @@ jobs:
           always-auth: false
           cache: 'npm'
           cache-dependency-path: ./pkg/js/package-lock.json  
-
+    
       - name: Build
         run: make all-tests-js
+    

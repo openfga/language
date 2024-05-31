@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0
+
+### [pkg/js/v0.2.0-beta](https://github.com/openfga/language/tree/f5fc1d6b5f8585f93f87045ab41f2bb0e1a6423f/pkg/js) (2024-06-10)
+
+- Initial release
+
 ## v0.2.0-beta.17
 
 ### [v0.2.0-beta.17](https://github.com/openfga/language/compare/f45e80a9f169370f7cbeb5da9d147e5ff0e7305e...7b0b7f08393b13d8c53509447ff6e3847542eefc) (2024-04-12)

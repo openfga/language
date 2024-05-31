@@ -1,0 +1,112 @@
+name: Release (Java)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "pkg/java/v*"
+
+jobs:
+  test:
+    uses: ./.github/workflows/pkg-java-build.yaml
+    secrets: inherit
+
+  publish-maven-central:
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: "pkg/java"
+
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: 0
+          path: "."
+          sparse-checkout: "pkg/java"
+          sparse-checkout-cone-mode: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        with:
+          java-version: 11
+          distribution: "temurin"
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+
+        # Tasks created by https://github.com/gradle-nexus/publish-plugin
+        # Manually verify that the artifacts placed in the closed staging repository in Nexus looks ok
+      - name: Publish package
+        # run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+        run: ./gradlew publishToSonatype closeSonatypeStagingRepository
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          ORG_GRADLE_PROJECT_SIGNINGKEY: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEY }}
+          ORG_GRADLE_PROJECT_SIGNINGPASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}
+
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: "pkg/java"
+
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: 0
+          path: "."
+          sparse-checkout: "pkg/java"
+          sparse-checkout-cone-mode: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        with:
+          java-version: 11
+          distribution: "temurin"
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+
+      # Tasks created by https://docs.gradle.org/current/userguide/publishing_maven.html
+      - name: Publish package
+        run: ./gradlew publishAllPublicationsToGitHubPackagesRepository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_SIGNINGKEY: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEY }}
+          ORG_GRADLE_PROJECT_SIGNINGPASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [publish-maven-central, publish-github-packages]
+    permissions:
+      contents: write
+      packages: write # publish a new github release
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: 0
+
+      - name: Create Release
+        uses: Roang-zero1/github-create-release-action@57eb9bdce7a964e48788b9e78b5ac766cb684803 # v3.0.1
+        with:
+          version_regex: ^pkg/java/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
+          prerelease_regex: ^pkg/java/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta)\.[[:digit:]]+$
+          changelog_file: pkg/java/CHANGELOG.md
+          create_draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

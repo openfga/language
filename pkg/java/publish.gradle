@@ -6,7 +6,7 @@ publishing {
             pom {
                 group = 'dev.openfga'
                 name = 'openfga-language'
-                version = '0.0.1'
+                version = 'v0.2.0-beta.0'
                 description = 'This is the language library for OpenFGA.'
                 url = 'https://openfga.dev'
                 licenses {

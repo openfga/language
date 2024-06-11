@@ -249,8 +249,14 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
     case ValidationError.ReservedRelationKeywords:
       lineIndex = getRelationLineNumber(metadata.symbol, lines);
       break;
-    case ValidationError.InvalidRelationOnTupleset:
     case ValidationError.InvalidRelationType:
+      let offendingTypeIndex = getTypeLineNumber(metadata.offendingType!, lines);
+      if (offendingTypeIndex === -1) {
+        offendingTypeIndex = getTypeLineNumber(metadata.offendingType!, lines, undefined, true);
+      }
+      lineIndex = getRelationLineNumber(metadata.relation!, lines, offendingTypeIndex);
+      break;
+    case ValidationError.InvalidRelationOnTupleset:
     case ValidationError.MissingDefinition:
     case ValidationError.InvalidType:
     case ValidationError.ConditionNotDefined:

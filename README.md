@@ -12,6 +12,8 @@ ANTLR Grammar for the OpenFGA DSL and parser from and to the OpenFGA JSON Syntax
 ## Table of Contents
 - [About OpenFGA](#about)
 - [Resources](#resources)
+- [Packages](#packages)
+- [About This Repo](#about-this-repo)
 - [Installation](#installation)
 - [Usage](#usage)
 - [CLI](#cli)
@@ -34,6 +36,14 @@ OpenFGA is designed to make it easy for application builders to model their perm
 - [Zanzibar Academy](https://zanzibar.academy)
 - [Google's Zanzibar Paper (2019)](https://research.google/pubs/pub48190/)
 
+## Packages
+
+| Packages | Package Manager |
+| -------- | --------------- |
+| JS       | [![@openfga/syntax-transformer on npm](https://img.shields.io/npm/v/@openfga/syntax-transformer.svg?label=@openfga/syntax-transformer&style=flat-square)](https://www.npmjs.com/package/@openfga/syntax-transformer) |
+| Go       | [![OpenFGA Language (Go) on GitHub](https://img.shields.io/github/v/release/openfga/language/pkg/go?label=openfga-language&style=flat-square)](https://github.com/openfga/language/tree/main/pkg/go) |
+| Java     | [![openfga-language on Maven Central](https://img.shields.io/maven-central/v/dev.openfga/openfga-language?style=flat-square&label=openfga-language)](https://central.sonatype.com/artifact/dev.openfga/openfga-language) |
+
 ## About This Repo
 This repo contains everything needed to interact with the OpenFGA Authorization Models schema versions 1.1+, in multiple languages (currently, Go and JS are supported).
 
@@ -47,7 +57,10 @@ This repo contains everything needed to interact with the OpenFGA Authorization 
 |-------------------------------------------------------|----------------------|--------------|-----------------------|
 | Transformer from the DSL to JSON and from JSON to DSL | ✅                    | ✅           | ✅                    |
 | Syntactic Model Validations                           | ✅                    | ✅           | ✅                    |
-| Semantic Model Validations                            | ❌ (planned, see [#99](https://github.com/openfga/language/issues/99)) | ✅      | ✅ |
+| Schema 1.0                                            | ❌                    | ❌ (supported in [v0.1.6](https://www.npmjs.com/package/@openfga/syntax-transformer/v/0.1.6) and below) | ❌ |
+| Schema 1.1                                            | ✅                    | ✅ (supported in [v0.2.0](https://www.npmjs.com/package/@openfga/syntax-transformer) and above) | ✅         |
+| Schema 1.2 (Modular Models)                           | ✅                    | ✅           | ✅                     |
+| Semantic Model Validations                            | ❌ (planned, see [#99](https://github.com/openfga/language/issues/99)) | ✅      | ✅      |
 | Graphing & Utility Methods                            | ❌ (planned)          | ❌ (planned) | ❌ (planned)           |
 
 
@@ -59,8 +72,11 @@ go get github.com/openfga/language/pkg/go
 
 ### Node
 ```bash
-npm install @openfga/syntax-transformer@beta
+npm install @openfga/syntax-transformer
 ```
+
+### Java
+From [dev.openfga/openfga-language on MavenCentral](https://central.sonatype.com/artifact/dev.openfga/openfga-language)
 
 ## Usage
 

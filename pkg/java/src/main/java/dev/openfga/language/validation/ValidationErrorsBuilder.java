@@ -4,6 +4,7 @@ import dev.openfga.language.errors.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 class ValidationErrorsBuilder {
@@ -22,21 +23,26 @@ class ValidationErrorsBuilder {
     private ErrorProperties buildErrorProperties(
             String message, int lineIndex, String symbol, WordResolver wordResolver) {
 
-        var rawLine = lines[lineIndex];
-        var regex = Pattern.compile("\\b" + symbol + "\\b");
-        var wordIdx = 0;
-        var matcher = regex.matcher(rawLine);
-        if (matcher.find()) {
-            wordIdx = matcher.start();
+        var properties = new ErrorProperties(null, null, message);
+
+        if (lines != null) {
+            var rawLine = lines[lineIndex];
+            var regex = Pattern.compile("\\b" + symbol + "\\b");
+            var wordIdx = 0;
+            var matcher = regex.matcher(rawLine);
+            if (matcher.find()) {
+                wordIdx = matcher.start();
+            }
+
+            if (wordResolver != null) {
+                wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
+            }
+
+            properties.setLine(new StartEnd(lineIndex, lineIndex));
+            properties.setColumn(new StartEnd(wordIdx, wordIdx + symbol.length()));
         }
 
-        if (wordResolver != null) {
-            wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
-        }
-
-        var line = new StartEnd(lineIndex, lineIndex);
-        var column = new StartEnd(wordIdx, wordIdx + symbol.length());
-        return new ErrorProperties(line, column, message);
+        return properties;
     }
 
     public void raiseSchemaVersionRequired(int lineIndex, String symbol) {
@@ -198,6 +204,23 @@ class ValidationErrorsBuilder {
         var message = "`" + symbol + "` condition is not used in the model.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.ConditionNotUsed, null, null, symbol);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    public void raiseDifferentNestedConditionName(String conditionKey, String nestedConditionName) {
+        var message = "condition key is `" + conditionKey + "` but nested name property is " + nestedConditionName;
+        var errorProperties = buildErrorProperties(message, 0, nestedConditionName);
+        var metadata = new ValidationMetadata(
+                nestedConditionName, ValidationError.DifferentNestedConditionName, null, null, null);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    public void raiseMultipleModulesInSingleFile(String file, Set<String> modules) {
+        var modulesString = String.join(", ", modules);
+        var message = "file " + file + " would contain multiple module definitions (" + modulesString
+                + ") when transforming to DSL. Only one module can be defined per file.";
+        var errorProperties = buildErrorProperties(message, 0, file);
+        var metadata = new ValidationMetadata(file, ValidationError.MultipleModulesInFile, null, null, null);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

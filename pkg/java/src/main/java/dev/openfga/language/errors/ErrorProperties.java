@@ -15,7 +15,12 @@ public class ErrorProperties {
     }
 
     String getFullMessage(String type) {
-        return String.format("%s error at line=%d, column=%d: %s", type, line.getStart(), column.getStart(), message);
+        if (line != null && column != null) {
+            return String.format(
+                    "%s error at line=%d, column=%d: %s", type, line.getStart(), column.getStart(), message);
+        } else {
+            return String.format("%s error: %s", type, message);
+        }
     }
 
     public StartEnd getLine() {

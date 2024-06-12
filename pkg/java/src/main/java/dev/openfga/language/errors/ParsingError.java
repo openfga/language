@@ -24,6 +24,9 @@ public abstract class ParsingError extends SimpleError {
     }
 
     public StartEnd getLine(int offset) {
+        if (line == null) {
+            return null;
+        }
         return line.withOffset(offset);
     }
 
@@ -36,6 +39,9 @@ public abstract class ParsingError extends SimpleError {
     }
 
     public StartEnd getColumn(int offset) {
+        if (line == null) {
+            return null;
+        }
         return column.withOffset(offset);
     }
 

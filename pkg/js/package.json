@@ -1,6 +1,6 @@
 {
   "name": "@openfga/syntax-transformer",
-  "version": "0.2.0-beta.17",
+  "version": "0.2.0-beta.18",
   "description": "",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
@@ -31,23 +31,23 @@
   "author": "OpenFGA",
   "dependencies": {
     "antlr4": "^4.13.1",
-    "yaml": "^2.4.1"
+    "yaml": "^2.4.5"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@openfga/sdk": "^0.4.0",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.30",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "jest": "^29.7.0",
     "jest-html-reporter": "^3.10.2",
-    "prettier": "^3.2.5",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.3"
+    "prettier": "^3.3.2",
+    "ts-jest": "^29.1.4",
+    "typescript": "^5.4.5"
   },
   "files": [
     "README.md",

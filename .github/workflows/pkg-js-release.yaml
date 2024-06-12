@@ -26,8 +26,10 @@ jobs:
         with:
           fetch-depth: 0
           path: "."
-          sparse-checkout: "pkg/js"
-          sparse-checkout-cone-mode: false
+          ## TODO: We need to comment these out b/c we are copying the main README as part of the publish process
+          ##       Once we have a README specific to the JS package, we can re-include them
+          # sparse-checkout: "pkg/js"
+          # sparse-checkout-cone-mode: false
 
       - name: Set up node
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2

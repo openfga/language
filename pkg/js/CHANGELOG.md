@@ -2,7 +2,7 @@
 
 ## v0.2.0-beta.18
 
-### [pkg/js/v0.2.0-beta.18](https://github.com/openfga/language/compare/34a1a85f8307547cfd44d270472c317cc64962dd...6bf7c3e4910b7acc1ff80d8c66a8e1277e949fe6) (2024-06-10)
+### [pkg/js/v0.2.0-beta.18](https://github.com/openfga/language/compare/34a1a85f8307547cfd44d270472c317cc64962dd...6bf7c3e4910b7acc1ff80d8c66a8e1277e949fe6) (2024-06-12)
 
 Fixed:
 

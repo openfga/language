@@ -2,7 +2,7 @@
 
 ## v0.2.0-beta.0
 
-### [pkg/go/v0.2.0-beta.0](https://github.com/openfga/language/tree/6bf7c3e4910b7acc1ff80d8c66a8e1277e949fe6/pkg/go) (2024-06-10)
+### [pkg/go/v0.2.0-beta.0](https://github.com/openfga/language/tree/a3958b8187145f3a1f98f1d7334ba49411521cc8/pkg/go) (2024-06-12)
 
 - Initial release
 

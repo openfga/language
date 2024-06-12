@@ -37,6 +37,7 @@ jobs:
           scope: "@openfga"
           always-auth: false
           cache: "npm"
+          cache-dependency-path: ./pkg/js/package-lock.json 
 
       - name: Install dependencies
         run: npm ci

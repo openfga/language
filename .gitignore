@@ -19,6 +19,7 @@ go.work
 
 # IDEs
 .idea/
+.vscode/
 
 # Node
 node_modules/

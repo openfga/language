@@ -5,8 +5,9 @@ publishing {
 
             pom {
                 group = 'dev.openfga'
-                name = 'openfga-language'
-                version = 'v0.2.0-beta.0'
+                artifactId = 'java'
+                name = 'OpenFGA Language'
+                version = 'v0.2.0-beta.2'
                 description = 'This is the language library for OpenFGA.'
                 url = 'https://openfga.dev'
                 licenses {
@@ -25,6 +26,15 @@ publishing {
                     url = 'https://github.com/openfga/language'
                     connection = 'scm:git:git@github.com:openfga/language.git'
                     developerConnection = 'scm:git:git@github.com:openfga/language.git'
+                }
+
+                distributionManagement {
+                    relocation {
+                        group = 'dev.openfga'
+                        artifactId = 'openfga-language'
+                        version = 'v0.2.0-beta.1'
+                        message = "artifactId has been fixed"
+                    }
                 }
             }
         }

@@ -24,7 +24,7 @@ publishing {
 
             pom {
                 group = 'dev.openfga'
-                name = 'openfga-language'
+                name = 'java'
                 version = 'v0.2.0-beta.0'
                 description = 'This is the language library for OpenFGA.'
                 url = 'https://openfga.dev'

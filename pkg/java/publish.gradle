@@ -1,30 +1,20 @@
 publishing {
     publications {
-        maven(MavenPublication) {
-            from components.java
-
+        relocation(MavenPublication) {
             pom {
+                // Old artifact coordinates
                 group = 'dev.openfga'
-                name = 'openfga-language'
+                name = 'java'
                 version = 'v0.2.0-beta.0'
-                description = 'This is the language library for OpenFGA.'
-                url = 'https://openfga.dev'
-                licenses {
-                    license {
-                        name = 'Apache-2.0'
-                        url = 'https://github.com/openfga/language/blob/main/LICENSE'
+
+                distributionManagement {
+                    relocation {
+                        // New artifact coordinates
+                        group = 'dev.openfga'
+                        name = 'openfga-language'
+                        version = 'v0.2.0-beta.0'
+                        message = "package name has been fixed"
                     }
-                }
-                developers {
-                    developer {
-                        name = 'OpenFGA'
-                        url = 'https://openfga.dev'
-                    }
-                }
-                scm {
-                    url = 'https://github.com/openfga/language'
-                    connection = 'scm:git:git@github.com:openfga/language.git'
-                    developerConnection = 'scm:git:git@github.com:openfga/language.git'
                 }
             }
         }

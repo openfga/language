@@ -1,7 +1,6 @@
 publishing {
     publications {
         maven(MavenPublication) {
-            artifact sourcesJar
             from components.java
 
             pom {

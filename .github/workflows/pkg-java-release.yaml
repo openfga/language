@@ -42,10 +42,8 @@ jobs:
         uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
 
         # Tasks created by https://github.com/gradle-nexus/publish-plugin
-        # Manually verify that the artifacts placed in the closed staging repository in Nexus looks ok
       - name: Publish package
-        # run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
-        run: ./gradlew publishToSonatype closeSonatypeStagingRepository
+        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

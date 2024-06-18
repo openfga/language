@@ -22,7 +22,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
           path: "."
@@ -36,10 +36,10 @@ jobs:
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+        uses: gradle/actions/wrapper-validation@31ae3562f68c96d481c31bc1a8a55cc1be162f83 # v3.4.1
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+        uses: gradle/actions/setup-gradle@31ae3562f68c96d481c31bc1a8a55cc1be162f83 # v3.4.1
 
         # Tasks created by https://github.com/gradle-nexus/publish-plugin
       - name: Publish package
@@ -61,7 +61,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
           path: "."
@@ -75,10 +75,10 @@ jobs:
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+        uses: gradle/actions/wrapper-validation@31ae3562f68c96d481c31bc1a8a55cc1be162f83 # v3.4.1
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
+        uses: gradle/actions/setup-gradle@31ae3562f68c96d481c31bc1a8a55cc1be162f83 # v3.4.1
 
       # Tasks created by https://docs.gradle.org/current/userguide/publishing_maven.html
       - name: Publish package
@@ -95,7 +95,7 @@ jobs:
       contents: write
       packages: write # publish a new github release
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 

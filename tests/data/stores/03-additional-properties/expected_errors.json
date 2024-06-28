@@ -1,0 +1,364 @@
+[
+  {
+    "instancePath": "",
+    "schemaPath": "#/additionalProperties",
+    "keyword": "additionalProperties",
+    "params": {
+      "additionalProperty": "unexpected_field2"
+    },
+    "message": "must NOT have additional properties",
+    "schema": false,
+    "parentSchema": {
+      "type": "object",
+      "required": [
+        "tests"
+      ],
+      "additionalProperties": false,
+      "valid_store": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "the store name"
+        },
+        "model_file": {
+          "type": "string",
+          "description": "the authorization model file path"
+        },
+        "model": {
+          "type": "string",
+          "description": "the authorization model (takes precedence over model_file)"
+        },
+        "tuple_file": {
+          "type": "string",
+          "description": "the tuple file path"
+        },
+        "tuples": {
+          "type": "array",
+          "description": "the tuples (takes precedence over tuples_file)",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "user",
+              "relation",
+              "object"
+            ],
+            "valid_tuple": true,
+            "properties": {
+              "user": {
+                "type": "string",
+                "format": "user",
+                "description": "the user"
+              },
+              "relation": {
+                "type": "string",
+                "format": "relation",
+                "description": "the relation"
+              },
+              "object": {
+                "type": "string",
+                "format": "object",
+                "description": "the object"
+              },
+              "condition": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "format": "condition"
+                  },
+                  "context": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "the test name"
+              },
+              "description": {
+                "type": "string",
+                "description": "the test description"
+              },
+              "tuple_file": {
+                "type": "string",
+                "description": "the tuple file with additional tuples for this test"
+              },
+              "tuples": {
+                "type": "array",
+                "description": "the tuples (takes precedence over tuples_file)",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "user",
+                    "relation",
+                    "object"
+                  ],
+                  "valid_tuple": true,
+                  "properties": {
+                    "user": {
+                      "type": "string",
+                      "format": "user",
+                      "description": "the user"
+                    },
+                    "relation": {
+                      "type": "string",
+                      "format": "relation",
+                      "description": "the relation"
+                    },
+                    "object": {
+                      "type": "string",
+                      "format": "object",
+                      "description": "the object"
+                    },
+                    "condition": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "format": "condition"
+                        },
+                        "context": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "check": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "user",
+                    "object",
+                    "assertions"
+                  ],
+                  "properties": {
+                    "user": {
+                      "type": "string",
+                      "format": "user",
+                      "description": "the user"
+                    },
+                    "object": {
+                      "type": "string",
+                      "format": "object",
+                      "description": "the object"
+                    },
+                    "assertions": {
+                      "type": "object",
+                      "patternProperties": {
+                        ".*": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "context": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "list_objects": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "user",
+                    "type",
+                    "assertions"
+                  ],
+                  "properties": {
+                    "user": {
+                      "type": "string",
+                      "format": "user",
+                      "description": "the user"
+                    },
+                    "relation": {
+                      "type": "string",
+                      "format": "relation",
+                      "description": "the relation"
+                    },
+                    "type": {
+                      "type": "string",
+                      "format": "type",
+                      "description": "the object type"
+                    },
+                    "assertions": {
+                      "type": "object",
+                      "patternProperties": {
+                        ".*": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "context": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "list_users": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "object",
+                    "user_filter",
+                    "assertions"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "format": "object"
+                    },
+                    "user_filter": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string"
+                          },
+                          "relation": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "context": {
+                      "type": "object"
+                    },
+                    "assertions": {
+                      "type": "object",
+                      "patternProperties": {
+                        ".*": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "users": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "format": "user"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "data": {
+      "name": "Additional Properties",
+      "model": "model\n  schema 1.1\ntype user\ntype organization\n  relations\n    define member: [user]\n",
+      "tuples": [
+        {
+          "user": "user:daniel",
+          "relation": "member",
+          "object": "organization:auth0"
+        }
+      ],
+      "tests": [
+        {
+          "name": "Tests for organization members",
+          "check": [
+            {
+              "user": "user:daniel",
+              "object": "organization:auth0",
+              "unexpected_field": "value",
+              "assertions": {
+                "member": true
+              }
+            }
+          ]
+        }
+      ],
+      "unexpected_field2": "value"
+    }
+  },
+  {
+    "instancePath": "/tests/0/check/0",
+    "schemaPath": "#/properties/tests/items/properties/check/items/additionalProperties",
+    "keyword": "additionalProperties",
+    "params": {
+      "additionalProperty": "unexpected_field"
+    },
+    "message": "must NOT have additional properties",
+    "schema": false,
+    "parentSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "object",
+        "assertions"
+      ],
+      "properties": {
+        "user": {
+          "type": "string",
+          "format": "user",
+          "description": "the user"
+        },
+        "object": {
+          "type": "string",
+          "format": "object",
+          "description": "the object"
+        },
+        "assertions": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "boolean"
+            }
+          }
+        },
+        "context": {
+          "type": "object"
+        }
+      }
+    },
+    "data": {
+      "user": "user:daniel",
+      "object": "organization:auth0",
+      "unexpected_field": "value",
+      "assertions": {
+        "member": true
+      }
+    }
+  }
+]

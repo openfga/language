@@ -3,11 +3,7 @@ import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer/dsltojson";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { ExceptionCollector } from "../util/exceptions";
-
-// eslint-disable-next-line no-useless-escape
-const defaultTypeRule = "^[^:#@\\s]{1,254}$";
-// eslint-disable-next-line no-useless-escape
-const defaultRelationRule = "^[^:#@\\s]{1,50}$";
+import { Rules } from "./validate-rules";
 
 enum RelationDefOperator {
   Union = "union",
@@ -856,8 +852,8 @@ export function validateJSON(
   const lines = dslString?.split("\n");
   const errors: ModelValidationSingleError[] = [];
   const collector = new ExceptionCollector(errors, lines);
-  const typeValidation = options.typeValidation || defaultTypeRule;
-  const relationValidation = options.relationValidation || defaultRelationRule;
+  const typeValidation = options.typeValidation || `^${Rules.type}$`;
+  const relationValidation = options.relationValidation || `^${Rules.relation}$`;
   const defaultRegex = new RegExp("[a-zA-Z]*");
   const fileToModuleMap: Record<string, Set<string>> = {};
 

@@ -8,6 +8,7 @@ import {
   ModelValidationSingleError,
 } from "../errors";
 import { ModuleFile } from "../transformer";
+import { ErrorObject } from "ajv";
 
 interface ValidTestCase {
   name: string;
@@ -58,6 +59,13 @@ interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
   dslWithSourceInfo?: string;
   expected_errors?: BaseError[];
+}
+
+interface MultipleInvalidStoreTestCase {
+  name: string;
+  store: string;
+  skip?: boolean;
+  expected_errors: ErrorObject[];
 }
 
 export function loadValidTransformerTestCases(): ValidTestCase[] {
@@ -200,4 +208,33 @@ export function loadModuleTestCases(): ModuleTestCase[] {
   }
 
   return testCases;
+}
+
+export function loadStoreTestCases(): MultipleInvalidStoreTestCase[] {
+  const testDataPath = path.join(__dirname, "../../../tests", "data", "stores");
+  const entries = fs.readdirSync(testDataPath, { withFileTypes: true });
+
+  const errors: MultipleInvalidStoreTestCase[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const testCase: Partial<MultipleInvalidStoreTestCase> = {
+      name: entry.name,
+    };
+
+    testCase.store = path.join(testDataPath, testCase.name!, "store.fga.yaml");
+
+    const errorsPath = path.join(testDataPath, testCase.name!, "expected_errors.json");
+    if (fs.existsSync(errorsPath)) {
+      const expectedErrors = fs.readFileSync(errorsPath);
+      testCase.expected_errors = JSON.parse(expectedErrors.toString("utf8"));
+    }
+
+    errors.push(testCase as MultipleInvalidStoreTestCase);
+  }
+
+  return errors;
 }

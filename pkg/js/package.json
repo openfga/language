@@ -30,6 +30,7 @@
   ],
   "author": "OpenFGA",
   "dependencies": {
+    "ajv": "^8.16.0",
     "antlr4": "^4.13.1",
     "yaml": "^2.4.5"
   },

@@ -1,0 +1,23 @@
+name: Additional Properties
+
+model: |
+  model
+    schema 1.1
+  type user
+  type organization
+    relations
+      define member: [user]
+
+tuples:
+  - user: user:daniel
+    relation: member
+    object: organization:auth0
+tests:
+  - name: Tests for organization members
+    check:
+      - user: user:daniel
+        object: organization:auth0
+        unexpected_field: value
+        assertions:
+          member: true
+unexpected_field2: value

@@ -1,0 +1,17 @@
+name: Missing model & model_file
+
+tuples:
+  - user: user:daniel
+    relation: member
+    object: organization:auth0
+tests:
+  - name: Tests for organization members
+    check:
+      - user: user:daniel
+        object: organization:auth0
+        assertions:
+          member: true
+      - user: user:unknown
+        object: organization:auth0
+        assertions:
+          member: false

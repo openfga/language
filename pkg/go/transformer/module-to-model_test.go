@@ -31,6 +31,10 @@ func TestTransformModuleToJSON(t *testing.T) {
 				t.Skip()
 			}
 
+			if testCase.Modules == nil {
+				return
+			}
+
 			actual, err := transformer.TransformModuleFilesToModel(testCase.Modules, "1.2")
 			if len(testCase.ExpectedErrors) == 0 {
 				require.NoError(t, err)

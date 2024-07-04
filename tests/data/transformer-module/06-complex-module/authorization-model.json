@@ -1,0 +1,250 @@
+{
+    "schema_version": "1.2",
+    "type_definitions": [
+        {
+            "type": "user",
+            "relations": {},
+            "metadata": {
+                "module": "core",
+                "source_info": {
+                    "file": "core.fga"
+                }
+            }
+        },
+        {
+            "type": "organization",
+            "relations": {
+                "member": {
+                    "this": {}
+                },
+                "admin": {
+                    "this": {}
+                },
+                "can_create_project": {
+                    "computedUserset": {
+                        "relation": "member"
+                    }
+                },
+                "can_create_page": {
+                    "computedUserset": {
+                        "relation": "member"
+                    }
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "member": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    },
+                    "admin": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    },
+                    "can_create_project": {
+                        "directly_related_user_types": [],
+                        "module": "jira",
+                        "source_info": {
+                            "file": "jira/projects.fga"
+                        }
+                    },
+                    "can_create_page": {
+                        "directly_related_user_types": [],
+                        "module": "atlassian",
+                        "source_info": {
+                            "file": "atlassian.fga"
+                        }
+                    }
+                },
+                "module": "core",
+                "source_info": {
+                    "file": "core.fga"
+                }
+            }
+        },
+        {
+            "type": "group",
+            "relations": {
+                "member": {
+                    "this": {}
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "member": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    }
+                },
+                "module": "core",
+                "source_info": {
+                    "file": "core.fga"
+                }
+            }
+        },
+        {
+            "type": "project",
+            "relations": {
+                "organization": {
+                    "this": {}
+                },
+                "viewer": {
+                    "tupleToUserset": {
+                        "computedUserset": {
+                            "relation": "member"
+                        },
+                        "tupleset": {
+                            "relation": "organization"
+                        }
+                    }
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "organization": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "organization"
+                            }
+                        ]
+                    },
+                    "viewer": {
+                        "directly_related_user_types": []
+                    }
+                },
+                "module": "jira",
+                "source_info": {
+                    "file": "jira/projects.fga"
+                }
+            }
+        },
+        {
+            "type": "ticket",
+            "relations": {
+                "project": {
+                    "this": {}
+                },
+                "owner": {
+                    "this": {}
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "project": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "project"
+                            }
+                        ]
+                    },
+                    "owner": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    }
+                },
+                "module": "jira",
+                "source_info": {
+                    "file": "jira/tickets.fga"
+                }
+            }
+        },
+        {
+            "type": "space",
+            "relations": {
+                "organization": {
+                    "this": {}
+                },
+                "can_view_pages": {
+                    "tupleToUserset": {
+                        "computedUserset": {
+                            "relation": "member"
+                        },
+                        "tupleset": {
+                            "relation": "organization"
+                        }
+                    }
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "organization": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "organization"
+                            }
+                        ]
+                    },
+                    "can_view_pages": {
+                        "directly_related_user_types": []
+                    }
+                },
+                "module": "confluence",
+                "source_info": {
+                    "file": "confluence.fga"
+                }
+            }
+        },
+        {
+            "type": "page",
+            "relations": {
+                "space": {
+                    "this": {}
+                },
+                "owner": {
+                    "this": {}
+                }
+            },
+            "metadata": {
+                "relations": {
+                    "space": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "space"
+                            }
+                        ]
+                    },
+                    "owner": {
+                        "directly_related_user_types": [
+                            {
+                                "type": "user"
+                            }
+                        ]
+                    }
+                },
+                "module": "confluence",
+                "source_info": {
+                    "file": "confluence.fga"
+                }
+            }
+        }
+    ],
+    "conditions": {
+        "a_check": {
+            "expression": "val <= 10",
+            "metadata": {
+                "module": "org",
+                "source_info": {
+                    "file": "org.fga"
+                }
+            },
+            "name": "a_check",
+            "parameters": {
+                "val": {
+                    "type_name": "TYPE_NAME_INT"
+                }
+            }
+        }
+    }
+}

@@ -182,6 +182,12 @@ export class ConditionNameDoesntMatchError extends Error {
   }
 }
 
+export class UnsupportedModularModules extends Error {
+  constructor(public schemaVersion: string) {
+    super(`model schema version ${schemaVersion} does not support modules`);
+  }
+}
+
 /**
  * Represents an individual error returned during validation of `fga.mod`.
  * Line and column numbers returned as part of this are zero based.

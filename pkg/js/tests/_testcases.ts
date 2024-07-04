@@ -57,6 +57,7 @@ interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
 interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
   dslWithSourceInfo?: string;
+  expected_modules?: string[];
   expected_errors?: BaseError[];
 }
 
@@ -159,6 +160,12 @@ export function loadModuleTestCases(): ModuleTestCase[] {
       testCase.json = jsonData.toString("utf8");
     }
 
+    const expectedModulesPath = path.join(testDataPath, testCase.name!, "expected_modules.json");
+    if (fs.existsSync(expectedModulesPath)) {
+      const expectedModules = fs.readFileSync(expectedModulesPath);
+      testCase.expected_modules = JSON.parse(expectedModules.toString("utf8"));
+    }
+
     const errorsPath = path.join(testDataPath, testCase.name!, "expected_errors.json");
     if (fs.existsSync(errorsPath)) {
       const expectedErrors = fs.readFileSync(errorsPath);
@@ -178,23 +185,26 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     }
 
     const modules: ModuleFile[] = [];
-    const files = fs.readdirSync(path.join(testDataPath, testCase.name!, "module"), {
-      withFileTypes: true,
-      recursive: true,
-    });
+    const modulesPath = path.join(testDataPath, testCase.name!, "module");
+    if (fs.existsSync(modulesPath)) {
+      const files = fs.readdirSync(modulesPath, {
+        withFileTypes: true,
+        recursive: true,
+      });
 
-    for (const file of files) {
-      if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
-        continue;
+      for (const file of files) {
+        if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
+          continue;
+        }
+
+        modules.push({
+          name: file.name,
+          contents: fs.readFileSync(path.join(testDataPath, testCase.name!, "module", file.name), "utf8"),
+        });
       }
 
-      modules.push({
-        name: file.name,
-        contents: fs.readFileSync(path.join(testDataPath, testCase.name!, "module", file.name), "utf8"),
-      });
+      testCase.modules = modules;
     }
-
-    testCase.modules = modules;
 
     testCases.push(testCase as ModuleTestCase);
   }

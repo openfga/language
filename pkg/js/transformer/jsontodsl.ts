@@ -9,7 +9,7 @@ import type {
   TypeDefinition,
   Userset,
 } from "@openfga/sdk";
-import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
+import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError, UnsupportedModularModules } from "../errors";
 
 class DirectAssignmentValidator {
   occured: number = 0;
@@ -389,4 +389,48 @@ function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Me
 
   // If the module name and file name are the same then sort based on name
   return aName.localeCompare(bName);
+}
+
+/* This function gets the modules from the JSON model and
+ * returns them as an alphabetically sorted array
+ */
+export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): string[] {
+  const schemaVersion = model?.schema_version || "1.1";
+
+  if (schemaVersion !== "1.2") {
+    throw new UnsupportedModularModules(schemaVersion);
+  }
+
+  const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
+  const modules: string[] = [];
+
+  if (!isModularModel) {
+    return modules;
+  }
+
+  model.type_definitions?.forEach((typeDef) => {
+    const module = typeDef.metadata?.module;
+    if (module && !modules.includes(module)) {
+      modules.push(module);
+    }
+
+    const relations = typeDef?.metadata?.relations || {};
+    Object.entries(relations).forEach(([_, relationDefinition]) => {
+      const relationModule = relationDefinition.module;
+      if (relationModule && !modules.includes(relationModule)) {
+        modules.push(relationModule);
+      }
+    });
+  });
+
+  const conditions = model.conditions || {};
+
+  Object.entries(conditions).forEach(([_, conditionDefinition]) => {
+    const module = conditionDefinition.metadata?.module;
+    if (module && !modules.includes(module)) {
+      modules.push(module);
+    }
+  });
+
+  return modules.sort((a, b) => a.localeCompare(b));
 }

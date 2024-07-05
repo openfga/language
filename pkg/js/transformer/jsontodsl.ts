@@ -402,35 +402,26 @@ export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): strin
   }
 
   const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
-  const modules: string[] = [];
 
   if (!isModularModel) {
-    return modules;
+    return [];
   }
 
-  model.type_definitions?.forEach((typeDef) => {
-    const module = typeDef.metadata?.module;
-    if (module && !modules.includes(module)) {
-      modules.push(module);
-    }
-
+  const modules = model.type_definitions?.reduce((acc: (string | undefined)[], typeDef) => {
     const relations = typeDef?.metadata?.relations || {};
     Object.entries(relations).forEach(([_, relationDefinition]) => {
-      const relationModule = relationDefinition.module;
-      if (relationModule && !modules.includes(relationModule)) {
-        modules.push(relationModule);
-      }
+      acc.push(relationDefinition.module);
     });
-  });
+
+    return [...acc, typeDef.metadata?.module];
+  }, []);
 
   const conditions = model.conditions || {};
+  const conditionModules = Object.entries(conditions).map(
+    ([_, conditionDefinition]) => conditionDefinition.metadata?.module,
+  );
 
-  Object.entries(conditions).forEach(([_, conditionDefinition]) => {
-    const module = conditionDefinition.metadata?.module;
-    if (module && !modules.includes(module)) {
-      modules.push(module);
-    }
-  });
+  const filteredModules = [...modules, ...conditionModules].filter((module) => module !== undefined) as string[];
 
-  return modules.sort((a, b) => a.localeCompare(b));
+  return [...new Set(filteredModules)].sort((a, b) => a.localeCompare(b));
 }

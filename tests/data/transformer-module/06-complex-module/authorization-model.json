@@ -62,9 +62,9 @@
                         }
                     }
                 },
-                "module": "core",
+                "module": "bitbucket",
                 "source_info": {
-                    "file": "core.fga"
+                    "file": "bitbucket.fga"
                 }
             }
         },
@@ -85,9 +85,9 @@
                         ]
                     }
                 },
-                "module": "core",
+                "module": "bitbucket",
                 "source_info": {
-                    "file": "core.fga"
+                    "file": "bitbucket.fga"
                 }
             }
         },
@@ -222,10 +222,6 @@
                             }
                         ]
                     }
-                },
-                "module": "confluence",
-                "source_info": {
-                    "file": "confluence.fga"
                 }
             }
         }

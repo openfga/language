@@ -6,7 +6,7 @@ export const Rules = {
   object: "[^\\s]{2,256}",
 };
 
-export const Validate = {
+export const Validator = {
   // An Object is composed of a type and identifier (e.g. 'document:1')
   object: (object: string): boolean => {
     return validateFieldValue(`^${Rules.type}:${Rules.id}$`, object) && validateFieldValue(`^${Rules.object}$`, object);
@@ -32,7 +32,7 @@ export const Validate = {
   },
   // Is either a userset, userobject or a user wildcard
   user: (user: string): boolean => {
-    return Validate.userSet(user) || Validate.userObject(user) || Validate.userWildcard(user);
+    return Validator.userSet(user) || Validator.userObject(user) || Validator.userWildcard(user);
   },
   // Condition name
   relationshipCondition: (condition: string) => {

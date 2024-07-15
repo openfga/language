@@ -408,7 +408,7 @@ export function getModulesFromJSON2(model: Omit<AuthorizationModel, "id">): stri
   }
 
   const modulesMap: Record<string, boolean> = {};
-  model.type_definitions?.forEach(typeDef => {
+  model.type_definitions?.forEach((typeDef) => {
     const key = typeDef.metadata?.module;
     if (key) {
       modulesMap[key] = true;

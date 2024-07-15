@@ -394,7 +394,7 @@ function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Me
 /* This function gets the modules from the JSON model and
  * returns them as an alphabetically sorted array
  */
-export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): string[] {
+export function getModulesFromJSON2(model: Omit<AuthorizationModel, "id">): string[] {
   const schemaVersion = model?.schema_version || "1.1";
 
   if (schemaVersion !== "1.2") {
@@ -407,21 +407,28 @@ export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): strin
     return [];
   }
 
-  const modules = model.type_definitions?.reduce((acc: (string | undefined)[], typeDef) => {
-    const relations = typeDef?.metadata?.relations || {};
-    Object.entries(relations).forEach(([_, relationDefinition]) => {
-      acc.push(relationDefinition.module);
-    });
+  const modulesMap: Record<string, boolean> = {};
+  model.type_definitions?.forEach(typeDef => {
+    const key = typeDef.metadata?.module;
+    if (key) {
+      modulesMap[key] = true;
+    }
 
-    return [...acc, typeDef.metadata?.module];
-  }, []);
+    for (const relationMeta in typeDef?.metadata?.relations) {
+      const key = typeDef?.metadata?.relations[relationMeta]?.module;
+      if (key) {
+        modulesMap[key] = true;
+      }
+    }
+  });
 
   const conditions = model.conditions || {};
-  const conditionModules = Object.entries(conditions).map(
-    ([_, conditionDefinition]) => conditionDefinition.metadata?.module,
-  );
+  for (const conditionMeta in conditions) {
+    const key = conditions[conditionMeta].metadata?.module;
+    if (key) {
+      modulesMap[key] = true;
+    }
+  }
 
-  const filteredModules = [...modules, ...conditionModules].filter((module) => module !== undefined) as string[];
-
-  return [...new Set(filteredModules)].sort((a, b) => a.localeCompare(b));
+  return Object.keys(modulesMap).sort();
 }

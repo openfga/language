@@ -109,7 +109,7 @@
     - msg: >-
         type
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-        does not match naming rule: '^[^:#@\s]{1,254}$'.
+        does not match naming rule: '^[^:#@\*\s]{1,254}$'.
       line:
         start: 3
         end: 3
@@ -131,7 +131,7 @@
     - msg: >-
         relation
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-        of type 'org' does not match naming rule: '^[^:#@\s]{1,50}$'.
+        of type 'org' does not match naming rule: '^[^:#@\*\s]{1,50}$'.
       line:
         start: 5
         end: 5

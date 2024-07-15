@@ -394,7 +394,7 @@ function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Me
 /* This function gets the modules from the JSON model and
  * returns them as an alphabetically sorted array
  */
-export function getModulesFromJSON2(model: Omit<AuthorizationModel, "id">): string[] {
+export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): string[] {
   const schemaVersion = model?.schema_version || "1.1";
 
   if (schemaVersion !== "1.2") {

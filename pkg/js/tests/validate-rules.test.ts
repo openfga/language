@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 import { Validator } from "../validator/validate-rules";
 
 // These tests are a subset of bad formats that all validation rules that should fail
-const validatedBadStructure = (validator: any) => {
+const validatedBadStructure = (validator: (value: string) => boolean) => {
   it("should fail if '::' is the delimiter", () => {
     expect(validator("item::1")).toBeFalsy();
   });

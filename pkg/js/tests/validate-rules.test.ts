@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { Validate } from "../validator/validate-rules";
+import { Validator } from "../validator/validate-rules";
 
 // These tests are a subset of bad formats that all validation rules that should fail
 const validatedBadStructure = (validator: any) => {
@@ -59,109 +59,117 @@ const validatedBadStructure = (validator: any) => {
 describe("Validation Rules", () => {
   describe("Rule 'Object'", () => {
     it("should pass '<object>:<id>'", () => {
-      expect(Validate.object("document:1")).toBeTruthy();
+      expect(Validator.object("document:1")).toBeTruthy();
     });
 
     it("should fail if no ':' delimiter", () => {
-      expect(Validate.object("document1")).toBeFalsy();
+      expect(Validator.object("document1")).toBeFalsy();
     });
 
     it("should fail if includes relation", () => {
-      expect(Validate.object("document:1#relation")).toBeFalsy();
+      expect(Validator.object("document:1#relation")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.object);
+    it("should fail if includes '*'", () => {
+      expect(Validator.object("document:*")).toBeFalsy();
+    });
+
+    validatedBadStructure(Validator.object);
   });
 
   describe("Rule 'User'", () => {
     it("shoud pass for 'UserSet'", () => {
-      expect(Validate.user("group:engineering#member")).toBeTruthy();
+      expect(Validator.user("group:engineering#member")).toBeTruthy();
     });
 
     it("shoud pass for 'UserObject'", () => {
-      expect(Validate.user("group:engineering")).toBeTruthy();
+      expect(Validator.user("group:engineering")).toBeTruthy();
     });
 
     it("shoud pass for 'UserWildcard'", () => {
-      expect(Validate.user("group:*")).toBeTruthy();
+      expect(Validator.user("group:*")).toBeTruthy();
     });
 
     it("shoud fail when missing <id>'", () => {
-      expect(Validate.user("group")).toBeFalsy();
+      expect(Validator.user("group")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.user);
+    validatedBadStructure(Validator.user);
   });
 
   describe("Rule 'UserSet'", () => {
     it("should pass '<type>:<id>#<relation>'", () => {
-      expect(Validate.userSet("group:engineering#member")).toBeTruthy();
+      expect(Validator.userSet("group:engineering#member")).toBeTruthy();
     });
 
     it("shoud fail for 'UserObject'", () => {
-      expect(Validate.userSet("group:engineering")).toBeFalsy();
+      expect(Validator.userSet("group:engineering")).toBeFalsy();
     });
 
     it("shoud fail for 'UserWildcard'", () => {
-      expect(Validate.userSet("group:*")).toBeFalsy();
+      expect(Validator.userSet("group:*")).toBeFalsy();
     });
 
     it("should fail if missing <id>", () => {
-      expect(Validate.userSet("group")).toBeFalsy();
+      expect(Validator.userSet("group")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.userSet);
+    validatedBadStructure(Validator.userSet);
   });
 
   describe("Rule 'UserObject'", () => {
     it("should pass '<type>:<id>", () => {
-      expect(Validate.userObject("group:engineering")).toBeTruthy();
+      expect(Validator.userObject("group:engineering")).toBeTruthy();
     });
 
     it("should fail if contains '#", () => {
-      expect(Validate.userObject("group:engineering#member")).toBeFalsy();
+      expect(Validator.userObject("group:engineering#member")).toBeFalsy();
     });
 
     it("should fail if 'Wildcard' is present", () => {
-      expect(Validate.userObject("group:*")).toBeFalsy();
+      expect(Validator.userObject("group:*")).toBeFalsy();
     });
 
     it("should fail if missing <id>", () => {
-      expect(Validate.userObject("group")).toBeFalsy();
+      expect(Validator.userObject("group")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.userObject);
+    validatedBadStructure(Validator.userObject);
   });
 
   describe("Rule 'UserWildcard'", () => {
     it("should pass '<type>:*", () => {
-      expect(Validate.userWildcard("group:*")).toBeTruthy();
+      expect(Validator.userWildcard("group:*")).toBeTruthy();
     });
 
     it("should fail if missing 'UserObject'", () => {
-      expect(Validate.userWildcard("group:organization")).toBeFalsy();
+      expect(Validator.userWildcard("group:organization")).toBeFalsy();
+    });
+
+    it("should fail if contains '#", () => {
+      expect(Validator.userWildcard("group:engineering#member")).toBeFalsy();
     });
 
     it("should fail if missing '*' delimiter", () => {
-      expect(Validate.userWildcard("group")).toBeFalsy();
+      expect(Validator.userWildcard("group")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.userWildcard);
+    validatedBadStructure(Validator.userWildcard);
   });
 
   describe("Rule 'Type'", () => {
     it("should pass '<type>", () => {
-      expect(Validate.type("folder")).toBeTruthy();
+      expect(Validator.type("folder")).toBeTruthy();
     });
 
     it("should fail 'UserObject", () => {
-      expect(Validate.type("folder:1")).toBeFalsy();
+      expect(Validator.type("folder:1")).toBeFalsy();
     });
 
     it("should fail 'UserSet'", () => {
-      expect(Validate.type("folder:1#relation")).toBeFalsy();
+      expect(Validator.type("folder:1#relation")).toBeFalsy();
     });
 
-    validatedBadStructure(Validate.type);
+    validatedBadStructure(Validator.type);
   });
 });

@@ -9,7 +9,7 @@ import {
   TypeDefinition,
 } from "@openfga/sdk";
 import Ajv, { Schema, ValidateFunction, SchemaValidateFunction } from "ajv";
-import { Validate } from "./validate-rules";
+import { Validator } from "./validate-rules";
 
 export function isStringValue(str: unknown) {
   return typeof str == "string";
@@ -734,16 +734,16 @@ export function YamlTuplesValidator(): ValidateFunction {
     $data: true,
   })
     .addFormat("user", {
-      validate: Validate.user,
+      validate: Validator.user,
     })
     .addFormat("relation", {
-      validate: Validate.relation,
+      validate: Validator.relation,
     })
     .addFormat("object", {
-      validate: Validate.object,
+      validate: Validator.object,
     })
     .addFormat("condition", {
-      validate: Validate.relationshipCondition,
+      validate: Validator.relationshipCondition,
     })
     .addKeyword({
       keyword: "valid_tuple",
@@ -807,19 +807,19 @@ export function YamlStoreValidator(): ValidateFunction {
     $data: true,
   })
     .addFormat("user", {
-      validate: Validate.user,
+      validate: Validator.user,
     })
     .addFormat("relation", {
-      validate: Validate.relation,
+      validate: Validator.relation,
     })
     .addFormat("object", {
-      validate: Validate.object,
+      validate: Validator.object,
     })
     .addFormat("condition", {
-      validate: Validate.relationshipCondition,
+      validate: Validator.relationshipCondition,
     })
     .addFormat("type", {
-      validate: Validate.type,
+      validate: Validator.type,
     })
     .addKeyword({
       keyword: "valid_tuple",

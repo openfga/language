@@ -12,7 +12,7 @@ import Ajv, { Schema, ValidateFunction, SchemaValidateFunction } from "ajv";
 import { Validator } from "./validate-rules";
 
 export function isStringValue(str: unknown) {
-  return typeof str == "string";
+  return typeof str == "string" || String;
 }
 
 type Store = {
@@ -34,16 +34,20 @@ type Test = {
 
 type CheckTest = Omit<CheckRequestTupleKey, "relation"> & {
   assertions: Record<string, boolean>;
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   context: Record<string, any>;
 };
 
 type ListObjectTest = Omit<ListObjectsRequest, "relation"> & {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   assertions: Record<string, any>;
 };
 
 type ListUsersTest = Omit<ListUsersRequest, "relation" | "user_filters"> & {
   object: string;
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   user_filter: Record<string, any>;
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   assertions: Record<string, any>;
 };
 
@@ -418,6 +422,7 @@ function validateUserField(model: AuthorizationModel, types: string[], userField
 function validateAssertionField(
   model: AuthorizationModel,
   typeField: string,
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   assertions: Record<string, any>,
   instancePath: string,
 ) {
@@ -649,7 +654,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
 
     // Validate check
     if (test.check) {
-      for (const singleCheckTest of test.check) {
+      for (const [testNumber, singleCheckTest] of Object.entries(test.check)) {
         if (!singleCheckTest.user || !singleCheckTest.object) {
           return false;
         }
@@ -659,7 +664,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
             singleCheckTest,
             tuples,
             params,
-            instancePath + `/tests/${singleTest}/check/${singleCheckTest}`,
+            instancePath + `/tests/${singleTest}/check/${testNumber}`,
           ),
         );
       }
@@ -667,7 +672,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
 
     // Validate list objects
     if (test.list_objects) {
-      for (const singleListObjectTest of test.list_objects) {
+      for (const [testNumber, singleListObjectTest] of Object.entries(test.list_objects)) {
         if (!singleListObjectTest.user || !singleListObjectTest.type) {
           return false;
         }
@@ -677,7 +682,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
             singleListObjectTest,
             tuples,
             params,
-            instancePath + `/tests/${singleTest}/list_objects/${singleListObjectTest}`,
+            instancePath + `/tests/${singleTest}/list_objects/${testNumber}`,
           ),
         );
       }
@@ -685,7 +690,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
 
     // Validate list users
     if (test.list_users) {
-      for (const singleListUsersTest of test.list_users) {
+      for (const [testNumber, singleListUsersTest] of Object.entries(test.list_users)) {
         if (!singleListUsersTest.object || !singleListUsersTest.user_filter) {
           return false;
         }
@@ -695,7 +700,7 @@ function validateTestTypes(store: Store, model: AuthorizationModel, instancePath
             singleListUsersTest,
             tuples,
             params,
-            instancePath + `/tests/${singleTest}/list_users/${singleListUsersTest}`,
+            instancePath + `/tests/${singleTest}/list_users/${testNumber}`,
           ),
         );
       }

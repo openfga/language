@@ -733,6 +733,7 @@ const validateStore: SchemaValidateFunction = function (
 // YAML validation using ajv
 export function YamlTuplesValidator(): ValidateFunction {
   return new Ajv({
+    strict: true,
     allErrors: true,
     verbose: true,
     passContext: true,
@@ -806,6 +807,7 @@ const OPENFGA_TUPLES_SCHEMA: Schema = {
 // YAML validation using ajv
 export function YamlStoreValidator(): ValidateFunction {
   return new Ajv({
+    strict: true,
     allErrors: true,
     verbose: true,
     passContext: true,

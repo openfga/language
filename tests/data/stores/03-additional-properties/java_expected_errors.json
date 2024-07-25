@@ -1,0 +1,34 @@
+[
+  {
+    "message": "/tests/0/check/0: property 'unexpected_field' is not defined in the schema and the schema does not allow additional properties",
+    "validationMessage": {
+      "type": "additionalProperties",
+      "code": "1001",
+      "message": "/tests/0/check/0: property 'unexpected_field' is not defined in the schema and the schema does not allow additional properties",
+      "instanceLocation": "/tests/0/check/0",
+      "property": "unexpected_field",
+      "evaluationPath": "/properties/tests/items/properties/check/items/additionalProperties",
+      "schemaLocation": "#/properties/tests/items/properties/check/items/additionalProperties",
+      "messageKey": "additionalProperties",
+      "arguments": [
+        "unexpected_field"
+      ]
+    }
+  },
+  {
+    "message": ": property 'unexpected_field2' is not defined in the schema and the schema does not allow additional properties",
+    "validationMessage": {
+      "type": "additionalProperties",
+      "code": "1001",
+      "message": ": property 'unexpected_field2' is not defined in the schema and the schema does not allow additional properties",
+      "instanceLocation": "",
+      "property": "unexpected_field2",
+      "evaluationPath": "/additionalProperties",
+      "schemaLocation": "#/additionalProperties",
+      "messageKey": "additionalProperties",
+      "arguments": [
+        "unexpected_field2"
+      ]
+    }
+  }
+]

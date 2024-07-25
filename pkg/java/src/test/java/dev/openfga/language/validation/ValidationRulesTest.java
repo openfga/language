@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
-public class ValidationRulesTestCase {
+public class ValidationRulesTest {
 
     public void validatedBadStructure(Function<String, Boolean> validate) {
         assertFalse(validate.apply("item::1"));

@@ -31,6 +31,39 @@ public class TestsData {
     public static final List<FgaModTestCase> FGA_MOD_TRANSFORM_TEST_CASES = loadFgaModTransformTestCases();
     public static final List<JsonValidationTestCase> JSON_VALIDATION_TEST_CASES = loadJsonValidationTestCases();
 
+    public static final String STORE_VALIDATION_YAML_FILE = "store.fga.yaml";
+    public static final String STORE_VALIDATION_ERRORS_JSON_FILE = "java_expected_errors.json";
+    public static final String STORE_VALIDATION_CASES_FOLDER = "../../tests/data/stores";
+    public static final List<ValidateStoreTestCase> STORE_VALIDATION_TEST_CASES = loadStoreValidationTestCases();
+
+    private static List<ValidateStoreTestCase> loadStoreValidationTestCases() {
+        var storeValidationCasesFolder = Paths.get(STORE_VALIDATION_CASES_FOLDER);
+
+        List<ValidateStoreTestCase> cases = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(storeValidationCasesFolder)) {
+            for (Path path : stream) {
+                if (!Files.isDirectory(path)) {
+                    continue;
+                }
+
+                var name = path.getFileName().toString();
+                var storeFile = path.resolve(STORE_VALIDATION_YAML_FILE);
+                var errorFile = path.resolve(STORE_VALIDATION_ERRORS_JSON_FILE);
+
+                if (errorFile.toFile().exists()) {
+                    cases.add(
+                            new ValidateStoreTestCase(name, Files.readString(storeFile), Files.readString(errorFile)));
+                } else {
+                    cases.add(new ValidateStoreTestCase(name, Files.readString(storeFile), null));
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return unmodifiableList(cases);
+    }
+
     private static List<ValidTransformerTestCase> loadValidTransformerTestCases() {
         var transformerCasesFolder = Paths.get(TRANSFORMER_CASES_FOLDER);
 

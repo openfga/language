@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "message": "'model' or 'model_file' must be presenet keys.",
+    "validationMessage": {
+      "type": "valid_store",
+      "code": "valid_store",
+      "message": "'model' or 'model_file' must be presenet keys.",
+      "instanceLocation": "",
+      "evaluationPath": "/valid_store",
+      "schemaLocation": "#/valid_store",
+      "messageKey": "'model' or 'model_file' must be presenet keys."
+    }
+  }
+]

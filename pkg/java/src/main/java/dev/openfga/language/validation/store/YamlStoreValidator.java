@@ -1,4 +1,4 @@
-package dev.openfga.language.validation;
+package dev.openfga.language.validation.store;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,6 +19,7 @@ import com.networknt.schema.ValidationContext;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.serialization.JsonNodeReader;
 import dev.openfga.language.errors.StoreValidationSingleError;
+import dev.openfga.language.validation.Validator;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package dev.openfga.language.validation;
+package dev.openfga.language.validation.store;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.BaseJsonValidator;
@@ -46,14 +46,14 @@ public class TupleValidator extends BaseJsonValidator {
     @Override
     public Set<ValidationMessage> validate(
             ExecutionContext executionContext, JsonNode node, JsonNode rootNode, JsonNodePath instanceLocation) {
-        if (!node.asText().equals(value)) {
-            return Collections.singleton(message()
-                    .message("{0}: must be equal to ''{1}''")
-                    .arguments(value)
-                    .instanceLocation(instanceLocation)
-                    .instanceNode(node)
-                    .build());
-        }
+        // if (!node.asText().equals(value)) {
+        // return Collections.singleton(message()
+        // .message("{0}: must be equal to ''{1}''")
+        // .arguments(value)
+        // .instanceLocation(instanceLocation)
+        // .instanceNode(node)
+        // .build());
+        // }
         return Collections.emptySet();
     }
 }

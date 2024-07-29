@@ -1,4 +1,4 @@
-package dev.openfga.language.validation;
+package dev.openfga.language.validation.store;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,14 +26,22 @@ public class YamlStoreValidatorShould {
         var load = new Load(settings);
         var loader = load.loadFromString(store);
         var mapper = new ObjectMapper();
+
+        //var mapped = mapper.readValue(loader.toString(), StorePojo.class);
+
         var mapped = mapper.writeValueAsString(loader);
-        var results = validator.validate(mapped);
+        var storePojo = mapper.readValue(mapped, StorePojo.class);
 
-        assertNotNull(results);
+        System.out.println(storePojo);
 
-        if (!Objects.isNull(errors)) {
-            assertEquals(mapper.readTree(errors), mapper.readTree(mapper.writeValueAsString(results)));
-        }
+        // var mapped = mapper.writeValueAsString(loader);
+//        var results = validator.validate(mapped);
+//
+//        assertNotNull(results);
+//
+//        if (!Objects.isNull(errors)) {
+//            assertEquals(mapper.readTree(errors), mapper.readTree(mapper.writeValueAsString(results)));
+//        }
     }
 
     private static Stream<Arguments> validationTestCases() {

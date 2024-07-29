@@ -146,13 +146,13 @@ function hasEntryPointOrLoop(
   relationName: string | undefined,
   rewrite: Userset,
   visitedRecords: Record<string, Record<string, boolean>>,
-): [boolean, boolean] {
+): { hasEntry: boolean; loop: boolean } {
   // Deep copy
   const visited = deepCopy(visitedRecords);
 
   if (!relationName) {
     // nothing to do if relation is undefined
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   if (!visited[typeName]) {
@@ -162,13 +162,13 @@ function hasEntryPointOrLoop(
 
   const currentRelation = typeMap[typeName].relations;
   if (!currentRelation || !currentRelation[relationName]) {
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   const relationMetadata = typeMap[typeName].metadata?.relations;
 
   if (!typeMap[typeName].relations || !typeMap[typeName].relations![relationName]) {
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   if (rewrite.this) {
@@ -177,58 +177,57 @@ function hasEntryPointOrLoop(
     )) {
       const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(assignableType);
       if (!decodedRelation || isWildcard) {
-        return [true, false];
+        return { hasEntry: true, loop: false };
       }
 
       const assignableRelation = typeMap[decodedType].relations![decodedRelation];
       if (!assignableRelation) {
-        return [false, false];
+        return { hasEntry: false, loop: false };
       }
 
       if (visited[decodedType]?.[decodedRelation]) {
         continue;
       }
 
-      const [hasEntry] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+      const { hasEntry } = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
       if (hasEntry) {
-        return [true, false];
+        return { hasEntry: true, loop: false };
       }
     }
 
-    return [false, false];
+    return { hasEntry: false, loop: false };
   } else if (rewrite.computedUserset) {
     const computedRelationName = rewrite.computedUserset.relation;
     if (!computedRelationName) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     if (!typeMap[typeName].relations![computedRelationName]) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     const computedRelation = typeMap[typeName].relations![computedRelationName];
     if (!computedRelation) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     // Loop detected
     if (visited[typeName][computedRelationName]) {
-      return [false, true];
+      return { hasEntry: false, loop: true };
     }
 
-    const [hasEntry, loop] = hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
-    return [hasEntry, loop];
+    return hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
   } else if (rewrite.tupleToUserset) {
     const tuplesetRelationName = rewrite.tupleToUserset.tupleset.relation;
     const computedRelationName = rewrite.tupleToUserset.computedUserset.relation;
 
     if (!tuplesetRelationName || !computedRelationName) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     const tuplesetRelation = typeMap[typeName].relations![tuplesetRelationName];
     if (!tuplesetRelation) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     for (const assignableType of getTypeRestrictions(
@@ -240,7 +239,7 @@ function hasEntryPointOrLoop(
           continue;
         }
 
-        const [hasEntry] = hasEntryPointOrLoop(
+        const { hasEntry } = hasEntryPointOrLoop(
           typeMap,
           assignableType,
           computedRelationName,
@@ -248,60 +247,47 @@ function hasEntryPointOrLoop(
           visited,
         );
         if (hasEntry) {
-          return [true, false];
+          return { hasEntry: true, loop: false };
         }
       }
     }
-    return [false, false];
+    return { hasEntry: false, loop: false };
   } else if (rewrite.union) {
-    let loop = false;
+    let hasLoop = false;
 
     for (const child of rewrite.union.child) {
-      const [entryPoint, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
-      if (entryPoint) {
-        return [true, false];
+      const { hasEntry, loop } = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      if (hasEntry) {
+        return { hasEntry: true, loop: false };
       }
-      loop = loop || childLoop;
+      hasLoop = hasLoop || loop;
     }
-    return [false, loop];
+    return { hasEntry: false, loop: hasLoop };
   } else if (rewrite.intersection) {
     for (const child of rewrite.intersection.child) {
-      const [hasEntry, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      const { hasEntry, loop } = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
       if (!hasEntry) {
-        return [false, childLoop];
+        return { hasEntry: false, loop };
       }
     }
-
-    return [true, false];
+    return { hasEntry: true, loop: false };
   } else if (rewrite.difference) {
     const visited = deepCopy(visitedRecords);
 
-    const [hasEntryBase, loopBase] = hasEntryPointOrLoop(
-      typeMap,
-      typeName,
-      relationName,
-      rewrite.difference.base,
-      visited,
-    );
-    if (!hasEntryBase) {
-      return [false, loopBase];
+    const baseResult = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.base, visited);
+    if (!baseResult.hasEntry) {
+      return { hasEntry: false, loop: baseResult.loop };
     }
 
-    const [hasEntrySubtract, loopSubtract] = hasEntryPointOrLoop(
-      typeMap,
-      typeName,
-      relationName,
-      rewrite.difference.subtract,
-      visited,
-    );
-    if (!hasEntrySubtract) {
-      return [false, loopSubtract];
+    const subtractResult = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.subtract, visited);
+    if (!subtractResult.hasEntry) {
+      return { hasEntry: false, loop: subtractResult.loop };
     }
 
-    return [true, false];
+    return { hasEntry: true, loop: false };
   }
 
-  return [false, false];
+  return { hasEntry: false, loop: false };
 }
 
 const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {
@@ -465,7 +451,7 @@ function childDefDefined(
       for (const item of fromPossibleTypes) {
         const { decodedType, decodedRelation, isWildcard, decodedConditionName } = destructTupleToUserset(item);
         if (!typeMap[decodedType]) {
-          // type is not defined
+          // Split line at definition as InvalidType should mark the value, not the key
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
           collector.raiseInvalidType(decodedType, type, relation, { file, module }, lineIndex);
@@ -725,7 +711,7 @@ function modelValidation(
           fileToModuleMap[file].add(module);
         }
 
-        const [hasEntry, loop] = hasEntryPointOrLoop(
+        const { hasEntry, loop } = hasEntryPointOrLoop(
           typeMap,
           typeName,
           relationName,

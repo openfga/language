@@ -1412,6 +1412,508 @@
         end: 29
       metadata:
         errorType: invalid-relation-type
+
+# Cycle tests
+
+- name: cycle 1 should fail
+  dsl: |
+    model
+      schema 1.1
+    type resource
+      relations
+        define x: y
+        define y: x
+  expected_errors:
+    - msg: "`x` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`y` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: cycle 2 should fail
+  dsl: |
+    model
+      schema 1.1
+    type resource
+      relations
+        define x: y
+        define y: z
+        define z: x
+  expected_errors:
+    - msg: "`x` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 4
+        end: 4
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`y` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`z` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+
+# Cycles currnetly not being caught
+
+- name: cycle 3 should fail
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type resource
+      relations
+        define x: [user] or y
+        define y: [user] or z
+        define z: [user] or x
+  expected_errors:
+    - msg: "`x` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`y` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`z` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: cycle 4 should fail
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type resource
+      relations
+        define x: [user] but not y
+        define y: [user] but not z
+        define z: [user] or x
+  expected_errors:
+    - msg: "`x` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`y` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`z` is an impossible relation for `resource` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 12
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: cycle 5 should fail
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user] or memberA or memberB or memberC
+        define memberA: [user] or member or memberB or memberC
+        define memberB: [user] or member or memberA or memberC
+        define memberC: [user] or member or memberA or memberB
+  expected_errors:
+    - msg: "`member` is an impossible relation for `group` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`memberA` is an impossible relation for `group` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`memberB` is an impossible relation for `group` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`memberC` is an impossible relation for `group` (potential loop)."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: cycle 6 should fail
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type account
+      relations
+        define admin: [user] or member or super_admin or owner
+        define member: [user] or owner or admin or super_admin
+        define super_admin: [user] or admin or member or owner
+        define owner: [user]
+  expected_errors:
+    - msg: "`admin` is an impossible relation for `account` (potential loop)."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 16
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`member` is an impossible relation for `account` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`super_admin` is an impossible relation for `account` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 22
+      metadata:
+        errorType: relation-no-entry-point
+
+# - name: cycle 7
+#   dsl: |
+#     model
+#       schema 1.1
+#     type user
+#     type document
+#       relations
+#         define editor: [user]
+#         define viewer: [document#viewer] or editor
+#   expected_errors: []
+
+# Validate
+
+- name: direct_relationship_with_entrypoint should pass
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define viewer: [user]
+  expected_errors: []
+
+- name: computed_relationship_with_entrypoint should pass
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define editor: [user]
+        define viewer: editor
+  expected_errors: []
+
+- name: no_entrypoint_1 should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define admin: [user]
+        define action1: admin and action2 and action3
+        define action2: admin and action1 and action3
+        define action3: admin and action1 and action2
+  expected_errors:
+    - msg: "`action1` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action2` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action3` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: no_entrypoint_2 should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define admin: [user]
+        define action1: admin but not action2
+        define action2: admin but not action3
+        define action3: admin but not action1
+  expected_errors:
+    - msg: "`action1` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action2` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+    - msg: "`action3` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 11
+        end: 18
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: no_entrypoint_3a should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define viewer: [document#viewer] and editor
+        define editor: [user]
+  expected_errors:
+    - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: no_entrypoint_3b should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define viewer: [document#viewer] but not editor
+        define editor: [user]
+  expected_errors:
+    - msg: "`viewer` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        errorType: relation-no-entry-point
+
+- name: no_entrypoint_4 should fail
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type folder
+      relations
+        define parent: [document]
+        define viewer: editor from parent
+
+    type document
+      relations
+        define parent: [folder]
+        define editor: viewer
+        define viewer: editor from parent
+  expected_errors:
+    - msg: "the `editor` relation definition on type `document` is not valid: `editor` does not exist on `parent`, which is of type `folder`."
+      line:
+        start: 13
+        end: 13
+      column:
+        start: 19
+        end: 37
+      metadata:
+        errorType: invalid-relation-on-tupleset
+
+- name: self_referencing_type_restriction_with_entrypoint_1 should pass
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define restricted: [user]
+        define editor: [user]
+        define viewer: [document#viewer] or editor
+        define can_view: viewer but not restricted
+        define can_view_actual: can_view
+  expected_errors: []
+
+- name: self_referencing_type_restriction_with_entrypoint_2 should pass
+  dsl: |
+    model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define editor: [user]
+        define viewer: [document#viewer] or editor
+  expected_errors: []
+
+# Models with loops, but are valid because of an entry point
+
+- name: union does not require all child to have entry
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define admin: [user]
+        define action1: admin or action2 or action3
+        define action2: admin or action3 or action1
+        define action3: admin or action1 or action2
+  expected_errors: []
+
+- name: union does not require all child to have entry even for intersection child
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type docs
+      relations
+        define admin: [user]
+        define union1: admin or union2
+        define union2: admin or union1
+        define intersection1: union1 and union2
+        define intersection2: union1 and union2
+  expected_errors: []
+
+- name: union does not require all child to have entry even for exclusion child
+  skip: true
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type docs
+      relations
+        define admin: [user]
+        define union1: admin or union2
+        define union2: admin or union1
+        define exclusion1: admin but not union1
+        define exclusion2: admin but not union2
+  expected_errors: []
+
 #- name: invalid cel expression
 #  dsl: |
 #    model
@@ -1451,3 +1953,34 @@
 #    }
 #  expected_errors:
 #    - msg: some error
+
+- name: invalid type error maps to wrong location when duplicate relation name is used in direct assignment
+  dsl: |
+    model
+      schema 1.1
+    type custome
+    type bank
+      relations
+        define customer : [customer]
+    type account
+      relations
+        define owner : [customer]
+  expected_errors:
+    - msg: "`customer` is not a valid type."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 23
+        end: 31
+      metadata:
+        errorType: invalid-type
+    - msg: "`customer` is not a valid type."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 20
+        end: 28
+      metadata:
+        errorType: invalid-type

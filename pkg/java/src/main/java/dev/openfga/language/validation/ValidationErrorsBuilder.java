@@ -108,7 +108,11 @@ class ValidationErrorsBuilder {
 
     public void raiseInvalidType(int lineIndex, String symbol, String typeName) {
         var message = "`" + typeName + "` is not a valid type.";
-        var errorProperties = buildErrorProperties(message, lineIndex, symbol);
+        var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIdx, rawLine, type) -> {
+            // Split line at definition as InvalidType should mark the value, not the key
+            var splitLine = rawLine.split(":");
+            return splitLine[0].length() + splitLine[1].indexOf(typeName) + 1;
+        });
         var metadata = new ValidationMetadata(symbol, ValidationError.InvalidType);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }

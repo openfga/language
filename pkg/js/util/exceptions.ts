@@ -212,6 +212,12 @@ const createInvalidTypeError = (props: BaseProps, typeName: string) => {
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.InvalidType, typeName: typeName, file, module, relation },
+      customResolver: (wordIndex: number, rawLine: string, symbol: string): number => {
+        // Split line at definition as InvalidType should mark the value, not the key
+        const re = new RegExp("\\b" + symbol + "\\b");
+        const splitLine = rawLine.split(":");
+        return splitLine[0].length + splitLine[1].search(re) + 1;
+      },
     }),
   );
 };

@@ -16,7 +16,7 @@ type AuthorizationModelGraph struct {
 
 var _ dot.Attributers = (*AuthorizationModelGraph)(nil)
 
-func (g *AuthorizationModelGraph) DOTAttributers() (graph, node, edge encoding.Attributer) {
+func (g *AuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encoding.Attributer, encoding.Attributer) {
 	return g, nil, nil
 }
 

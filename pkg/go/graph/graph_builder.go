@@ -60,8 +60,7 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 			relationNode := graphBuilder.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
 
 			rewrite := typeDef.GetRelations()[relation]
-			switch rewrite.GetUserset().(type) {
-			case *openfgav1.Userset_This:
+			if _, ok := rewrite.GetUserset().(*openfgav1.Userset_This); ok {
 				directlyRelated := make([]*openfgav1.RelationReference, 0)
 				if metadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
 					directlyRelated = metadata.GetDirectlyRelatedUserTypes()

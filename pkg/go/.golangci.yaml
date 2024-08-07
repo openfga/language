@@ -9,22 +9,16 @@ skip-dirs:
 linters:
   enable-all: true
   disable:
+    - godox
+    - lll
+    - varnamelen
+    - ireturn
     - dupl #temporary
     - exhaustruct
     - gochecknoinits
     - forbidigo
     - gochecknoglobals
     # deprecated
-    - exhaustivestruct
-    - interfacer
-    - maligned
-    - scopelint
-    - structcheck
-    - varcheck
-    - deadcode
-    - ifshort
-    - golint
-    - nosnakecase
     - testpackage
     - gci
 linters-settings:

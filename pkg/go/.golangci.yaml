@@ -47,6 +47,7 @@ linters-settings:
           - "$test"
         allow:
           - $gostd
+          - github.com/google/go-cmp/cmp
           - github.com/stretchr/testify
           - github.com/openfga/api
           - gopkg.in/yaml.v3

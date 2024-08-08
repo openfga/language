@@ -63,6 +63,10 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 			if _, ok := rewrite.GetUserset().(*openfgav1.Userset_This); ok {
 				parseThis(typeDef, relation, graphBuilder, relationNode)
 			}
+
+			if _, ok := rewrite.GetUserset().(*openfgav1.Userset_ComputedUserset); ok {
+				parseComputed(rewrite, typeDef.GetType(), graphBuilder, relationNode)
+			}
 		}
 	}
 
@@ -102,6 +106,15 @@ func parseThis(typeDef *openfgav1.TypeDefinition, relation string, graphBuilder 
 			graphBuilder.AddEdge(newNode, relationNode, DirectEdge)
 		}
 	}
+}
+
+func parseComputed(rewrite *openfgav1.Userset, typeName string, graphBuilder *AuthorizationModelGraphBuilder, relationNode *AuthorizationModelNode) {
+	// e.g. define x: y. Here y is the rewritten relation
+	rewrittenRelation := rewrite.GetComputedUserset().GetRelation()
+	rewrittenNodeName := fmt.Sprintf("%s#%s", typeName, rewrittenRelation)
+	newNode := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
+	// new edge from y to x
+	graphBuilder.AddEdge(newNode, relationNode, ComputedEdge)
 }
 
 func (g *AuthorizationModelGraphBuilder) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *AuthorizationModelNode {

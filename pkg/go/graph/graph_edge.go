@@ -10,6 +10,7 @@ type EdgeType int64
 const (
 	DirectEdge   EdgeType = 0
 	ComputedEdge EdgeType = 1
+	TTUEdge      EdgeType = 2
 )
 
 type AuthorizationModelEdge struct {
@@ -17,6 +18,9 @@ type AuthorizationModelEdge struct {
 
 	// custom attributes
 	edgeType EdgeType
+
+	// only when edgeType == TTUEdge
+	conditionedOn string
 }
 
 var _ encoding.Attributer = (*AuthorizationModelEdge)(nil)
@@ -35,6 +39,18 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 		attrs = append(attrs, encoding.Attribute{
 			Key:   "style",
 			Value: "dashed",
+		})
+	}
+
+	if n.edgeType == TTUEdge {
+		headLabelAttrValue := n.conditionedOn
+		if headLabelAttrValue == "" {
+			headLabelAttrValue = "missing"
+		}
+
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "headlabel",
+			Value: headLabelAttrValue,
 		})
 	}
 

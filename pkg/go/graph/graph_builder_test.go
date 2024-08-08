@@ -41,6 +41,106 @@ rankdir=BT
 2 -> 1 [label=direct];
 }`,
 		},
+		`direct_assignment_with_wildcard`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define viewer: [user:*]
+				type user`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label="user:*"];
+3 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+}`,
+		},
+		`direct_assignment_with_wildcard_and_type`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define viewer: [user:*, user]
+				type user`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label="user:*"];
+3 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+3 -> 1 [label=direct];
+}`,
+		},
+		`direct_assignment_with_usersets`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define viewer: [group#member]
+				type group
+					relations
+						define member: [user]
+				type user`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label="group#member"];
+3 [label=group];
+4 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+4 -> 2 [label=direct];
+}`,
+		},
+		`direct_assignment_with_conditions`: { // conditions are not represented
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define viewer: [user with condX]
+				condition condX (x:int) {
+					x > 0
+				}`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+}`,
+		},
 	}
 
 	for name, test := range testCases {

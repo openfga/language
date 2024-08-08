@@ -61,17 +61,7 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 
 			rewrite := typeDef.GetRelations()[relation]
 			if _, ok := rewrite.GetUserset().(*openfgav1.Userset_This); ok {
-				directlyRelated := make([]*openfgav1.RelationReference, 0)
-				if metadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
-					directlyRelated = metadata.GetDirectlyRelatedUserTypes()
-				}
-
-				for _, directlyRelatedDef := range directlyRelated {
-					assignableType := directlyRelatedDef.GetType()
-
-					newNode := graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType)
-					graphBuilder.AddEdge(newNode, relationNode, DirectEdge)
-				}
+				parseThis(typeDef, relation, graphBuilder, relationNode)
 			}
 		}
 	}
@@ -82,6 +72,36 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 	}
 
 	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
+}
+
+func parseThis(typeDef *openfgav1.TypeDefinition, relation string, graphBuilder *AuthorizationModelGraphBuilder, relationNode *AuthorizationModelNode) {
+	directlyRelated := make([]*openfgav1.RelationReference, 0)
+	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
+		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
+	}
+
+	for _, directlyRelatedDef := range directlyRelated {
+		if directlyRelatedDef.GetRelationOrWildcard() == nil {
+			// direct assignment to concrete type
+			assignableType := directlyRelatedDef.GetType()
+			newNode := graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType)
+			graphBuilder.AddEdge(newNode, relationNode, DirectEdge)
+		}
+
+		if directlyRelatedDef.GetWildcard() != nil {
+			// direct assignment to wildcard
+			assignableWildcard := directlyRelatedDef.GetType() + ":*"
+			newNode := graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
+			graphBuilder.AddEdge(newNode, relationNode, DirectEdge)
+		}
+
+		if directlyRelatedDef.GetRelation() != "" {
+			// direct assignment to userset
+			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
+			newNode := graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
+			graphBuilder.AddEdge(newNode, relationNode, DirectEdge)
+		}
+	}
 }
 
 func (g *AuthorizationModelGraphBuilder) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *AuthorizationModelNode {

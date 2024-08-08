@@ -8,7 +8,8 @@ import (
 type EdgeType int64
 
 const (
-	DirectEdge EdgeType = 0 // e.g. `group`
+	DirectEdge   EdgeType = 0
+	ComputedEdge EdgeType = 1
 )
 
 type AuthorizationModelEdge struct {
@@ -27,6 +28,13 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 		attrs = append(attrs, encoding.Attribute{
 			Key:   "label",
 			Value: "direct",
+		})
+	}
+
+	if n.edgeType == ComputedEdge {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "style",
+			Value: "dashed",
 		})
 	}
 

@@ -141,6 +141,57 @@ rankdir=BT
 2 -> 1 [label=direct];
 }`,
 		},
+		`computed_relation`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define x: y
+						define y: [user]
+				type user`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#x"];
+2 [label="folder#y"];
+3 [label=user];
+
+// Edge definitions.
+2 -> 1 [style=dashed];
+3 -> 2 [label=direct];
+}`,
+		},
+		`computed_relation_with_cycle`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define x: y
+						define y: z
+						define z: x`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#x"];
+2 [label="folder#y"];
+3 [label="folder#z"];
+
+// Edge definitions.
+1 -> 3 [style=dashed];
+2 -> 1 [style=dashed];
+3 -> 2 [style=dashed];
+}`,
+		},
 	}
 
 	for name, test := range testCases {
@@ -159,7 +210,7 @@ rankdir=BT
 
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
-			require.Empty(t, diff, "expected %s\ngot %s", test.expectedOutput, actualDOT)
+			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, actualDOT)
 		})
 	}
 }

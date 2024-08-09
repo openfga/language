@@ -192,6 +192,110 @@ rankdir=BT
 3 -> 2 [style=dashed];
 }`,
 		},
+		`tuple_to_userset_one_related_type`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type document
+					relations
+						define parent: [folder]
+						define viewer: admin from parent
+				type folder
+					relations
+						define admin: [user]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#parent"];
+2 [label=folder];
+3 [label="document#viewer"];
+4 [label="folder#admin"];
+5 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+4 -> 3 [headlabel="(document#parent)"];
+5 -> 4 [label=direct];
+}`,
+		},
+		`tuple_to_userset_two_related_types`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type document
+					relations
+						define parent: [folder, folder2]
+						define viewer: admin from parent
+				type folder
+					relations
+						define admin: [user]
+				type folder2
+					relations
+						define admin: [user]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#parent"];
+2 [label=folder];
+3 [label=folder2];
+4 [label="document#viewer"];
+5 [label="folder#admin"];
+6 [label="folder2#admin"];
+7 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+3 -> 1 [label=direct];
+5 -> 4 [headlabel="(document#parent)"];
+6 -> 4 [headlabel="(document#parent)"];
+7 -> 5 [label=direct];
+7 -> 6 [label=direct];
+}`,
+		},
+		`tuple_to_userset_one_related_type_the_other_not`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type document
+					relations
+						define parent: [folder, folder2]
+						define viewer: admin from parent
+				type folder
+					relations
+						define admin: [user]
+				type folder2`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#parent"];
+2 [label=folder];
+3 [label=folder2];
+4 [label="document#viewer"];
+5 [label="folder#admin"];
+6 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+3 -> 1 [label=direct];
+5 -> 4 [headlabel="(document#parent)"];
+6 -> 5 [label=direct];
+}`,
+		},
 	}
 
 	for name, test := range testCases {

@@ -511,7 +511,28 @@ function childDefDefined(
     case RewriteType.TupleToUserset: {
       // for this case, we need to consider both the "from" and "relation"
       if (childDef.from && childDef.target) {
-        // First, check to see if the childDef.from exists
+        // Tupleset relations must only be direct relationships, no rewrites are allowed on them.
+        const currentRelation = relations[relation];
+        const rewrite = { ...currentRelation };
+        const tupleSet = rewrite.tupleToUserset?.tupleset.relation;
+
+        if (tupleSet && relations[tupleSet] && !relations[tupleSet].this) {
+          const typeIndex = getTypeLineNumber(type, lines);
+          const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
+          collector.raiseTupleUsersetRequiresDirect(
+            childDef.from,
+            type,
+            relation,
+            {
+              file,
+              module,
+            },
+            lineIndex,
+          );
+          break;
+        }
+
+        // Check to see if the childDef.from exists
         if (!relations[childDef.from]) {
           const typeIndex = getTypeLineNumber(type, lines); // org
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex); // has_assigned

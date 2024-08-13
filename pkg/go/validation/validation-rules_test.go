@@ -36,8 +36,8 @@ func TestValidateObject(t *testing.T) {
 	// Should fail if includes relation
 	assert.False(t, ValidateObject("document:1#relation"))
 
-	// Should fail if the id is '*'  
-	assert.False(t, ValidateObject("document:*")) 
+	// Should fail if the id is '*'
+	assert.False(t, ValidateObject("document:*"))
 
 	validateBadStructure(t, ValidateObject)
 }

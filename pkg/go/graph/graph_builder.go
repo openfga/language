@@ -162,7 +162,6 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
 	}
 
-	nodes := make([]*AuthorizationModelNode, 0, len(directlyRelated))
 	for _, relatedType := range directlyRelated {
 		tuplesetType := relatedType.GetType()
 
@@ -172,7 +171,6 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 
 		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
 		nodeSource := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		nodes = append(nodes, nodeSource)
 		conditionedOnNodeName := fmt.Sprintf("(%s#%s)", typeDef.GetType(), tuplesetRelation)
 
 		// new edge from "xxx#admin" to "yyy#viewer" conditioned on "yyy#parent"

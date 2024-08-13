@@ -74,25 +74,30 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 
 func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *AuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string) {
 	var operator string
+
 	var children []*openfgav1.Userset
+
 	switch rw := rewrite.GetUserset().(type) {
 	case *openfgav1.Userset_This:
 		parseThis(graphBuilder, parentNode, typeDef, relation)
+
 		return
 	case *openfgav1.Userset_ComputedUserset:
 		parseComputed(graphBuilder, parentNode, typeDef, rw.ComputedUserset.GetRelation())
+
 		return
 	case *openfgav1.Userset_TupleToUserset:
 		parseTupleToUserset(graphBuilder, parentNode, model, typeDef, rw.TupleToUserset)
+
 		return
 	case *openfgav1.Userset_Union:
 		operator = "union"
 		children = rw.Union.GetChild()
-		break
+
 	case *openfgav1.Userset_Intersection:
 		operator = "intersection"
 		children = rw.Intersection.GetChild()
-		break
+
 	default:
 		panic("TODO handle difference")
 	}
@@ -106,15 +111,15 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 	for _, child := range children {
 		checkRewrite(graphBuilder, operatorNodeParent, model, child, typeDef, relation)
 	}
-
 }
 
 func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
 	directlyRelated := make([]*openfgav1.RelationReference, 0)
+	newNodes := make([]*AuthorizationModelNode, 0, len(directlyRelated))
+
 	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
 		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
 	}
-	newNodes := make([]*AuthorizationModelNode, 0, len(directlyRelated))
 
 	for _, directlyRelatedDef := range directlyRelated {
 		if directlyRelatedDef.GetRelationOrWildcard() == nil {

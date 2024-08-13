@@ -21,6 +21,7 @@ linters:
     # deprecated
     - testpackage
     - gci
+    - wsl
 linters-settings:
   depguard:
     rules:

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/oklog/ulid/v2"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/multi"
@@ -56,18 +57,7 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 		slices.Sort(sortedRelations)
 
 		for _, relation := range sortedRelations {
-			uniqueLabel := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
-			relationNode := graphBuilder.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
-
-			rewrite := typeDef.GetRelations()[relation]
-			switch rewrite.GetUserset().(type) {
-			case *openfgav1.Userset_This:
-				parseThis(typeDef, relation, graphBuilder, relationNode)
-			case *openfgav1.Userset_ComputedUserset:
-				parseComputed(rewrite, typeDef.GetType(), graphBuilder, relationNode)
-			case *openfgav1.Userset_TupleToUserset:
-				parseTupleToUserset(model, rewrite, typeDef, graphBuilder, relationNode)
-			}
+			_ = parseRelation(model, typeDef, relation, graphBuilder)
 		}
 	}
 
@@ -79,46 +69,121 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
 }
 
-func parseThis(typeDef *openfgav1.TypeDefinition, relation string, graphBuilder *AuthorizationModelGraphBuilder, relationNode *AuthorizationModelNode) {
-	directlyRelated := make([]*openfgav1.RelationReference, 0)
-	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
-		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
+func parseRelation(model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, relation string, graphBuilder *AuthorizationModelGraphBuilder) graph.Node {
+	uniqueLabel := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
+	relationNode := graphBuilder.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
+	rewrite := typeDef.GetRelations()[relation]
+
+	switch rewrite.GetUserset().(type) {
+	case *openfgav1.Userset_This:
+		directlyRelated := make([]*openfgav1.RelationReference, 0)
+		if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
+			directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
+		}
+
+		_ = parseThis(directlyRelated, graphBuilder, relationNode)
+	case *openfgav1.Userset_ComputedUserset:
+		return parseComputed(rewrite, typeDef.GetType(), graphBuilder, relationNode)
+	case *openfgav1.Userset_TupleToUserset:
+		return parseTupleToUserset(model, rewrite, typeDef, graphBuilder, relationNode)
+	case *openfgav1.Userset_Intersection:
+		children := rewrite.GetIntersection().GetChild()
+
+		return parseOperator("intersection", relationNode, children, typeDef, relation, graphBuilder)
+	case *openfgav1.Userset_Union:
+		children := rewrite.GetUnion().GetChild()
+
+		return parseOperator("union", relationNode, children, typeDef, relation, graphBuilder)
+	default:
+		panic("TODO handle difference")
 	}
+
+	return nil
+}
+
+func parseThis(directlyRelated []*openfgav1.RelationReference, graphBuilder *AuthorizationModelGraphBuilder, thisNode graph.Node) []graph.Node {
+	newNodes := make([]graph.Node, 0, len(directlyRelated))
 
 	for _, directlyRelatedDef := range directlyRelated {
 		if directlyRelatedDef.GetRelationOrWildcard() == nil {
 			// direct assignment to concrete type
 			assignableType := directlyRelatedDef.GetType()
-			newNode := graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType)
-			graphBuilder.AddEdge(newNode, relationNode, DirectEdge, "")
+			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType))
 		}
 
 		if directlyRelatedDef.GetWildcard() != nil {
 			// direct assignment to wildcard
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
-			newNode := graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
-			graphBuilder.AddEdge(newNode, relationNode, DirectEdge, "")
+			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType))
 		}
 
 		if directlyRelatedDef.GetRelation() != "" {
 			// direct assignment to userset
 			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
-			newNode := graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
-			graphBuilder.AddEdge(newNode, relationNode, DirectEdge, "")
+			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation))
 		}
 	}
+
+	for _, newNode := range newNodes {
+		graphBuilder.AddEdge(newNode, thisNode, DirectEdge, "")
+	}
+
+	return newNodes
 }
 
-func parseComputed(rewrite *openfgav1.Userset, typeName string, graphBuilder *AuthorizationModelGraphBuilder, relationNode *AuthorizationModelNode) {
+func parseComputed(rewrite *openfgav1.Userset, typeName string, graphBuilder *AuthorizationModelGraphBuilder, relationNode graph.Node) graph.Node {
 	// e.g. define x: y. Here y is the rewritten relation
 	rewrittenRelation := rewrite.GetComputedUserset().GetRelation()
 	rewrittenNodeName := fmt.Sprintf("%s#%s", typeName, rewrittenRelation)
 	newNode := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 	// new edge from y to x
-	graphBuilder.AddEdge(newNode, relationNode, ComputedEdge, "")
+	graphBuilder.AddEdge(newNode, relationNode, RewriteEdge, "")
+
+	return newNode
 }
 
-func parseTupleToUserset(model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, graphBuilder *AuthorizationModelGraphBuilder, nodeTarget *AuthorizationModelNode) {
+// parseOperator creates as many intermediate nodes as necessary for each composition of operators.
+func parseOperator(operator string, operationNode graph.Node, childrenOfOperator []*openfgav1.Userset, typeDefOfOperator *openfgav1.TypeDefinition, relationNameOfOperator string, graphBuilder *AuthorizationModelGraphBuilder) graph.Node {
+	uniqueIdentifierOfIntermediateNode := fmt.Sprintf("%s:%s", operator, ulid.Make().String())
+
+	intermediateOperatorNode := graphBuilder.GetOrAddNode(uniqueIdentifierOfIntermediateNode, operator, OperatorNode)
+
+	// add one edge "operator" -> "relation that defined the operator"
+	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
+	graphBuilder.AddEdge(intermediateOperatorNode, operationNode, RewriteEdge, "")
+
+	// add one edge per children: "child" -> "operator"
+	for _, child := range childrenOfOperator {
+		switch child.GetUserset().(type) {
+		case *openfgav1.Userset_This:
+			directlyRelated := make([]*openfgav1.RelationReference, 0)
+			if relationMetadata, ok := typeDefOfOperator.GetMetadata().GetRelations()[relationNameOfOperator]; ok {
+				directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
+			}
+			// e.g. `define: [user] and viewer` will add edges `user -> intersection`, and `document#viewer -> intersection`:
+			for _, childNode := range parseThis(directlyRelated, graphBuilder, nil) {
+				graphBuilder.AddEdge(childNode, intermediateOperatorNode, DirectEdge, "")
+			}
+		case *openfgav1.Userset_ComputedUserset:
+			childNode := parseComputed(child, typeDefOfOperator.GetType(), graphBuilder, nil)
+			graphBuilder.AddEdge(childNode, intermediateOperatorNode, RewriteEdge, "")
+		case *openfgav1.Userset_Intersection:
+			childrenOfIntersection := child.GetIntersection().GetChild()
+			childNode := parseOperator("intersection", nil, childrenOfIntersection, typeDefOfOperator, relationNameOfOperator, graphBuilder)
+			graphBuilder.AddEdge(childNode, intermediateOperatorNode, RewriteEdge, "")
+		case *openfgav1.Userset_Union:
+			childrenOfUnion := child.GetUnion().GetChild()
+			childNode := parseOperator("union", nil, childrenOfUnion, typeDefOfOperator, relationNameOfOperator, graphBuilder)
+			graphBuilder.AddEdge(childNode, intermediateOperatorNode, RewriteEdge, "")
+		default:
+			panic("TODO handle TTU and difference")
+		}
+	}
+
+	return intermediateOperatorNode
+}
+
+func parseTupleToUserset(model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, graphBuilder *AuthorizationModelGraphBuilder, nodeTarget graph.Node) graph.Node {
 	// e.g. define viewer: admin from parent
 	// "parent" is the tupleset
 	tuplesetRelation := rewrite.GetTupleToUserset().GetTupleset().GetRelation()
@@ -146,6 +211,8 @@ func parseTupleToUserset(model *openfgav1.AuthorizationModel, rewrite *openfgav1
 		// new edge from "xxx#admin" to "yyy#viewer" conditioned on "yyy#parent"
 		graphBuilder.AddEdge(nodeSource, nodeTarget, TTUEdge, conditionedOnNodeName)
 	}
+
+	return nodeTarget
 }
 
 func (g *AuthorizationModelGraphBuilder) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *AuthorizationModelNode {
@@ -182,6 +249,10 @@ func (g *AuthorizationModelGraphBuilder) GetNodeFor(uniqueLabel string) *Authori
 }
 
 func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType EdgeType, conditionedOn string) *AuthorizationModelEdge {
+	if from == nil || to == nil {
+		return nil
+	}
+
 	l := g.NewLine(from, to)
 	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, conditionedOn: conditionedOn}
 	g.SetLine(newLine)

@@ -12,6 +12,8 @@ import (
 )
 
 // TestGetDOTRepresentation also tests that the graph is built correctly.
+//
+//nolint:maintidx
 func TestGetDOTRepresentation(t *testing.T) {
 	t.Parallel()
 
@@ -294,6 +296,206 @@ rankdir=BT
 3 -> 1 [label=direct];
 5 -> 4 [headlabel="(document#parent)"];
 6 -> 5 [label=direct];
+}`,
+		},
+		`intersection_of_relations`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user]
+					 define c: a and b`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label=intersection];
+
+// Edge definitions.
+1 -> 5 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+3 -> 5 [style=dashed];
+5 -> 4 [style=dashed];
+}`,
+		},
+		`intersection_of_relation_and_type`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user] and a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label=intersection];
+
+// Edge definitions.
+1 -> 4 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 4 [label=direct];
+4 -> 3 [style=dashed];
+}`,
+		},
+		`intersection_with_parens`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define a: [user]
+						define b: [user]
+						define c: [user]
+						define d: [user]
+						define e: (a and b and c) and d`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label="folder#d"];
+6 [label="folder#e"];
+7 [label=intersection];
+8 [label=intersection];
+
+// Edge definitions.
+1 -> 8 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+2 -> 4 [label=direct];
+2 -> 5 [label=direct];
+3 -> 8 [style=dashed];
+4 -> 8 [style=dashed];
+5 -> 7 [style=dashed];
+7 -> 6 [style=dashed];
+8 -> 7 [style=dashed];
+}`,
+		},
+		`union_of_relations`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user]
+					 define c: a or b`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label=union];
+
+// Edge definitions.
+1 -> 5 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+3 -> 5 [style=dashed];
+5 -> 4 [style=dashed];
+}`,
+		},
+		`union_of_relation_and_type`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user] or a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label=union];
+
+// Edge definitions.
+1 -> 4 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 4 [label=direct];
+4 -> 3 [style=dashed];
+}`,
+		},
+		`union_with_parens`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define a: [user]
+						define b: [user]
+						define c: [user]
+						define d: [user]
+						define e: (a or b or c) or d`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label="folder#d"];
+6 [label="folder#e"];
+7 [label=union];
+8 [label=union];
+
+// Edge definitions.
+1 -> 8 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+2 -> 4 [label=direct];
+2 -> 5 [label=direct];
+3 -> 8 [style=dashed];
+4 -> 8 [style=dashed];
+5 -> 7 [style=dashed];
+7 -> 6 [style=dashed];
+8 -> 7 [style=dashed];
 }`,
 		},
 	}

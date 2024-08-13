@@ -10,6 +10,7 @@ type NodeType int64
 const (
 	SpecificType            NodeType = 0 // e.g. `group`
 	SpecificTypeAndRelation NodeType = 1 // e.g. `group#viewer`
+	OperatorNode            NodeType = 2 // e.g. union
 )
 
 type AuthorizationModelNode struct {
@@ -18,7 +19,7 @@ type AuthorizationModelNode struct {
 	// custom attributes
 	label       string // e.g. `union`, for DOT
 	nodeType    NodeType
-	uniqueLabel string // e.g. `union[a,b]`
+	uniqueLabel string // e.g. `union:01J54ND7WHGAAJTGDMFWP4FZTR`
 }
 
 var _ encoding.Attributer = (*AuthorizationModelNode)(nil)

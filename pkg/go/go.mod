@@ -1,10 +1,9 @@
 module github.com/openfga/language/pkg/go
 
 go 1.21.9
-toolchain go1.22.5
 
 require (
-	github.com/antlr4-go/antlr/v4 v4.13.1
+	github.com/antlr4-go/antlr/v4 v4.13.0
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/openfga/api/proto v0.0.0-20240318145204-66b9e5cb403c

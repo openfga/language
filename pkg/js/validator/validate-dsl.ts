@@ -89,11 +89,13 @@ const deepCopy = <T>(object: T): T => {
   return JSON.parse(JSON.stringify(object));
 };
 
+// Ensure a relation is assignable, the rest of the checks are to ensure that no model has this as well as additional properties defined
 const relationIsSingle = (currentRelation: Userset): boolean => {
   return (
     !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union) &&
     !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Intersection) &&
-    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference)
+    !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Difference) &&
+    !Object.prototype.hasOwnProperty.call(currentRelation, "this")
   );
 };
 
@@ -546,6 +548,12 @@ function childDefDefined(
             { file, module },
           );
         } else {
+          // 2. Ensure that the childDef.from relation is directly assignable
+          //    That means that the relation referenced is:
+          //    a. directly assignable
+          //    b. not a rewrite (not union, intersection or exclusion)
+          //    c. none of the directly assignable types contains a wildcard or a relation
+          //    d. on every valid assignable type, ensure that the computed relation (e.g. a in a from b) is a relation on those types 
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
           if (isValid) {
             const childRelationNotValid = [];

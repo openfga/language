@@ -1,7 +1,7 @@
 export const Rules = {
   type: "[^:#@\\*\\s]{1,254}",
   relation: "[^:#@\\*\\s]{1,50}",
-  condition: "[^\\*\\s]{2,256}",
+  condition: "[^\\*\\s]{1,50}",
   id: "[^#:\\*\\s]+",
   object: "[^\\s]{2,256}",
 };

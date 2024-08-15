@@ -498,6 +498,106 @@ rankdir=BT
 8 -> 7 [style=dashed];
 }`,
 		},
+		`exclusion_of_relations`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user]
+					 define c: a but not b`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label=exclusion];
+
+// Edge definitions.
+1 -> 5 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+3 -> 5 [style=dashed];
+5 -> 4 [style=dashed];
+}`,
+		},
+		`exclusion_of_relation_and_type`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user]
+					 define b: [user] but not a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label=exclusion];
+
+// Edge definitions.
+1 -> 4 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 4 [label=direct];
+4 -> 3 [style=dashed];
+}`,
+		},
+		`exclusion_with_parens`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define a: [user]
+						define b: [user]
+						define c: [user]
+						define d: [user]
+						define e: (a or b or c) but not d`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=user];
+3 [label="folder#b"];
+4 [label="folder#c"];
+5 [label="folder#d"];
+6 [label="folder#e"];
+7 [label=exclusion];
+8 [label=union];
+
+// Edge definitions.
+1 -> 8 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+2 -> 4 [label=direct];
+2 -> 5 [label=direct];
+3 -> 8 [style=dashed];
+4 -> 8 [style=dashed];
+5 -> 7 [style=dashed];
+7 -> 6 [style=dashed];
+8 -> 7 [style=dashed];
+}`,
+		},
 	}
 
 	for name, test := range testCases {

@@ -21,6 +21,7 @@ linters:
     # deprecated
     - testpackage
     - gci
+    - wsl
 linters-settings:
   depguard:
     rules:
@@ -30,6 +31,7 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - github.com/oklog/ulid/v2
           - github.com/antlr4-go/antlr/v4
           - github.com/hashicorp/go-multierror
           - github.com/openfga/api

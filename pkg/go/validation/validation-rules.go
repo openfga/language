@@ -10,7 +10,7 @@ type Rule string
 const (
 	RuleType      Rule = "[^:#@\\*\\s]{1,254}"
 	RuleRelation  Rule = "[^:#@\\*\\s]{1,50}"
-	RuleCondition Rule = "[^\\*\\s]{2,256}"
+	RuleCondition Rule = "[^\\*\\s]{1,50}"
 	RuleID        Rule = "[^#:\\*\\s]+"
 	RuleObject    Rule = "[^\\s]{2,256}"
 )

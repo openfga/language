@@ -5,7 +5,7 @@ public class Validator {
     public class Rules {
         public static final String TYPE = "[^:#@\\*\\s]{1,254}";
         public static final String RELATION = "[^:#@\\*\\s]{1,50}";
-        public static final String CONDITION = "[^\\*\\s]{2,256}";
+        public static final String CONDITION = "[^\\*\\s]{1,50}";
         public static final String ID = "[^#:\\*\\s]+";
         public static final String OBJECT = "[^\\s]{2,256}";
     }

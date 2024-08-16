@@ -22,7 +22,8 @@ type AuthorizationModelGraphBuilder struct {
 //
 // The edges are defined by the assignments, e.g.
 // `define viewer: [group]` defines an edge from group to document#viewer.
-// TODO expand when more use cases are added.
+// Conditions are not encoded in the graph,
+// and the two edges in an exclusion are not distinguished.
 func NewAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*AuthorizationModelGraph, error) {
 	res, err := parseModel(model)
 	if err != nil {
@@ -98,8 +99,12 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 		operator = "intersection"
 		children = rw.Intersection.GetChild()
 
-	default:
-		panic("TODO handle difference")
+	case *openfgav1.Userset_Difference:
+		operator = "exclusion"
+		children = []*openfgav1.Userset{
+			rw.Difference.GetBase(),
+			rw.Difference.GetSubtract(),
+		}
 	}
 
 	operatorNode := fmt.Sprintf("%s:%s", operator, ulid.Make().String())

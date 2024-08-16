@@ -120,7 +120,7 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 
 func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
 	directlyRelated := make([]*openfgav1.RelationReference, 0)
-	newNodes := make([]*AuthorizationModelNode, 0, len(directlyRelated))
+	var curNode *AuthorizationModelNode
 
 	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
 		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
@@ -130,24 +130,28 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 		if directlyRelatedDef.GetRelationOrWildcard() == nil {
 			// direct assignment to concrete type
 			assignableType := directlyRelatedDef.GetType()
-			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType))
+			curNode = graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType)
 		}
 
 		if directlyRelatedDef.GetWildcard() != nil {
 			// direct assignment to wildcard
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
-			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType))
+			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
 		}
 
 		if directlyRelatedDef.GetRelation() != "" {
 			// direct assignment to userset
 			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
-			newNodes = append(newNodes, graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation))
+			curNode = graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
 		}
-	}
 
-	for _, newNode := range newNodes {
-		graphBuilder.AddEdge(newNode, parentNode, DirectEdge, "")
+		if graphBuilder.HasEdge(curNode, parentNode, DirectEdge, "") {
+			// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
+			// we only draw one edge from user to x#viewer
+			continue
+		}
+
+		graphBuilder.AddEdge(curNode, parentNode, DirectEdge, "")
 	}
 }
 
@@ -231,6 +235,27 @@ func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType E
 	g.SetLine(newLine)
 
 	return newLine
+}
+
+func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType EdgeType, conditionedOn string) bool {
+	if from == nil || to == nil {
+		return false
+	}
+
+	iter := g.Lines(from.ID(), to.ID())
+	for {
+		if !iter.Next() {
+			return false
+		}
+		l := iter.Line()
+		edge, ok := l.(*AuthorizationModelEdge)
+		if !ok {
+			return false
+		}
+		if edge.edgeType == edgeType && edge.conditionedOn == conditionedOn {
+			return true
+		}
+	}
 }
 
 func typeAndRelationExists(model *openfgav1.AuthorizationModel, typeName, relation string) bool {

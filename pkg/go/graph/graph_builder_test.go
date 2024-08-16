@@ -118,14 +118,14 @@ rankdir=BT
 4 -> 2 [label=direct];
 }`,
 		},
-		`direct_assignment_with_conditions`: { // conditions are not represented
+		`direct_assignment_with_conditions`: { // conditions are not represented and edges are de-duped
 			model: `
 				model
 					schema 1.1
 				type user
 				type folder
 					relations
-						define viewer: [user with condX]
+						define viewer: [user with condX, user]
 				condition condX (x:int) {
 					x > 0
 				}`,
@@ -496,6 +496,47 @@ rankdir=BT
 5 -> 7 [style=dashed];
 7 -> 6 [style=dashed];
 8 -> 7 [style=dashed];
+}`,
+		},
+		`multigraph`: {
+			model: `
+				model
+				  schema 1.1
+				
+				type user
+				
+				type state
+				  relations
+					define can_view: [user]
+				
+				type transition
+				  relations
+					define start: [state]
+					define end: [state]
+					define can_apply: [user] and can_view from start and can_view from end`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=state];
+1 [label="state#can_view"];
+2 [label=user];
+3 [label=transition];
+4 [label="transition#can_apply"];
+5 [label=intersection];
+6 [label="transition#end"];
+7 [label="transition#start"];
+
+// Edge definitions.
+0 -> 6 [label=direct];
+0 -> 7 [label=direct];
+1 -> 5 [headlabel="(transition#start)"];
+1 -> 5 [headlabel="(transition#end)"];
+2 -> 1 [label=direct];
+2 -> 5 [label=direct];
+5 -> 4 [style=dashed];
 }`,
 		},
 		`exclusion_of_relations`: {

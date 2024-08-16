@@ -1,6 +1,9 @@
 package graph
 
 import (
+	"io/fs"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -10,6 +13,11 @@ import (
 
 	language "github.com/openfga/language/pkg/go/transformer"
 )
+
+type graphTestCase struct {
+	model          string
+	expectedOutput string
+}
 
 // TestGetDOTRepresentation also tests that the graph is built correctly.
 //
@@ -647,6 +655,67 @@ rankdir=BT
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
+			model := language.MustTransformDSLToProto(test.model)
+			graph, err := NewAuthorizationModelGraph(model)
+			require.NoError(t, err)
+
+			actualDOT := graph.GetDOT()
+			actualSorted := getSorted(actualDOT)
+			expectedSorted := getSorted(test.expectedOutput)
+
+			diff := cmp.Diff(expectedSorted, actualSorted)
+
+			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, actualDOT)
+		})
+	}
+}
+
+func TestGetDOTRepresentation_2(t *testing.T) {
+	rootFolder := "../../../tests/data/transformer"
+	testCases := make(map[string]*graphTestCase)
+
+	err := filepath.Walk(rootFolder, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		fileName := info.Name()
+		extension := filepath.Ext(fileName)
+		pathWithoutExtension := strings.TrimSuffix(path, extension)
+
+		if extension == ".json" {
+			return nil
+		}
+
+		if _, ok := testCases[pathWithoutExtension]; !ok {
+			testCases[pathWithoutExtension] = &graphTestCase{}
+		}
+
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if extension == ".fga" {
+			testCases[pathWithoutExtension].model = string(content)
+		} else if extension == ".dot" {
+			testCases[pathWithoutExtension].expectedOutput = string(content)
+		}
+
+		return nil
+	})
+
+	require.NoError(t, err)
+	require.Greater(t, len(testCases), 0)
+
+	for testname, test := range testCases {
+		t.Run(testname, func(t *testing.T) {
+			if test.model == "" {
+				t.Skip("empty")
+			}
 			model := language.MustTransformDSLToProto(test.model)
 			graph, err := NewAuthorizationModelGraph(model)
 			require.NoError(t, err)

@@ -1,0 +1,13 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=datatype_test];
+1 [label="datatype_test#is_valid"];
+2 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+}

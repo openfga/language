@@ -1,0 +1,18 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#member"];
+2 [label=user];
+3 [label="document#writer"];
+4 [label=intersection];
+
+// Edge definitions.
+1 -> 4 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 4 [label=direct];
+4 -> 3 [style=dashed];
+}

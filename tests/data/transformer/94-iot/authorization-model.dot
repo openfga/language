@@ -1,0 +1,34 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=device];
+1 [label="device#can_rename_device"];
+2 [label="device#it_admin"];
+3 [label="device#can_view_live_video"];
+4 [label=union];
+5 [label="device#security_guard"];
+6 [label="device#can_view_recorded_video"];
+7 [label=union];
+8 [label=user];
+9 [label="device_group#it_admin"];
+10 [label="device_group#security_guard"];
+11 [label=device_group];
+
+// Edge definitions.
+2 -> 1 [style=dashed];
+2 -> 4 [style=dashed];
+2 -> 7 [style=dashed];
+4 -> 3 [style=dashed];
+5 -> 4 [style=dashed];
+5 -> 7 [style=dashed];
+7 -> 6 [style=dashed];
+8 -> 2 [label=direct];
+8 -> 5 [label=direct];
+8 -> 9 [label=direct];
+8 -> 10 [label=direct];
+9 -> 2 [label=direct];
+10 -> 5 [label=direct];
+}

@@ -22,6 +22,7 @@ linters:
     - testpackage
     - gci
     - wsl
+    - paralleltest
 linters-settings:
   depguard:
     rules:

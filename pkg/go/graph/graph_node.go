@@ -11,6 +11,7 @@ const (
 	SpecificType            NodeType = 0 // e.g. `group`
 	SpecificTypeAndRelation NodeType = 1 // e.g. `group#viewer`
 	OperatorNode            NodeType = 2 // e.g. union
+	TTUNode
 )
 
 type AuthorizationModelNode struct {
@@ -31,6 +32,13 @@ func (n *AuthorizationModelNode) Attributes() []encoding.Attribute {
 		Key:   "label",
 		Value: n.label,
 	})
+
+	if n.nodeType == OperatorNode {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "style",
+			Value: "dashed",
+		})
+	}
 
 	return attrs
 }

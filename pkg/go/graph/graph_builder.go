@@ -127,21 +127,25 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 	}
 
 	for _, directlyRelatedDef := range directlyRelated {
+		conditionName := directlyRelatedDef.GetCondition()
+		assignableType := directlyRelatedDef.GetType()
+		if conditionName != "" {
+			assignableType = fmt.Sprintf("%s [with %s]", directlyRelatedDef.GetType(), conditionName)
+		}
 		if directlyRelatedDef.GetRelationOrWildcard() == nil {
 			// direct assignment to concrete type
-			assignableType := directlyRelatedDef.GetType()
 			curNode = graphBuilder.GetOrAddNode(assignableType, assignableType, SpecificType)
 		}
 
 		if directlyRelatedDef.GetWildcard() != nil {
 			// direct assignment to wildcard
-			assignableWildcard := directlyRelatedDef.GetType() + ":*"
+			assignableWildcard := assignableType + ":*"
 			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
 		}
 
 		if directlyRelatedDef.GetRelation() != "" {
 			// direct assignment to userset
-			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
+			assignableUserset := assignableType + "#" + directlyRelatedDef.GetRelation()
 			curNode = graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
 		}
 
@@ -158,7 +162,7 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
 	// e.g. define x: y. Here y is the rewritten relation
 	rewrittenNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
-	newNode := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
+	newNode := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, TTUNode)
 	// new edge from y to x
 	graphBuilder.AddEdge(newNode, parentNode, RewriteEdge, "")
 }
@@ -183,9 +187,13 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 			continue
 		}
 
-		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
-		nodeSource := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		conditionedOnNodeName := fmt.Sprintf("(%s#%s)", typeDef.GetType(), tuplesetRelation)
+		typeee := tuplesetType
+		if relatedType.GetCondition() != "" {
+			typeee = fmt.Sprintf("%s [with %s]", tuplesetType, relatedType.GetCondition())
+		}
+		rewrittenNodeName := fmt.Sprintf("%s#%s", typeee, computedRelation)
+		nodeSource := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, TTUNode)
+		conditionedOnNodeName := fmt.Sprintf("(if %s is %s of %s)", typeee, tuplesetRelation, typeDef.GetType())
 
 		// new edge from "xxx#admin" to "yyy#viewer" conditioned on "yyy#parent"
 		graphBuilder.AddEdge(nodeSource, parentNode, TTUEdge, conditionedOnNodeName)
@@ -230,7 +238,7 @@ func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType E
 		return nil
 	}
 
-	l := g.NewLine(from, to)
+	l := g.NewLine(to, from)
 	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, conditionedOn: conditionedOn}
 	g.SetLine(newLine)
 

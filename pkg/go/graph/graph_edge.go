@@ -52,6 +52,10 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 			Key:   "headlabel",
 			Value: headLabelAttrValue,
 		})
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "labelfontsize",
+			Value: "10",
+		})
 	}
 
 	return attrs

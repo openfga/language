@@ -2047,3 +2047,30 @@
         end: 40
       metadata:
         errorType: tupleuserset-not-direct
+
+- name: relation used inside from allows only direct relation 2
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type group
+      relations
+        define member: [user]
+
+    type folder
+      relations
+        define parent: [folder]
+        define parent2: parent
+        define viewer: [user] or viewer from parent2
+  expected_errors:
+    - msg: "`parent2` relation used inside from allows only direct relation."
+      line:
+        start: 13
+        end: 13
+      column:
+        start: 41
+        end: 48
+      metadata:
+        errorType: tupleuserset-not-direct

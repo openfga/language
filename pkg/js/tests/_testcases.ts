@@ -89,6 +89,7 @@ export function loadValidTransformerTestCases(): ValidTestCase[] {
       if (skipFile) {
         testCase.skip = true;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // do nothing
     }
@@ -158,6 +159,7 @@ export function loadModuleTestCases(): ModuleTestCase[] {
       if (skipFile) {
         testCase.skip = true;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // do nothing
     }

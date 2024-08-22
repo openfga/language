@@ -397,7 +397,8 @@ public class ModelValidator {
                                 childDef.getFrom());
                     } else {
                         var allowableTypesResult = allowableTypes(typeMap, typeName, childDef.getFrom());
-                        if (allowableTypesResult.isValid()) {
+                        if (allowableTypesResult.isValid()
+                                && !allowableTypesResult.getAllowableTypes().isEmpty()) {
                             var childRelationNotValid = new ArrayList<InvalidChildRelationMetadata>();
                             var fromTypes = allowableTypesResult.getAllowableTypes();
                             for (var item : fromTypes) {

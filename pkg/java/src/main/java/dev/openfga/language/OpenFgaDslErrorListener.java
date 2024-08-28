@@ -39,8 +39,8 @@ public class OpenFgaDslErrorListener implements ANTLRErrorListener {
             columnOffset = metadata.getSymbol().length();
         }
 
-        var properties =
-                new ErrorProperties(new StartEnd(line, line), new StartEnd(column, column + columnOffset), message);
+        var properties = new ErrorProperties(
+                new StartEnd(line - 1, line - 1), new StartEnd(column, column + columnOffset), message);
         this.errors.add(new SyntaxError(properties, metadata, e));
     }
 

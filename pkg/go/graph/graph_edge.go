@@ -1,6 +1,8 @@
 package graph
 
 import (
+	"fmt"
+
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding"
 )
@@ -14,7 +16,7 @@ const (
 )
 
 type AuthorizationModelEdge struct {
-	graph.Line
+	graph.WeightedLine
 
 	// custom attributes
 	edgeType EdgeType
@@ -31,7 +33,7 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 	if n.edgeType == DirectEdge {
 		attrs = append(attrs, encoding.Attribute{
 			Key:   "label",
-			Value: "direct",
+			Value: fmt.Sprintf("w: %.1f", n.Weight()),
 		})
 	}
 

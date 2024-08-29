@@ -17,7 +17,6 @@ func TestJSONToDSLTransformer(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
@@ -42,7 +41,6 @@ func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
@@ -64,7 +62,6 @@ func TestJSONToDSLTransformerForModularModelCases(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		if testCase.DSL == "" {
 			continue
 		}
@@ -87,7 +84,6 @@ func TestJSONToDSLTransformerForModularModelCasesWithSourceInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		if testCase.DSLWithSourceInfo == "" {
 			continue
 		}

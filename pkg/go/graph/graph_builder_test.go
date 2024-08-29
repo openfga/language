@@ -671,6 +671,7 @@ rankdir=BT
 }
 
 func TestGetDOTRepresentation_2(t *testing.T) {
+	t.Parallel()
 	rootFolder := "../../../tests/data/transformer"
 	testCases := make(map[string]*graphTestCase)
 
@@ -696,6 +697,7 @@ func TestGetDOTRepresentation_2(t *testing.T) {
 
 		content, err := os.ReadFile(path)
 		if err != nil {
+			//nolint:wrapcheck
 			return err
 		}
 
@@ -709,10 +711,12 @@ func TestGetDOTRepresentation_2(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	require.Greater(t, len(testCases), 0)
+	require.NotEmpty(t, testCases)
 
 	for testname, test := range testCases {
+		test := test
 		t.Run(testname, func(t *testing.T) {
+			t.Parallel()
 			if test.model == "" {
 				t.Skip("empty")
 			}

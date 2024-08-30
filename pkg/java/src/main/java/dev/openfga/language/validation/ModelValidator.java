@@ -175,7 +175,8 @@ public class ModelValidator {
         }
 
         // next, ensure all relation have entry point
-        // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
+        // we can skip if there are errors because errors (such as missing relations)
+        // will likely lead to no entries
         if (errors.isEmpty()) {
             authorizationModel.getTypeDefinitions().forEach(typeDef -> {
                 var typeName = typeDef.getType();
@@ -369,6 +370,7 @@ public class ModelValidator {
             }
             case TupleToUserset: {
                 if (childDef.getFrom() != null && childDef.getTarget() != null) {
+
                     if (!relations.containsKey(childDef.getFrom())) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
@@ -379,7 +381,8 @@ public class ModelValidator {
                                 childDef.getFrom());
                     } else {
                         var allowableTypesResult = allowableTypes(typeMap, typeName, childDef.getFrom());
-                        if (allowableTypesResult.isValid()) {
+                        if (allowableTypesResult.isValid()
+                                && !allowableTypesResult.getAllowableTypes().isEmpty()) {
                             var childRelationNotValid = new ArrayList<InvalidChildRelationMetadata>();
                             var fromTypes = allowableTypesResult.getAllowableTypes();
                             for (var item : fromTypes) {

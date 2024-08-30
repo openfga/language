@@ -184,16 +184,15 @@
       relations
         define group: group from group
   expected_errors:
-    - msg: "`group` is an impossible relation for `group` (no entrypoint)."
+    - msg: "`group` relation used inside from allows only direct relation."
       line:
         start: 5
         end: 5
       column:
-        start: 11
-        end: 16
+        start: 29
+        end: 34
       metadata:
-        symbol: "group"
-        errorType: relation-no-entry-point
+        errorType: tupleuserset-not-direct
 - name: no entry point for single type multiple relations
   dsl: |
     model
@@ -1984,3 +1983,94 @@
         end: 28
       metadata:
         errorType: invalid-type
+
+- name: relation is referenced
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+      relations
+        define owner: [user]
+        define member: [user]
+        define can_add_member: owner
+    type team
+      relations
+        define parent: [org]
+        define member: [user]
+        define can_add_member: can_add_member from parent
+    type group
+      relations
+        define parent: [team]
+        define org: parent from parent
+        define member: [user]
+        define can_add_member: can_add_member from org
+  expected_errors:
+    - msg: "`org` relation used inside from allows only direct relation."
+      line:
+        start: 18
+        end: 18
+      column:
+        start: 47
+        end: 50
+      metadata:
+        errorType: tupleuserset-not-direct
+
+- name: relation used inside from allows only direct relation
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type system
+      relations
+        define admin: [user]
+        define staff: [user] or admin
+
+    type organization
+      relations
+        define system: [system]
+      
+    type resource
+      relations
+        define system      : system from organization   
+        define organization: [organization]
+        define can_delete: staff from system
+  expected_errors:
+    - msg: "`system` relation used inside from allows only direct relation."
+      line:
+        start: 18
+        end: 18
+      column:
+        start: 34
+        end: 40
+      metadata:
+        errorType: tupleuserset-not-direct
+
+- name: relation used inside from allows only direct relation 2
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type group
+      relations
+        define member: [user]
+
+    type folder
+      relations
+        define parent: [folder]
+        define parent2: parent
+        define viewer: [user] or viewer from parent2
+  expected_errors:
+    - msg: "`parent2` relation used inside from allows only direct relation."
+      line:
+        start: 13
+        end: 13
+      column:
+        start: 41
+        end: 48
+      metadata:
+        errorType: tupleuserset-not-direct

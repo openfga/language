@@ -22,6 +22,7 @@ linters:
     - testpackage
     - gci
     - wsl
+    - intrange
 linters-settings:
   depguard:
     rules:

@@ -1,0 +1,8 @@
+{
+  "ignore": {
+    "eslint": {
+      "versions": "9.*.*",
+      "reason": "eslint 9.x.x is causing a lot of breaking changes"
+    }
+  }
+}

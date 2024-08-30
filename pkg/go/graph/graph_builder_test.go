@@ -641,23 +641,21 @@ rankdir=BT
 		},
 	}
 
-	for name, test := range testCases {
-		test := test
-
+	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			model := language.MustTransformDSLToProto(test.model)
+			model := language.MustTransformDSLToProto(testCase.model)
 			graph, err := NewAuthorizationModelGraph(model)
 			require.NoError(t, err)
 
 			actualDOT := graph.GetDOT()
 			actualSorted := getSorted(actualDOT)
-			expectedSorted := getSorted(test.expectedOutput)
+			expectedSorted := getSorted(testCase.expectedOutput)
 
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
-			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, actualDOT)
+			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
 		})
 	}
 }

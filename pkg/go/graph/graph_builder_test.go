@@ -126,6 +126,29 @@ rankdir=BT
 4 -> 2 [label=direct];
 }`,
 		},
+		`direct_assignment_with_usersets_recursive`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define viewer: [user,folder#viewer]
+				type user`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label=user];
+
+// Edge definitions.
+1 -> 1 [label=direct];
+2 -> 1 [label=direct];
+}`,
+		},
 		`direct_assignment_with_conditions`: { // conditions are not represented and edges are de-duped
 			model: `
 				model
@@ -231,6 +254,34 @@ rankdir=BT
 2 -> 1 [label=direct];
 4 -> 3 [headlabel="(document#parent)"];
 5 -> 4 [label=direct];
+}`,
+		},
+		`tuple_to_userset_recursive`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define parent: [folder]
+						define viewer: [user] or viewer from parent`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#parent"];
+2 [label="folder#viewer"];
+3 [label=union];
+4 [label=user];
+
+// Edge definitions.
+0 -> 1 [label=direct];
+2 -> 3 [headlabel="(folder#parent)"];
+3 -> 2 [style=dashed];
+4 -> 3 [label=direct];
 }`,
 		},
 		`tuple_to_userset_two_related_types`: {
@@ -649,23 +700,21 @@ rankdir=BT
 		},
 	}
 
-	for name, test := range testCases {
-		test := test
-
+	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			model := language.MustTransformDSLToProto(test.model)
+			model := language.MustTransformDSLToProto(testCase.model)
 			graph, err := NewAuthorizationModelGraph(model)
 			require.NoError(t, err)
 
 			actualDOT := graph.GetDOT()
 			actualSorted := getSorted(actualDOT)
-			expectedSorted := getSorted(test.expectedOutput)
+			expectedSorted := getSorted(testCase.expectedOutput)
 
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
-			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, actualDOT)
+			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
 		})
 	}
 }

@@ -89,6 +89,7 @@ const deepCopy = <T>(object: T): T => {
   return JSON.parse(JSON.stringify(object));
 };
 
+// Ensure a relation is assignable, the rest of the checks are to ensure that no model has this as well as additional properties defined
 const relationIsSingle = (currentRelation: Userset): boolean => {
   return (
     !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union) &&
@@ -511,7 +512,9 @@ function childDefDefined(
     case RewriteType.TupleToUserset: {
       // for this case, we need to consider both the "from" and "relation"
       if (childDef.from && childDef.target) {
-        // First, check to see if the childDef.from exists
+        // 1. Check to see if the childDef.from exists
+        //    Ensure that the relation referenced in the from exists
+        //    (e.g. ensures that `b` exists as a relation on the type in the case of `a from b`)
         if (!relations[childDef.from]) {
           const typeIndex = getTypeLineNumber(type, lines); // org
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex); // has_assigned
@@ -525,8 +528,14 @@ function childDefDefined(
             { file, module },
           );
         } else {
+          // 2. Ensure that the childDef.from relation is directly assignable
+          //    That means that the relation referenced is:
+          //    a. directly assignable
+          //    b. not a rewrite (not union, intersection or exclusion)
+          //    c. none of the directly assignable types contains a wildcard or a relation
+          //    d. on every valid assignable type, ensure that the computed relation (e.g. a in a from b) is a relation on those types
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
-          if (isValid) {
+          if (isValid && fromTypes.length) {
             const childRelationNotValid = [];
             for (const item of fromTypes) {
               const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(item);

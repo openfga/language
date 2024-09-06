@@ -763,7 +763,6 @@ func TestGetDOTRepresentation_2(t *testing.T) {
 	require.NotEmpty(t, testCases)
 
 	for testname, test := range testCases {
-		test := test
 		t.Run(testname, func(t *testing.T) {
 			t.Parallel()
 			if test.model == "" {

@@ -7,7 +7,7 @@ publishing {
                 group = 'dev.openfga'
                 artifactId = 'openfga-language'
                 name = 'openfga-language'
-                version = 'v0.2.0-beta.1'
+                version = 'v0.2.0-beta.2'
                 description = 'OpenFGA Language package: transformers, validators and more'
                 url = 'https://openfga.dev'
                 licenses {

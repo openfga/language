@@ -38,6 +38,18 @@ jobs:
       - name: Lint Java source
         run: make lint-java
 
+  check-gen:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Generate Antlr code and validate up to date
+        run: |
+            make antlr-gen-java
+            git diff --text --exit-code ./pkg/java/src/main/gen
+      
+
   test:
     name: Test Java
     runs-on: ubuntu-latest

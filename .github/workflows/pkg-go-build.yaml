@@ -23,6 +23,17 @@ jobs:
       - name: Lint
         run: make lint-go
 
+  check-gen:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Generate Antlr code and validate up to date
+        run: |
+            make antlr-gen-go
+            git diff --text --exit-code ./pkg/go/gen
+
   build:
     runs-on: ubuntu-latest
     strategy:

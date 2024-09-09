@@ -26,6 +26,17 @@ jobs:
       - name: Run eslint and prettier
         run: make lint-js
 
+  check-gen:
+      runs-on: ubuntu-latest
+      
+      steps:
+        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+        - name: Generate Antlr code and validate up to date
+          run: |
+             make antlr-gen-js
+             git diff --text --exit-code ./pkg/js/gen
+
   build:
     runs-on: ubuntu-latest
     

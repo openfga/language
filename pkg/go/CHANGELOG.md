@@ -2,6 +2,14 @@
 
 ## pkg/go/v0.2.0-beta.1
 
+### [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.1...pkg/go/v0.2.0-beta.2) (2024-09-09)
+
+Fixed:
+
+- Updated generated antlr code to fix issue when parsing modules (#339)
+
+## pkg/go/v0.2.0-beta.1
+
 ### [v0.2.0-beta.1](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.0...pkg/go/v0.2.0-beta.1) (2024-09-06)
 
 Added:

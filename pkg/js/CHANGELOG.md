@@ -2,6 +2,14 @@
 
 ## pkg/js/v0.2.0-beta.20
 
+### [v0.2.0-beta.21](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.20...pkg/js/v0.2.0-beta.21) (2024-09-09)
+
+Fixed:
+
+- Updated generated antlr code to fix issue when parsing modules (#339)
+
+## pkg/js/v0.2.0-beta.20
+
 ### [v0.2.0-beta.20](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.19...pkg/js/v0.2.0-beta.20) (2024-09-06)
 
 Added:

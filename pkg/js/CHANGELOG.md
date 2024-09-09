@@ -1,6 +1,6 @@
 # Changelog
 
-## pkg/js/v0.2.0-beta.20
+## pkg/js/v0.2.0-beta.21
 
 ### [v0.2.0-beta.21](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.20...pkg/js/v0.2.0-beta.21) (2024-09-09)
 

@@ -12,7 +12,7 @@ import (
 )
 
 type AuthorizationModelGraphBuilder struct {
-	graph.DirectedMultigraphBuilder
+	graph.DirectedWeightedMultigraphBuilder
 
 	ids map[string]int64 // nodes: unique labels to ids. Used to find nodes by label.
 }
@@ -33,9 +33,9 @@ func NewAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*Authoriza
 	return &AuthorizationModelGraph{res}, nil
 }
 
-func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, error) {
+func parseModel(model *openfgav1.AuthorizationModel) (*multi.WeightedDirectedGraph, error) {
 	graphBuilder := &AuthorizationModelGraphBuilder{
-		multi.NewDirectedGraph(), map[string]int64{},
+		multi.NewWeightedDirectedGraph(), map[string]int64{},
 	}
 
 	// sort types by name to guarantee stable output
@@ -65,7 +65,7 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 		}
 	}
 
-	multigraph, ok := graphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
+	multigraph, ok := graphBuilder.DirectedWeightedMultigraphBuilder.(*multi.WeightedDirectedGraph)
 	if ok {
 		return multigraph, nil
 	}
@@ -204,6 +204,7 @@ func (g *AuthorizationModelGraphBuilder) GetOrAddNode(uniqueLabel, label string,
 		label:       label,
 		nodeType:    nodeType,
 		uniqueLabel: uniqueLabel,
+		weight:      1,
 	}
 	g.AddNode(newNode)
 	g.ids[uniqueLabel] = nodeid
@@ -230,9 +231,9 @@ func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType E
 		return nil
 	}
 
-	l := g.NewLine(from, to)
-	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, conditionedOn: conditionedOn}
-	g.SetLine(newLine)
+	l := g.NewWeightedLine(from, to, 1)
+	newLine := &AuthorizationModelEdge{WeightedLine: l, edgeType: edgeType, conditionedOn: conditionedOn}
+	g.SetWeightedLine(newLine)
 
 	return newLine
 }

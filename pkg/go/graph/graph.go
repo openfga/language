@@ -11,7 +11,7 @@ import (
 var ErrBuildingGraph = errors.New("cannot build graph")
 
 type AuthorizationModelGraph struct {
-	*multi.DirectedGraph
+	*multi.WeightedDirectedGraph
 }
 
 var _ dot.Attributers = (*AuthorizationModelGraph)(nil)

@@ -1,0 +1,57 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#allowed"];
+2 [label=user];
+3 [label="document#blocked"];
+4 [label="document#relation1"];
+5 [label=exclusion];
+6 [label=intersection];
+7 [label="document#relation2"];
+8 [label=intersection];
+9 [label=exclusion];
+10 [label="document#relation3"];
+11 [label=union];
+12 [label="user:*"];
+13 [label="user#follower"];
+14 [label=exclusion];
+15 [label=intersection];
+16 [label="document#relation4"];
+17 [label=exclusion];
+18 [label=union];
+19 [label=intersection];
+
+// Edge definitions.
+1 -> 6 [style=dashed];
+1 -> 9 [style=dashed];
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+2 -> 6 [label=direct];
+2 -> 8 [label=direct];
+2 -> 11 [label=direct];
+2 -> 18 [label=direct];
+3 -> 5 [style=dashed];
+3 -> 9 [style=dashed];
+3 -> 14 [style=dashed];
+4 -> 15 [style=dashed];
+4 -> 19 [style=dashed];
+5 -> 4 [style=dashed];
+6 -> 5 [style=dashed];
+7 -> 15 [style=dashed];
+7 -> 19 [style=dashed];
+8 -> 7 [style=dashed];
+9 -> 8 [style=dashed];
+10 -> 17 [style=dashed];
+11 -> 10 [style=dashed];
+12 -> 11 [label=direct];
+13 -> 11 [label=direct];
+14 -> 11 [style=dashed];
+15 -> 14 [style=dashed];
+17 -> 16 [style=dashed];
+18 -> 17 [style=dashed];
+19 -> 18 [style=dashed];
+}

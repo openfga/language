@@ -1,0 +1,19 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=feature];
+1 [label="feature#has_feature"];
+2 [label="plan#subscriber"];
+3 [label=organization];
+4 [label="organization#member"];
+5 [label=user];
+6 [label=plan];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+4 -> 2 [label=direct];
+5 -> 4 [label=direct];
+}

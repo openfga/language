@@ -1,0 +1,66 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=organization];
+1 [label="organization#member"];
+2 [label=union];
+3 [label=user];
+4 [label="organization#owner"];
+5 [label="organization#repo_admin"];
+6 [label="organization#repo_reader"];
+7 [label="organization#repo_writer"];
+8 [label=repo];
+9 [label="repo#admin"];
+10 [label=union];
+11 [label="team#member"];
+12 [label="repo#maintainer"];
+13 [label=union];
+14 [label="repo#owner"];
+15 [label="repo#reader"];
+16 [label=union];
+17 [label="repo#triager"];
+18 [label=union];
+19 [label="repo#writer"];
+20 [label=union];
+21 [label=team];
+
+// Edge definitions.
+0 -> 14 [label=direct];
+1 -> 5 [label=direct];
+1 -> 6 [label=direct];
+1 -> 7 [label=direct];
+2 -> 1 [style=dashed];
+3 -> 2 [label=direct];
+3 -> 4 [label=direct];
+3 -> 5 [label=direct];
+3 -> 6 [label=direct];
+3 -> 7 [label=direct];
+3 -> 10 [label=direct];
+3 -> 11 [label=direct];
+3 -> 13 [label=direct];
+3 -> 16 [label=direct];
+3 -> 18 [label=direct];
+3 -> 20 [label=direct];
+4 -> 2 [style=dashed];
+5 -> 10 [headlabel="(repo#owner)"];
+6 -> 16 [headlabel="(repo#owner)"];
+7 -> 20 [headlabel="(repo#owner)"];
+9 -> 13 [style=dashed];
+10 -> 9 [style=dashed];
+11 -> 10 [label=direct];
+11 -> 11 [label=direct];
+11 -> 13 [label=direct];
+11 -> 16 [label=direct];
+11 -> 18 [label=direct];
+11 -> 20 [label=direct];
+12 -> 20 [style=dashed];
+13 -> 12 [style=dashed];
+16 -> 15 [style=dashed];
+17 -> 16 [style=dashed];
+18 -> 17 [style=dashed];
+19 -> 18 [style=dashed];
+20 -> 19 [style=dashed];
+}

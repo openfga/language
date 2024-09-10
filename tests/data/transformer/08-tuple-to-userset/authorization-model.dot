@@ -1,0 +1,18 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#owner"];
+2 [label=union];
+3 [label=user];
+4 [label="folder#parent"];
+
+// Edge definitions.
+0 -> 4 [label=direct];
+1 -> 2 [headlabel="(folder#parent)"];
+2 -> 1 [style=dashed];
+3 -> 2 [label=direct];
+}

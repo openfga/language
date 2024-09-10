@@ -1,0 +1,56 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=doc];
+1 [label="doc#can_change_owner"];
+2 [label="doc#owner"];
+3 [label="doc#can_read"];
+4 [label=union];
+5 [label="doc#viewer"];
+6 [label="folder#viewer"];
+7 [label="doc#can_share"];
+8 [label=union];
+9 [label="folder#owner"];
+10 [label="doc#can_write"];
+11 [label=union];
+12 [label=user];
+13 [label="doc#parent"];
+14 [label=folder];
+15 [label="user:*"];
+16 [label="group#member"];
+17 [label="folder#can_create_file"];
+18 [label="folder#parent"];
+19 [label=union];
+20 [label=group];
+
+// Edge definitions.
+2 -> 1 [style=dashed];
+2 -> 4 [style=dashed];
+2 -> 8 [style=dashed];
+2 -> 11 [style=dashed];
+4 -> 3 [style=dashed];
+5 -> 4 [style=dashed];
+6 -> 4 [headlabel="(doc#parent)"];
+6 -> 19 [headlabel="(folder#parent)"];
+8 -> 7 [style=dashed];
+9 -> 8 [headlabel="(doc#parent)"];
+9 -> 11 [headlabel="(doc#parent)"];
+9 -> 17 [style=dashed];
+9 -> 19 [style=dashed];
+11 -> 10 [style=dashed];
+12 -> 2 [label=direct];
+12 -> 5 [label=direct];
+12 -> 9 [label=direct];
+12 -> 16 [label=direct];
+12 -> 19 [label=direct];
+14 -> 13 [label=direct];
+14 -> 18 [label=direct];
+15 -> 5 [label=direct];
+15 -> 19 [label=direct];
+16 -> 5 [label=direct];
+16 -> 19 [label=direct];
+19 -> 6 [style=dashed];
+}

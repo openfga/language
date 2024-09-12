@@ -11,8 +11,8 @@ rankdir=BT
 4 [label=intersection];
 
 // Edge definitions.
-1 -> 4 [style=dashed];
+1 -> 4;
 2 -> 1 [label=direct];
 2 -> 4 [label=direct];
-4 -> 3 [style=dashed];
+4 -> 3;
 }

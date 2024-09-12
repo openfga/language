@@ -28,19 +28,19 @@ rankdir=BT
 
 // Edge definitions.
 2 -> 1 [style=dashed];
-2 -> 4 [style=dashed];
-2 -> 8 [style=dashed];
-2 -> 11 [style=dashed];
-4 -> 3 [style=dashed];
-5 -> 4 [style=dashed];
+2 -> 4;
+2 -> 8;
+2 -> 11;
+4 -> 3;
+5 -> 4;
 6 -> 4 [headlabel="(doc#parent)"];
 6 -> 19 [headlabel="(folder#parent)"];
-8 -> 7 [style=dashed];
+8 -> 7;
 9 -> 8 [headlabel="(doc#parent)"];
 9 -> 11 [headlabel="(doc#parent)"];
 9 -> 17 [style=dashed];
-9 -> 19 [style=dashed];
-11 -> 10 [style=dashed];
+9 -> 19;
+11 -> 10;
 12 -> 2 [label=direct];
 12 -> 5 [label=direct];
 12 -> 9 [label=direct];
@@ -52,5 +52,5 @@ rankdir=BT
 15 -> 19 [label=direct];
 16 -> 5 [label=direct];
 16 -> 19 [label=direct];
-19 -> 6 [style=dashed];
+19 -> 6;
 }

@@ -155,12 +155,17 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 	}
 }
 
-func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
+func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode *AuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) {
+	nodeType := RewriteEdge
 	// e.g. define x: y. Here y is the rewritten relation
 	rewrittenNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
 	newNode := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 	// new edge from y to x
-	graphBuilder.AddEdge(newNode, parentNode, RewriteEdge, "")
+
+	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {
+		nodeType = ComputedEdge
+	}
+	graphBuilder.AddEdge(newNode, parentNode, nodeType, "")
 }
 
 func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) {

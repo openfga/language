@@ -280,7 +280,7 @@ rankdir=BT
 // Edge definitions.
 0 -> 1 [label=direct];
 2 -> 3 [headlabel="(folder#parent)"];
-3 -> 2 [style=dashed];
+3 -> 2;
 4 -> 3 [label=direct];
 }`,
 		},
@@ -381,11 +381,11 @@ rankdir=BT
 5 [label=intersection];
 
 // Edge definitions.
-1 -> 5 [style=dashed];
+1 -> 5;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
-3 -> 5 [style=dashed];
-5 -> 4 [style=dashed];
+3 -> 5;
+5 -> 4;
 }`,
 		},
 		`intersection_of_relation_and_type`: {
@@ -410,10 +410,10 @@ rankdir=BT
 4 [label=intersection];
 
 // Edge definitions.
-1 -> 4 [style=dashed];
+1 -> 4;
 2 -> 1 [label=direct];
 2 -> 4 [label=direct];
-4 -> 3 [style=dashed];
+4 -> 3;
 }`,
 		},
 		`intersection_with_parens`: {
@@ -445,16 +445,16 @@ rankdir=BT
 8 [label=intersection];
 
 // Edge definitions.
-1 -> 8 [style=dashed];
+1 -> 8;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
 2 -> 4 [label=direct];
 2 -> 5 [label=direct];
-3 -> 8 [style=dashed];
-4 -> 8 [style=dashed];
-5 -> 7 [style=dashed];
-7 -> 6 [style=dashed];
-8 -> 7 [style=dashed];
+3 -> 8;
+4 -> 8;
+5 -> 7;
+7 -> 6;
+8 -> 7;
 }`,
 		},
 		`union_of_relations`: {
@@ -481,11 +481,11 @@ rankdir=BT
 5 [label=union];
 
 // Edge definitions.
-1 -> 5 [style=dashed];
+1 -> 5;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
-3 -> 5 [style=dashed];
-5 -> 4 [style=dashed];
+3 -> 5;
+5 -> 4;
 }`,
 		},
 		`union_of_relation_and_type`: {
@@ -510,10 +510,10 @@ rankdir=BT
 4 [label=union];
 
 // Edge definitions.
-1 -> 4 [style=dashed];
+1 -> 4;
 2 -> 1 [label=direct];
 2 -> 4 [label=direct];
-4 -> 3 [style=dashed];
+4 -> 3;
 }`,
 		},
 		`union_with_parens`: {
@@ -545,16 +545,16 @@ rankdir=BT
 8 [label=union];
 
 // Edge definitions.
-1 -> 8 [style=dashed];
+1 -> 8;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
 2 -> 4 [label=direct];
 2 -> 5 [label=direct];
-3 -> 8 [style=dashed];
-4 -> 8 [style=dashed];
-5 -> 7 [style=dashed];
-7 -> 6 [style=dashed];
-8 -> 7 [style=dashed];
+3 -> 8;
+4 -> 8;
+5 -> 7;
+7 -> 6;
+8 -> 7;
 }`,
 		},
 		`multigraph`: {
@@ -595,7 +595,7 @@ rankdir=BT
 1 -> 5 [headlabel="(transition#end)"];
 2 -> 1 [label=direct];
 2 -> 5 [label=direct];
-5 -> 4 [style=dashed];
+5 -> 4;
 }`,
 		},
 		`exclusion_of_relations`: {
@@ -622,11 +622,11 @@ rankdir=BT
 5 [label=exclusion];
 
 // Edge definitions.
-1 -> 5 [style=dashed];
+1 -> 5;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
-3 -> 5 [style=dashed];
-5 -> 4 [style=dashed];
+3 -> 5;
+5 -> 4;
 }`,
 		},
 		`exclusion_of_relation_and_type`: {
@@ -651,10 +651,10 @@ rankdir=BT
 4 [label=exclusion];
 
 // Edge definitions.
-1 -> 4 [style=dashed];
+1 -> 4;
 2 -> 1 [label=direct];
 2 -> 4 [label=direct];
-4 -> 3 [style=dashed];
+4 -> 3;
 }`,
 		},
 		`exclusion_with_parens`: {
@@ -686,16 +686,16 @@ rankdir=BT
 8 [label=union];
 
 // Edge definitions.
-1 -> 8 [style=dashed];
+1 -> 8;
 2 -> 1 [label=direct];
 2 -> 3 [label=direct];
 2 -> 4 [label=direct];
 2 -> 5 [label=direct];
-3 -> 8 [style=dashed];
-4 -> 8 [style=dashed];
-5 -> 7 [style=dashed];
-7 -> 6 [style=dashed];
-8 -> 7 [style=dashed];
+3 -> 8;
+4 -> 8;
+5 -> 7;
+7 -> 6;
+8 -> 7;
 }`,
 		},
 	}

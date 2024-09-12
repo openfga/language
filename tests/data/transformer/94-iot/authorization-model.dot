@@ -19,12 +19,12 @@ rankdir=BT
 
 // Edge definitions.
 2 -> 1 [style=dashed];
-2 -> 4 [style=dashed];
-2 -> 7 [style=dashed];
-4 -> 3 [style=dashed];
-5 -> 4 [style=dashed];
-5 -> 7 [style=dashed];
-7 -> 6 [style=dashed];
+2 -> 4;
+2 -> 7;
+4 -> 3;
+5 -> 4;
+5 -> 7;
+7 -> 6;
 8 -> 2 [label=direct];
 8 -> 5 [label=direct];
 8 -> 9 [label=direct];

@@ -20,17 +20,17 @@ rankdir=BT
 13 [label="bank#customer"];
 
 // Edge definitions.
-1 -> 11 [style=dashed];
+1 -> 11;
 2 -> 1 [label=direct];
 2 -> 12 [label=direct];
 4 -> 3 [label=direct];
-6 -> 5 [style=dashed];
-7 -> 6 [style=dashed];
+6 -> 5;
+7 -> 6;
 8 -> 6 [headlabel="(account#bank)"];
-9 -> 11 [style=dashed];
+9 -> 11;
 10 -> 9 [label=direct];
 10 -> 13 [label=direct];
-11 -> 7 [style=dashed];
+11 -> 7;
 12 -> 8 [label=direct];
 13 -> 8 [label=direct];
 }

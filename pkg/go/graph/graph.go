@@ -43,16 +43,20 @@ func (g *AuthorizationModelGraph) GetDOT() string {
 
 // CycleInformation encapsulates whether the graph has cycles.
 type CycleInformation struct {
+	// If hasCyclesAtCompileTime is true, we should block this model from ever being written.
+	// This is because we are trying to perform a Check on it will cause a stack overflow no matter what the tuples are.
 	hasCyclesAtCompileTime bool
-	hasCyclesAtRuntime     bool
+
+	// If canHaveCyclesAtRuntime is true, there could exist tuples that introduce a cycle.
+	canHaveCyclesAtRuntime bool
 }
 
 func (g *AuthorizationModelGraph) nodeListHasNonComputedEdge(nodeList []graph.Node) bool {
 	for i, nodeI := range nodeList {
 		for _, nodeJ := range nodeList[i+1:] {
-			otherEdges := g.Lines(nodeI.ID(), nodeJ.ID())
-			for otherEdges.Next() {
-				edge, ok := otherEdges.Line().(*AuthorizationModelEdge)
+			allEdges := g.Lines(nodeI.ID(), nodeJ.ID())
+			for allEdges.Next() {
+				edge, ok := allEdges.Line().(*AuthorizationModelEdge)
 				if ok && edge.edgeType != ComputedEdge {
 					return true
 				}
@@ -80,7 +84,7 @@ func (g *AuthorizationModelGraph) GetCycles() CycleInformation {
 
 	return CycleInformation{
 		hasCyclesAtCompileTime: hasCyclesAtCompileTime,
-		hasCyclesAtRuntime:     hasCyclesAtRuntime,
+		canHaveCyclesAtRuntime: hasCyclesAtRuntime,
 	}
 }
 

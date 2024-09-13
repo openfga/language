@@ -227,7 +227,7 @@ rankdir=BT
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: true,
-				hasCyclesAtRuntime:     false,
+				canHaveCyclesAtRuntime: false,
 			},
 		},
 		`computed_relation_with_size_two`: {
@@ -254,7 +254,7 @@ rankdir=BT
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: true,
-				hasCyclesAtRuntime:     false,
+				canHaveCyclesAtRuntime: false,
 			},
 		},
 		`tuple_to_userset_one_related_type`: {
@@ -317,7 +317,7 @@ rankdir=BT
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: false,
-				hasCyclesAtRuntime:     true,
+				canHaveCyclesAtRuntime: true,
 			},
 		},
 		`tuple_to_userset_two_related_types`: {
@@ -631,7 +631,7 @@ rankdir=BT
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: false,
-				hasCyclesAtRuntime:     true,
+				canHaveCyclesAtRuntime: true,
 			},
 		},
 		`multigraph`: {
@@ -820,7 +820,153 @@ rankdir=BT
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: true,
-				hasCyclesAtRuntime:     true,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_or_but_not`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type resource
+      relations
+        define x: [user] but not y
+        define y: [user] but not z
+        define z: [user] or x`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=resource];
+1 [label="resource#x"];
+2 [label=exclusion];
+3 [label=user];
+4 [label="resource#y"];
+5 [label=exclusion];
+6 [label="resource#z"];
+7 [label=union];
+
+// Edge definitions.
+1 -> 7;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 5 [label=direct];
+3 -> 7 [label=direct];
+4 -> 2;
+5 -> 4;
+6 -> 5;
+7 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_four_union`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user] or memberA or memberB or memberC
+        define memberA: [user] or member or memberB or memberC
+        define memberB: [user] or member or memberA or memberC
+        define memberC: [user] or member or memberA or memberB`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=group];
+1 [label="group#member"];
+2 [label=union];
+3 [label=user];
+4 [label="group#memberA"];
+5 [label="group#memberB"];
+6 [label="group#memberC"];
+7 [label=union];
+8 [label=union];
+9 [label=union];
+
+// Edge definitions.
+1 -> 7;
+1 -> 8;
+1 -> 9;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 7 [label=direct];
+3 -> 8 [label=direct];
+3 -> 9 [label=direct];
+4 -> 2;
+4 -> 8;
+4 -> 9;
+5 -> 2;
+5 -> 7;
+5 -> 9;
+6 -> 2;
+6 -> 7;
+6 -> 8;
+7 -> 4;
+8 -> 5;
+9 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_four_union_with_one_member_no_union`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type account
+      relations
+        define admin: [user] or member or super_admin or owner
+        define member: [user] or owner or admin or super_admin
+        define super_admin: [user] or admin or member or owner
+        define owner: [user]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=account];
+1 [label="account#admin"];
+2 [label=union];
+3 [label=user];
+4 [label="account#member"];
+5 [label="account#super_admin"];
+6 [label="account#owner"];
+7 [label=union];
+8 [label=union];
+
+// Edge definitions.
+1 -> 7;
+1 -> 8;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 6 [label=direct];
+3 -> 7 [label=direct];
+3 -> 8 [label=direct];
+4 -> 2;
+4 -> 8;
+5 -> 2;
+5 -> 7;
+6 -> 2;
+6 -> 7;
+6 -> 8;
+7 -> 4;
+8 -> 5;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
 			},
 		},
 	}

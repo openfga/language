@@ -3,9 +3,11 @@ package graph
 import (
 	"errors"
 
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/multi"
+	"gonum.org/v1/gonum/graph/topo"
 )
 
 var ErrBuildingGraph = errors.New("cannot build graph")
@@ -39,4 +41,51 @@ func (g *AuthorizationModelGraph) GetDOT() string {
 	return string(dotRepresentation)
 }
 
-// TODO add graph traversals, cycle detection, etc.
+// CycleInformation encapsulates whether the graph has cycles.
+type CycleInformation struct {
+	// If hasCyclesAtCompileTime is true, we should block this model from ever being written.
+	// This is because we are trying to perform a Check on it will cause a stack overflow no matter what the tuples are.
+	hasCyclesAtCompileTime bool
+
+	// If canHaveCyclesAtRuntime is true, there could exist tuples that introduce a cycle.
+	canHaveCyclesAtRuntime bool
+}
+
+func (g *AuthorizationModelGraph) nodeListHasNonComputedEdge(nodeList []graph.Node) bool {
+	for i, nodeI := range nodeList {
+		for _, nodeJ := range nodeList[i+1:] {
+			allEdges := g.Lines(nodeI.ID(), nodeJ.ID())
+			for allEdges.Next() {
+				edge, ok := allEdges.Line().(*AuthorizationModelEdge)
+				if ok && edge.edgeType != ComputedEdge {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func (g *AuthorizationModelGraph) GetCycles() CycleInformation {
+	hasCyclesAtCompileTime := false
+	hasCyclesAtRuntime := false
+
+	// TODO: investigate whether len(1) should be identified as cycle
+
+	nodes := topo.DirectedCyclesIn(g)
+	for _, nodeList := range nodes {
+		if g.nodeListHasNonComputedEdge(nodeList) {
+			hasCyclesAtRuntime = true
+		} else {
+			hasCyclesAtCompileTime = true
+		}
+	}
+
+	return CycleInformation{
+		hasCyclesAtCompileTime: hasCyclesAtCompileTime,
+		canHaveCyclesAtRuntime: hasCyclesAtRuntime,
+	}
+}
+
+// TODO add graph traversals, etc.

@@ -26,8 +26,9 @@ func TestGetDOTRepresentation(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		model          string
-		expectedOutput string // can visualize in https://dreampuf.github.io/GraphvizOnline
+		model            string
+		cycleInformation CycleInformation
+		expectedOutput   string // can visualize in https://dreampuf.github.io/GraphvizOnline
 	}{
 		`direct_assignment`: {
 			model: `
@@ -224,6 +225,37 @@ rankdir=BT
 2 -> 1 [style=dashed];
 3 -> 2 [style=dashed];
 }`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				hasCyclesAtRuntime:     false,
+			},
+		},
+		`computed_relation_with_size_two`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define x: y
+						define y: x`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#x"];
+2 [label="folder#y"];
+
+// Edge definitions.
+1 -> 2 [style=dashed];
+2 -> 1 [style=dashed];
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				hasCyclesAtRuntime:     false,
+			},
 		},
 		`tuple_to_userset_one_related_type`: {
 			model: `
@@ -283,6 +315,10 @@ rankdir=BT
 3 -> 2;
 4 -> 3 [label=direct];
 }`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				hasCyclesAtRuntime:     true,
+			},
 		},
 		`tuple_to_userset_two_related_types`: {
 			model: `
@@ -557,6 +593,47 @@ rankdir=BT
 8 -> 7;
 }`,
 		},
+		`unionRuntimeRecursive`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user] or b
+					 define b: [user] or c
+					 define c: [user] or a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=union];
+3 [label=user];
+4 [label="folder#b"];
+5 [label=union];
+6 [label="folder#c"];
+7 [label=union];
+
+// Edge definitions.
+1 -> 7;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 5 [label=direct];
+3 -> 7 [label=direct];
+4 -> 2;
+5 -> 4;
+6 -> 5;
+7 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				hasCyclesAtRuntime:     true,
+			},
+		},
 		`multigraph`: {
 			model: `
 				model
@@ -698,6 +775,54 @@ rankdir=BT
 8 -> 7;
 }`,
 		},
+		`multiple_cycles`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define x: y
+						define y: x
+						define a: [user] or x or b
+						define b: [user] or c
+						define c: [user] or a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=union];
+3 [label=user];
+4 [label="folder#x"];
+5 [label="folder#b"];
+6 [label=union];
+7 [label="folder#c"];
+8 [label=union];
+9 [label="folder#y"];
+
+// Edge definitions.
+1 -> 8;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 6 [label=direct];
+3 -> 8 [label=direct];
+4 -> 2;
+4 -> 9 [style=dashed];
+5 -> 2;
+6 -> 5;
+7 -> 6;
+8 -> 7;
+9 -> 4 [style=dashed];
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				hasCyclesAtRuntime:     true,
+			},
+		},
 	}
 
 	for name, testCase := range testCases {
@@ -715,6 +840,7 @@ rankdir=BT
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
+			require.Equal(t, testCase.cycleInformation, graph.GetCycles())
 		})
 	}
 }

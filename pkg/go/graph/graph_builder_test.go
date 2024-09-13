@@ -26,8 +26,9 @@ func TestGetDOTRepresentation(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		model          string
-		expectedOutput string // can visualize in https://dreampuf.github.io/GraphvizOnline
+		model            string
+		cycleInformation CycleInformation
+		expectedOutput   string // can visualize in https://dreampuf.github.io/GraphvizOnline
 	}{
 		`direct_assignment`: {
 			model: `
@@ -148,6 +149,7 @@ rankdir=BT
 1 -> 1 [label=direct];
 2 -> 1 [label=direct];
 }`,
+			// NOTE: For now, we will not consider this case as cycle. We may want to reevaluate in the future.
 		},
 		`direct_assignment_with_conditions`: { // conditions are not represented and edges are de-duped
 			model: `
@@ -224,6 +226,37 @@ rankdir=BT
 2 -> 1 [style=dashed];
 3 -> 2 [style=dashed];
 }`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				canHaveCyclesAtRuntime: false,
+			},
+		},
+		`computed_relation_with_size_two`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define x: y
+						define y: x`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#x"];
+2 [label="folder#y"];
+
+// Edge definitions.
+1 -> 2 [style=dashed];
+2 -> 1 [style=dashed];
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				canHaveCyclesAtRuntime: false,
+			},
 		},
 		`tuple_to_userset_one_related_type`: {
 			model: `
@@ -283,6 +316,10 @@ rankdir=BT
 3 -> 2;
 4 -> 3 [label=direct];
 }`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
 		},
 		`tuple_to_userset_two_related_types`: {
 			model: `
@@ -557,6 +594,47 @@ rankdir=BT
 8 -> 7;
 }`,
 		},
+		`unionRuntimeRecursive`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+				   relations
+					 define a: [user] or b
+					 define b: [user] or c
+					 define c: [user] or a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=union];
+3 [label=user];
+4 [label="folder#b"];
+5 [label=union];
+6 [label="folder#c"];
+7 [label=union];
+
+// Edge definitions.
+1 -> 7;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 5 [label=direct];
+3 -> 7 [label=direct];
+4 -> 2;
+5 -> 4;
+6 -> 5;
+7 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
 		`multigraph`: {
 			model: `
 				model
@@ -698,6 +776,248 @@ rankdir=BT
 8 -> 7;
 }`,
 		},
+		`multiple_cycles`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define x: y
+						define y: x
+						define a: [user] or x or b
+						define b: [user] or c
+						define c: [user] or a`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#a"];
+2 [label=union];
+3 [label=user];
+4 [label="folder#x"];
+5 [label="folder#b"];
+6 [label=union];
+7 [label="folder#c"];
+8 [label=union];
+9 [label="folder#y"];
+
+// Edge definitions.
+1 -> 8;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 6 [label=direct];
+3 -> 8 [label=direct];
+4 -> 2;
+4 -> 9 [style=dashed];
+5 -> 2;
+6 -> 5;
+7 -> 6;
+8 -> 7;
+9 -> 4 [style=dashed];
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: true,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_or_but_not`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type resource
+      relations
+        define x: [user] but not y
+        define y: [user] but not z
+        define z: [user] or x`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=resource];
+1 [label="resource#x"];
+2 [label=exclusion];
+3 [label=user];
+4 [label="resource#y"];
+5 [label=exclusion];
+6 [label="resource#z"];
+7 [label=union];
+
+// Edge definitions.
+1 -> 7;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 5 [label=direct];
+3 -> 7 [label=direct];
+4 -> 2;
+5 -> 4;
+6 -> 5;
+7 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_four_union`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user] or memberA or memberB or memberC
+        define memberA: [user] or member or memberB or memberC
+        define memberB: [user] or member or memberA or memberC
+        define memberC: [user] or member or memberA or memberB`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=group];
+1 [label="group#member"];
+2 [label=union];
+3 [label=user];
+4 [label="group#memberA"];
+5 [label="group#memberB"];
+6 [label="group#memberC"];
+7 [label=union];
+8 [label=union];
+9 [label=union];
+
+// Edge definitions.
+1 -> 7;
+1 -> 8;
+1 -> 9;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 7 [label=direct];
+3 -> 8 [label=direct];
+3 -> 9 [label=direct];
+4 -> 2;
+4 -> 8;
+4 -> 9;
+5 -> 2;
+5 -> 7;
+5 -> 9;
+6 -> 2;
+6 -> 7;
+6 -> 8;
+7 -> 4;
+8 -> 5;
+9 -> 6;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`potential_cycle_four_union_with_one_member_no_union`: {
+			model: `
+				model
+      schema 1.1
+    type user
+    type account
+      relations
+        define admin: [user] or member or super_admin or owner
+        define member: [user] or owner or admin or super_admin
+        define super_admin: [user] or admin or member or owner
+        define owner: [user]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=account];
+1 [label="account#admin"];
+2 [label=union];
+3 [label=user];
+4 [label="account#member"];
+5 [label="account#super_admin"];
+6 [label="account#owner"];
+7 [label=union];
+8 [label=union];
+
+// Edge definitions.
+1 -> 7;
+1 -> 8;
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 6 [label=direct];
+3 -> 7 [label=direct];
+3 -> 8 [label=direct];
+4 -> 2;
+4 -> 8;
+5 -> 2;
+5 -> 7;
+6 -> 2;
+6 -> 7;
+6 -> 8;
+7 -> 4;
+8 -> 5;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`intersection`: {
+			model: `
+				model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define admin: [user]
+        define action1: admin and action2 and action3
+        define action2: admin and action1 and action3
+        define action3: admin and action1 and action2`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#action1"];
+2 [label=intersection];
+3 [label="document#admin"];
+4 [label="document#action2"];
+5 [label="document#action3"];
+6 [label=intersection];
+7 [label=intersection];
+8 [label=user];
+
+// Edge definitions.
+1 -> 6;
+1 -> 7;
+2 -> 1;
+3 -> 2;
+3 -> 6;
+3 -> 7;
+4 -> 2;
+4 -> 7;
+5 -> 2;
+5 -> 6;
+6 -> 4;
+7 -> 5;
+8 -> 3 [label=direct];
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
 	}
 
 	for name, testCase := range testCases {
@@ -715,6 +1035,7 @@ rankdir=BT
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
+			require.Equal(t, testCase.cycleInformation, graph.GetCycles())
 		})
 	}
 }

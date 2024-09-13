@@ -149,6 +149,7 @@ rankdir=BT
 1 -> 1 [label=direct];
 2 -> 1 [label=direct];
 }`,
+			// NOTE: For now, we will not consider this case as cycle. We may want to reevaluate in the future.
 		},
 		`direct_assignment_with_conditions`: { // conditions are not represented and edges are de-duped
 			model: `
@@ -963,6 +964,54 @@ rankdir=BT
 6 -> 8;
 7 -> 4;
 8 -> 5;
+}`,
+			cycleInformation: CycleInformation{
+				hasCyclesAtCompileTime: false,
+				canHaveCyclesAtRuntime: true,
+			},
+		},
+		`intersection`: {
+			model: `
+				model
+      schema 1.1
+    type user
+
+    type document
+      relations
+        define admin: [user]
+        define action1: admin and action2 and action3
+        define action2: admin and action1 and action3
+        define action3: admin and action1 and action2`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#action1"];
+2 [label=intersection];
+3 [label="document#admin"];
+4 [label="document#action2"];
+5 [label="document#action3"];
+6 [label=intersection];
+7 [label=intersection];
+8 [label=user];
+
+// Edge definitions.
+1 -> 6;
+1 -> 7;
+2 -> 1;
+3 -> 2;
+3 -> 6;
+3 -> 7;
+4 -> 2;
+4 -> 7;
+5 -> 2;
+5 -> 6;
+6 -> 4;
+7 -> 5;
+8 -> 3 [label=direct];
 }`,
 			cycleInformation: CycleInformation{
 				hasCyclesAtCompileTime: false,

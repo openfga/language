@@ -1036,6 +1036,18 @@ rankdir=BT
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
 			require.Equal(t, testCase.cycleInformation, graph.GetCycles())
+
+			// assert that dot(reverse(reverse(graph)) == dot(graph)
+			reverseGraph1, err := graph.Reversed()
+			require.NoError(t, err)
+			reverseGraph2, err := reverseGraph1.Reversed()
+			require.NoError(t, err)
+			reversedDot := reverseGraph2.GetDOT()
+			reversedSorted := getSorted(reversedDot)
+
+			diff = cmp.Diff(expectedSorted, reversedSorted)
+
+			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, reversedDot)
 		})
 	}
 }
@@ -1100,6 +1112,18 @@ func TestGetDOTRepresentation_2(t *testing.T) {
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, actualDOT)
+
+			// assert that dot(reverse(reverse(graph)) == dot(graph)
+			reverseGraph1, err := graph.Reversed()
+			require.NoError(t, err)
+			reverseGraph2, err := reverseGraph1.Reversed()
+			require.NoError(t, err)
+			reversedDot := reverseGraph2.GetDOT()
+			reversedSorted := getSorted(reversedDot)
+
+			diff = cmp.Diff(expectedSorted, reversedSorted)
+
+			require.Empty(t, diff, "expected %s\ngot\n%s", test.expectedOutput, reversedDot)
 		})
 	}
 }

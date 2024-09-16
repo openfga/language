@@ -72,17 +72,14 @@ func (g *AuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encodin
 }
 
 func (g *AuthorizationModelGraph) Attributes() []encoding.Attribute {
-	// https://graphviz.org/docs/attrs/rankdir/
+	rankdir := "BT" // bottom to top
 	if g.drawingDirection == DrawingDirectionCheck {
-		return []encoding.Attribute{{
-			Key:   "rankdir",
-			Value: "TB",
-		}}
+		rankdir = "TB" // top to bottom
 	}
 
 	return []encoding.Attribute{{
-		Key:   "rankdir",
-		Value: "BT",
+		Key:   "rankdir", // https://graphviz.org/docs/attrs/rankdir/
+		Value: rankdir,
 	}}
 }
 

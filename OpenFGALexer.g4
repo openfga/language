@@ -133,6 +133,7 @@ IDENTIFIER: (LETTER | '_') (LETTER | DIGIT | '_' | MINUS)*;
 	// NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
 
 // END CEL GRAMMAR
+EXTENDED_IDENTIFIER: (LETTER | '_')((SLASH | DOT | MINUS)?(LETTER | DIGIT | '_')+)*;
 
 NEWLINE:
 	WHITESPACE? ('\r'? '\n' | '\r' | '\f') WHITESPACE? NEWLINE?;

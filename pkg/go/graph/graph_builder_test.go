@@ -631,8 +631,8 @@ rankdir=BT
 7 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: nil,
-				canHaveCyclesAtRuntime: [][]string{{"folder#a", "folder#b", "folder#c"}},
+				hasCyclesAtCompileTime: [][]string{{"folder#a", "folder#b", "folder#c"}},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`multigraph`: {
@@ -820,8 +820,8 @@ rankdir=BT
 9 -> 4 [style=dashed];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: [][]string{{"folder#x", "folder#y"}},
-				canHaveCyclesAtRuntime: [][]string{{"folder#a", "folder#b", "folder#c"}},
+				hasCyclesAtCompileTime: [][]string{{"folder#x", "folder#y"}, {"folder#a", "folder#b", "folder#c"}},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`potential_cycle_or_but_not`: {
@@ -861,8 +861,8 @@ rankdir=BT
 7 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: nil,
-				canHaveCyclesAtRuntime: [][]string{{"resource#x", "resource#y", "resource#z"}},
+				hasCyclesAtCompileTime: [][]string{{"resource#x", "resource#y", "resource#z"}},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`potential_cycle_four_union`: {
@@ -916,8 +916,7 @@ rankdir=BT
 9 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: nil,
-				canHaveCyclesAtRuntime: [][]string{
+				hasCyclesAtCompileTime: [][]string{
 					{"group#member", "group#memberA"},
 					{"group#member", "group#memberB"},
 					{"group#member", "group#memberC"},
@@ -930,6 +929,7 @@ rankdir=BT
 					{"group#memberA", "group#memberB", "group#memberC"},
 					{"group#member", "group#memberA", "group#memberB", "group#memberC"},
 				},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`potential_cycle_four_union_with_one_member_no_union`: {
@@ -978,13 +978,13 @@ rankdir=BT
 8 -> 5;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: nil,
-				canHaveCyclesAtRuntime: [][]string{
+				hasCyclesAtCompileTime: [][]string{
 					{"account#admin", "account#member"},
 					{"account#admin", "account#super_admin"},
 					{"account#member", "account#super_admin"},
 					{"account#admin", "account#member", "account#super_admin"},
 				},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`intersection`: {
@@ -1031,13 +1031,48 @@ rankdir=BT
 8 -> 3 [label=direct];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: nil,
-				canHaveCyclesAtRuntime: [][]string{
+				hasCyclesAtCompileTime: [][]string{
 					{"document#action1", "document#action2"},
 					{"document#action1", "document#action3"},
 					{"document#action2", "document#action3"},
 					{"document#action1", "document#action2", "document#action3"},
 				},
+				canHaveCyclesAtRuntime: nil,
+			},
+		},
+		`union_of_userset_other`: {
+			model: `
+model
+					schema 1.1
+				type user
+
+				type document
+					relations
+						define editor: [user]
+						define viewer: [document#viewer] or editor`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#editor"];
+2 [label=user];
+3 [label="document#viewer"];
+4 [label=union];
+
+// Edge definitions.
+1 -> 4;
+2 -> 1 [label=direct];
+3 -> 4 [label=direct];
+4 -> 3;
+}`,
+			cycleInformation: CycleInformation{
+				canHaveCyclesAtRuntime: [][]string{
+					{"document#viewer"},
+				},
+				hasCyclesAtCompileTime: nil,
 			},
 		},
 	}

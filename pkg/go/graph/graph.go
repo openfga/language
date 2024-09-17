@@ -107,7 +107,7 @@ func (g *AuthorizationModelGraph) nodeListHasNonComputedEdge(nodeList []graph.No
 			allEdges := g.Lines(nodeI.ID(), nodeJ.ID())
 			for allEdges.Next() {
 				edge, ok := allEdges.Line().(*AuthorizationModelEdge)
-				if ok && edge.edgeType != ComputedEdge {
+				if ok && (edge.edgeType == TTUEdge || edge.edgeType == DirectEdge) {
 					return true
 				}
 			}

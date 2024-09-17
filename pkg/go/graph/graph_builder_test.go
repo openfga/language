@@ -227,8 +227,8 @@ rankdir=BT
 3 -> 2 [style=dashed];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: true,
-				canHaveCyclesAtRuntime: false,
+				hasCyclesAtCompileTime: [][]string{{"folder#x", "folder#y", "folder#z", "folder#x"}},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`computed_relation_with_size_two`: {
@@ -254,8 +254,8 @@ rankdir=BT
 2 -> 1 [style=dashed];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: true,
-				canHaveCyclesAtRuntime: false,
+				hasCyclesAtCompileTime: [][]string{{"folder#x", "folder#y", "folder#x"}},
+				canHaveCyclesAtRuntime: nil,
 			},
 		},
 		`tuple_to_userset_one_related_type`: {
@@ -317,8 +317,8 @@ rankdir=BT
 4 -> 3 [label=direct];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{{"folder#viewer"}},
 			},
 		},
 		`tuple_to_userset_two_related_types`: {
@@ -631,8 +631,8 @@ rankdir=BT
 7 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{{"folder#a", "folder#b", "folder#c"}},
 			},
 		},
 		`multigraph`: {
@@ -820,8 +820,8 @@ rankdir=BT
 9 -> 4 [style=dashed];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: true,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: [][]string{{"folder#x", "folder#y"}},
+				canHaveCyclesAtRuntime: [][]string{{"folder#a", "folder#b", "folder#c"}},
 			},
 		},
 		`potential_cycle_or_but_not`: {
@@ -861,8 +861,8 @@ rankdir=BT
 7 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{{"resource#x", "resource#y", "resource#z"}},
 			},
 		},
 		`potential_cycle_four_union`: {
@@ -916,8 +916,20 @@ rankdir=BT
 9 -> 6;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{
+					{"group#member", "group#memberA"},
+					{"group#member", "group#memberB"},
+					{"group#member", "group#memberC"},
+					{"group#memberA", "group#memberB"},
+					{"group#memberA", "group#memberC"},
+					{"group#memberB", "group#memberC"},
+					{"group#member", "group#memberA", "group#memberB"},
+					{"group#member", "group#memberA", "group#memberC"},
+					{"group#member", "group#memberB", "group#memberC"},
+					{"group#memberA", "group#memberB", "group#memberC"},
+					{"group#member", "group#memberA", "group#memberB", "group#memberC"},
+				},
 			},
 		},
 		`potential_cycle_four_union_with_one_member_no_union`: {
@@ -966,8 +978,13 @@ rankdir=BT
 8 -> 5;
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{
+					{"account#admin", "account#member"},
+					{"account#admin", "account#super_admin"},
+					{"account#member", "account#super_admin"},
+					{"account#admin", "account#member", "account#super_admin"},
+				},
 			},
 		},
 		`intersection`: {
@@ -1014,8 +1031,13 @@ rankdir=BT
 8 -> 3 [label=direct];
 }`,
 			cycleInformation: CycleInformation{
-				hasCyclesAtCompileTime: false,
-				canHaveCyclesAtRuntime: true,
+				hasCyclesAtCompileTime: nil,
+				canHaveCyclesAtRuntime: [][]string{
+					{"document#action1", "document#action2"},
+					{"document#action1", "document#action3"},
+					{"document#action2", "document#action3"},
+					{"document#action1", "document#action2", "document#action3"},
+				},
 			},
 		},
 	}
@@ -1035,7 +1057,17 @@ rankdir=BT
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
-			require.Equal(t, testCase.cycleInformation, graph.GetCycles())
+			cycleInfo := graph.GetCycles()
+			if len(testCase.cycleInformation.canHaveCyclesAtRuntime) > 0 {
+				require.Equal(t, testCase.cycleInformation.SortedCanHaveCyclesAtRuntime(), cycleInfo.SortedCanHaveCyclesAtRuntime())
+			} else {
+				require.Empty(t, cycleInfo.SortedCanHaveCyclesAtRuntime())
+			}
+			if len(testCase.cycleInformation.hasCyclesAtCompileTime) > 0 {
+				require.Equal(t, testCase.cycleInformation.SortedHasCyclesAtCompileTime(), cycleInfo.SortedHasCyclesAtCompileTime())
+			} else {
+				require.Empty(t, cycleInfo.SortedHasCyclesAtCompileTime())
+			}
 		})
 	}
 }
@@ -1113,4 +1145,91 @@ func getSorted(input string) string {
 	sort.Strings(lines)
 
 	return strings.Join(lines, "\n")
+}
+
+func TestSortAndRemoveDuplicateAndAlgebraic(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		input    [][]string
+		expected [][]string
+	}{
+		{
+			name:     "empty",
+			input:    [][]string{},
+			expected: [][]string{},
+		},
+		{
+			name: "single_line_with_no_duplicate",
+			input: [][]string{
+				{"c", "b", "a"},
+			},
+			expected: [][]string{
+				{"a", "b", "c"},
+			},
+		},
+		{
+			name: "single_line_with_duplicate_union_intersection_exclusion",
+			input: [][]string{
+				{"c", "exclusion", "b", "union", "c", "a", "intersection", "a", "a"},
+			},
+			expected: [][]string{
+				{"a", "b", "c"},
+			},
+		},
+		{
+			name: "multiple_line_with_no_duplicate",
+			input: [][]string{
+				{"y", "x", "z"},
+				{"c", "b", "a"},
+				{"a", "c", "d", "b"},
+			},
+			expected: [][]string{
+				{"a", "b", "c"},
+				{"x", "y", "z"},
+				{"a", "b", "c", "d"},
+			},
+		},
+		{
+			name: "multiple_line_with_duplicate_items",
+			input: [][]string{
+				{"y", "x", "x", "z"},
+				{"c", "b", "a", "a"},
+				{"a", "c", "d", "b"},
+			},
+			expected: [][]string{
+				{"a", "b", "c"},
+				{"x", "y", "z"},
+				{"a", "b", "c", "d"},
+			},
+		},
+		{
+			name: "multiple_line_difference_last_item",
+			input: [][]string{
+				{"c", "b", "a", "e"},
+				{"a", "c", "d", "b"},
+			},
+			expected: [][]string{
+				{"a", "b", "c", "d"},
+				{"a", "b", "c", "e"},
+			},
+		},
+		{
+			name: "duplicate_lines",
+			input: [][]string{
+				{"c", "b", "a", "d"},
+				{"a", "c", "d", "b"},
+			},
+			expected: [][]string{
+				{"a", "b", "c", "d"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			output := sortAndRemoveDuplicateAndAlgebraic(tt.input)
+			require.Equal(t, tt.expected, output)
+		})
+	}
 }

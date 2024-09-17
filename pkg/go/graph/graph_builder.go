@@ -11,6 +11,12 @@ import (
 	"gonum.org/v1/gonum/graph/multi"
 )
 
+const (
+	union        = "union"
+	intersection = "intersection"
+	exclusion    = "exclusion"
+)
+
 type AuthorizationModelGraphBuilder struct {
 	graph.DirectedMultigraphBuilder
 
@@ -92,15 +98,15 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 
 		return
 	case *openfgav1.Userset_Union:
-		operator = "union"
+		operator = union
 		children = rw.Union.GetChild()
 
 	case *openfgav1.Userset_Intersection:
-		operator = "intersection"
+		operator = intersection
 		children = rw.Intersection.GetChild()
 
 	case *openfgav1.Userset_Difference:
-		operator = "exclusion"
+		operator = exclusion
 		children = []*openfgav1.Userset{
 			rw.Difference.GetBase(),
 			rw.Difference.GetSubtract(),

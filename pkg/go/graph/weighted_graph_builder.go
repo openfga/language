@@ -264,8 +264,13 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 			if err := wb.dfs(neighborNode, seen); err != nil {
 				return err
 			}
+
 			if curNode == neighborNode {
-				edge.weights[curNode.label] = math.MaxInt
+				// recursive userset
+				for k := range curNode.weights {
+					curNode.weights[k] = math.MaxInt
+					edge.weights[k] = math.MaxInt
+				}
 			}
 
 			switch edge.edgeType {

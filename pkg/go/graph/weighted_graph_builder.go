@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"container/list"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -102,12 +102,24 @@ func (wn *WeightedAuthorizationModelNode) Attributes() []encoding.Attribute {
 
 type WeightedAuthorizationModelEdge struct {
 	*AuthorizationModelEdge
+	weights WeightToLeafs
 }
 
 var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
 
-func (we *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
-	return we.AuthorizationModelEdge.Attributes()
+func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
+	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelEdge.Attributes()))
+	for _, attr := range wn.AuthorizationModelEdge.Attributes() {
+		if attr.Key == "label" {
+			weightsStr := wn.weights.String()
+			if len(weightsStr) > 0 {
+				attr.Value += fmt.Sprintf(" - weights:[%v]", weightsStr)
+			}
+		}
+		attrs = append(attrs, attr)
+	}
+
+	return attrs
 }
 
 func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *AuthorizationModelEdge) error {
@@ -115,17 +127,17 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 	if !ok {
 		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 	}
-	weightedFrom := &WeightedAuthorizationModelNode{from, make(map[string]int)}
+	weightedFrom := &WeightedAuthorizationModelNode{from, make(WeightToLeafs)}
 	to, ok := edge.To().(*AuthorizationModelNode)
 	if !ok {
 		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 	}
-	weightedTo := &WeightedAuthorizationModelNode{to, make(map[string]int)}
+	weightedTo := &WeightedAuthorizationModelNode{to, make(WeightToLeafs)}
 
 	// Rewrite Line so that when we do WeightedAuthorizationModelEdge.From, it returns a WeightedAuthorizationModelNode
 	// instead of an AuthorizationModelNode.
 	edge.Line = wb.NewLine(weightedFrom, weightedTo)
-	newWeightedEdge := &WeightedAuthorizationModelEdge{edge}
+	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(WeightToLeafs)}
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
 	return nil
@@ -133,6 +145,10 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 
 func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	g, err := NewAuthorizationModelGraph(model)
+	if err != nil {
+		return nil, err
+	}
+	g, err = g.Reversed()
 	if err != nil {
 		return nil, err
 	}
@@ -177,18 +193,9 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 	return wg, nil
 }
 
-// dfsState's goal is to avoid visiting the same edge more than once (it's okay to visit the same node more than once).
-type dfsState struct {
-	fromNodeID int64
-	toNodeID   int64
-	lineID     int64
-}
-
-//nolint:gocognit,cyclop
 func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 	// DFS traversal
-	stack := list.New()
-	seen := make(map[dfsState]struct{})
+	seen := make(map[*WeightedAuthorizationModelNode]struct{})
 
 	startFrom, err := wb.GetNodesWithNoIncomingEdges()
 	if err != nil {
@@ -196,47 +203,73 @@ func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 	}
 
 	for node := range startFrom {
-		stack.PushBack(node)
-		seen[dfsState{fromNodeID: node.ID(), lineID: -1, toNodeID: -1}] = struct{}{}
+		seen[node] = struct{}{}
+		err := wb.dfs(node, seen)
+		if err != nil {
+			return err
+		}
 	}
 
-	for stack.Len() > 0 {
-		curNode, ok := stack.Remove(stack.Back()).(*WeightedAuthorizationModelNode)
+	return nil
+}
+
+//nolint:gocognit,cyclop
+func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationModelNode, seen map[*WeightedAuthorizationModelNode]struct{}) error {
+	// if _, seeen := seen[curNode]; seeen {
+	//	// TODO
+	//}
+	seen[curNode] = struct{}{}
+
+	neighborNodes := wb.From(curNode.ID())
+
+	for neighborNodes.Next() {
+		neighborNode, ok := neighborNodes.Node().(*WeightedAuthorizationModelNode)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
-
-		neighbors := wb.From(curNode.ID())
-
-		for neighbors.Next() {
-			neighborNode, ok := neighbors.Node().(*WeightedAuthorizationModelNode)
+		edges := wb.Lines(curNode.ID(), neighborNode.ID())
+		for edges.Next() {
+			edge, ok := edges.Line().(*WeightedAuthorizationModelEdge)
 			if !ok {
-				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelEdge", ErrBuildingGraph)
 			}
 
-			// There could be more than one edge between two nodes.
-			edges := wb.Lines(curNode.ID(), neighborNode.ID())
-			for edges.Next() {
-				edge, ok := edges.Line().(*WeightedAuthorizationModelEdge)
-				if !ok {
-					return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelEdge", ErrBuildingGraph)
+			if len(edge.weights) > 0 {
+				continue
+			}
+			if neighborNode.nodeType == SpecificType && !strings.Contains(neighborNode.label, "*") {
+				edge.weights[neighborNode.label] = 1
+				// continue
+			}
+			if err := wb.dfs(neighborNode, seen); err != nil {
+				return err
+			}
+			if curNode == neighborNode {
+				edge.weights[curNode.label] = math.MaxInt
+				// continue
+			}
+
+			switch edge.edgeType {
+			case ComputedEdge, RewriteEdge:
+				for k, v := range neighborNode.weights {
+					edge.weights[k] = v
 				}
-
-				cur := dfsState{fromNodeID: curNode.ID(), toNodeID: neighborNode.ID(), lineID: edge.ID()}
-
-				if _, seeen := seen[cur]; !seeen {
-					// Update weights
-					if curNode.nodeType == SpecificType {
-						neighborNode.weights[curNode.label] = 1
+			case DirectEdge, TTUEdge:
+				for k, v := range neighborNode.weights {
+					if v == math.MaxInt {
+						edge.weights[k] = math.MaxInt
+					} else {
+						edge.weights[k] = v + 1
 					}
-					if neighborNode.nodeType == SpecificTypeAndRelation && edge.edgeType == ComputedEdge {
-						neighborNode.weights = curNode.weights
-					}
-
-					// Continue DFS
-					seen[cur] = struct{}{}
-					stack.PushBack(neighborNode)
 				}
+			}
+
+			for k, v := range edge.weights {
+				curNode.weights[k] = max(curNode.weights[k], v)
+			}
+
+			if curNode.nodeType == OperatorNode && (curNode.label == "union" || curNode.label == "intersection") && len(curNode.weights) > 1 {
+				return fmt.Errorf("%w: operator node should have one and only one weight", ErrInvalidModel)
 			}
 		}
 	}
@@ -245,10 +278,10 @@ func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 }
 
 func (wb *WeightedAuthorizationModelGraph) GetNodesWithNoIncomingEdges() (map[*WeightedAuthorizationModelNode]struct{}, error) {
-	if wb.drawingDirection != DrawingDirectionListObjects {
+	if wb.drawingDirection != DrawingDirectionCheck {
 		return nil, fmt.Errorf("%w: incorrect drawing direction: %v", ErrBuildingGraph, wb.drawingDirection)
 	}
-	leafs := make(map[*WeightedAuthorizationModelNode]struct{})
+	res := make(map[*WeightedAuthorizationModelNode]struct{})
 	iterNodes := wb.Nodes()
 	for iterNodes.Next() {
 		nextNode := iterNodes.Node()
@@ -258,9 +291,9 @@ func (wb *WeightedAuthorizationModelGraph) GetNodesWithNoIncomingEdges() (map[*W
 		}
 
 		if wb.To(casted.ID()).Len() == 0 {
-			leafs[casted] = struct{}{}
+			res[casted] = struct{}{}
 		}
 	}
 
-	return leafs, nil
+	return res, nil
 }

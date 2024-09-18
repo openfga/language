@@ -27,7 +27,7 @@ func TestWeightedGraphBuilder(t *testing.T) {
 						define viewer: [user1, user2]`,
 			expectedOutput: `digraph {
 graph [
-rankdir=BT
+rankdir=TB
 ];
 
 // Node definitions.
@@ -36,8 +36,8 @@ rankdir=BT
 3 [label=user2];
 
 // Edge definitions.
-2 -> 1 [label=direct];
-3 -> 1 [label=direct];
+1 -> 2 [label="direct - weights:[user1=1]"];
+1 -> 3 [label="direct - weights:[user2=1]"];
 }`,
 		},
 		`computed_rewrite`: {
@@ -51,7 +51,7 @@ rankdir=BT
 						define rewrite: viewer`,
 			expectedOutput: `digraph {
 graph [
-rankdir=BT
+rankdir=TB
 ];
 
 // Node definitions.
@@ -60,8 +60,8 @@ rankdir=BT
 3 [label=user];
 
 // Edge definitions.
-2 -> 1 [style=dashed];
-3 -> 2 [label=direct];
+1 -> 2 [style=dashed];
+2 -> 3 [label="direct - weights:[user=1]"];
 }`,
 		},
 	}

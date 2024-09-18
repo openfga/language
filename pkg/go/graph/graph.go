@@ -11,7 +11,10 @@ import (
 	"gonum.org/v1/gonum/graph/topo"
 )
 
-var ErrBuildingGraph = errors.New("cannot build graph")
+var (
+	ErrBuildingGraph = errors.New("cannot build graph")
+	ErrInvalidModel  = errors.New("model is invalid")
+)
 
 type DrawingDirection bool
 

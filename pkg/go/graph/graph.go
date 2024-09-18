@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrBuildingGraph = errors.New("cannot build graph")
+	ErrBuildingGraph = errors.New("cannot build graph of model")
 	ErrInvalidModel  = errors.New("model is invalid")
 )
 

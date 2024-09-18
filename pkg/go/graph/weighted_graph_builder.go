@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
@@ -30,14 +31,18 @@ func (wt WeightToLeafs) String() string {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		sb.WriteString(fmt.Sprintf("%v=%v,", k, wt[k]))
+		formatV := strconv.Itoa(wt[k])
+		if wt[k] == math.MaxInt {
+			formatV = "+∞"
+		}
+		sb.WriteString(fmt.Sprintf("%v=%s,", k, formatV))
 	}
 	formattedWeights := sb.String()
 	if len(formattedWeights) > 0 {
 		formattedWeights = formattedWeights[:len(formattedWeights)-1]
 	}
 
-	return formattedWeights
+	return fmt.Sprintf("weights:[%v]", formattedWeights)
 }
 
 type WeightedAuthorizationModelGraph struct {
@@ -86,15 +91,24 @@ type WeightedAuthorizationModelNode struct {
 var _ encoding.Attributer = (*WeightedAuthorizationModelNode)(nil)
 
 func (wn *WeightedAuthorizationModelNode) Attributes() []encoding.Attribute {
+	weightsStr := wn.weights.String()
+	labelSet := false
 	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelNode.Attributes()))
 	for _, attr := range wn.AuthorizationModelNode.Attributes() {
 		if attr.Key == "label" {
-			weightsStr := wn.weights.String()
+			labelSet = true
 			if len(weightsStr) > 0 {
-				attr.Value += fmt.Sprintf(" - weights:[%v]", weightsStr)
+				attr.Value += fmt.Sprintf(" - %v", weightsStr)
 			}
 		}
 		attrs = append(attrs, attr)
+	}
+
+	if !labelSet {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "label",
+			Value: weightsStr,
+		})
 	}
 
 	return attrs
@@ -108,15 +122,24 @@ type WeightedAuthorizationModelEdge struct {
 var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
 
 func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
+	weightsStr := wn.weights.String()
+	labelSet := false
 	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelEdge.Attributes()))
 	for _, attr := range wn.AuthorizationModelEdge.Attributes() {
 		if attr.Key == "label" {
-			weightsStr := wn.weights.String()
+			labelSet = true
 			if len(weightsStr) > 0 {
-				attr.Value += fmt.Sprintf(" - weights:[%v]", weightsStr)
+				attr.Value += fmt.Sprintf(" - %v", weightsStr)
 			}
 		}
 		attrs = append(attrs, attr)
+	}
+
+	if !labelSet {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "label",
+			Value: weightsStr,
+		})
 	}
 
 	return attrs
@@ -194,20 +217,18 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 }
 
 func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
-	// DFS traversal
 	seen := make(map[*WeightedAuthorizationModelNode]struct{})
-
-	startFrom, err := wb.GetNodesWithNoIncomingEdges()
-	if err != nil {
-		return err
-	}
-
-	for node := range startFrom {
-		seen[node] = struct{}{}
-		err := wb.dfs(node, seen)
+	iterNodes := wb.Nodes()
+	for iterNodes.Next() {
+		nextNode, ok := iterNodes.Node().(*WeightedAuthorizationModelNode)
+		if !ok {
+			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+		}
+		err := wb.dfs(nextNode, seen)
 		if err != nil {
 			return err
 		}
+		seen[nextNode] = struct{}{}
 	}
 
 	return nil
@@ -215,9 +236,9 @@ func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 
 //nolint:gocognit,cyclop
 func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationModelNode, seen map[*WeightedAuthorizationModelNode]struct{}) error {
-	// if _, seeen := seen[curNode]; seeen {
-	//	// TODO
-	//}
+	if _, seeen := seen[curNode]; seeen {
+		return nil
+	}
 	seen[curNode] = struct{}{}
 
 	neighborNodes := wb.From(curNode.ID())
@@ -239,14 +260,12 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 			}
 			if neighborNode.nodeType == SpecificType && !strings.Contains(neighborNode.label, "*") {
 				edge.weights[neighborNode.label] = 1
-				// continue
 			}
 			if err := wb.dfs(neighborNode, seen); err != nil {
 				return err
 			}
 			if curNode == neighborNode {
 				edge.weights[curNode.label] = math.MaxInt
-				// continue
 			}
 
 			switch edge.edgeType {
@@ -268,32 +287,11 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 				curNode.weights[k] = max(curNode.weights[k], v)
 			}
 
-			if curNode.nodeType == OperatorNode && (curNode.label == "union" || curNode.label == "intersection") && len(curNode.weights) > 1 {
+			if curNode.nodeType == OperatorNode && (curNode.label == "exclusion" || curNode.label == "intersection") && len(curNode.weights) > 1 {
 				return fmt.Errorf("%w: operator node should have one and only one weight", ErrInvalidModel)
 			}
 		}
 	}
 
 	return nil
-}
-
-func (wb *WeightedAuthorizationModelGraph) GetNodesWithNoIncomingEdges() (map[*WeightedAuthorizationModelNode]struct{}, error) {
-	if wb.drawingDirection != DrawingDirectionCheck {
-		return nil, fmt.Errorf("%w: incorrect drawing direction: %v", ErrBuildingGraph, wb.drawingDirection)
-	}
-	res := make(map[*WeightedAuthorizationModelNode]struct{})
-	iterNodes := wb.Nodes()
-	for iterNodes.Next() {
-		nextNode := iterNodes.Node()
-		casted, ok := nextNode.(*WeightedAuthorizationModelNode)
-		if !ok {
-			return nil, fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
-		}
-
-		if wb.To(casted.ID()).Len() == 0 {
-			res[casted] = struct{}{}
-		}
-	}
-
-	return res, nil
 }

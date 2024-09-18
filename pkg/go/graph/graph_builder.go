@@ -30,7 +30,7 @@ func NewAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*Authoriza
 		return nil, err
 	}
 
-	return &AuthorizationModelGraph{res}, nil
+	return &AuthorizationModelGraph{res, DrawingDirectionListObjects}, nil
 }
 
 func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, error) {

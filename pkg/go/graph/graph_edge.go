@@ -14,14 +14,32 @@ const (
 	ComputedEdge EdgeType = 3
 )
 
+var _ graph.Line = (*AuthorizationModelEdge)(nil)
+
 type AuthorizationModelEdge struct {
-	graph.Line
+	Line graph.Line
 
 	// custom attributes
 	edgeType EdgeType
 
 	// only when edgeType == TTUEdge
 	conditionedOn string
+}
+
+func (n *AuthorizationModelEdge) From() graph.Node {
+	return n.Line.From()
+}
+
+func (n *AuthorizationModelEdge) To() graph.Node {
+	return n.Line.To()
+}
+
+func (n *AuthorizationModelEdge) ReversedLine() graph.Line {
+	panic("implement me")
+}
+
+func (n *AuthorizationModelEdge) ID() int64 {
+	return n.Line.ID()
 }
 
 var _ encoding.Attributer = (*AuthorizationModelEdge)(nil)

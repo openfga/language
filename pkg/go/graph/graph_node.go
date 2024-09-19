@@ -13,13 +13,19 @@ const (
 	OperatorNode            NodeType = 2 // e.g. union
 )
 
+var _ graph.Node = (*AuthorizationModelNode)(nil)
+
 type AuthorizationModelNode struct {
-	graph.Node
+	Node graph.Node
 
 	// custom attributes
 	label       string // e.g. `union`, for DOT
 	nodeType    NodeType
 	uniqueLabel string // e.g. `union:01J54ND7WHGAAJTGDMFWP4FZTR`
+}
+
+func (n *AuthorizationModelNode) ID() int64 {
+	return n.Node.ID()
 }
 
 var _ encoding.Attributer = (*AuthorizationModelNode)(nil)

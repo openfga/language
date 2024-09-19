@@ -10,7 +10,7 @@ import (
 )
 
 func TestWeightedGraphBuilder(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	testCases := map[string]struct {
 		model          string
@@ -123,6 +123,7 @@ label="weights:[user=1]"
 				type folder
 					relations
 						define viewer: [user, folder#viewer]`,
+
 			expectedOutput: `digraph {
 graph [
 rankdir=TB
@@ -320,7 +321,7 @@ label="weights:[user=2]"
 	}
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			//t.Parallel()
+			t.Parallel()
 
 			model := language.MustTransformDSLToProto(testCase.model)
 			weightedGraph, err := NewWeightedAuthorizationModelGraph(model)

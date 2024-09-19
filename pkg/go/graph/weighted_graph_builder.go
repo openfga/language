@@ -141,8 +141,10 @@ func (wn *WeightedAuthorizationModelEdge) ID() int64 {
 	return wn.Inner.ID()
 }
 
-var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
-var _ graph.Line = (*WeightedAuthorizationModelEdge)(nil)
+var (
+	_ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
+	_ graph.Line          = (*WeightedAuthorizationModelEdge)(nil)
+)
 
 func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
 	weightsStr := wn.weights
@@ -169,27 +171,32 @@ func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
 }
 
 func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *AuthorizationModelEdge) error {
-	from, ok := edge.From().(*AuthorizationModelNode)
-	if !ok {
-		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+	fromNode := wb.Node(edge.From().ID())
+	if fromNode == nil {
+		from, ok := edge.From().(*AuthorizationModelNode)
+		if !ok {
+			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+		}
+		fromNode = &WeightedAuthorizationModelNode{from, make(WeightToLeafs)}
+		// if it's a self-edge, have both ends refer to the same object
+		wb.AddNode(fromNode)
 	}
 
-	weightedFrom := &WeightedAuthorizationModelNode{from, make(map[string]int)}
-
-	// if it's a self-edge, have both ends refer to the same object
-	weightedTo := weightedFrom
-	if edge.From() != edge.To() {
+	toNode := wb.Node(edge.To().ID())
+	if toNode == nil {
 		to, ok := edge.To().(*AuthorizationModelNode)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
-		weightedTo = &WeightedAuthorizationModelNode{to, make(map[string]int)}
+		toNode = &WeightedAuthorizationModelNode{to, make(WeightToLeafs)}
+		wb.AddNode(toNode)
 	}
-
 	// Rewrite Line so that when we do WeightedAuthorizationModelEdge.From, it returns a WeightedAuthorizationModelNode
 	// instead of an AuthorizationModelNode.
-	edge.Line = wb.NewLine(weightedFrom, weightedTo)
+	edge.Line = wb.NewLine(fromNode, toNode)
+
 	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(map[string]int)}
+
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
 	return nil
@@ -260,10 +267,11 @@ func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 		}
 	}
 
-	err := wb.ReassignWeightsForNodesWithSelfLoops()
+	err := wb.ReassignWeightsForNodesWithSelfLoopsToInfinity()
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -321,7 +329,6 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 
 			for k, v := range edge.weights {
 				curNode.weights[k] = max(curNode.weights[k], v)
-				fmt.Println("first update!", curNode)
 			}
 
 			if curNode.Inner.nodeType == OperatorNode && (curNode.Inner.label == "exclusion" || curNode.Inner.label == "intersection") && len(curNode.weights) > 1 {
@@ -334,19 +341,18 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 }
 
 // TODO is there a faster way of doing this that doesn't require going through the entire graph again?
-func (wb *WeightedAuthorizationModelGraph) ReassignWeightsForNodesWithSelfLoops() error {
+func (wb *WeightedAuthorizationModelGraph) ReassignWeightsForNodesWithSelfLoopsToInfinity() error {
 	iterEdges := wb.Edges()
 	for iterEdges.Next() {
 		nextEdge, ok := iterEdges.Edge().(multi.Edge)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to multi.Edge", ErrBuildingGraph)
 		}
-		iterLines := nextEdge
+		iterLines := nextEdge.Lines
 		for iterLines.Next() {
-			nextLine := iterLines.Line()
-			edge, ok := nextLine.(*WeightedAuthorizationModelEdge)
+			edge, ok := iterLines.Line().(*WeightedAuthorizationModelEdge)
 			if !ok {
-				return fmt.Errorf("%w: could not cast to AuthorizationModelEdge", ErrBuildingGraph)
+				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelEdge", ErrBuildingGraph)
 			}
 
 			nodeFrom, ok := edge.From().(*WeightedAuthorizationModelNode)
@@ -362,13 +368,12 @@ func (wb *WeightedAuthorizationModelGraph) ReassignWeightsForNodesWithSelfLoops(
 				continue
 			}
 
-			fmt.Println("second update!", nodeFrom)
 			for k := range nodeFrom.weights {
-				nodeFrom.weights[k] = math.MaxInt
+				(nodeFrom.weights)[k] = math.MaxInt
 				edge.weights[k] = math.MaxInt
 			}
 		}
 	}
-	return nil
 
+	return nil
 }

@@ -150,12 +150,17 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 	if !ok {
 		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 	}
+
 	weightedFrom := &WeightedAuthorizationModelNode{from, make(WeightToLeafs)}
-	to, ok := edge.To().(*AuthorizationModelNode)
-	if !ok {
-		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+
+	weightedTo := weightedFrom
+	if edge.From() != edge.To() {
+		to, ok := edge.To().(*AuthorizationModelNode)
+		if !ok {
+			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+		}
+		weightedTo = &WeightedAuthorizationModelNode{to, make(WeightToLeafs)}
 	}
-	weightedTo := &WeightedAuthorizationModelNode{to, make(WeightToLeafs)}
 
 	// Rewrite Line so that when we do WeightedAuthorizationModelEdge.From, it returns a WeightedAuthorizationModelNode
 	// instead of an AuthorizationModelNode.
@@ -217,30 +222,35 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 }
 
 func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
-	seen := make(map[*WeightedAuthorizationModelNode]struct{})
+	seen := make(map[int64]struct{})
 	iterNodes := wb.Nodes()
 	for iterNodes.Next() {
 		nextNode, ok := iterNodes.Node().(*WeightedAuthorizationModelNode)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
+
 		err := wb.dfs(nextNode, seen)
 		if err != nil {
 			return err
 		}
-		seen[nextNode] = struct{}{}
 	}
 
+	err := wb.ReassignWeightsForNodesWithSelfLoops()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 //nolint:gocognit,cyclop
-func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationModelNode, seen map[*WeightedAuthorizationModelNode]struct{}) error {
-	if _, seeen := seen[curNode]; seeen {
+func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
+	if _, seeen := seen[curNode.ID()]; seeen {
 		return nil
 	}
-	seen[curNode] = struct{}{}
+	seen[curNode.ID()] = struct{}{}
 
+	fmt.Println("visiting node", curNode.uniqueLabel)
 	neighborNodes := wb.From(curNode.ID())
 
 	for neighborNodes.Next() {
@@ -248,6 +258,12 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
+
+		if curNode == neighborNode {
+			fmt.Println("CONTINUE")
+			continue // will be dealt with later
+		}
+
 		edges := wb.Lines(curNode.ID(), neighborNode.ID())
 		for edges.Next() {
 			edge, ok := edges.Line().(*WeightedAuthorizationModelEdge)
@@ -255,22 +271,17 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelEdge", ErrBuildingGraph)
 			}
 
+			fmt.Println("visiting edge", curNode.uniqueLabel, "->", neighborNode.uniqueLabel)
 			if len(edge.weights) > 0 {
 				continue
 			}
 			if neighborNode.nodeType == SpecificType && !strings.Contains(neighborNode.label, "*") {
 				edge.weights[neighborNode.label] = 1
 			}
+
+			fmt.Println("doing DFS on the neighbor", neighborNode.uniqueLabel)
 			if err := wb.dfs(neighborNode, seen); err != nil {
 				return err
-			}
-
-			if curNode == neighborNode {
-				// recursive userset
-				for k := range curNode.weights {
-					curNode.weights[k] = math.MaxInt
-					edge.weights[k] = math.MaxInt
-				}
 			}
 
 			switch edge.edgeType {
@@ -292,6 +303,8 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 				curNode.weights[k] = max(curNode.weights[k], v)
 			}
 
+			fmt.Println(curNode)
+
 			if curNode.nodeType == OperatorNode && (curNode.label == "exclusion" || curNode.label == "intersection") && len(curNode.weights) > 1 {
 				return fmt.Errorf("%w: operator node should have one and only one weight", ErrInvalidModel)
 			}
@@ -299,4 +312,48 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 	}
 
 	return nil
+}
+
+// TODO is there a faster way of doing this that doesn't require going through the entire graph again?
+func (wb *WeightedAuthorizationModelGraph) ReassignWeightsForNodesWithSelfLoops() error {
+	iterEdges := wb.Edges()
+	for iterEdges.Next() {
+		nextEdge, ok := iterEdges.Edge().(multi.Edge)
+		if !ok {
+			return fmt.Errorf("%w: could not cast to multi.Edge", ErrBuildingGraph)
+		}
+		iterLines := nextEdge
+		for iterLines.Next() {
+			nextLine := iterLines.Line()
+			edge, ok := nextLine.(*WeightedAuthorizationModelEdge)
+			if !ok {
+				return fmt.Errorf("%w: could not cast to AuthorizationModelEdge", ErrBuildingGraph)
+			}
+
+			nodeFrom, ok := edge.From().(*WeightedAuthorizationModelNode)
+			if !ok {
+				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+			}
+			nodeTo, ok := edge.To().(*WeightedAuthorizationModelNode)
+			if !ok {
+				return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+			}
+
+			fmt.Println("edge", edge, nodeFrom, nodeFrom.uniqueLabel, "->", nodeTo, nodeTo.uniqueLabel)
+
+			if nodeFrom != nodeTo {
+				continue
+			}
+
+			fmt.Println("recursive userset!", nodeFrom, nodeTo)
+			for k := range nodeFrom.weights {
+				nodeFrom.weights[k] = math.MaxInt
+				edge.weights[k] = math.MaxInt
+			}
+
+			fmt.Println("node", nodeFrom, nodeFrom.uniqueLabel, nodeFrom.weights)
+		}
+	}
+	return nil
+
 }

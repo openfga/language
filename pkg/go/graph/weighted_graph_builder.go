@@ -83,19 +83,13 @@ type WeightedAuthorizationModelGraphBuilder struct {
 	graph.DirectedMultigraphBuilder
 }
 
-var _ graph.Node = (*WeightedAuthorizationModelNode)(nil)
-
 type WeightedAuthorizationModelNode struct {
-	Inner   *AuthorizationModelNode
+	*AuthorizationModelNode
 	weights WeightToLeafs
 }
 
-func (wn *WeightedAuthorizationModelNode) ID() int64 {
-	return wn.Inner.ID()
-}
-
 func (wn *WeightedAuthorizationModelNode) String() string {
-	return fmt.Sprintf("%s [%v]", wn.Inner.uniqueLabel, wn.weights)
+	return fmt.Sprintf("%s [%v]", wn.AuthorizationModelNode.uniqueLabel, wn.weights)
 }
 
 var _ encoding.Attributer = (*WeightedAuthorizationModelNode)(nil)
@@ -103,8 +97,8 @@ var _ encoding.Attributer = (*WeightedAuthorizationModelNode)(nil)
 func (wn *WeightedAuthorizationModelNode) Attributes() []encoding.Attribute {
 	weightsStr := wn.weights
 	labelSet := false
-	attrs := make([]encoding.Attribute, 0, len(wn.Inner.Attributes()))
-	for _, attr := range wn.Inner.Attributes() {
+	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelNode.Attributes()))
+	for _, attr := range wn.AuthorizationModelNode.Attributes() {
 		if attr.Key == "label" {
 			labelSet = true
 			if len(weightsStr) > 0 {
@@ -125,29 +119,13 @@ func (wn *WeightedAuthorizationModelNode) Attributes() []encoding.Attribute {
 }
 
 type WeightedAuthorizationModelEdge struct {
-	Inner      *AuthorizationModelEdge
-	weights    WeightToLeafs
-	isSelfLoop bool
-}
-
-func (wn *WeightedAuthorizationModelEdge) From() graph.Node {
-	return wn.Inner.From()
-}
-
-func (wn *WeightedAuthorizationModelEdge) To() graph.Node {
-	return wn.Inner.To()
-}
-
-func (wn *WeightedAuthorizationModelEdge) ReversedLine() graph.Line {
-	panic("implement me")
-}
-
-func (wn *WeightedAuthorizationModelEdge) ID() int64 {
-	return wn.Inner.ID()
+	*AuthorizationModelEdge
+	weights WeightToLeafs
+	isLoop  bool
 }
 
 func (wn *WeightedAuthorizationModelEdge) String() string {
-	return fmt.Sprintf("%d -> %d [%v]", wn.Inner.From().ID(), wn.Inner.To().ID(), wn.weights)
+	return fmt.Sprintf("%d -> %d [%v]", wn.AuthorizationModelEdge.From().ID(), wn.AuthorizationModelEdge.To().ID(), wn.weights)
 }
 
 var (
@@ -158,8 +136,8 @@ var (
 func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
 	weightsStr := wn.weights
 	labelSet := false
-	attrs := make([]encoding.Attribute, 0, len(wn.Inner.Attributes()))
-	for _, attr := range wn.Inner.Attributes() {
+	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelEdge.Attributes()))
+	for _, attr := range wn.AuthorizationModelEdge.Attributes() {
 		if attr.Key == "label" {
 			labelSet = true
 			if len(weightsStr) > 0 {
@@ -187,7 +165,6 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
 		fromNode = &WeightedAuthorizationModelNode{from, make(WeightToLeafs)}
-		// if it's a self-edge, have both ends refer to the same object
 		wb.AddNode(fromNode)
 	}
 
@@ -204,8 +181,8 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 	// instead of an AuthorizationModelNode.
 	edge.Line = wb.NewLine(fromNode, toNode)
 
-	isSelfEdge := edge.From().ID() == edge.To().ID()
-	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(map[string]int), isSelfEdge}
+	isLoop := edge.From().ID() == edge.To().ID()
+	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(map[string]int), isLoop}
 
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
@@ -254,6 +231,8 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 
 	wg := &WeightedAuthorizationModelGraph{multigraph, g.drawingDirection}
 
+	g = nil // release the original graph
+
 	err = wg.AssignWeights()
 	if err != nil {
 		return nil, err
@@ -271,22 +250,17 @@ func (wb *WeightedAuthorizationModelGraph) AssignWeights() error {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
 
-		err := wb.dfs(nextNode, seen)
+		err := wb.dfsToAssignWeights(nextNode, seen)
 		if err != nil {
 			return err
 		}
 	}
 
-	//err := wb.ReassignWeightsForNodesWithSelfLoopsToInfinity()
-	//if err != nil {
-	//	return err
-	//}
-
 	return nil
 }
 
 //nolint:gocognit,cyclop
-func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
+func (wb *WeightedAuthorizationModelGraph) dfsToAssignWeights(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
 	if _, seeen := seen[curNode.ID()]; seeen {
 		return nil
 	}
@@ -297,8 +271,9 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 		return err
 	}
 
+	// first, assign weights to edges
 	for _, edge := range edgesArray {
-		if len(edge.weights) > 0 || edge.isSelfLoop {
+		if len(edge.weights) > 0 || edge.isLoop {
 			continue
 		}
 
@@ -307,15 +282,15 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
 
-		if neighborNode.Inner.nodeType == SpecificType && !strings.Contains(neighborNode.Inner.label, "*") {
-			edge.weights[neighborNode.Inner.label] = 1
+		if neighborNode.AuthorizationModelNode.nodeType == SpecificType && !strings.Contains(neighborNode.AuthorizationModelNode.label, "*") {
+			edge.weights[neighborNode.AuthorizationModelNode.label] = 1
 		}
 
-		if err := wb.dfs(neighborNode, seen); err != nil {
+		if err := wb.dfsToAssignWeights(neighborNode, seen); err != nil {
 			return err
 		}
 
-		switch edge.Inner.edgeType {
+		switch edge.AuthorizationModelEdge.edgeType {
 		case ComputedEdge, RewriteEdge:
 			for k, v := range neighborNode.weights {
 				edge.weights[k] = v
@@ -329,10 +304,9 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 				}
 			}
 		}
-
-		fmt.Println("updated edge weights", edge)
 	}
 
+	// second, assign weights to nodes
 	if len(edgesArray) > 0 {
 		// copy the values of the weights from the first edge to the node
 		for k, v := range edgesArray[0].weights {
@@ -342,7 +316,7 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 		// now process the rest of the edges
 		for i := 1; i < len(edgesArray); i++ {
 			curEdge := edgesArray[i]
-			if curEdge.isSelfLoop {
+			if curEdge.isLoop {
 				// special case for self loops
 				for k := range curNode.weights {
 					curNode.weights[k] = math.MaxInt
@@ -352,18 +326,15 @@ func (wb *WeightedAuthorizationModelGraph) dfs(curNode *WeightedAuthorizationMod
 				// pass the weights from the edges to the node
 				for k, v := range curEdge.weights {
 					if _, ok := curNode.weights[k]; !ok {
-						if curNode.Inner.nodeType == OperatorNode && (curNode.Inner.label == "exclusion" || curNode.Inner.label == "intersection") {
+						if curNode.AuthorizationModelNode.nodeType == OperatorNode && (curNode.AuthorizationModelNode.label == "exclusion" || curNode.AuthorizationModelNode.label == "intersection") {
 							return fmt.Errorf("%w: operator node should have one and only one weight", ErrInvalidModel)
 						}
 					}
 					curNode.weights[k] = max(curNode.weights[k], v)
 				}
 			}
-
 		}
 	}
-
-	fmt.Println("updated node", curNode)
 
 	return nil
 }
@@ -386,7 +357,7 @@ func (wb *WeightedAuthorizationModelGraph) getNeighboringEdges(node *WeightedAut
 				return nil, fmt.Errorf("%w: could not cast to WeightedAuthorizationModelEdge", ErrBuildingGraph)
 			}
 
-			if edge.isSelfLoop {
+			if edge.isLoop {
 				selfEdgesArray = append(selfEdgesArray, edge)
 			} else {
 				edgesarray = append(edgesarray, edge)

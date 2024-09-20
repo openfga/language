@@ -11,7 +11,10 @@ import (
 	"gonum.org/v1/gonum/graph/topo"
 )
 
-var ErrBuildingGraph = errors.New("cannot build graph")
+var (
+	ErrBuildingGraph = errors.New("cannot build graph")
+	ErrQueryingGraph = errors.New("cannot query graph")
+)
 
 type DrawingDirection bool
 
@@ -22,7 +25,28 @@ const (
 
 type AuthorizationModelGraph struct {
 	*multi.DirectedGraph
-	drawingDirection DrawingDirection
+	DrawingDirection DrawingDirection
+	ids              NodeLabelsToIDs
+}
+
+// GetNodeByLabel provides O(1) access to a node.
+func (g *AuthorizationModelGraph) GetNodeByLabel(label string) (*AuthorizationModelNode, error) {
+	id, ok := g.ids[label]
+	if !ok {
+		return nil, fmt.Errorf("%w: node with label %s not found", ErrQueryingGraph, label)
+	}
+
+	node := g.Node(id)
+	if node == nil {
+		return nil, fmt.Errorf("%w: node with id %d not found", ErrQueryingGraph, id)
+	}
+
+	casted, ok := node.(*AuthorizationModelNode)
+	if !ok {
+		return nil, fmt.Errorf("%w: could not cast to AuthorizationModelNode", ErrQueryingGraph)
+	}
+
+	return casted, nil
 }
 
 // Reversed returns a full copy of the graph, but with the direction of the arrows flipped.
@@ -57,9 +81,15 @@ func (g *AuthorizationModelGraph) Reversed() (*AuthorizationModelGraph, error) {
 		}
 	}
 
+	// Make a brand new copy of the map.
+	copyIDs := make(NodeLabelsToIDs, len(g.ids))
+	for k, v := range g.ids {
+		copyIDs[k] = v
+	}
+
 	multigraph, ok := graphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
 	if ok {
-		return &AuthorizationModelGraph{multigraph, !g.drawingDirection}, nil
+		return &AuthorizationModelGraph{multigraph, !g.DrawingDirection, copyIDs}, nil
 	}
 
 	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
@@ -73,7 +103,7 @@ func (g *AuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encodin
 
 func (g *AuthorizationModelGraph) Attributes() []encoding.Attribute {
 	rankdir := "BT" // bottom to top
-	if g.drawingDirection == DrawingDirectionCheck {
+	if g.DrawingDirection == DrawingDirectionCheck {
 		rankdir = "TB" // top to bottom
 	}
 

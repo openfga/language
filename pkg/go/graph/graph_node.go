@@ -34,3 +34,11 @@ func (n *AuthorizationModelNode) Attributes() []encoding.Attribute {
 
 	return attrs
 }
+
+func (n *AuthorizationModelNode) Label() string {
+	return n.label
+}
+
+func (n *AuthorizationModelNode) NodeType() NodeType {
+	return n.nodeType
+}

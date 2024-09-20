@@ -301,8 +301,7 @@ label="weights:[user=2]"
 						define viewer: a and b
 						define a: [user1]
 						define b: [user2]`,
-			expectedOutput: ``,
-			expectedError:  ErrInvalidModel,
+			expectedError: ErrInvalidModel,
 		},
 		`error_if_difference_leads_to_two_types`: {
 			model: `
@@ -315,8 +314,40 @@ label="weights:[user=2]"
 						define viewer: a but not b
 						define a: [user1]
 						define b: [user2]`,
-			expectedOutput: ``,
-			expectedError:  ErrInvalidModel,
+			expectedError: ErrInvalidModel,
+		},
+		`no_error_if_difference_leads_to_at_least_one_type`: {
+			model: `
+				model
+					schema 1.1
+				type user1
+				type user2
+				type folder
+					relations
+						define viewer: a but not b
+						define a: [user1, user2]
+						define b: [user2]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=TB
+];
+
+// Node definitions.
+1 [label="folder#a - weights:[user1=1,user2=1]"];
+2 [label=user1];
+3 [label=user2];
+4 [label="folder#b - weights:[user2=1]"];
+5 [label="folder#viewer - weights:[user1=1,user2=1]"];
+6 [label="exclusion - weights:[user1=1,user2=1]"];
+
+// Edge definitions.
+1 -> 2 [label="direct - weights:[user1=1]"];
+1 -> 3 [label="direct - weights:[user2=1]"];
+4 -> 3 [label="direct - weights:[user2=1]"];
+5 -> 6 [label="weights:[user1=1,user2=1]"];
+6 -> 1 [label="weights:[user1=1,user2=1]"];
+6 -> 4 [label="weights:[user2=1]"];
+}`,
 		},
 	}
 	for name, testCase := range testCases {

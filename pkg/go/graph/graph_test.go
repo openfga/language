@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -71,10 +72,8 @@ rankdir=TB
 			model := language.MustTransformDSLToProto(testCase.model)
 			graph, err := NewAuthorizationModelGraph(model)
 			require.NoError(t, err)
-			require.Equal(t, DrawingDirectionListObjects, graph.drawingDirection)
 			reversedGraph, err := graph.Reversed()
 			require.NoError(t, err)
-			require.Equal(t, DrawingDirectionCheck, reversedGraph.drawingDirection)
 			actualDOT := reversedGraph.GetDOT()
 			actualSorted := getSorted(actualDOT)
 			expectedSorted := getSorted(testCase.expectedOutput)
@@ -82,6 +81,81 @@ rankdir=TB
 			diff := cmp.Diff(expectedSorted, actualSorted)
 
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
+		})
+	}
+}
+
+func TestGetDrawingDirection(t *testing.T) {
+	t.Parallel()
+	model := language.MustTransformDSLToProto(`
+				model
+					schema 1.1
+				type user
+				type company
+					relations
+						define member: [user]`)
+	graph, err := NewAuthorizationModelGraph(model)
+	require.NoError(t, err)
+	require.Equal(t, DrawingDirectionListObjects, graph.GetDrawingDirection())
+	reversedGraph, err := graph.Reversed()
+	require.NoError(t, err)
+	require.Equal(t, DrawingDirectionCheck, reversedGraph.GetDrawingDirection())
+}
+
+func TestGetNodeByLabel(t *testing.T) {
+	t.Parallel()
+	model := language.MustTransformDSLToProto(`
+				model
+					schema 1.1
+				type user
+				type company
+					relations
+						define member: [user with cond, user:* with cond]
+						define owner: [user]
+						define approved_member: member or owner
+				type group
+					relations
+						define approved_member: [user]
+				type license
+					relations
+						define active_member: approved_member from owner
+						define owner: [company, group]`)
+	graph, err := NewAuthorizationModelGraph(model)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		label         string
+		expectedFound bool
+	}{
+		// found
+		{"user", true},
+		{"user:*", true},
+		{"company", true},
+		{"company#member", true},
+		{"company#owner", true},
+		{"company#approved_member", true},
+		{"group", true},
+		{"group#approved_member", true},
+		{"license", true},
+		{"license#active_member", true},
+		{"license#owner", true},
+		// not found
+		{"unknown", false},
+		{"unknown#unknown", false},
+		{"user with cond", false},
+		{"user:* with cond", false},
+	}
+	for i, testCase := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			t.Parallel()
+			node, err := graph.GetNodeByLabel(testCase.label)
+			if testCase.expectedFound {
+				require.NoError(t, err)
+				require.NotNil(t, node)
+			} else {
+				require.ErrorIs(t, err, ErrQueryingGraph)
+				require.Nil(t, node)
+			}
 		})
 	}
 }

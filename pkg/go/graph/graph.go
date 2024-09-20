@@ -19,8 +19,10 @@ var (
 type DrawingDirection bool
 
 const (
+	// DrawingDirectionListObjects is when terminal types have outgoing edges and no incoming edges.
 	DrawingDirectionListObjects DrawingDirection = true
-	DrawingDirectionCheck       DrawingDirection = false
+	// DrawingDirectionCheck is when terminal types have incoming edges and no outgoing edges.
+	DrawingDirectionCheck DrawingDirection = false
 )
 
 type AuthorizationModelGraph struct {

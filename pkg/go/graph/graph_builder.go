@@ -21,11 +21,8 @@ type AuthorizationModelGraphBuilder struct {
 
 // NewAuthorizationModelGraph builds an authorization model in graph form.
 // For example, types such as `group`, usersets such as `group#member` and wildcards `group:*` are encoded as nodes.
-//
-// The edges are defined by the assignments, e.g.
-// `define viewer: [group]` defines an edge from group to document#viewer.
-// Conditions are not encoded in the graph,
-// and the two edges in an exclusion are not distinguished.
+// By default, the graph is drawn from bottom to top (i.e. terminal types have outgoing edges and no incoming edges).
+// Conditions are not encoded in the graph.
 func NewAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*AuthorizationModelGraph, error) {
 	res, ids, err := parseModel(model)
 	if err != nil {
@@ -250,10 +247,7 @@ func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType E
 	}
 
 	iter := g.Lines(from.ID(), to.ID())
-	for {
-		if !iter.Next() {
-			return false
-		}
+	for iter.Next() {
 		l := iter.Line()
 		edge, ok := l.(*AuthorizationModelEdge)
 		if !ok {
@@ -263,6 +257,8 @@ func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType E
 			return true
 		}
 	}
+
+	return false
 }
 
 func typeAndRelationExists(model *openfgav1.AuthorizationModel, typeName, relation string) bool {

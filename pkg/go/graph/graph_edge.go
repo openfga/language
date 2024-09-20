@@ -51,13 +51,16 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 		if headLabelAttrValue == "" {
 			headLabelAttrValue = "missing"
 		}
+
 		return []encoding.Attribute{
 			{
 				Key:   "headlabel",
 				Value: headLabelAttrValue,
 			},
 		}
+	case RewriteEdge:
+		return []encoding.Attribute{}
+	default:
+		return []encoding.Attribute{}
 	}
-
-	return []encoding.Attribute{}
 }

@@ -10,7 +10,7 @@ import (
 	language "github.com/openfga/language/pkg/go/transformer"
 )
 
-func TestReverseGraphAndDrawingDirection(t *testing.T) {
+func TestReverseGraph(t *testing.T) {
 	t.Parallel()
 	testCases := map[string]struct {
 		model          string
@@ -72,10 +72,8 @@ rankdir=TB
 			model := language.MustTransformDSLToProto(testCase.model)
 			graph, err := NewAuthorizationModelGraph(model)
 			require.NoError(t, err)
-			require.Equal(t, DrawingDirectionListObjects, graph.DrawingDirection)
 			reversedGraph, err := graph.Reversed()
 			require.NoError(t, err)
-			require.Equal(t, DrawingDirectionCheck, reversedGraph.DrawingDirection)
 			actualDOT := reversedGraph.GetDOT()
 			actualSorted := getSorted(actualDOT)
 			expectedSorted := getSorted(testCase.expectedOutput)
@@ -85,6 +83,23 @@ rankdir=TB
 			require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
 		})
 	}
+}
+
+func TestGetDrawingDirection(t *testing.T) {
+	t.Parallel()
+	model := language.MustTransformDSLToProto(`
+				model
+					schema 1.1
+				type user
+				type company
+					relations
+						define member: [user]`)
+	graph, err := NewAuthorizationModelGraph(model)
+	require.NoError(t, err)
+	require.Equal(t, DrawingDirectionListObjects, graph.GetDrawingDirection())
+	reversedGraph, err := graph.Reversed()
+	require.NoError(t, err)
+	require.Equal(t, DrawingDirectionCheck, reversedGraph.GetDrawingDirection())
 }
 
 func TestGetNodeByLabel(t *testing.T) {

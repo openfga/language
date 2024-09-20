@@ -25,8 +25,12 @@ const (
 
 type AuthorizationModelGraph struct {
 	*multi.DirectedGraph
-	DrawingDirection DrawingDirection
+	drawingDirection DrawingDirection
 	ids              NodeLabelsToIDs
+}
+
+func (g *AuthorizationModelGraph) GetDrawingDirection() DrawingDirection {
+	return g.drawingDirection
 }
 
 // GetNodeByLabel provides O(1) access to a node.
@@ -89,7 +93,7 @@ func (g *AuthorizationModelGraph) Reversed() (*AuthorizationModelGraph, error) {
 
 	multigraph, ok := graphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
 	if ok {
-		return &AuthorizationModelGraph{multigraph, !g.DrawingDirection, copyIDs}, nil
+		return &AuthorizationModelGraph{multigraph, !g.drawingDirection, copyIDs}, nil
 	}
 
 	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
@@ -103,7 +107,7 @@ func (g *AuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encodin
 
 func (g *AuthorizationModelGraph) Attributes() []encoding.Attribute {
 	rankdir := "BT" // bottom to top
-	if g.DrawingDirection == DrawingDirectionCheck {
+	if g.drawingDirection == DrawingDirectionCheck {
 		rankdir = "TB" // top to bottom
 	}
 

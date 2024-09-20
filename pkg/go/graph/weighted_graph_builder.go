@@ -12,33 +12,13 @@ type WeightedAuthorizationModelGraphBuilder struct {
 	graph.DirectedMultigraphBuilder
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *AuthorizationModelEdge) error {
-	isLoop := edge.From().ID() == edge.To().ID()
-
-	// create "from" node
+func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeAndUpdateNodes(edge *AuthorizationModelEdge) error {
 	fromNode := wb.Node(edge.From().ID())
-	if fromNode == nil {
-		from, ok := edge.From().(*AuthorizationModelNode)
-		if !ok {
-			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
-		}
-		fromNode = &WeightedAuthorizationModelNode{from, make(WeightMap), false}
-		wb.AddNode(fromNode)
-	}
-
-	// create "to" node
 	toNode := wb.Node(edge.To().ID())
-	if toNode == nil {
-		to, ok := edge.To().(*AuthorizationModelNode)
-		if !ok {
-			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
-		}
-		toNode = &WeightedAuthorizationModelNode{to, make(WeightMap), false}
-		wb.AddNode(toNode)
-	}
+	isNested := fromNode == toNode
 
 	// update "isNested" field for the node
-	if isLoop {
+	if isNested {
 		selfNode, ok := fromNode.(*WeightedAuthorizationModelNode)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
@@ -48,7 +28,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeWithWeights(edge *Autho
 
 	// add line
 	edge.Line = wb.NewLine(fromNode, toNode)
-	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(map[string]int), isLoop}
+	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(WeightMap), isNested}
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
 	return nil

@@ -31,6 +31,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#viewer - weights:[user=1]"];
 2 [label=user];
 
@@ -53,6 +54,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#viewer - weights:[user1=1,user2=1]"];
 2 [label=user1];
 3 [label=user2];
@@ -79,6 +81,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#viewer - weights:[user=1]"];
 2 [label=user];
 3 [label="user:*"];
@@ -103,6 +106,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#rewrite - weights:[user=1]"];
 2 [label="folder#viewer - weights:[user=1]"];
 3 [label=user];
@@ -130,6 +134,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#viewer - weights:[user=+∞]"];
 2 [label=user];
 
@@ -159,6 +164,7 @@ rankdir=TB
 0 [label=company];
 1 [label="company#approved_member - weights:[user=1]"];
 2 [label=user];
+3 [label=license];
 4 [label="license#member - weights:[user=2]"];
 5 [label="license#owner - weights:[company=1]"];
 
@@ -197,6 +203,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#org - weights:[org=1]"];
 2 [label=org];
 3 [label="folder#viewer - weights:[user=4]"];
@@ -255,6 +262,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=group];
 1 [label="group#max_owner - weights:[user=+∞]"];
 2 [label="group#owner - weights:[user=3]"];
 3 [label=user];
@@ -263,6 +271,7 @@ rankdir=TB
 6 [label="state#can_view - weights:[user=1]"];
 7 [label="union - weights:[user=1]"];
 8 [label="state#member - weights:[user=1]"];
+9 [label=transition];
 10 [label="intersection - weights:[user=2]"];
 11 [label="transition#end - weights:[state=1]"];
 12 [label="transition#start - weights:[state=1]"];
@@ -333,6 +342,7 @@ rankdir=TB
 ];
 
 // Node definitions.
+0 [label=folder];
 1 [label="folder#a - weights:[user1=1,user2=1]"];
 2 [label=user1];
 3 [label=user2];

@@ -135,7 +135,7 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 		if directlyRelatedDef.GetWildcard() != nil {
 			// direct assignment to wildcard
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
-			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
+			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
 		}
 
 		if directlyRelatedDef.GetRelation() != "" {

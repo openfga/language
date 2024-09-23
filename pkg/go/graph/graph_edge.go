@@ -26,34 +26,41 @@ type AuthorizationModelEdge struct {
 
 var _ encoding.Attributer = (*AuthorizationModelEdge)(nil)
 
+func (n *AuthorizationModelEdge) EdgeType() EdgeType {
+	return n.edgeType
+}
+
 func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
-	var attrs []encoding.Attribute
-
-	if n.edgeType == DirectEdge {
-		attrs = append(attrs, encoding.Attribute{
-			Key:   "label",
-			Value: "direct",
-		})
-	}
-
-	if n.edgeType == ComputedEdge {
-		attrs = append(attrs, encoding.Attribute{
-			Key:   "style",
-			Value: "dashed",
-		})
-	}
-
-	if n.edgeType == TTUEdge {
+	switch n.edgeType {
+	case DirectEdge:
+		return []encoding.Attribute{
+			{
+				Key:   "label",
+				Value: "direct",
+			},
+		}
+	case ComputedEdge:
+		return []encoding.Attribute{
+			{
+				Key:   "style",
+				Value: "dashed",
+			},
+		}
+	case TTUEdge:
 		headLabelAttrValue := n.conditionedOn
 		if headLabelAttrValue == "" {
 			headLabelAttrValue = "missing"
 		}
 
-		attrs = append(attrs, encoding.Attribute{
-			Key:   "headlabel",
-			Value: headLabelAttrValue,
-		})
+		return []encoding.Attribute{
+			{
+				Key:   "headlabel",
+				Value: headLabelAttrValue,
+			},
+		}
+	case RewriteEdge:
+		return []encoding.Attribute{}
+	default:
+		return []encoding.Attribute{}
 	}
-
-	return attrs
 }

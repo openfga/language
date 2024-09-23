@@ -11,29 +11,28 @@ import (
 	"gonum.org/v1/gonum/graph/multi"
 )
 
+type NodeLabelsToIDs map[string]int64
+
 type AuthorizationModelGraphBuilder struct {
 	graph.DirectedMultigraphBuilder
 
-	ids map[string]int64 // nodes: unique labels to ids. Used to find nodes by label.
+	ids NodeLabelsToIDs // nodes: unique labels to ids. Used to find nodes by label.
 }
 
 // NewAuthorizationModelGraph builds an authorization model in graph form.
 // For example, types such as `group`, usersets such as `group#member` and wildcards `group:*` are encoded as nodes.
-//
-// The edges are defined by the assignments, e.g.
-// `define viewer: [group]` defines an edge from group to document#viewer.
-// Conditions are not encoded in the graph,
-// and the two edges in an exclusion are not distinguished.
+// By default, the graph is drawn from bottom to top (i.e. terminal types have outgoing edges and no incoming edges).
+// Conditions are not encoded in the graph.
 func NewAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*AuthorizationModelGraph, error) {
-	res, err := parseModel(model)
+	res, ids, err := parseModel(model)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AuthorizationModelGraph{res, DrawingDirectionListObjects}, nil
+	return &AuthorizationModelGraph{res, DrawingDirectionListObjects, ids}, nil
 }
 
-func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, error) {
+func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, NodeLabelsToIDs, error) {
 	graphBuilder := &AuthorizationModelGraphBuilder{
 		multi.NewDirectedGraph(), map[string]int64{},
 	}
@@ -67,10 +66,10 @@ func parseModel(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, erro
 
 	multigraph, ok := graphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
 	if ok {
-		return multigraph, nil
+		return multigraph, graphBuilder.ids, nil
 	}
 
-	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
+	return nil, nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
 }
 
 func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *AuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string) {
@@ -136,7 +135,7 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 		if directlyRelatedDef.GetWildcard() != nil {
 			// direct assignment to wildcard
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
-			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificType)
+			curNode = graphBuilder.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
 		}
 
 		if directlyRelatedDef.GetRelation() != "" {
@@ -248,10 +247,7 @@ func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType E
 	}
 
 	iter := g.Lines(from.ID(), to.ID())
-	for {
-		if !iter.Next() {
-			return false
-		}
+	for iter.Next() {
 		l := iter.Line()
 		edge, ok := l.(*AuthorizationModelEdge)
 		if !ok {
@@ -261,6 +257,8 @@ func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType E
 			return true
 		}
 	}
+
+	return false
 }
 
 func typeAndRelationExists(model *openfgav1.AuthorizationModel, typeName, relation string) bool {

@@ -3,7 +3,6 @@ package graph
 import (
 	"fmt"
 	"math"
-	"strings"
 
 	"gonum.org/v1/gonum/graph"
 )
@@ -28,7 +27,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeAndUpdateNodes(edge *Au
 
 	// add line
 	edge.Line = wb.NewLine(fromNode, toNode)
-	newWeightedEdge := &WeightedAuthorizationModelEdge{edge, make(WeightMap), isNested}
+	newWeightedEdge := NewWeightedAuthorizationModelEdge(edge, isNested)
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
 	return nil
@@ -52,7 +51,6 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AssignWeights() error {
 	return nil
 }
 
-//nolint:gocognit,cyclop
 func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
 	if _, seeen := seen[curNode.ID()]; seeen {
 		return nil
@@ -78,7 +76,8 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
 
-		if neighborNode.AuthorizationModelNode.nodeType == SpecificType && !strings.Contains(neighborNode.AuthorizationModelNode.label, "*") {
+		// NOTE: type:* nodes don't have a weight, and neither will their edges
+		if neighborNode.AuthorizationModelNode.nodeType == SpecificType {
 			edge.weights[neighborNode.AuthorizationModelNode.label] = 1
 		}
 
@@ -86,44 +85,20 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 			return err
 		}
 
-		switch edge.AuthorizationModelEdge.edgeType {
-		case ComputedEdge, RewriteEdge:
-			for k, v := range neighborNode.weights {
-				edge.weights[k] = v
-			}
-		case DirectEdge, TTUEdge:
-			for k, v := range neighborNode.weights {
-				if v == math.MaxInt {
-					edge.weights[k] = math.MaxInt
-				} else {
-					edge.weights[k] = v + 1
-				}
-			}
-		}
+		wb.assignWeightsToEdge(edge, neighborNode)
 	}
 
-	// second, now that all edge weights have been recursively assigned, assign weights to nodes
-	for _, edge := range edgesArray {
-		for k, v := range edge.weights {
-			curNode.weights[k] = max(curNode.weights[k], v)
-			if curNode.isNested {
-				curNode.weights[k] = math.MaxInt
-			}
-		}
-	}
+	// second, now that all edge weights have been recursively assigned, assign weights to node
+	wb.assignWeightsToNode(curNode, edgesArray)
 
 	// third, update edges that are loops
-	if curNode.isNested {
-		for _, edge := range edgesArray {
-			if edge.isNested {
-				for k, v := range curNode.weights {
-					edge.weights[k] = v
-				}
-			}
-		}
-	}
+	wb.assignWeightsToLoopEdges(curNode, edgesArray)
 
 	// finally, make sure that intersections and exclusions are "correct"
+	return wb.verifyOperators(curNode, edgesArray)
+}
+
+func (wb *WeightedAuthorizationModelGraphBuilder) verifyOperators(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
 	if curNode.nodeType == OperatorNode && !(curNode.label == "union") {
 		edgeWeights := make([]WeightMap, len(edgesArray))
 		for i := 0; i < len(edgesArray); i++ {
@@ -140,6 +115,47 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	}
 
 	return nil
+}
+
+func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) {
+	if !curNode.isNested {
+		return
+	}
+	for _, edge := range edgesArray {
+		if edge.isNested {
+			for k, v := range curNode.weights {
+				edge.weights[k] = v
+			}
+		}
+	}
+}
+
+func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToNode(node *WeightedAuthorizationModelNode, neighborEdges []*WeightedAuthorizationModelEdge) {
+	for _, edge := range neighborEdges {
+		for k, v := range edge.weights {
+			node.weights[k] = max(node.weights[k], v)
+			if node.isNested {
+				node.weights[k] = math.MaxInt
+			}
+		}
+	}
+}
+
+func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *WeightedAuthorizationModelEdge, neighborNode *WeightedAuthorizationModelNode) {
+	switch edge.AuthorizationModelEdge.edgeType {
+	case ComputedEdge, RewriteEdge:
+		for k, v := range neighborNode.weights {
+			edge.weights[k] = v
+		}
+	case DirectEdge, TTUEdge:
+		for k, v := range neighborNode.weights {
+			if v == math.MaxInt {
+				edge.weights[k] = math.MaxInt
+			} else {
+				edge.weights[k] = v + 1
+			}
+		}
+	}
 }
 
 // getNeighboringEdges is nothing but a convenience function.

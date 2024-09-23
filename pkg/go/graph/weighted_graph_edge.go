@@ -12,6 +12,14 @@ type WeightedAuthorizationModelEdge struct {
 	isNested bool
 }
 
+func NewWeightedAuthorizationModelEdge(edge *AuthorizationModelEdge, isNested bool) *WeightedAuthorizationModelEdge {
+	return &WeightedAuthorizationModelEdge{
+		AuthorizationModelEdge: edge,
+		weights:                make(WeightMap),
+		isNested:               isNested,
+	}
+}
+
 var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
 
 func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {

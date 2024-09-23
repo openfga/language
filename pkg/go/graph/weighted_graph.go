@@ -14,7 +14,7 @@ type WeightedAuthorizationModelGraph struct {
 	drawingDirection DrawingDirection
 }
 
-// nolint: cyclop
+//nolint: cyclop
 func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {
@@ -35,7 +35,8 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 		if !ok {
 			return nil, fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
-		graphBuilder.AddNode(&WeightedAuthorizationModelNode{node, make(WeightMap), false})
+		newNode := NewWeightedAuthorizationModelNode(node, false)
+		graphBuilder.AddNode(newNode)
 	}
 
 	// Add all the edges

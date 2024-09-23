@@ -57,7 +57,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	}
 	seen[curNode.ID()] = struct{}{}
 
-	edgesArray, err := wb.getNeighboringEdges(curNode)
+	edgesArray, err := wb.getOutgoingEdges(curNode)
 	if err != nil {
 		return err
 	}
@@ -81,11 +81,14 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 			edge.weights[neighborNode.AuthorizationModelNode.label] = 1
 		}
 
+		// recursively assign weights to neighbor nodes
 		if err := wb.dfsToAssignWeights(neighborNode, seen); err != nil {
 			return err
 		}
 
-		wb.assignWeightsToEdge(edge, neighborNode)
+		if err := wb.assignWeightsToEdge(edge); err != nil {
+			return err
+		}
 	}
 
 	// second, now that all edge weights have been recursively assigned, assign weights to node
@@ -95,10 +98,13 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	wb.assignWeightsToLoopEdges(curNode, edgesArray)
 
 	// finally, make sure that intersections and exclusions are "correct"
-	return wb.verifyOperators(curNode, edgesArray)
+	return wb.verifyIntersectionAndExclusionNodes(curNode, edgesArray)
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) verifyOperators(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
+// verifyIntersectionAndExclusionNodes checks that intersections and exclusions are correct. For example, an intersection operator that has
+// a weight map such as "user:1, employee:2" may be valid, but if one of the edges/operands connecting it doesn't have a weight defined for
+// "user", then the operator is invalid, because one of the operands of the intersection will never lead to a "user" type.
+func (wb *WeightedAuthorizationModelGraphBuilder) verifyIntersectionAndExclusionNodes(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
 	if curNode.nodeType == OperatorNode && !(curNode.label == "union") {
 		edgeWeights := make([]WeightMap, len(edgesArray))
 		for i := 0; i < len(edgesArray); i++ {
@@ -110,7 +116,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) verifyOperators(curNode *Weigh
 		}
 
 		if len(intersect) == 0 {
-			return fmt.Errorf("%w: this operator cannot reach any type", ErrInvalidModel)
+			return fmt.Errorf("%w: this operator has at leat one operand that cannot reach all types", ErrInvalidModel)
 		}
 	}
 
@@ -141,7 +147,12 @@ func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToNode(node *Weig
 	}
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *WeightedAuthorizationModelEdge, neighborNode *WeightedAuthorizationModelNode) {
+func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *WeightedAuthorizationModelEdge) error {
+	neighborNode, ok := edge.To().(*WeightedAuthorizationModelNode)
+	if !ok {
+		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+	}
+
 	switch edge.AuthorizationModelEdge.edgeType {
 	case ComputedEdge, RewriteEdge:
 		for k, v := range neighborNode.weights {
@@ -156,10 +167,12 @@ func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *Weig
 			}
 		}
 	}
+
+	return nil
 }
 
-// getNeighboringEdges is nothing but a convenience function.
-func (wb *WeightedAuthorizationModelGraphBuilder) getNeighboringEdges(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, error) {
+// getOutgoingEdges is nothing but a convenience function.
+func (wb *WeightedAuthorizationModelGraphBuilder) getOutgoingEdges(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, error) {
 	edgesarray := make([]*WeightedAuthorizationModelEdge, 0)
 
 	neighborNodes := wb.From(node.ID())

@@ -8,7 +8,9 @@ import (
 
 type WeightedAuthorizationModelNode struct {
 	*AuthorizationModelNode
-	weights  WeightMap
+	weights WeightMap
+
+	// isNested signals that this node has a self-loop. That edge will also have this flag set to true.
 	isNested bool
 }
 

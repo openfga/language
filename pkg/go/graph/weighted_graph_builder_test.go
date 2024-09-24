@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -380,5 +381,49 @@ rankdir=TB
 				require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
 			}
 		})
+	}
+}
+
+func TestGetOutgoingEdges(t *testing.T) {
+	t.Parallel()
+	// use a model that is a multigraph.
+	model := language.MustTransformDSLToProto(`model
+  schema 1.1
+type user
+type state
+  relations
+      define can_view: [user]
+type transition
+  relations
+      define start: [state]
+      define end: [state]
+      define can_apply: [user] and can_view from start and can_view from end`)
+
+	weightedGraphBuilder, err := NewWeightedAuthorizationModelGraphBuilder(model)
+	require.NoError(t, err)
+
+	iterNodes := weightedGraphBuilder.Nodes()
+	for iterNodes.Next() {
+		node, ok := iterNodes.Node().(*WeightedAuthorizationModelNode)
+		require.True(t, ok)
+		if node.nodeType != OperatorNode {
+			continue
+		}
+
+		edges, err := weightedGraphBuilder.getOutgoingEdges(node)
+		require.NoError(t, err)
+		require.Len(t, edges, 3)
+
+		var targets []string
+		for _, edge := range edges {
+			toNode, ok := edge.To().(*WeightedAuthorizationModelNode)
+			require.True(t, ok)
+			targets = append(targets, toNode.AuthorizationModelNode.label)
+		}
+
+		sort.Strings(targets)
+		require.Equal(t, "state#can_view", targets[0])
+		require.Equal(t, "state#can_view", targets[1])
+		require.Equal(t, "user", targets[2])
 	}
 }

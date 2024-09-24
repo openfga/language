@@ -9,6 +9,7 @@ import (
 
 type WeightedAuthorizationModelGraphBuilder struct {
 	graph.DirectedMultigraphBuilder
+	drawingDirection DrawingDirection
 }
 
 func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeAndUpdateNodes(edge *AuthorizationModelEdge) error {
@@ -86,25 +87,25 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 			return err
 		}
 
-		if err := wb.assignWeightsToEdge(edge); err != nil {
+		if err := assignWeightsToEdge(edge); err != nil {
 			return err
 		}
 	}
 
 	// second, now that all edge weights have been recursively assigned, assign weights to node
-	wb.assignWeightsToNode(curNode, edgesArray)
+	assignWeightsToNode(curNode, edgesArray)
 
 	// third, update edges that are loops
-	wb.assignWeightsToLoopEdges(curNode, edgesArray)
+	assignWeightsToLoopEdges(curNode, edgesArray)
 
 	// finally, make sure that intersections and exclusions are "correct"
-	return wb.verifyIntersectionAndExclusionNodes(curNode, edgesArray)
+	return verifyIntersectionAndExclusionNodes(curNode, edgesArray)
 }
 
 // verifyIntersectionAndExclusionNodes checks that intersections and exclusions are correct. For example, an intersection operator that has
 // a weight map such as "user:1, employee:2" may be valid, but if one of the edges/operands connecting it doesn't have a weight defined for
 // "user", then the operator is invalid, because one of the operands of the intersection will never lead to a "user" type.
-func (wb *WeightedAuthorizationModelGraphBuilder) verifyIntersectionAndExclusionNodes(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
+func verifyIntersectionAndExclusionNodes(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
 	if curNode.nodeType == OperatorNode && !(curNode.label == "union") {
 		edgeWeights := make([]WeightMap, len(edgesArray))
 		for i := 0; i < len(edgesArray); i++ {
@@ -123,7 +124,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) verifyIntersectionAndExclusion
 	return nil
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) {
+func assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) {
 	if !curNode.isNested {
 		return
 	}
@@ -136,7 +137,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToLoopEdges(curNo
 	}
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToNode(node *WeightedAuthorizationModelNode, neighborEdges []*WeightedAuthorizationModelEdge) {
+func assignWeightsToNode(node *WeightedAuthorizationModelNode, neighborEdges []*WeightedAuthorizationModelEdge) {
 	for _, edge := range neighborEdges {
 		for k, v := range edge.weights {
 			node.weights[k] = max(node.weights[k], v)
@@ -147,7 +148,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToNode(node *Weig
 	}
 }
 
-func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *WeightedAuthorizationModelEdge) error {
+func assignWeightsToEdge(edge *WeightedAuthorizationModelEdge) error {
 	neighborNode, ok := edge.To().(*WeightedAuthorizationModelNode)
 	if !ok {
 		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
@@ -172,7 +173,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) assignWeightsToEdge(edge *Weig
 }
 
 // getOutgoingEdges is nothing but a convenience function.
-func (wb *WeightedAuthorizationModelGraphBuilder) getOutgoingEdges(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, error) {
+func (wb *WeightedAuthorizationModelGraphBuilder) getOutgoingEdges(node graph.Node) ([]*WeightedAuthorizationModelEdge, error) {
 	edgesarray := make([]*WeightedAuthorizationModelEdge, 0)
 
 	neighborNodes := wb.From(node.ID())

@@ -14,8 +14,28 @@ type WeightedAuthorizationModelGraph struct {
 	drawingDirection DrawingDirection
 }
 
-// nolint: cyclop
+func (wg *WeightedAuthorizationModelGraph) GetDrawingDirection() DrawingDirection {
+	return wg.drawingDirection
+}
+
 func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	weightedGraphBuilder, err := NewWeightedAuthorizationModelGraphBuilder(model)
+	if err != nil {
+		return nil, err
+	}
+
+	multigraph, ok := weightedGraphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
+	if !ok {
+		return nil, fmt.Errorf("%w: could not cast to DirectedGraph", ErrBuildingGraph)
+	}
+
+	wg := &WeightedAuthorizationModelGraph{multigraph, weightedGraphBuilder.drawingDirection}
+
+	return wg, nil
+}
+
+//nolint: cyclop
+func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraphBuilder, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {
 		return nil, err
@@ -25,7 +45,7 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 		return nil, err
 	}
 
-	graphBuilder := &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph()}
+	graphBuilder := &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 
 	// Add all nodes
 	iterNodes := g.Nodes()
@@ -68,25 +88,18 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 		return nil, err
 	}
 
-	multigraph, ok := graphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
-	if !ok {
-		return nil, fmt.Errorf("%w: could not cast to DirectedGraph", ErrBuildingGraph)
-	}
-
-	wg := &WeightedAuthorizationModelGraph{multigraph, g.drawingDirection}
-
-	return wg, nil
+	return graphBuilder, nil
 }
 
 var _ dot.Attributers = (*WeightedAuthorizationModelGraph)(nil)
 
-func (wb *WeightedAuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encoding.Attributer, encoding.Attributer) {
-	return wb, nil, nil
+func (wg *WeightedAuthorizationModelGraph) DOTAttributers() (encoding.Attributer, encoding.Attributer, encoding.Attributer) {
+	return wg, nil, nil
 }
 
-func (wb *WeightedAuthorizationModelGraph) Attributes() []encoding.Attribute {
+func (wg *WeightedAuthorizationModelGraph) Attributes() []encoding.Attribute {
 	rankdir := "BT" // bottom to top
-	if wb.drawingDirection == DrawingDirectionCheck {
+	if wg.drawingDirection == DrawingDirectionCheck {
 		rankdir = "TB" // top to bottom
 	}
 
@@ -98,8 +111,8 @@ func (wb *WeightedAuthorizationModelGraph) Attributes() []encoding.Attribute {
 
 // GetDOT returns the DOT visualization. The output text is stable.
 // It should only be used for debugging.
-func (wb *WeightedAuthorizationModelGraph) GetDOT() string {
-	dotRepresentation, err := dot.MarshalMulti(wb, "", "", "")
+func (wg *WeightedAuthorizationModelGraph) GetDOT() string {
+	dotRepresentation, err := dot.MarshalMulti(wg, "", "", "")
 	if err != nil {
 		return ""
 	}

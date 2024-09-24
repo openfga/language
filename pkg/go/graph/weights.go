@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	exp "golang.org/x/exp/maps"
 )
 
 // WeightMap is a map of where the key is a type (e.g. folder, user) and the value is the weight/complexity to reach that type.
@@ -36,7 +38,7 @@ func (wt WeightMap) String() string {
 	return fmt.Sprintf("weights:[%v]", formattedWeights)
 }
 
-func Intersection(maps ...WeightMap) (WeightMap, error) {
+func IntersectionOfKeys(maps ...WeightMap) ([]string, error) {
 	if len(maps) == 0 {
 		return nil, fmt.Errorf("%w: no maps given to compute intersection", ErrBuildingGraph)
 	}
@@ -50,6 +52,9 @@ func Intersection(maps ...WeightMap) (WeightMap, error) {
 	// For each subsequent map, retain only the keys that exist in the current intersection map
 	for i := 1; i < len(maps); i++ {
 		currentMap := maps[i]
+		if currentMap == nil {
+			continue
+		}
 		for key := range intersectionMap {
 			if _, exists := currentMap[key]; !exists {
 				delete(intersectionMap, key)
@@ -57,5 +62,5 @@ func Intersection(maps ...WeightMap) (WeightMap, error) {
 		}
 	}
 
-	return intersectionMap, nil
+	return exp.Keys(intersectionMap), nil
 }

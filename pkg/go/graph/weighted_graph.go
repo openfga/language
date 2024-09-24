@@ -34,7 +34,7 @@ func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*W
 	return wg, nil
 }
 
-//nolint: cyclop
+// nolint: cyclop
 func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraphBuilder, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {

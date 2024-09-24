@@ -111,7 +111,7 @@ func verifyIntersectionAndExclusionNodes(curNode *WeightedAuthorizationModelNode
 		for i := 0; i < len(edgesArray); i++ {
 			edgeWeights[i] = edgesArray[i].weights
 		}
-		intersect, err := Intersection(edgeWeights...)
+		intersect, err := IntersectionOfKeys(edgeWeights...)
 		if err != nil {
 			return err
 		}

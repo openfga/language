@@ -58,17 +58,10 @@ func (weightedEdge *WeightedAuthorizationModelEdge) assignWeightsToEdge() error 
 
 	for k, v := range neighborNode.weights {
 		weightedEdge.weights[k] = v
-	}
-
-	switch weightedEdge.AuthorizationModelEdge.edgeType {
-	case DirectEdge, TTUEdge:
-		for k, v := range neighborNode.weights {
-			if v != math.MaxInt {
-				weightedEdge.weights[k] = v + 1
-			}
+		if v != math.MaxInt &&
+			(weightedEdge.AuthorizationModelEdge.edgeType == DirectEdge || weightedEdge.AuthorizationModelEdge.edgeType == TTUEdge) {
+			weightedEdge.weights[k] = v + 1
 		}
-	case RewriteEdge, ComputedEdge:
-		// do nothing
 	}
 
 	return nil

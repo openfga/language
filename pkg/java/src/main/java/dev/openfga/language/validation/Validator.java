@@ -14,8 +14,7 @@ public class Validator {
         public static final ValidationRegex object =
                 ValidationRegex.build("object", String.format("^%s$", Rules.OBJECT));
 
-        public static final ValidationRegex objectId =
-                ValidationRegex.build("object", String.format("^%s$", Rules.ID));
+        public static final ValidationRegex objectId = ValidationRegex.build("object", String.format("^%s$", Rules.ID));
 
         public static final ValidationRegex typeId =
                 ValidationRegex.build("object", String.format("^%s:%s$", Rules.TYPE, Rules.ID));

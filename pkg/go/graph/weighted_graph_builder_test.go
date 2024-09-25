@@ -427,3 +427,57 @@ type transition
 		require.Equal(t, "user", targets[2])
 	}
 }
+
+func TestAssignWeightsToLoopEdges(t *testing.T) {
+	t.Parallel()
+	testcases := map[string]struct {
+		makeNode             func() *WeightedAuthorizationModelNode
+		makeOutgoingEdges    func() []*WeightedAuthorizationModelEdge
+		assertWeightsOfEdges func(edges []*WeightedAuthorizationModelEdge)
+	}{
+		`node_is_not_nested_does_nothing`: {
+			makeNode: func() *WeightedAuthorizationModelNode {
+				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{}, false)
+			},
+			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
+				return []*WeightedAuthorizationModelEdge{
+					{weights: make(WeightMap)},
+				}
+			},
+			assertWeightsOfEdges: func(edges []*WeightedAuthorizationModelEdge) {
+				require.Empty(t, edges[0].weights)
+			},
+		},
+
+		`assigns_weight_on_nested_edges`: {
+			makeNode: func() *WeightedAuthorizationModelNode {
+				node := NewWeightedAuthorizationModelNode(&AuthorizationModelNode{}, true)
+				node.weights["user"] = 1
+
+				return node
+			},
+			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
+				return []*WeightedAuthorizationModelEdge{
+					{weights: make(WeightMap), isNested: true},
+					{weights: make(WeightMap), isNested: false},
+				}
+			},
+			assertWeightsOfEdges: func(edges []*WeightedAuthorizationModelEdge) {
+				expectedMap := make(WeightMap)
+				expectedMap["user"] = 1
+				require.Equal(t, expectedMap, edges[0].weights)
+				require.Empty(t, edges[1].weights)
+			},
+		},
+	}
+
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			edges := tc.makeOutgoingEdges()
+			assignWeightsToLoopEdges(tc.makeNode(), edges)
+			tc.assertWeightsOfEdges(edges)
+		})
+	}
+}

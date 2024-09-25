@@ -2,7 +2,7 @@ export const Rules = {
   type: "[^:#@\\*\\s]{1,254}",
   relation: "[^:#@\\*\\s]{1,50}",
   condition: "[^\\*\\s]{1,50}",
-  id: "[^#:\\*\\s]+",
+  id: "[^#:\\s*][a-zA-Z0-9_|*@.+]*",
   object: "[^\\s]{2,256}",
 };
 
@@ -41,6 +41,10 @@ export const Validator = {
   // Type name
   type: (type: string): boolean => {
     return validateFieldValue(`^${Rules.type}$`, type);
+  },
+  // ObjectId name
+  objectId: (id: string): boolean => {
+    return validateFieldValue(`^${Rules.id}$`, id);
   },
 };
 

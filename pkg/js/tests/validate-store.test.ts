@@ -13,7 +13,7 @@ describe("validate valid store file", () => {
   testCases.forEach((testCase) => {
     const testFn = testCase.skip ? it.skip : it;
 
-    testFn(`should valdiate ${testCase.name} `, () => {
+    testFn(`should validate ${testCase.name} `, () => {
       const schemaValidator: ValidateFunction = YamlStoreValidator();
 
       const yaml = YAML.parseDocument(fs.readFileSync(testCase.store).toString());

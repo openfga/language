@@ -44,6 +44,30 @@ public class ValidationRules {
     }
 
     @Test
+    public void testValidateObjectId() {
+        // Valid cases
+        assertTrue(Validator.Regexes.objectId.matches("document1"));
+        assertTrue(Validator.Regexes.objectId.matches("doc_123"));
+        assertTrue(Validator.Regexes.objectId.matches("user@domain.com"));
+        assertTrue(Validator.Regexes.objectId.matches("file.name"));
+        assertTrue(Validator.Regexes.objectId.matches("data+set"));
+        assertTrue(Validator.Regexes.objectId.matches("pipe|char"));
+        assertTrue(Validator.Regexes.objectId.matches("star*char"));
+        assertTrue(Validator.Regexes.objectId.matches("underscore_"));
+        assertTrue(Validator.Regexes.objectId.matches("pipe|underscore_@domain.com"));
+
+        // Invalid cases
+        assertFalse(Validator.Regexes.objectId.matches("#document1"));
+        assertFalse(Validator.Regexes.objectId.matches(":doc123"));
+        assertFalse(Validator.Regexes.objectId.matches(" doc123"));
+        assertFalse(Validator.Regexes.objectId.matches("doc:123"));
+        assertFalse(Validator.Regexes.objectId.matches("doc#123"));
+        assertFalse(Validator.Regexes.objectId.matches("doc 123"));
+        assertFalse(Validator.Regexes.objectId.matches("doc:"));
+        assertFalse(Validator.Regexes.objectId.matches("    doc"));
+    }
+
+    @Test
     public void ruleUserTest() {
 
         // Should pass if UserSet

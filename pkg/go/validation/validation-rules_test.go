@@ -24,6 +24,43 @@ func validateBadStructure(t *testing.T, validator func(string) bool) {
 	assert.False(t, validator("item:**"))
 }
 
+func TestValidateObjectID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		value    string
+		expected bool
+	}{
+		{"document1", true},                   // Should pass valid ID
+		{"doc_123", true},                     // Should pass valid ID with underscore
+		{"user@domain.com", true},             // Should pass valid email-like ID
+		{"file.name", true},                   // Should pass valid ID with dot
+		{"data+set", true},                    // Should pass valid ID with plus
+		{"pipe|char", true},                   // Should pass valid ID with pipe
+		{"star*char", true},                   // Should pass valid ID with star
+		{"underscore_", true},                 // Should pass valid ID with underscore
+		{"pipe|underscore_@domain.com", true}, // Should pass valid complex ID
+		{"#document1", false},                 // Should fail if starts with #
+		{":doc123", false},                    // Should fail if starts with :
+		{" doc123", false},                    // Should fail if starts with space
+		{"doc*123", true},                     // Should pass valid ID with star
+		{"doc:123", false},                    // Should fail if contains :
+		{"doc#123", false},                    // Should fail if contains #
+		{"doc 123", false},                    // Should fail if contains space
+		{"doc*", true},                        // Should pass valid ID with star
+		{"doc:", false},                       // Should fail if ends with :
+		{"    doc", false},                    // Should fail if starts with space
+	}
+
+	for _, test := range tests {
+		t.Run(test.value, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, test.expected, ValidateObjectID(test.value))
+		})
+	}
+
+}
+
 func TestValidateObject(t *testing.T) {
 	t.Parallel()
 

@@ -22,7 +22,7 @@ func ValidateObject(object string) bool {
 	return typeMatch && objectMatch
 }
 
-func ValidateObjectId(relation string) bool {
+func ValidateObjectID(relation string) bool {
 	match, _ := regexp.MatchString(fmt.Sprintf("^%s$", RuleID), relation)
 
 	return match

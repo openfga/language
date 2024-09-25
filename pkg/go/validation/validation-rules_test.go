@@ -24,7 +24,7 @@ func validateBadStructure(t *testing.T, validator func(string) bool) {
 	assert.False(t, validator("item:**"))
 }
 
-func TestValidateObjectId(t *testing.T) {
+func TestValidateObjectID(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -54,7 +54,8 @@ func TestValidateObjectId(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.value, func(t *testing.T) {
-			assert.Equal(t, test.expected, ValidateObjectId(test.value))
+			t.Parallel()
+			assert.Equal(t, test.expected, ValidateObjectID(test.value))
 		})
 	}
 

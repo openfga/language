@@ -91,15 +91,15 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 
 		return
 	case *openfgav1.Userset_Union:
-		operator = "union"
+		operator = UnionOperator
 		children = rw.Union.GetChild()
 
 	case *openfgav1.Userset_Intersection:
-		operator = "intersection"
+		operator = IntersectionOperator
 		children = rw.Intersection.GetChild()
 
 	case *openfgav1.Userset_Difference:
-		operator = "exclusion"
+		operator = ExclusionOperator
 		children = []*openfgav1.Userset{
 			rw.Difference.GetBase(),
 			rw.Difference.GetSubtract(),

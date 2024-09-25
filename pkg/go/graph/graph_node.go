@@ -12,13 +12,16 @@ const (
 	SpecificTypeAndRelation NodeType = 1 // e.g. `group#viewer`
 	OperatorNode            NodeType = 2 // e.g. union
 	SpecificTypeWildcard    NodeType = 3 // e.g. `group:*`
+
+	UnionOperator        = "union"
+	IntersectionOperator = "intersection"
+	ExclusionOperator    = "exclusion"
 )
 
 type AuthorizationModelNode struct {
 	graph.Node
 
-	// custom attributes
-	label       string // e.g. `union`, for DOT
+	label       string // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
 	nodeType    NodeType
 	uniqueLabel string // e.g. `union:01J54ND7WHGAAJTGDMFWP4FZTR`
 }

@@ -42,6 +42,10 @@ export const Validator = {
   type: (type: string): boolean => {
     return validateFieldValue(`^${Rules.type}$`, type);
   },
+  // ObjectId name
+  objectId: (id: string): boolean => {
+    return validateFieldValue(`^${Rules.id}$`, id);
+  },
 };
 
 const validateFieldValue = (rule: string, value: string): boolean => {

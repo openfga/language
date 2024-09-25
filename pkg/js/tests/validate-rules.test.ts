@@ -172,4 +172,78 @@ describe("Validation Rules", () => {
 
     validatedBadStructure(Validator.type);
   });
+
+  describe("Rule 'id'", () => {
+    it("should pass 'document1'", () => {
+      expect(Validator.objectId("document1")).toBeTruthy();
+    });
+
+    it("should pass 'doc_123'", () => {
+      expect(Validator.objectId("doc_123")).toBeTruthy();
+    });
+
+    it("should pass 'user@domain.com'", () => {
+      expect(Validator.objectId("user@domain.com")).toBeTruthy();
+    });
+
+    it("should pass 'file.name'", () => {
+      expect(Validator.objectId("file.name")).toBeTruthy();
+    });
+
+    it("should pass 'data+set'", () => {
+      expect(Validator.objectId("data+set")).toBeTruthy();
+    });
+
+    it("should pass 'pipe|char'", () => {
+      expect(Validator.objectId("pipe|char")).toBeTruthy();
+    });
+
+    it("should pass 'star*char'", () => {
+      expect(Validator.objectId("star*char")).toBeTruthy();
+    });
+
+    it("should pass 'underscore_'", () => {
+      expect(Validator.objectId("underscore_")).toBeTruthy();
+    });
+
+    it("should pass 'pipe|underscore_@domain.com'", () => {
+      expect(Validator.objectId("pipe|underscore_@domain.com")).toBeTruthy();
+    });
+
+    it("should fail '#document1'", () => {
+      expect(Validator.objectId("#document1")).toBeFalsy();
+    });
+
+    it("should fail ':doc123'", () => {
+      expect(Validator.objectId(":doc123")).toBeFalsy();
+    });
+
+    it("should fail ' doc123'", () => {
+      expect(Validator.objectId(" doc123")).toBeFalsy();
+    });
+
+    it("should fail 'doc*123'", () => {
+      expect(Validator.objectId("doc*123")).toBeTruthy();
+    });
+
+    it("should fail 'doc:123'", () => {
+      expect(Validator.objectId("doc:123")).toBeFalsy();
+    });
+
+    it("should fail 'doc#123'", () => {
+      expect(Validator.objectId("doc#123")).toBeFalsy();
+    });
+
+    it("should fail 'doc 123'", () => {
+      expect(Validator.objectId("doc 123")).toBeFalsy();
+    });
+
+    it("should fail 'doc*'", () => {
+      expect(Validator.objectId("doc*")).toBeTruthy();
+    });
+
+    it("should fail 'doc:'", () => {
+      expect(Validator.objectId("doc:")).toBeFalsy();
+    });
+  });
 });

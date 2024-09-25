@@ -459,8 +459,8 @@ func TestAssignWeightsToLoopEdges(t *testing.T) {
 			},
 			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
 				return []*WeightedAuthorizationModelEdge{
-					{weights: make(WeightMap), isNested: true},
-					{weights: make(WeightMap), isNested: false},
+					{weights: make(WeightMap), isLoop: true},
+					{weights: make(WeightMap), isLoop: false},
 				}
 			},
 			assertWeightsOfEdges: func(edges []*WeightedAuthorizationModelEdge) {

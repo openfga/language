@@ -80,20 +80,19 @@ func (wb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Authori
 func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeAndUpdateNodes(edge *AuthorizationModelEdge) error {
 	fromNode := wb.Node(edge.From().ID())
 	toNode := wb.Node(edge.To().ID())
-	isNested := fromNode == toNode
+	isLoop := fromNode == toNode
 
-	// update "isNested" field for the node
-	if isNested {
+	if isLoop {
 		selfNode, ok := fromNode.(*WeightedAuthorizationModelNode)
 		if !ok {
 			return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
-		selfNode.isNested = true
+		selfNode.isLoop = true
 	}
 
 	// add line
 	edge.Line = wb.NewLine(fromNode, toNode)
-	newWeightedEdge := NewWeightedAuthorizationModelEdge(edge, isNested)
+	newWeightedEdge := NewWeightedAuthorizationModelEdge(edge, isLoop)
 	wb.DirectedMultigraphBuilder.SetLine(newWeightedEdge)
 
 	return nil
@@ -120,6 +119,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AssignWeights() error {
 //nolint:cyclop
 func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
 	if _, seeen := seen[curNode.ID()]; seeen {
+		// TODO handle cycles, maybe throw an error
 		return nil
 	}
 	seen[curNode.ID()] = struct{}{}
@@ -132,9 +132,10 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	// first, assign weights to neighbor edges
 	for _, edge := range outgoingEdgesOfNode {
 		if len(edge.weights) > 0 {
+			// TODO add test for this
 			continue // already assigned
 		}
-		if edge.isNested {
+		if edge.isLoop {
 			continue // will be assigned later
 		}
 
@@ -163,18 +164,19 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 		return err
 	}
 
-	// third, update edges that are loops
+	// third, update edges that are loops. (Note: another way of doing this could have been to tweak
+	// the for loop above so that we process loop edges last)
 	assignWeightsToLoopEdges(curNode, outgoingEdgesOfNode)
 
 	return nil
 }
 
 func assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, outgoingEdges []*WeightedAuthorizationModelEdge) {
-	if !curNode.isNested {
+	if !curNode.isLoop {
 		return
 	}
 	for _, edge := range outgoingEdges {
-		if edge.isNested {
+		if edge.isLoop {
 			for k, v := range curNode.weights {
 				edge.weights[k] = v
 			}

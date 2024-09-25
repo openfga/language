@@ -11,15 +11,15 @@ type WeightedAuthorizationModelNode struct {
 	*AuthorizationModelNode
 	weights WeightMap
 
-	// isNested signals that this node has a self-loop. That edge will also have this flag set to true.
-	isNested bool
+	// isLoop signals that this node has a self-loop. That edge will also have this flag set to true.
+	isLoop bool
 }
 
-func NewWeightedAuthorizationModelNode(node *AuthorizationModelNode, isNested bool) *WeightedAuthorizationModelNode {
+func NewWeightedAuthorizationModelNode(node *AuthorizationModelNode, isLoop bool) *WeightedAuthorizationModelNode {
 	return &WeightedAuthorizationModelNode{
 		AuthorizationModelNode: node,
 		weights:                make(WeightMap),
-		isNested:               isNested,
+		isLoop:                 isLoop,
 	}
 }
 
@@ -53,7 +53,7 @@ func (weightedNode *WeightedAuthorizationModelNode) assignWeightsToNode(outgoing
 	for _, edge := range outgoingEdges {
 		for k, v := range edge.weights {
 			weightedNode.weights[k] = max(weightedNode.weights[k], v)
-			if weightedNode.isNested {
+			if weightedNode.isLoop {
 				weightedNode.weights[k] = math.MaxInt
 			}
 		}

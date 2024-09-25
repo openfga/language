@@ -218,11 +218,11 @@ func TestGetNodeTypes(t *testing.T) {
 		}
 
 		switch node.label {
-		case "union":
+		case UnionOperator:
 			unionNodes = append(unionNodes, node)
-		case "intersection":
+		case IntersectionOperator:
 			intersectionNodes = append(intersectionNodes, node)
-		case "exclusion":
+		case ExclusionOperator:
 			differenceNodes = append(differenceNodes, node)
 		}
 	}

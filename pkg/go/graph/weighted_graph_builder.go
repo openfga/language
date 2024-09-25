@@ -2,7 +2,6 @@ package graph
 
 import (
 	"fmt"
-	"math"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
@@ -117,13 +116,13 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	}
 	seen[curNode.ID()] = struct{}{}
 
-	edgesArray, err := wb.getOutgoingEdges(curNode)
+	outgoingEdgesOfNode, err := wb.getOutgoingEdges(curNode)
 	if err != nil {
 		return err
 	}
 
 	// first, assign weights to neighbor edges
-	for _, edge := range edgesArray {
+	for _, edge := range outgoingEdgesOfNode {
 		if len(edge.weights) > 0 {
 			continue // already assigned
 		}
@@ -146,89 +145,32 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 			return err
 		}
 
-		if err := assignWeightsToEdge(edge); err != nil {
+		if err := edge.assignWeightsToEdge(); err != nil {
 			return err
 		}
 	}
 
 	// second, now that all edge weights have been recursively assigned, assign weights to node
-	assignWeightsToNode(curNode, edgesArray)
+	curNode.assignWeightsToNode(outgoingEdgesOfNode)
 
 	// third, update edges that are loops
-	assignWeightsToLoopEdges(curNode, edgesArray)
+	assignWeightsToLoopEdges(curNode, outgoingEdgesOfNode)
 
 	// finally, make sure that intersections and exclusions are "correct"
-	return verifyIntersectionAndExclusionNodes(curNode, edgesArray)
+	return curNode.verifyNodeIsValid(outgoingEdgesOfNode)
 }
 
-// verifyIntersectionAndExclusionNodes checks that intersections and exclusions are correct. For example, an intersection operator that has
-// a weight map such as "user:1, employee:2" may be valid, but if one of the edges/operands connecting it doesn't have a weight defined for
-// "user", then the operator is invalid, because one of the operands of the intersection will never lead to a "user" type.
-func verifyIntersectionAndExclusionNodes(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) error {
-	if curNode.nodeType == OperatorNode && !(curNode.label == "union") {
-		edgeWeights := make([]WeightMap, len(edgesArray))
-		for i := 0; i < len(edgesArray); i++ {
-			edgeWeights[i] = edgesArray[i].weights
-		}
-		intersect, err := IntersectionOfKeys(edgeWeights...)
-		if err != nil {
-			return err
-		}
-
-		if len(intersect) == 0 {
-			return fmt.Errorf("%w: this operator has at leat one operand that cannot reach all types", ErrInvalidModel)
-		}
-	}
-
-	return nil
-}
-
-func assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, edgesArray []*WeightedAuthorizationModelEdge) {
+func assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, outgoingEdges []*WeightedAuthorizationModelEdge) {
 	if !curNode.isNested {
 		return
 	}
-	for _, edge := range edgesArray {
+	for _, edge := range outgoingEdges {
 		if edge.isNested {
 			for k, v := range curNode.weights {
 				edge.weights[k] = v
 			}
 		}
 	}
-}
-
-func assignWeightsToNode(node *WeightedAuthorizationModelNode, neighborEdges []*WeightedAuthorizationModelEdge) {
-	for _, edge := range neighborEdges {
-		for k, v := range edge.weights {
-			node.weights[k] = max(node.weights[k], v)
-			if node.isNested {
-				node.weights[k] = math.MaxInt
-			}
-		}
-	}
-}
-
-func assignWeightsToEdge(edge *WeightedAuthorizationModelEdge) error {
-	neighborNode, ok := edge.To().(*WeightedAuthorizationModelNode)
-	if !ok {
-		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
-	}
-
-	switch edge.AuthorizationModelEdge.edgeType {
-	case ComputedEdge, RewriteEdge:
-		for k, v := range neighborNode.weights {
-			edge.weights[k] = v
-		}
-	case DirectEdge, TTUEdge:
-		for k, v := range neighborNode.weights {
-			if v == math.MaxInt {
-				edge.weights[k] = math.MaxInt
-			} else {
-				edge.weights[k] = v + 1
-			}
-		}
-	}
-
-	return nil
 }
 
 // getOutgoingEdges is nothing but a convenience function.

@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"math"
 
 	"gonum.org/v1/gonum/graph/encoding"
 )
@@ -24,11 +25,11 @@ func NewWeightedAuthorizationModelEdge(edge *AuthorizationModelEdge, isNested bo
 
 var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
 
-func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
-	weightsStr := wn.weights
+func (weightedEdge *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
+	weightsStr := weightedEdge.weights
 	labelSet := false
-	attrs := make([]encoding.Attribute, 0, len(wn.AuthorizationModelEdge.Attributes()))
-	for _, attr := range wn.AuthorizationModelEdge.Attributes() {
+	attrs := make([]encoding.Attribute, 0, len(weightedEdge.AuthorizationModelEdge.Attributes()))
+	for _, attr := range weightedEdge.AuthorizationModelEdge.Attributes() {
 		if attr.Key == "label" {
 			labelSet = true
 			if len(weightsStr) > 0 {
@@ -46,4 +47,29 @@ func (wn *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
 	}
 
 	return attrs
+}
+
+// assignWeightsToEdge assigns the weights of the edge based on the weights of the "to" node.
+func (weightedEdge *WeightedAuthorizationModelEdge) assignWeightsToEdge() error {
+	neighborNode, ok := weightedEdge.To().(*WeightedAuthorizationModelNode)
+	if !ok {
+		return fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
+	}
+
+	for k, v := range neighborNode.weights {
+		weightedEdge.weights[k] = v
+	}
+
+	switch weightedEdge.AuthorizationModelEdge.edgeType {
+	case DirectEdge, TTUEdge:
+		for k, v := range neighborNode.weights {
+			if v != math.MaxInt {
+				weightedEdge.weights[k] = v + 1
+			}
+		}
+	case RewriteEdge, ComputedEdge:
+		// do nothing
+	}
+
+	return nil
 }

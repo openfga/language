@@ -13,8 +13,12 @@ type WeightedAuthorizationModelGraphBuilder struct {
 	drawingDirection DrawingDirection
 }
 
-//nolint: cyclop
-func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraphBuilder, error) {
+func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGraphBuilder {
+	return &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
+}
+
+//nolint:cyclop
+func (wb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*multi.DirectedGraph, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {
 		return nil, err
@@ -23,8 +27,6 @@ func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationMod
 	if err != nil {
 		return nil, err
 	}
-
-	graphBuilder := &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 
 	// Add all nodes
 	iterNodes := g.Nodes()
@@ -35,7 +37,7 @@ func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationMod
 			return nil, fmt.Errorf("%w: could not cast to WeightedAuthorizationModelNode", ErrBuildingGraph)
 		}
 		newNode := NewWeightedAuthorizationModelNode(node, false)
-		graphBuilder.AddNode(newNode)
+		wb.AddNode(newNode)
 	}
 
 	// Add all the edges
@@ -55,19 +57,24 @@ func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationMod
 				return nil, fmt.Errorf("%w: could not cast %v to AuthorizationModelEdge", ErrBuildingGraph, nextLine)
 			}
 
-			err = graphBuilder.AddEdgeAndUpdateNodes(castedEdge)
+			err = wb.AddEdgeAndUpdateNodes(castedEdge)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	err = graphBuilder.AssignWeights()
+	err = wb.AssignWeights()
 	if err != nil {
 		return nil, err
 	}
 
-	return graphBuilder, nil
+	multigraph, ok := wb.DirectedMultigraphBuilder.(*multi.DirectedGraph)
+	if !ok {
+		return nil, fmt.Errorf("%w: could not cast to DirectedGraph", ErrBuildingGraph)
+	}
+
+	return multigraph, nil
 }
 
 func (wb *WeightedAuthorizationModelGraphBuilder) AddEdgeAndUpdateNodes(edge *AuthorizationModelEdge) error {

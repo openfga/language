@@ -1,8 +1,6 @@
 package graph
 
 import (
-	"fmt"
-
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph/encoding"
 	"gonum.org/v1/gonum/graph/encoding/dot"
@@ -19,14 +17,11 @@ func (wg *WeightedAuthorizationModelGraph) GetDrawingDirection() DrawingDirectio
 }
 
 func NewWeightedAuthorizationModelGraph(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
-	weightedGraphBuilder, err := NewWeightedAuthorizationModelGraphBuilder(model)
+	weightedGraphBuilder := NewWeightedAuthorizationModelGraphBuilder()
+
+	multigraph, err := weightedGraphBuilder.Build(model)
 	if err != nil {
 		return nil, err
-	}
-
-	multigraph, ok := weightedGraphBuilder.DirectedMultigraphBuilder.(*multi.DirectedGraph)
-	if !ok {
-		return nil, fmt.Errorf("%w: could not cast to DirectedGraph", ErrBuildingGraph)
 	}
 
 	wg := &WeightedAuthorizationModelGraph{multigraph, weightedGraphBuilder.drawingDirection}

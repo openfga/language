@@ -399,7 +399,8 @@ type transition
       define end: [state]
       define can_apply: [user] and can_view from start and can_view from end`)
 
-	weightedGraphBuilder, err := NewWeightedAuthorizationModelGraphBuilder(model)
+	weightedGraphBuilder := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := weightedGraphBuilder.Build(model)
 	require.NoError(t, err)
 
 	iterNodes := weightedGraphBuilder.Nodes()

@@ -111,7 +111,7 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 	}{
 		`union`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
-				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: "union"}, false)
+				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: UnionOperator}, false)
 			},
 			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
 				return nil
@@ -120,7 +120,7 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 		},
 		`intersection_good`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
-				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: "intersection"}, false)
+				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: IntersectionOperator}, false)
 			},
 			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
 				weights1 := make(WeightMap)
@@ -137,7 +137,7 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 		},
 		`intersection_bad`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
-				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: "intersection"}, false)
+				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: IntersectionOperator}, false)
 			},
 			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
 				weights1 := make(WeightMap)

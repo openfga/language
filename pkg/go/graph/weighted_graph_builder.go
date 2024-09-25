@@ -13,7 +13,7 @@ type WeightedAuthorizationModelGraphBuilder struct {
 	drawingDirection DrawingDirection
 }
 
-//nolint: cyclop
+// nolint: cyclop
 func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraphBuilder, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {

@@ -64,7 +64,7 @@ func (weightedNode *WeightedAuthorizationModelNode) assignWeightsToNode(outgoing
 // a weight map such as "user:1, employee:2" may be valid, but if one of the edges/operands connecting it doesn't have a weight defined for
 // "user", then the operator is invalid, because one of the operands of the intersection will never lead to a "user" type.// This function assumes that the input edges have weights already.
 func (weightedNode *WeightedAuthorizationModelNode) verifyNodeIsValid(outgoingEdges []*WeightedAuthorizationModelEdge) error {
-	if weightedNode.nodeType == OperatorNode && !(weightedNode.label == "union") {
+	if weightedNode.nodeType == OperatorNode && !(weightedNode.label == UnionOperator) {
 		edgeWeights := make([]WeightMap, len(outgoingEdges))
 		for i := 0; i < len(outgoingEdges); i++ {
 			edgeWeights[i] = outgoingEdges[i].weights

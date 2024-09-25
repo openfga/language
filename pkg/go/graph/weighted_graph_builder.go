@@ -13,7 +13,7 @@ type WeightedAuthorizationModelGraphBuilder struct {
 	drawingDirection DrawingDirection
 }
 
-// nolint: cyclop
+//nolint: cyclop
 func NewWeightedAuthorizationModelGraphBuilder(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraphBuilder, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {
@@ -110,6 +110,7 @@ func (wb *WeightedAuthorizationModelGraphBuilder) AssignWeights() error {
 	return nil
 }
 
+//nolint:cyclop
 func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *WeightedAuthorizationModelNode, seen map[int64]struct{}) error {
 	if _, seeen := seen[curNode.ID()]; seeen {
 		return nil
@@ -151,13 +152,14 @@ func (wb *WeightedAuthorizationModelGraphBuilder) dfsToAssignWeights(curNode *We
 	}
 
 	// second, now that all edge weights have been recursively assigned, assign weights to node
-	curNode.assignWeightsToNode(outgoingEdgesOfNode)
+	if err := curNode.assignWeightsToNode(outgoingEdgesOfNode); err != nil {
+		return err
+	}
 
 	// third, update edges that are loops
 	assignWeightsToLoopEdges(curNode, outgoingEdgesOfNode)
 
-	// finally, make sure that intersections and exclusions are "correct"
-	return curNode.verifyNodeIsValid(outgoingEdgesOfNode)
+	return nil
 }
 
 func assignWeightsToLoopEdges(curNode *WeightedAuthorizationModelNode, outgoingEdges []*WeightedAuthorizationModelEdge) {

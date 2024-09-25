@@ -14,6 +14,7 @@ func TestAssignWeightsToNode(t *testing.T) {
 		makeNode              func() *WeightedAuthorizationModelNode
 		makeOutgoingEdges     func() []*WeightedAuthorizationModelEdge
 		expectedWeightsOfNode WeightMap
+		expectError           bool
 	}{
 		`one_edge_and_not_nested`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
@@ -88,27 +89,6 @@ func TestAssignWeightsToNode(t *testing.T) {
 				"group": math.MaxInt,
 			},
 		},
-	}
-
-	for name, tc := range testcases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			node := tc.makeNode()
-			node.assignWeightsToNode(tc.makeOutgoingEdges())
-
-			require.Equal(t, tc.expectedWeightsOfNode, node.weights)
-		})
-	}
-}
-
-func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
-	t.Parallel()
-
-	testcases := map[string]struct {
-		makeNode          func() *WeightedAuthorizationModelNode
-		makeOutgoingEdges func() []*WeightedAuthorizationModelEdge
-		expectError       bool
-	}{
 		`union`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
 				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: UnionOperator}, false)
@@ -116,7 +96,7 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 			makeOutgoingEdges: func() []*WeightedAuthorizationModelEdge {
 				return nil
 			},
-			expectError: false,
+			expectedWeightsOfNode: map[string]int{},
 		},
 		`intersection_good`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
@@ -133,9 +113,11 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 					{weights: weights2},
 				}
 			},
-			expectError: false,
+			expectedWeightsOfNode: map[string]int{
+				"user": 2,
+			},
 		},
-		`intersection_bad`: {
+		`intersection_throws_error`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
 				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: IntersectionOperator}, false)
 			},
@@ -167,9 +149,11 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 					{weights: weights2},
 				}
 			},
-			expectError: false,
+			expectedWeightsOfNode: map[string]int{
+				"user": 2,
+			},
 		},
-		`difference_bad`: {
+		`difference_throws_error`: {
 			makeNode: func() *WeightedAuthorizationModelNode {
 				return NewWeightedAuthorizationModelNode(&AuthorizationModelNode{nodeType: OperatorNode, label: "difference"}, false)
 			},
@@ -192,12 +176,12 @@ func TestVerifyIntersectionAndExclusionNodes(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			node := tc.makeNode()
-			node.assignWeightsToNode(tc.makeOutgoingEdges())
-			err := node.verifyNodeIsValid(tc.makeOutgoingEdges())
+			err := node.assignWeightsToNode(tc.makeOutgoingEdges())
 			if tc.expectError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+				require.Equal(t, tc.expectedWeightsOfNode, node.weights)
 			}
 		})
 	}

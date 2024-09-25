@@ -49,7 +49,7 @@ func (weightedNode *WeightedAuthorizationModelNode) Attributes() []encoding.Attr
 	return attrs
 }
 
-func (weightedNode *WeightedAuthorizationModelNode) assignWeightsToNode(outgoingEdges []*WeightedAuthorizationModelEdge) {
+func (weightedNode *WeightedAuthorizationModelNode) assignWeightsToNode(outgoingEdges []*WeightedAuthorizationModelEdge) error {
 	for _, edge := range outgoingEdges {
 		for k, v := range edge.weights {
 			weightedNode.weights[k] = max(weightedNode.weights[k], v)
@@ -58,6 +58,8 @@ func (weightedNode *WeightedAuthorizationModelNode) assignWeightsToNode(outgoing
 			}
 		}
 	}
+
+	return weightedNode.verifyNodeIsValid(outgoingEdges)
 }
 
 // verifyNodeIsValid checks that intersections and exclusions are correct. For example, an intersection operator that has

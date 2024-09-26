@@ -40,6 +40,31 @@ rankdir=TB
 1 -> 2 [label="direct - weights:[user=1]"];
 }`,
 		},
+		`direct_assignment_to_one_userset`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type folder
+					relations
+						define editor: [user]
+						define viewer: [folder#editor]`,
+			expectedOutput: `digraph {
+graph [
+rankdir=TB
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#editor - weights:[user=1]"];
+2 [label=user];
+3 [label="folder#viewer - weights:[user=2]"];
+
+// Edge definitions.
+1 -> 2 [label="direct - weights:[user=1]"];
+3 -> 1 [label="direct - weights:[user=2]"];
+}`,
+		},
 		`direct_assignment_to_multiple_types`: {
 			model: `
 				model

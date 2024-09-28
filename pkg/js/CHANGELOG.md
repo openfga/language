@@ -2,10 +2,9 @@
 
 ## pkg/js/v0.2.0-beta.22
 
-### [v0.2.0-beta.22](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.21...pkg/js/v0.2.0-beta.22) (2024-09-09)
+### [v0.2.0-beta.22](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.21...pkg/js/v0.2.0-beta.22) (2024-09-27)
 
 Fixed:
-
 
 - Improve validation of object ids (#348)
 

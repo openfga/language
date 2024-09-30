@@ -22,7 +22,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
         with:
           fetch-depth: 0
           path: "."
@@ -30,7 +30,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up JDK
-        uses: actions/setup-java@2dfa2011c5b2a0f1489bf9e433881c92c1631f88 # v4.3.0
+        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 # v4.4.0
         with:
           java-version: 11
           distribution: "temurin"
@@ -61,7 +61,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
         with:
           fetch-depth: 0
           path: "."
@@ -69,7 +69,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up JDK
-        uses: actions/setup-java@2dfa2011c5b2a0f1489bf9e433881c92c1631f88 # v4.3.0
+        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 # v4.4.0
         with:
           java-version: 11
           distribution: "temurin"
@@ -95,7 +95,7 @@ jobs:
       contents: write
       packages: write # publish a new github release
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
         with:
           fetch-depth: 0
 

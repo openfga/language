@@ -30,6 +30,14 @@ func (n *AuthorizationModelEdge) EdgeType() EdgeType {
 	return n.edgeType
 }
 
+// ConditionedOn returns the TTU relation. For example, relation
+// define viewer: viewer from parent
+// gives the graph "document#viewer" -> "document#viewer" and the edge
+// is conditioned on "document#parent".
+func (n *AuthorizationModelEdge) ConditionedOn() string {
+	return n.conditionedOn
+}
+
 func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 	switch n.edgeType {
 	case DirectEdge:
@@ -55,7 +63,7 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 		return []encoding.Attribute{
 			{
 				Key:   "headlabel",
-				Value: headLabelAttrValue,
+				Value: "(" + headLabelAttrValue + ")",
 			},
 		}
 	case RewriteEdge:

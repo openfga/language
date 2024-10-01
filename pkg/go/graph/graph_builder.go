@@ -189,7 +189,7 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 
 		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
 		nodeSource := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		conditionedOnNodeName := fmt.Sprintf("(%s#%s)", typeDef.GetType(), tuplesetRelation)
+		conditionedOnNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
 
 		// new edge from "xxx#admin" to "yyy#viewer" conditioned on "yyy#parent"
 		graphBuilder.AddEdge(nodeSource, parentNode, TTUEdge, conditionedOnNodeName)

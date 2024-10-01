@@ -58,7 +58,6 @@ func TestValidateObjectID(t *testing.T) {
 			assert.Equal(t, test.expected, ValidateObjectID(test.value))
 		})
 	}
-
 }
 
 func TestValidateObject(t *testing.T) {

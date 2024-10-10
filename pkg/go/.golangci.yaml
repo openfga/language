@@ -2,75 +2,75 @@ run:
   timeout: 3m
   modules-download-mode: readonly
   allow-parallel-runners: true
-
-skip-dirs:
-  - gen
+  build-tags:
+    - docker
 
 linters:
-  enable-all: true
-  disable:
-    - godox
-    - lll
-    - varnamelen
-    - ireturn
-    - dupl #temporary
-    - exhaustruct
-    - gochecknoinits
-    - forbidigo
-    - gochecknoglobals
-    # deprecated
-    - testpackage
-    - gci
-    - wsl
-    - intrange
+  enable:
+    - errname
+    - gofmt
+    - goimports
+    - stylecheck
+    - importas
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - mirror
+    - misspell
+    - staticcheck
+    - tagalign
+    - testifylint
+    - typecheck
+    - unused
+    - unconvert
+    - unparam
+    - wastedassign
+    - whitespace
+    - protogetter
+    - revive
+    - godot
+    - bodyclose
+    - gocritic
+    - gocyclo
+    #- gosec Too many different issues. Needs to be tackled in a separate PR.
+
 linters-settings:
-  depguard:
-    rules:
-      main:
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/oklog/ulid/v2
-          - github.com/antlr4-go/antlr/v4
-          - github.com/hashicorp/go-multierror
-          - github.com/openfga/api
-          - google.golang.org/protobuf
-          - github.com/openfga/language/pkg/go
-          - gopkg.in/yaml.v3
-      test:
-        files:
-          - "$test"
-        allow:
-          - $gostd
-          - github.com/google/go-cmp/cmp
-          - github.com/stretchr/testify
-          - github.com/openfga/api
-          - gopkg.in/yaml.v3
-          - github.com/openfga/language/pkg/go
-
-  tagliatelle:
-    case:
-      use-field-name: true
-      rules:
-        json: snake
-        yaml: snake
-
-  funlen:
-    lines: 120
-    statements: 80
-
-  wrapcheck:
-    ignorePackageGlobs:
-      - github.com/openfga/language/pkg/go/*
-
+  gofmt:
+    simplify: true
+  staticcheck:
+    checks: [ "all" ]
+  gocyclo:
+    min-complexity: 58 # This is our baseline at the moment.
+  godot:
+    scope: declarations
+    capital: true
+    period: true
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+      - fieldalignment
   goimports:
     local-prefixes: "github.com/openfga/language/pkg/go"
+  importas:
+    no-unaliased: true # Do not allow unaliased imports of aliased packages.
+    no-extra-aliases: false # Do not allow non-required aliases.
+    alias:
+      - pkg: github.com/openfga/api/proto/openfga/v1
+        alias: openfgav1
 
 issues:
-  exclude-use-default: true
+  exclude-use-default: false
   exclude-rules:
-    - path: _test.go
+    - path: "(.+)_test.go"
       linters:
-        - funlen
+        - bodyclose
+  exclude:
+    - "should have a package comment" # stylecheck | revive
+    - "exported (.+) should have comment" # revive
+    - "comment on exported (.+) should be of the form" # revive
+    - "(.+) name will be used as (.+) by other packages, and that stutters; consider calling this (.+)" # revive
+    - "Error return value of (.+) is not checked" # errcheck
+    - "unused-parameter" # revive
+    - "exported func (.+) returns unexported type (.+), which can be annoying to use" # revive

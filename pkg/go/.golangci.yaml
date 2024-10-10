@@ -52,7 +52,7 @@ linters-settings:
       - shadow
       - fieldalignment
   goimports:
-    local-prefixes: "github.com/openfga/openfga"
+    local-prefixes: "github.com/openfga/language/pkg/go"
   importas:
     no-unaliased: true # Do not allow unaliased imports of aliased packages.
     no-extra-aliases: false # Do not allow non-required aliases.

@@ -13,7 +13,7 @@ type WeightedAuthorizationModelGraph struct {
 	edges map[string][]*WeightedAuthorizationModelEdge
 }
 
-// NewGraph creates a new Graph.
+// NewWeightedAuthorizationModelGraph creates a new WeightedAuthorizationModelGraph.
 func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	return &WeightedAuthorizationModelGraph{
 		nodes: make(map[string]*WeightedAuthorizationModelNode),

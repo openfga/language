@@ -95,7 +95,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 	}
 
 	var err error
-	tupleCycles, err = wg.calculateNodeWeightFromTheEdges(nodeID, tupleCycleDependencies, tupleCycles)
+	return wg.calculateNodeWeightFromTheEdges(nodeID, tupleCycleDependencies, tupleCycles)
 	if err != nil {
 		return tupleCycles, err
 	}

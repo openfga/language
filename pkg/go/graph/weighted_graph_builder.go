@@ -17,7 +17,6 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 	return &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 }
 
-//nolint:cyclop
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	g, err := NewAuthorizationModelGraph(model)
 	if err != nil {
@@ -57,7 +56,15 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 			if !ok {
 				return nil, fmt.Errorf("%w: could not cast %v to AuthorizationModelEdge", ErrBuildingGraph, nextLine)
 			}
-			wb.AddEdge(castedEdge.From().(*AuthorizationModelNode).uniqueLabel, castedEdge.To().(*AuthorizationModelNode).uniqueLabel, castedEdge.edgeType, castedEdge.conditionedOn)
+			castedFromNode, ok := castedEdge.From().(*AuthorizationModelNode)
+			if !ok {
+				return nil, fmt.Errorf("%w: could not cast %v to AuthorizationModelNode", ErrBuildingGraph, castedEdge.From())
+			}
+			castedToNode, ok := castedEdge.To().(*AuthorizationModelNode)
+			if !ok {
+				return nil, fmt.Errorf("%w: could not cast %v to AuthorizationModelNode", ErrBuildingGraph, castedEdge.To())
+			}
+			wb.AddEdge(castedFromNode.uniqueLabel, castedToNode.uniqueLabel, castedEdge.edgeType, castedEdge.conditionedOn)
 		}
 	}
 

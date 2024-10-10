@@ -3,10 +3,10 @@ package transformer_test
 import (
 	"testing"
 
-	pb "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openfga/language/pkg/go/transformer"
 )
 
@@ -30,7 +30,7 @@ func TestDSLToJSONTransformerForValidCases(t *testing.T) {
 
 			require.NoError(t, err)
 
-			expectedAuthModel := &pb.AuthorizationModel{}
+			expectedAuthModel := &openfgav1.AuthorizationModel{}
 			err = protojson.Unmarshal([]byte(testCase.JSON), expectedAuthModel)
 			require.NoError(t, err)
 

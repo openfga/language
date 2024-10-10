@@ -3,8 +3,9 @@ package graph
 import (
 	"testing"
 
-	language "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
+
+	language "github.com/openfga/language/pkg/go/transformer"
 )
 
 func TestWeight1Graph(t *testing.T) {

@@ -2,6 +2,7 @@ package graph
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -62,15 +63,15 @@ func TestValidWeight1OneTerminalType(t *testing.T) {
 	require.Equal(t, 1, graph.nodes["state-can_apply-but"].weights["user"])
 	require.Equal(t, 1, graph.nodes["state-can_apply-or"].weights["user"])
 
-	require.Equal(t, 1, len(graph.nodes["state-can_view"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_view-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_apply"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_apply-but"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_apply-or"].weights))
+	require.Len(t, graph.nodes["state-can_view"].weights, 1)
+	require.Len(t, graph.nodes["state-member"].weights, 1)
+	require.Len(t, graph.nodes["state-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].weights, 1)
+	require.Len(t, graph.nodes["state-owner-and"].weights, 1)
+	require.Len(t, graph.nodes["state-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["state-can_apply"].weights, 1)
+	require.Len(t, graph.nodes["state-can_apply-but"].weights, 1)
+	require.Len(t, graph.nodes["state-can_apply-or"].weights, 1)
 }
 
 /*
@@ -162,15 +163,15 @@ func TestValidWeight1MultipleTerminalTypes(t *testing.T) {
 	require.Equal(t, 1, graph.nodes["state-can_apply-or"].weights["user"])
 	require.Equal(t, 1, graph.nodes["state-can_apply-or"].weights["employee"])
 
-	require.Equal(t, 2, len(graph.nodes["state-can_view"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner"].weights))
-	require.Equal(t, 2, len(graph.nodes["state-can_view-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-approved_member"].weights))
-	require.Equal(t, 2, len(graph.nodes["state-can_apply"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_apply-but"].weights))
-	require.Equal(t, 2, len(graph.nodes["state-can_apply-or"].weights))
+	require.Len(t, graph.nodes["state-can_view"].weights, 2)
+	require.Len(t, graph.nodes["state-member"].weights, 1)
+	require.Len(t, graph.nodes["state-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].weights, 2)
+	require.Len(t, graph.nodes["state-owner-and"].weights, 1)
+	require.Len(t, graph.nodes["state-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["state-can_apply"].weights, 2)
+	require.Len(t, graph.nodes["state-can_apply-but"].weights, 1)
+	require.Len(t, graph.nodes["state-can_apply-or"].weights, 2)
 }
 
 /*
@@ -207,7 +208,7 @@ func TestInvalidWeight1NotMatchingTerminalTypes(t *testing.T) {
 	graph.AddEdge("state-approved_member", "user", DirectEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "not all paths return the same type for the node", err.Error())
+	require.True(t, strings.HasPrefix(err.Error(), "not all paths return the same type for the node"))
 }
 
 /*
@@ -273,16 +274,16 @@ func TestValidWeight2TTUOneTerminalType(t *testing.T) {
 	require.Equal(t, 2, graph.nodes["transition-can_apply"].weights["user"])
 	require.Equal(t, 2, graph.nodes["transition-can_apply-and"].weights["user"])
 
-	require.Equal(t, 1, len(graph.nodes["state-can_view"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_view-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-end"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-start"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-can_apply"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-can_apply-and"].weights))
+	require.Len(t, graph.nodes["state-can_view"].weights, 1)
+	require.Len(t, graph.nodes["state-member"].weights, 1)
+	require.Len(t, graph.nodes["state-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].weights, 1)
+	require.Len(t, graph.nodes["state-owner-and"].weights, 1)
+	require.Len(t, graph.nodes["state-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["transition-end"].weights, 1)
+	require.Len(t, graph.nodes["transition-start"].weights, 1)
+	require.Len(t, graph.nodes["transition-can_apply"].weights, 1)
+	require.Len(t, graph.nodes["transition-can_apply-and"].weights, 1)
 }
 
 /*
@@ -336,13 +337,13 @@ func TestValidWeight2UserSetOneTerminalType(t *testing.T) {
 	require.Equal(t, 1, graph.nodes["state-approved_member"].weights["user"])
 	require.Equal(t, 2, graph.nodes["transition-can_apply"].weights["user"])
 
-	require.Equal(t, 1, len(graph.nodes["state-can_view"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_view-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-owner-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-can_apply"].weights))
+	require.Len(t, graph.nodes["state-can_view"].weights, 1)
+	require.Len(t, graph.nodes["state-member"].weights, 1)
+	require.Len(t, graph.nodes["state-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].weights, 1)
+	require.Len(t, graph.nodes["state-owner-and"].weights, 1)
+	require.Len(t, graph.nodes["state-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["transition-can_apply"].weights, 1)
 }
 
 /*
@@ -404,13 +405,13 @@ func TestValidWeight2MultipleTerminalType(t *testing.T) {
 	require.Equal(t, 1, graph.nodes["license-owner"].weights["company"])
 	require.Equal(t, 1, graph.nodes["license-owner"].weights["group"])
 
-	require.Equal(t, 1, len(graph.nodes["company-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["company-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["company-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["company-approved_member-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-approved_member"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-active_member"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-owner"].weights))
+	require.Len(t, graph.nodes["company-member"].weights, 1)
+	require.Len(t, graph.nodes["company-owner"].weights, 1)
+	require.Len(t, graph.nodes["company-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["company-approved_member-or"].weights, 1)
+	require.Len(t, graph.nodes["group-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["license-active_member"].weights, 2)
+	require.Len(t, graph.nodes["license-owner"].weights, 2)
 }
 
 /*
@@ -471,7 +472,7 @@ func TestInvalidWeight2ButNotMistmatchType(t *testing.T) {
 	graph.AddEdge("company-can_execute-but", "company-approved_member", ComputedEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "not all paths return the same type for the node", err.Error())
+	require.True(t, strings.HasPrefix(err.Error(), "not all paths return the same type for the node"))
 }
 
 /*
@@ -529,13 +530,13 @@ func TestValidTupleCycle(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["document-rel7"].weights["employee"])
 	require.Equal(t, Infinite, graph.nodes["document-rel7"].weights["user"])
 
-	require.Equal(t, 2, len(graph.nodes["document-rel1"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel2"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel3"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel4"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel5"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel6"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel7"].weights))
+	require.Len(t, graph.nodes["document-rel1"].weights, 2)
+	require.Len(t, graph.nodes["document-rel2"].weights, 1)
+	require.Len(t, graph.nodes["document-rel3"].weights, 1)
+	require.Len(t, graph.nodes["document-rel4"].weights, 2)
+	require.Len(t, graph.nodes["document-rel5"].weights, 1)
+	require.Len(t, graph.nodes["document-rel6"].weights, 2)
+	require.Len(t, graph.nodes["document-rel7"].weights, 2)
 }
 
 /*
@@ -582,8 +583,7 @@ func TestInvalidTupleCycleWithInterceptionOfTerminalTypes(t *testing.T) {
 	graph.AddEdge("document-rel5", "employee", DirectEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "AND or BUT NOT cannot be involved in a cycle", err.Error())
-
+	require.Equal(t, "operands AND or BUT NOT cannot be involved in a cycle", err.Error())
 }
 
 /*
@@ -646,15 +646,15 @@ func TestValidTupleCycleWithInterceptionNotInCycle(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["document-rel7"].weights["employee"])
 	require.Equal(t, Infinite, graph.nodes["document-rel7"].weights["user"])
 
-	require.Equal(t, 1, len(graph.nodes["document-rel1"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel1-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel2"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel3"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel4"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel4-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel5"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel6"].weights))
-	require.Equal(t, 2, len(graph.nodes["document-rel7"].weights))
+	require.Len(t, graph.nodes["document-rel1"].weights, 1)
+	require.Len(t, graph.nodes["document-rel1-and"].weights, 1)
+	require.Len(t, graph.nodes["document-rel2"].weights, 1)
+	require.Len(t, graph.nodes["document-rel3"].weights, 2)
+	require.Len(t, graph.nodes["document-rel4"].weights, 2)
+	require.Len(t, graph.nodes["document-rel4-or"].weights, 2)
+	require.Len(t, graph.nodes["document-rel5"].weights, 1)
+	require.Len(t, graph.nodes["document-rel6"].weights, 1)
+	require.Len(t, graph.nodes["document-rel7"].weights, 2)
 }
 
 /*
@@ -697,11 +697,11 @@ func TestValidRecursionUsersetAndTTU(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["document-rel4"].weights["user"])
 	require.Equal(t, Infinite, graph.nodes["document-rel4-or"].weights["user"])
 
-	require.Equal(t, 2, len(graph.nodes["document-rel3"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel4"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel4-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel5"].weights))
-	require.Equal(t, 1, len(graph.nodes["document-rel6"].weights))
+	require.Len(t, graph.nodes["document-rel3"].weights, 2)
+	require.Len(t, graph.nodes["document-rel4"].weights, 1)
+	require.Len(t, graph.nodes["document-rel4-or"].weights, 1)
+	require.Len(t, graph.nodes["document-rel5"].weights, 1)
+	require.Len(t, graph.nodes["document-rel6"].weights, 1)
 }
 
 /*
@@ -764,15 +764,14 @@ func TestValidRecursionWithWeight3(t *testing.T) {
 	require.Equal(t, 3, graph.nodes["group-owner"].weights["user"])
 	require.Equal(t, Infinite, graph.nodes["group-max_owner"].weights["user"])
 
-	require.Equal(t, 1, len(graph.nodes["group-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_view"].weights))
-	require.Equal(t, 1, len(graph.nodes["state-can_view-or"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-start"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-end"].weights))
-	require.Equal(t, 1, len(graph.nodes["transition-end"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-max_owner"].weights))
-
+	require.Len(t, graph.nodes["group-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view"].weights, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].weights, 1)
+	require.Len(t, graph.nodes["transition-start"].weights, 1)
+	require.Len(t, graph.nodes["transition-end"].weights, 1)
+	require.Len(t, graph.nodes["transition-end"].weights, 1)
+	require.Len(t, graph.nodes["group-owner"].weights, 1)
+	require.Len(t, graph.nodes["group-max_owner"].weights, 1)
 }
 
 /*
@@ -984,40 +983,37 @@ func TestValidRecursionWithMultipleWeightsAndTypes(t *testing.T) {
 	require.Equal(t, 4, graph.nodes["feature-can_access-and"].weights["user"])
 	require.Equal(t, 4, graph.nodes["feature-can_access-and"].weights["employee"])
 
-	require.Equal(t, 1, len(graph.nodes["company-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["company-approved_member-and"].weights))
-	require.Equal(t, 2, len(graph.nodes["company-member"].weights))
-	require.Equal(t, 2, len(graph.nodes["company-facilitator"].weights))
-	require.Equal(t, 1, len(graph.nodes["company-user_in_context"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-approved_member-butnot"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-member"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-user_in_context"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-reader"].weights))
-	require.Equal(t, 1, len(graph.nodes["group-assignee"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-active_holder"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-active_holder-or"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-holder_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["license-holder_approved_member"].weights))
-	require.Equal(t, 1, len(graph.nodes["license-holder"].weights))
-	require.Equal(t, 1, len(graph.nodes["license-parent"].weights))
-	require.Equal(t, 1, len(graph.nodes["license-trust_holder"].weights))
-	require.Equal(t, 1, len(graph.nodes["license-trust_holder-or"].weights))
-	require.Equal(t, 2, len(graph.nodes["license-owner"].weights))
-	require.Equal(t, 2, len(graph.nodes["tier-subscriber"].weights))
-	require.Equal(t, 1, len(graph.nodes["tier-assignee"].weights))
-	require.Equal(t, 1, len(graph.nodes["tier-subtier_owner"].weights))
-	require.Equal(t, 1, len(graph.nodes["tier-assignee_sub"].weights))
-	require.Equal(t, 1, len(graph.nodes["tier-assignee_sub-and"].weights))
-	require.Equal(t, 1, len(graph.nodes["module-associated_license"].weights))
-	require.Equal(t, 2, len(graph.nodes["module-module_holder"].weights))
-	require.Equal(t, 2, len(graph.nodes["module-module_user"].weights))
-	require.Equal(t, 1, len(graph.nodes["feature-associated_module"].weights))
-	require.Equal(t, 1, len(graph.nodes["feature-associated_tier"].weights))
-	require.Equal(t, 2, len(graph.nodes["feature-tier_can_access"].weights))
-	require.Equal(t, 2, len(graph.nodes["feature-can_access"].weights))
-	require.Equal(t, 2, len(graph.nodes["feature-can_access-and"].weights))
-
+	require.Len(t, graph.nodes["company-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["company-approved_member-and"].weights, 1)
+	require.Len(t, graph.nodes["company-member"].weights, 2)
+	require.Len(t, graph.nodes["company-facilitator"].weights, 2)
+	require.Len(t, graph.nodes["company-user_in_context"].weights, 1)
+	require.Len(t, graph.nodes["group-approved_member"].weights, 1)
+	require.Len(t, graph.nodes["group-approved_member-butnot"].weights, 1)
+	require.Len(t, graph.nodes["group-member"].weights, 1)
+	require.Len(t, graph.nodes["group-user_in_context"].weights, 1)
+	require.Len(t, graph.nodes["group-reader"].weights, 1)
+	require.Len(t, graph.nodes["group-assignee"].weights, 1)
+	require.Len(t, graph.nodes["license-active_holder"].weights, 2)
+	require.Len(t, graph.nodes["license-active_holder-or"].weights, 2)
+	require.Len(t, graph.nodes["license-holder_member"].weights, 2)
+	require.Len(t, graph.nodes["license-holder_approved_member"].weights, 1)
+	require.Len(t, graph.nodes["license-holder"].weights, 1)
+	require.Len(t, graph.nodes["license-parent"].weights, 1)
+	require.Len(t, graph.nodes["license-trust_holder"].weights, 1)
+	require.Len(t, graph.nodes["license-trust_holder-or"].weights, 1)
+	require.Len(t, graph.nodes["license-owner"].weights, 2)
+	require.Len(t, graph.nodes["tier-subscriber"].weights, 2)
+	require.Len(t, graph.nodes["tier-assignee"].weights, 1)
+	require.Len(t, graph.nodes["tier-subtier_owner"].weights, 1)
+	require.Len(t, graph.nodes["tier-assignee_sub"].weights, 1)
+	require.Len(t, graph.nodes["tier-assignee_sub-and"].weights, 1)
+	require.Len(t, graph.nodes["module-associated_license"].weights, 1)
+	require.Len(t, graph.nodes["module-module_holder"].weights, 2)
+	require.Len(t, graph.nodes["module-module_user"].weights, 2)
+	require.Len(t, graph.nodes["feature-associated_module"].weights, 1)
+	require.Len(t, graph.nodes["feature-associated_tier"].weights, 1)
+	require.Len(t, graph.nodes["feature-tier_can_access"].weights, 2)
+	require.Len(t, graph.nodes["feature-can_access"].weights, 2)
+	require.Len(t, graph.nodes["feature-can_access-and"].weights, 2)
 }
-
-// super test

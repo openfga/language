@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -14,7 +13,7 @@ type WeightedAuthorizationModelGraph struct {
 	edges map[string][]*WeightedAuthorizationModelEdge
 }
 
-// NewGraph creates a new Graph
+// NewGraph creates a new Graph.
 func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	return &WeightedAuthorizationModelGraph{
 		nodes: make(map[string]*WeightedAuthorizationModelNode),
@@ -22,9 +21,8 @@ func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	}
 }
 
-// AddNode adds a node to the graph with optional operationType and weight
+// AddNode adds a node to the graph with optional operationType and weight.
 func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType) {
-
 	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType}
 }
 
@@ -53,7 +51,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 			for _, tupleCycle := range tupleCyles {
 				fmt.Println("Tuple cycle is ", tupleCycle)
 			}
-			return errors.New("tuple cycles found without resolution")
+			return fmt.Errorf("%d tuple cycles found without resolution", len(tupleCyles))
 		}
 	}
 	return nil
@@ -63,7 +61,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 	tupleCycles := make([]string, 0)
 
 	if visited[nodeID] {
-		return nil, nil // check how we will handle this case
+		return nil, nil
 	}
 
 	if wg.nodes[nodeID].nodeType == SpecificType || wg.nodes[nodeID].nodeType == SpecificTypeWildcard {
@@ -126,7 +124,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 			tupleCycle = append(tupleCycle, edge.to.uniqueLabel)
 			return tupleCycle, nil
 		}
-		return tupleCycle, errors.New("model cycle")
+		return tupleCycle, fmt.Errorf("model cycle")
 	}
 
 	isTupleCycle := len(tupleCycle) > 0
@@ -158,7 +156,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 	return tupleCycle, nil
 }
 
-// IsNodeVisited checks if a node with the given ID has been visited
+// IsNodeVisited checks if a node with the given ID has been visited.
 func (wg *WeightedAuthorizationModelGraph) isTupleCycle(nodeID string, ancestorPath []*WeightedAuthorizationModelEdge) bool {
 	startTracking := false
 	for _, edge := range ancestorPath {
@@ -193,10 +191,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
-	//recursive case
+	// recursive case
 	if node.nodeType == SpecificTypeAndRelation && wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
 		// calculate the weight of the node and fix all the dependencies that are in the tuple cycle.
-		wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+		err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+		if err != nil {
+			return tupleCycles, err
+		}
 		tupleCycles = wg.removeNodeFromTupleCycles(nodeID, tupleCycles)
 		return tupleCycles, nil
 	}
@@ -211,7 +212,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	if node.nodeType == OperatorNode && node.label == UnionOperator {
 		// if the node is the reference node of the cycle, recalculate the weight, solve the depencies and remove the node from the tuple cycle
 		if wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
-			wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+			err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+			if err != nil {
+				return tupleCycles, err
+			}
 			tupleCycles = wg.removeNodeFromTupleCycles(nodeID, tupleCycles)
 			return tupleCycles, nil
 		}
@@ -221,7 +225,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	}
 
 	// In the case of interception or exclussion involved in a cycle, is not allowed, so we return an error
-	return tupleCycles, errors.New("AND or BUT NOT cannot be involved in a cycle")
+	return tupleCycles, fmt.Errorf("operands AND or BUT NOT cannot be involved in a cycle")
 }
 
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) {
@@ -229,11 +233,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 	weights := make(map[string]int)
 
 	for _, edge := range wg.edges[nodeID] {
-
 		// the first time, take the weights of the edge
 		if len(weights) == 0 {
 			for key, value := range edge.weights {
-
 				weights[key] = value
 			}
 			continue
@@ -250,12 +252,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 }
 
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
-
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
 
 	for _, edge := range wg.edges[nodeID] {
-
 		// the first time, take the weights of the edge
 		if len(weights) == 0 {
 			for key, value := range edge.weights {
@@ -274,14 +274,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		}
 	}
 	if len(weights) == 0 {
-		return errors.New("not all paths return the same type for the node")
+		return fmt.Errorf("not all paths return the same type for the node %s", nodeID)
 	}
 	node.weights = weights
 	return nil
 }
 
-func (g *WeightedAuthorizationModelGraph) isNodeTupleCycleReference(nodeID string, tupleCycles []string) bool {
-
+func (wg *WeightedAuthorizationModelGraph) isNodeTupleCycleReference(nodeID string, tupleCycles []string) bool {
 	for _, tupleCycle := range tupleCycles {
 		if tupleCycle == nodeID {
 			return true
@@ -296,7 +295,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	referenceNodeID := "R#" + nodeID
 
 	if (node.nodeType == OperatorNode && node.label != UnionOperator) || (node.nodeType != SpecificTypeAndRelation && node.nodeType != OperatorNode) {
-		return errors.New("invalid node, reference node is not a union operator or a relation")
+		return fmt.Errorf("invalid node, reference node is not a union operator or a relation: %s", nodeID)
 	}
 
 	references := make([]string, 0)
@@ -359,14 +358,14 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle str
 	}
 }
 
-func (g *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle string, referenceNodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
-	node := g.nodes[nodeCycle]
+func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle string, referenceNodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
+	node := wg.nodes[nodeCycle]
 
 	// We can take this approach because there is not an AND or a BUT NOT in the cycle
 	// and all the nodes and edgs part of the cycle can apply the max strategy
 
 	for _, edge := range tupleCycleDependencies[nodeCycle] {
-		fromNode := g.nodes[edge.from.uniqueLabel]
+		fromNode := wg.nodes[edge.from.uniqueLabel]
 		nodeWeights := make(map[string]int)
 		for key1, value1 := range fromNode.weights {
 			if key1 == referenceNodeID {
@@ -389,7 +388,7 @@ func (g *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle stri
 	}
 }
 
-func (g *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID string, tupleCycles []string) []string {
+func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID string, tupleCycles []string) []string {
 	result := make([]string, 0)
 	for _, tupleCycle := range tupleCycles {
 		if tupleCycle != nodeID {

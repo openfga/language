@@ -1,9 +1,9 @@
 package graph
 
 type WeightedAuthorizationModelEdge struct {
-	from          *WeightedAuthorizationModelNode
-	to            *WeightedAuthorizationModelNode
+	weights       map[string]int
 	edgeType      EdgeType
 	conditionedOn string
-	weights       map[string]int
+	from          *WeightedAuthorizationModelNode
+	to            *WeightedAuthorizationModelNode
 }

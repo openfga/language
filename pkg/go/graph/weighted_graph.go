@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -8,12 +9,14 @@ import (
 
 const Infinite = math.MaxInt32
 
-var errModelCycle = fmt.Errorf("model cycle")
-var errTupleCycle = fmt.Errorf("operands AND or BUT NOT cannot be involved in a cycle")
+var ErrModelCycle = errors.New("model cycle")
+var ErrInvalidModel = errors.New("invalid model")
+var ErrTupleCycle = errors.New("tuple cycle")
+var ErrContrainstTupleCycle = fmt.Errorf("%w: operands AND or BUT NOT cannot be involved in a cycle", ErrTupleCycle)
 
 type WeightedAuthorizationModelGraph struct {
-	nodes map[string]*WeightedAuthorizationModelNode
 	edges map[string][]*WeightedAuthorizationModelEdge
+	nodes map[string]*WeightedAuthorizationModelNode
 }
 
 // NewWeightedAuthorizationModelGraph creates a new WeightedAuthorizationModelGraph.
@@ -52,7 +55,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 			return err
 		}
 		if len(tupleCyles) > 0 {
-			return fmt.Errorf("%d tuple cycles found without resolution", len(tupleCyles))
+			return fmt.Errorf("%w: %d tuple cycles found without resolution", ErrTupleCycle, len(tupleCyles))
 		}
 	}
 	return nil
@@ -125,7 +128,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 			tupleCycle = append(tupleCycle, edge.to.uniqueLabel)
 			return tupleCycle, nil
 		}
-		return tupleCycle, errModelCycle
+		return tupleCycle, ErrModelCycle
 	}
 
 	isTupleCycle := len(tupleCycle) > 0
@@ -229,7 +232,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	}
 
 	// In the case of interception or exclussion involved in a cycle, is not allowed, so we return an error
-	return tupleCycles, errTupleCycle
+	return tupleCycles, ErrContrainstTupleCycle
 }
 
 // The max weight strategy is to take all the types for all the edges and get the max value
@@ -277,7 +280,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		}
 	}
 	if len(weights) == 0 {
-		return fmt.Errorf("not all paths return the same type for the node %s", nodeID)
+		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
 	}
 	node.weights = weights
 	return nil
@@ -304,7 +307,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	referenceNodeID := "R#" + nodeID
 
 	if (node.nodeType == OperatorNode && node.label != UnionOperator) || (node.nodeType != SpecificTypeAndRelation && node.nodeType != OperatorNode) {
-		return fmt.Errorf("invalid node, reference node is not a union operator or a relation: %s", nodeID)
+		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation: %s", ErrTupleCycle, nodeID)
 	}
 
 	references := make([]string, 0)

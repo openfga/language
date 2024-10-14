@@ -1,14 +1,13 @@
 package graph
 
 import (
+	"errors"
 	"math"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-// const Infinite = math.MaxInt32
 
 /*
 type user
@@ -102,7 +101,7 @@ func TestInvalidWeight1WithAndModelCycle(t *testing.T) {
 	graph.AddEdge("state-owner-and", "state-can_view", ComputedEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "model cycle", err.Error())
+	require.ErrorIs(t, ErrModelCycle, err)
 }
 
 /*
@@ -208,7 +207,8 @@ func TestInvalidWeight1NotMatchingTerminalTypes(t *testing.T) {
 	graph.AddEdge("state-approved_member", "user", DirectEdge, "")
 
 	err := graph.AssignWeights()
-	require.True(t, strings.HasPrefix(err.Error(), "not all paths return the same type for the node"))
+	require.True(t, errors.Is(err, ErrInvalidModel))
+	require.True(t, strings.HasPrefix(err.Error(), "invalid model: not all paths return the same type for the node"))
 }
 
 /*
@@ -439,7 +439,7 @@ func TestInvalidWeight2ModelCycle(t *testing.T) {
 	graph.AddEdge("company-approved_member-or", "company-owner", ComputedEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "model cycle", err.Error())
+	require.ErrorIs(t, ErrModelCycle, err)
 }
 
 /*
@@ -472,7 +472,8 @@ func TestInvalidWeight2ButNotMistmatchType(t *testing.T) {
 	graph.AddEdge("company-can_execute-but", "company-approved_member", ComputedEdge, "")
 
 	err := graph.AssignWeights()
-	require.True(t, strings.HasPrefix(err.Error(), "not all paths return the same type for the node"))
+	require.True(t, errors.Is(err, ErrInvalidModel))
+	require.True(t, strings.HasPrefix(err.Error(), "invalid model: not all paths return the same type for the node"))
 }
 
 /*
@@ -583,7 +584,7 @@ func TestInvalidTupleCycleWithInterceptionOfTerminalTypes(t *testing.T) {
 	graph.AddEdge("document-rel5", "employee", DirectEdge, "")
 
 	err := graph.AssignWeights()
-	require.Equal(t, "operands AND or BUT NOT cannot be involved in a cycle", err.Error())
+	require.True(t, errors.Is(err, ErrContrainstTupleCycle))
 }
 
 /*

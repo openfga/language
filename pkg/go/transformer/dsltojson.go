@@ -6,7 +6,7 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/hashicorp/go-multierror"
-	pb "github.com/openfga/api/proto/openfga/v1"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	parser "github.com/openfga/language/pkg/go/gen"
@@ -25,35 +25,35 @@ const (
 
 type relation struct {
 	Name     string
-	Rewrites []*pb.Userset
+	Rewrites []*openfgav1.Userset
 	Operator RelationDefinitionOperator
-	TypeInfo pb.RelationTypeInfo
+	TypeInfo openfgav1.RelationTypeInfo
 }
 
 type stackRelation struct {
-	Rewrites []*pb.Userset
+	Rewrites []*openfgav1.Userset
 	Operator RelationDefinitionOperator
 }
 
 type OpenFgaDslListener struct {
 	*parser.BaseOpenFGAParserListener
 
-	authorizationModel pb.AuthorizationModel
-	currentTypeDef     *pb.TypeDefinition
+	authorizationModel openfgav1.AuthorizationModel
+	currentTypeDef     *openfgav1.TypeDefinition
 	currentRelation    *relation
-	currentCondition   *pb.Condition
+	currentCondition   *openfgav1.Condition
 	rewriteStack       []*stackRelation
 	isModularModel     bool
 	moduleName         string
-	typeDefExtensions  map[string]*pb.TypeDefinition
+	typeDefExtensions  map[string]*openfgav1.TypeDefinition
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
 	return new(OpenFgaDslListener)
 }
 
-func ParseExpression(rewrites []*pb.Userset, operator RelationDefinitionOperator) *pb.Userset {
-	var relationDef *pb.Userset
+func ParseExpression(rewrites []*openfgav1.Userset, operator RelationDefinitionOperator) *openfgav1.Userset {
+	var relationDef *openfgav1.Userset
 
 	if len(rewrites) == 0 {
 		return nil
@@ -66,25 +66,25 @@ func ParseExpression(rewrites []*pb.Userset, operator RelationDefinitionOperator
 		case RELATION_DEFINITION_OPERATOR_NONE:
 			// do nothing
 		case RELATION_DEFINITION_OPERATOR_OR:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Union{
-					Union: &pb.Usersets{
+			relationDef = &openfgav1.Userset{
+				Userset: &openfgav1.Userset_Union{
+					Union: &openfgav1.Usersets{
 						Child: rewrites,
 					},
 				},
 			}
 		case RELATION_DEFINITION_OPERATOR_AND:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Intersection{
-					Intersection: &pb.Usersets{
+			relationDef = &openfgav1.Userset{
+				Userset: &openfgav1.Userset_Intersection{
+					Intersection: &openfgav1.Usersets{
 						Child: rewrites,
 					},
 				},
 			}
 		case RELATION_DEFINITION_OPERATOR_BUT_NOT:
-			relationDef = &pb.Userset{
-				Userset: &pb.Userset_Difference{
-					Difference: &pb.Difference{
+			relationDef = &openfgav1.Userset{
+				Userset: &openfgav1.Userset_Difference{
+					Difference: &openfgav1.Difference{
 						Base:     rewrites[0],
 						Subtract: rewrites[1],
 					},
@@ -97,14 +97,14 @@ func ParseExpression(rewrites []*pb.Userset, operator RelationDefinitionOperator
 }
 
 func (l *OpenFgaDslListener) EnterMain(_ *parser.MainContext) {
-	l.authorizationModel.Conditions = map[string]*pb.Condition{}
+	l.authorizationModel.Conditions = map[string]*openfgav1.Condition{}
 }
 
 func (l *OpenFgaDslListener) ExitModuleHeader(ctx *parser.ModuleHeaderContext) {
 	l.isModularModel = true
 	if ctx.GetModuleName() != nil {
 		l.moduleName = ctx.GetModuleName().GetText()
-		l.typeDefExtensions = map[string]*pb.TypeDefinition{}
+		l.typeDefExtensions = map[string]*openfgav1.TypeDefinition{}
 	}
 }
 
@@ -127,11 +127,11 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 		)
 	}
 
-	l.currentTypeDef = &pb.TypeDefinition{
+	l.currentTypeDef = &openfgav1.TypeDefinition{
 		Type:      ctx.GetTypeName().GetText(),
-		Relations: map[string]*pb.Userset{},
-		Metadata: &pb.Metadata{
-			Relations: map[string]*pb.RelationMetadata{},
+		Relations: map[string]*openfgav1.Userset{},
+		Metadata: &openfgav1.Metadata{
+			Relations: map[string]*openfgav1.RelationMetadata{},
 		},
 	}
 
@@ -141,7 +141,7 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 }
 
 func (l *OpenFgaDslListener) EnterConditions(_ *parser.ConditionsContext) {
-	l.authorizationModel.Conditions = map[string]*pb.Condition{}
+	l.authorizationModel.Conditions = map[string]*openfgav1.Condition{}
 }
 
 func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
@@ -157,14 +157,14 @@ func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
 			nil)
 	}
 
-	l.currentCondition = &pb.Condition{
+	l.currentCondition = &openfgav1.Condition{
 		Name:       conditionName,
 		Expression: "",
-		Parameters: map[string]*pb.ConditionParamTypeRef{},
+		Parameters: map[string]*openfgav1.ConditionParamTypeRef{},
 	}
 
 	if l.isModularModel {
-		l.currentCondition.Metadata = &pb.ConditionMetadata{
+		l.currentCondition.Metadata = &openfgav1.ConditionMetadata{
 			Module: l.moduleName,
 		}
 	}
@@ -186,7 +186,7 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 	paramContainer := ctx.ParameterType().CONDITION_PARAM_CONTAINER()
 	typeNameString := ctx.ParameterType().GetText()
 
-	var genericName *pb.ConditionParamTypeRef_TypeName
+	var genericName *openfgav1.ConditionParamTypeRef_TypeName
 
 	if paramContainer != nil {
 		typeNameString = paramContainer.GetText()
@@ -194,24 +194,24 @@ func (l *OpenFgaDslListener) ExitConditionParameter(ctx *parser.ConditionParamet
 
 		if genericType != nil {
 			genericString := ctx.ParameterType().CONDITION_PARAM_TYPE().GetText()
-			genericName = new(pb.ConditionParamTypeRef_TypeName)
-			*genericName = pb.ConditionParamTypeRef_TypeName(
-				pb.ConditionParamTypeRef_TypeName_value["TYPE_NAME_"+strings.ToUpper(genericString)],
+			genericName = new(openfgav1.ConditionParamTypeRef_TypeName)
+			*genericName = openfgav1.ConditionParamTypeRef_TypeName(
+				openfgav1.ConditionParamTypeRef_TypeName_value["TYPE_NAME_"+strings.ToUpper(genericString)],
 			)
 		}
 	}
 
-	typeName := new(pb.ConditionParamTypeRef_TypeName)
-	*typeName = pb.ConditionParamTypeRef_TypeName(
-		pb.ConditionParamTypeRef_TypeName_value["TYPE_NAME_"+strings.ToUpper(typeNameString)],
+	typeName := new(openfgav1.ConditionParamTypeRef_TypeName)
+	*typeName = openfgav1.ConditionParamTypeRef_TypeName(
+		openfgav1.ConditionParamTypeRef_TypeName_value["TYPE_NAME_"+strings.ToUpper(typeNameString)],
 	)
-	conditionParamTypeRef := &pb.ConditionParamTypeRef{
+	conditionParamTypeRef := &openfgav1.ConditionParamTypeRef{
 		TypeName:     *typeName,
-		GenericTypes: []*pb.ConditionParamTypeRef{},
+		GenericTypes: []*openfgav1.ConditionParamTypeRef{},
 	}
 
 	if genericName != nil {
-		conditionParamTypeRef.GenericTypes = append(conditionParamTypeRef.GenericTypes, &pb.ConditionParamTypeRef{
+		conditionParamTypeRef.GenericTypes = append(conditionParamTypeRef.GenericTypes, &openfgav1.ConditionParamTypeRef{
 			TypeName: *genericName,
 		})
 	}
@@ -261,8 +261,8 @@ func (l *OpenFgaDslListener) ExitTypeDef(ctx *parser.TypeDefContext) {
 
 func (l *OpenFgaDslListener) EnterRelationDeclaration(_ *parser.RelationDeclarationContext) {
 	l.currentRelation = &relation{
-		Rewrites: []*pb.Userset{},
-		TypeInfo: pb.RelationTypeInfo{DirectlyRelatedUserTypes: []*pb.RelationReference{}},
+		Rewrites: []*openfgav1.Userset{},
+		TypeInfo: openfgav1.RelationTypeInfo{DirectlyRelatedUserTypes: []*openfgav1.RelationReference{}},
 	}
 
 	l.rewriteStack = []*stackRelation{}
@@ -286,7 +286,7 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 
 		l.currentTypeDef.Relations[relationName] = relationDef
 		directlyRelatedUserTypes := l.currentRelation.TypeInfo.GetDirectlyRelatedUserTypes()
-		l.currentTypeDef.Metadata.Relations[relationName] = &pb.RelationMetadata{
+		l.currentTypeDef.Metadata.Relations[relationName] = &openfgav1.RelationMetadata{
 			DirectlyRelatedUserTypes: directlyRelatedUserTypes,
 		}
 
@@ -304,11 +304,11 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 }
 
 func (l *OpenFgaDslListener) EnterRelationDefDirectAssignment(_ *parser.RelationDefDirectAssignmentContext) {
-	l.currentRelation.TypeInfo = pb.RelationTypeInfo{DirectlyRelatedUserTypes: []*pb.RelationReference{}}
+	l.currentRelation.TypeInfo = openfgav1.RelationTypeInfo{DirectlyRelatedUserTypes: []*openfgav1.RelationReference{}}
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefDirectAssignment(_ *parser.RelationDefDirectAssignmentContext) {
-	partialRewrite := &pb.Userset{Userset: &pb.Userset_This{}}
+	partialRewrite := &openfgav1.Userset{Userset: &openfgav1.Userset_This{}}
 
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
@@ -324,7 +324,7 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 	wildcardRestriction := baseRestriction.GetRelationDefTypeRestrictionWildcard()
 	conditionName := ctx.ConditionName()
 
-	relationRef := &pb.RelationReference{}
+	relationRef := &openfgav1.RelationReference{}
 	if _type != nil {
 		relationRef.Type = _type.GetText()
 	}
@@ -334,13 +334,13 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 	}
 
 	if usersetRestriction != nil {
-		relationRef.RelationOrWildcard = &pb.RelationReference_Relation{
+		relationRef.RelationOrWildcard = &openfgav1.RelationReference_Relation{
 			Relation: usersetRestriction.GetText(),
 		}
 	}
 
 	if wildcardRestriction != nil {
-		relationRef.RelationOrWildcard = &pb.RelationReference_Wildcard{Wildcard: &pb.Wildcard{}}
+		relationRef.RelationOrWildcard = &openfgav1.RelationReference_Wildcard{Wildcard: &openfgav1.Wildcard{}}
 	}
 
 	l.currentRelation.TypeInfo.DirectlyRelatedUserTypes = append(
@@ -349,21 +349,21 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefRewrite(ctx *parser.RelationDefRewriteContext) {
-	var partialRewrite *pb.Userset
+	var partialRewrite *openfgav1.Userset
 
-	computedUserset := &pb.ObjectRelation{
+	computedUserset := &openfgav1.ObjectRelation{
 		Relation: ctx.GetRewriteComputedusersetName().GetText(),
 	}
 
 	if ctx.GetRewriteTuplesetName() == nil {
-		partialRewrite = &pb.Userset{Userset: &pb.Userset_ComputedUserset{
+		partialRewrite = &openfgav1.Userset{Userset: &openfgav1.Userset_ComputedUserset{
 			ComputedUserset: computedUserset,
 		}}
 	} else {
-		partialRewrite = &pb.Userset{Userset: &pb.Userset_TupleToUserset{
-			TupleToUserset: &pb.TupleToUserset{
+		partialRewrite = &openfgav1.Userset{Userset: &openfgav1.Userset_TupleToUserset{
+			TupleToUserset: &openfgav1.TupleToUserset{
 				ComputedUserset: computedUserset,
-				Tupleset: &pb.ObjectRelation{
+				Tupleset: &openfgav1.ObjectRelation{
 					Relation: ctx.GetRewriteTuplesetName().GetText(),
 				},
 			},
@@ -381,7 +381,7 @@ func (l *OpenFgaDslListener) ExitRelationRecurse(_ *parser.RelationRecurseContex
 	relationDef := ParseExpression(l.currentRelation.Rewrites, l.currentRelation.Operator)
 
 	if relationDef != nil {
-		l.currentRelation.Rewrites = []*pb.Userset{relationDef}
+		l.currentRelation.Rewrites = []*openfgav1.Userset{relationDef}
 	}
 }
 
@@ -393,7 +393,7 @@ func (l *OpenFgaDslListener) EnterRelationRecurseNoDirect(_ *parser.RelationRecu
 		})
 	}
 
-	l.currentRelation.Rewrites = []*pb.Userset{}
+	l.currentRelation.Rewrites = []*openfgav1.Userset{}
 }
 
 func (l *OpenFgaDslListener) ExitRelationRecurseNoDirect(_ *parser.RelationRecurseNoDirectContext) {
@@ -539,7 +539,7 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 }
 
 // TransformDSLToProto - Converts models authored in FGA DSL syntax to the OpenFGA Authorization Model Protobuf format.
-func TransformDSLToProto(data string) (*pb.AuthorizationModel, error) {
+func TransformDSLToProto(data string) (*openfgav1.AuthorizationModel, error) {
 	listener, errorListener := ParseDSL(data)
 
 	if errorListener.Errors != nil {
@@ -550,7 +550,7 @@ func TransformDSLToProto(data string) (*pb.AuthorizationModel, error) {
 }
 
 // MustTransformDSLToProto - Calls TransformDSLToProto - panics if the error fails.
-func MustTransformDSLToProto(data string) *pb.AuthorizationModel {
+func MustTransformDSLToProto(data string) *openfgav1.AuthorizationModel {
 	model, err := TransformDSLToProto(data)
 	if err != nil {
 		panic(err)
@@ -586,7 +586,7 @@ func MustTransformDSLToJSON(data string) string {
 
 // TransformModularDSLToProto - Converts a part of a modular model in DSL syntax to the json syntax accepted by
 // OpenFGA API and also returns the type definitions that are extended in the DSL if any are.
-func TransformModularDSLToProto(data string) (*pb.AuthorizationModel, map[string]*pb.TypeDefinition, error) {
+func TransformModularDSLToProto(data string) (*openfgav1.AuthorizationModel, map[string]*openfgav1.TypeDefinition, error) {
 	listener, errorListener := ParseDSL(data)
 
 	if errorListener.Errors != nil {

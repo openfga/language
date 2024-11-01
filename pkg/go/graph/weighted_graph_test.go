@@ -473,7 +473,6 @@ func TestInvalidWeight2ButNotMistmatchType(t *testing.T) {
 	err := graph.AssignWeights()
 	require.ErrorIs(t, err, ErrInvalidModel)
 	require.True(t, strings.HasPrefix(err.Error(), "invalid model: not all paths return the same type for the node"))
-
 }
 
 /*

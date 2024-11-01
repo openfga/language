@@ -19,6 +19,16 @@ type WeightedAuthorizationModelGraph struct {
 	nodes map[string]*WeightedAuthorizationModelNode
 }
 
+// GetEdges returns the edges map.
+func (wg *WeightedAuthorizationModelGraph) GetEdges() map[string][]*WeightedAuthorizationModelEdge {
+	return wg.edges
+}
+
+// GetNodes returns the nodes map.
+func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthorizationModelNode {
+	return wg.nodes
+}
+
 // NewWeightedAuthorizationModelGraph creates a new WeightedAuthorizationModelGraph.
 func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	return &WeightedAuthorizationModelGraph{
@@ -236,7 +246,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 }
 
 // The max weight strategy is to take all the types for all the edges and get the max value
-// if more than one edge have the same type in their weights
+// if more than one edge have the same type in their weights.
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
@@ -332,7 +342,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 
 // This function will fix the weight of the edges that are dependent on the reference node
 // We can take this max weight strategy to remove the dependecies in the edges
-// because AND or a BUT NOT are not allowed in a tuple cycle
+// because AND or a BUT NOT are not allowed in a tuple cycle.
 func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle string, referenceNodeID string, references []string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
 	node := wg.nodes[nodeCycle]
 
@@ -372,7 +382,7 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle str
 
 // This function will fix the weight of the nodes that are dependent on the reference node
 // We can take this max weight strategy to remove the dependecies in the nodes
-// because AND or a BUT NOT are not allowed in a tuple cycle
+// because AND or a BUT NOT are not allowed in a tuple cycle.
 func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle string, referenceNodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
 	node := wg.nodes[nodeCycle]
 
@@ -400,7 +410,7 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle str
 	}
 }
 
-// This function will remove the node from the tuple cycle list
+// This function will remove the node from the tuple cycle list.
 func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID string, tupleCycles []string) []string {
 	result := make([]string, 0)
 	for _, tupleCycle := range tupleCycles {

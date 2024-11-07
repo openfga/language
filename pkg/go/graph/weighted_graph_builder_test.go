@@ -305,3 +305,56 @@ func TestInvalidGraphNoRelationDefined(t *testing.T) {
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrInvalidModel)
 }
+
+func TestInvalidGraphTupleCycleWithExclusion(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+		type document
+			relations
+				define viewer: [user] but not restricted
+				define restricted: [user, document#viewer]
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrContrainstTupleCycle)
+}
+
+func TestInvalidGraphTupleCycleWithExclusionCase2(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+		type document
+			relations
+				define viewer: [user] but not restricteda
+				define restricteda: restrictedb
+				define restrictedb: restrictedc
+				define restrictedc: [user, document#viewer]
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrContrainstTupleCycle)
+}
+
+func TestInvalidGraphModelCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+		type document
+			relations
+				define x: y
+				define y: x
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrModelCycle)
+}

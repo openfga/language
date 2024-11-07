@@ -209,7 +209,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	if len(tupleCycles) == 0 {
 		// for any node that is not AND or BUT NOT, we can calculate the weight using the max strategy
 		if node.nodeType != OperatorNode || node.label == UnionOperator {
-			wg.calculateNodeWeightWithMaxStrategy(nodeID) // max weight strategy
+			err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+			if err != nil {
+				return tupleCycles, err
+			}
 		} else {
 			// for and and but not, we need to enforce the type strategy, meaning all edges require to return the same type
 			err = wg.calculateNodeWeightWithEnforceTypeStrategy(nodeID)
@@ -233,7 +236,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 
 	if node.nodeType != OperatorNode {
 		// even when there is a cycle, if the relation is not recursive then we calculate the weight using the max strategy
-		wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		if err != nil {
+			return tupleCycles, err
+		}
 		return tupleCycles, nil
 	}
 
@@ -249,7 +255,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 			return tupleCycles, nil
 		}
 		// otherwise even when there is a cycle but the reference node is not the tuple cycle, we can calculate the weight
-		wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		if err != nil {
+			return tupleCycles, err
+		}
 		return tupleCycles, nil
 	}
 
@@ -259,11 +268,16 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 
 // The max weight strategy is to take all the types for all the edges and get the max value
 // if more than one edge have the same type in their weights.
-func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) {
+func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
+	edges := wg.edges[nodeID]
 
-	for _, edge := range wg.edges[nodeID] {
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	for _, edge := range edges {
 		for key, value := range edge.weights {
 			if _, ok := weights[key]; !ok {
 				weights[key] = value
@@ -273,6 +287,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 		}
 	}
 	node.weights = weights
+	return nil
 }
 
 // This strategy is used in AND or BUT NOT operations, and enforces that all the edges return the same type
@@ -282,8 +297,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
+	edges := wg.edges[nodeID]
 
-	for _, edge := range wg.edges[nodeID] {
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	for _, edge := range edges {
 		// the first time, take the weights of the edge
 		if len(weights) == 0 {
 			for key, value := range edge.weights {
@@ -327,13 +347,18 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
 	referenceNodeID := "R#" + nodeID
+	edges := wg.edges[nodeID]
 
 	if (node.nodeType == OperatorNode && node.label != UnionOperator) || (node.nodeType != SpecificTypeAndRelation && node.nodeType != OperatorNode) {
 		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation: %s", ErrTupleCycle, nodeID)
 	}
 
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
 	references := make([]string, 0)
-	for _, edge := range wg.edges[nodeID] {
+	for _, edge := range edges {
 		for key := range edge.weights {
 			if key == referenceNodeID {
 				continue

@@ -8,7 +8,7 @@ import (
 	language "github.com/openfga/language/pkg/go/transformer"
 )
 
-func TestWeight1Graph(t *testing.T) {
+func TestCompleteWeightedGraph(t *testing.T) {
 	t.Parallel()
 	model := `
 	model
@@ -285,4 +285,23 @@ condition xcond(x: string) {
 	require.Equal(t, 5, graph.nodes["complexity4#userset_or_compute_complex3"].weights["employee"])
 	require.Equal(t, 5, graph.nodes["complexity4#ttu_and_nested_complex3"].weights["user"])
 	require.Equal(t, 5, graph.nodes["complexity4#or_complex4"].weights["user"])
+}
+
+func TestInvalidGraphNoRelationDefined(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+		type group
+			relations
+				define member: [user]
+		type folder
+			relations
+				define viewer: [group#computed_member]
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrInvalidModel)
 }

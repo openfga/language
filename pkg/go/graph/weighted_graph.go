@@ -37,7 +37,7 @@ func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthor
 }
 
 // GetNodes returns the nodes map.
-func (wg *WeightedAuthorizationModelGraph) GetNodesById(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
+func (wg *WeightedAuthorizationModelGraph) GetNodeById(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
 	v, ok := wg.nodes[uniqueLabel]
 	return v, ok
 }
@@ -60,9 +60,10 @@ func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, no
 }
 
 func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, condition string) {
+	wildcards := make([]string, 0)
 	fromNode := wg.nodes[fromID]
 	toNode := wg.nodes[toID]
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, conditionedOn: condition}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, conditionedOn: condition, wildcards: wildcards}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 

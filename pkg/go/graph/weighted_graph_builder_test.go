@@ -285,6 +285,106 @@ condition xcond(x: string) {
 	require.Equal(t, 5, graph.nodes["complexity4#userset_or_compute_complex3"].weights["employee"])
 	require.Equal(t, 5, graph.nodes["complexity4#ttu_and_nested_complex3"].weights["user"])
 	require.Equal(t, 5, graph.nodes["complexity4#or_complex4"].weights["user"])
+
+	require.Len(t, graph.nodes["directs-user#direct_wild"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct_wild_cond"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct_and_direct_wild"].wildcards, 2)
+	require.Len(t, graph.nodes["directs-user#direct_and_direct_wild_cond"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct_cond_and_direct_wild"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct_cond_and_direct_wild_cond"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct_wildcard_and_direct_wildcard_cond"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#computed_wild"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#or_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#and_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#butnot_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-user#direct"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#direct_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#direct_and_direct_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#computed"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#computed_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#computed_computed"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#computed_computed_computed"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#tuple_cycle2"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#tuple_cycle3"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-user#compute_tuple_cycle3"].wildcards, 0)
+
+	require.Len(t, graph.nodes["directs-employee#direct"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-employee#computed"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-employee#direct_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["directs-employee#direct_wild"].wildcards, 1)
+	require.Len(t, graph.nodes["directs-employee#direct_wild_cond"].wildcards, 1)
+
+	require.Len(t, graph.nodes["usersets-user#userset"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_to_computed"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_to_computed_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_to_computed_wild"].wildcards, 2)
+	require.Len(t, graph.nodes["usersets-user#userset_to_computed_wild_cond"].wildcards, 2)
+	require.Len(t, graph.nodes["usersets-user#userset_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_cond_to_computed"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_cond_to_computed_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#userset_cond_to_computed_wild"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#userset_cond_to_computed_wild_cond"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#userset_to_or_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#userset_to_butnot_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#userset_to_and_computed"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#userset_recursive"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#or_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#and_userset"].wildcards, 2)
+	require.Len(t, graph.nodes["usersets-user#butnot_userset"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#nested_or_userset"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#nested_and_userset"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#ttu_direct_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#ttu_direct_cond_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#ttu_or_direct_userset"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#ttu_and_direct_userset"].wildcards, 1)
+	require.Len(t, graph.nodes["usersets-user#tuple_cycle2"].wildcards, 0)
+	require.Len(t, graph.nodes["usersets-user#tuple_cycle3"].wildcards, 0)
+
+	require.Len(t, graph.nodes["ttus#direct_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#mult_parent_types"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#mult_parent_types_cond"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#direct_cond_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_cond_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#tuple_cycle2"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#tuple_cycle3"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#direct_pa_direct_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#direct_cond_pa_direct_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#or_comp_from_direct_parent"].wildcards, 1)
+	require.Len(t, graph.nodes["ttus#and_comp_from_direct_parent"].wildcards, 1)
+	require.Len(t, graph.nodes["ttus#butnot_comp_from_direct_parent"].wildcards, 1)
+	require.Len(t, graph.nodes["ttus#userset_pa_userset_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_pa_userset_comp_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_pa_userset_comp_cond_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_pa_userset_comp_wild_ch"].wildcards, 2)
+	require.Len(t, graph.nodes["ttus#userset_pa_userset_comp_wild_cond_ch"].wildcards, 2)
+	require.Len(t, graph.nodes["ttus#userset_cond_userset_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_cond_userset_comp_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_cond_userset_comp_cond_ch"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#userset_cond_userset_comp_wild_ch"].wildcards, 2)
+	require.Len(t, graph.nodes["ttus#userset_cond_userset_comp_wild_cond_ch"].wildcards, 2)
+	require.Len(t, graph.nodes["ttus#or_ttu"].wildcards, 0)
+	require.Len(t, graph.nodes["ttus#and_ttu"].wildcards, 1)
+	require.Len(t, graph.nodes["ttus#nested_butnot_ttu"].wildcards, 2)
+
+	require.Len(t, graph.nodes["complexity3#ttu_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#userset_parent"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#ttu_userset_ttu"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#userset_ttu_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#userset_userset_ttu"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#compute_ttu_userset_ttu"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#compute_userset_ttu_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#or_compute_complex3"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity3#and_nested_complex3"].wildcards, 1)
+	require.Len(t, graph.nodes["complexity3#cycle_nested"].wildcards, 0)
+
+	require.Len(t, graph.nodes["complexity4#userset_ttu_userset_ttu"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity4#parent"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity4#ttu_ttu_ttu_userset"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity4#userset_or_compute_complex3"].wildcards, 0)
+	require.Len(t, graph.nodes["complexity4#ttu_and_nested_complex3"].wildcards, 1)
+	require.Len(t, graph.nodes["complexity4#or_complex4"].wildcards, 1)
+
 }
 
 func TestInvalidGraphNoRelationDefined(t *testing.T) {
@@ -357,4 +457,29 @@ func TestInvalidGraphModelCycle(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrModelCycle)
+}
+
+func TestValidGraphModel(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+        type role
+            relations
+                define assignee: [user]
+        type permission
+            relations
+                define assignee: [role#assignee]
+        type job
+            relations
+                define can_read: assignee from permission
+                define permission: [permission]
+                define cannot_read: [user] but not can_read
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
 }

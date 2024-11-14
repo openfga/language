@@ -5,6 +5,7 @@ type WeightedAuthorizationModelNode struct {
 	nodeType    NodeType
 	label       string // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
 	uniqueLabel string
+	wildcards   []string
 }
 
 // GetWeights returns the entire weights map.
@@ -31,4 +32,9 @@ func (node *WeightedAuthorizationModelNode) GetLabel() string {
 // GetUniqueLabel returns the unique label.
 func (node *WeightedAuthorizationModelNode) GetUniqueLabel() string {
 	return node.uniqueLabel
+}
+
+// GetWildcards returns the wildcards.
+func (node *WeightedAuthorizationModelNode) GetWildcards() []string {
+	return node.wildcards
 }

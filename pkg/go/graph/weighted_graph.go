@@ -37,7 +37,7 @@ func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthor
 }
 
 // GetNodes returns the nodes map.
-func (wg *WeightedAuthorizationModelGraph) GetNodeById(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
+func (wg *WeightedAuthorizationModelGraph) GetNodeByID(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
 	v, ok := wg.nodes[uniqueLabel]
 	return v, ok
 }
@@ -175,9 +175,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 		}
 	}
 
-	tupleCyles, err := wg.calculateNodeWeightFromTheEdges(nodeID, tupleCycleDependencies, tupleCycles)
-	return tupleCyles, err
-
+	return wg.calculateNodeWeightFromTheEdges(nodeID, tupleCycleDependencies, tupleCycles)
 }
 
 // Calculate the weight of the edge based on the type of edge and the weight of the node that is connected to.

@@ -6,6 +6,7 @@ type WeightedAuthorizationModelEdge struct {
 	conditionedOn string
 	from          *WeightedAuthorizationModelNode
 	to            *WeightedAuthorizationModelNode
+	wildcards     []string
 }
 
 // GetWeights returns the entire weights map.
@@ -37,4 +38,9 @@ func (edge *WeightedAuthorizationModelEdge) GetFrom() *WeightedAuthorizationMode
 // GetTo returns the to node.
 func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelNode {
 	return edge.to
+}
+
+// GetWildcards returns the wildcards.
+func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
+	return edge.wildcards
 }

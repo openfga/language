@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -24,9 +25,21 @@ func (wg *WeightedAuthorizationModelGraph) GetEdges() map[string][]*WeightedAuth
 	return wg.edges
 }
 
+// GetEdges returns the edges map.
+func (wg *WeightedAuthorizationModelGraph) GetEdgesByNode(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, bool) {
+	v, ok := wg.edges[node.uniqueLabel]
+	return v, ok
+}
+
 // GetNodes returns the nodes map.
 func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthorizationModelNode {
 	return wg.nodes
+}
+
+// GetNodes returns the nodes map.
+func (wg *WeightedAuthorizationModelGraph) GetNodeByID(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
+	v, ok := wg.nodes[uniqueLabel]
+	return v, ok
 }
 
 // NewWeightedAuthorizationModelGraph creates a new WeightedAuthorizationModelGraph.
@@ -39,13 +52,18 @@ func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 
 // AddNode adds a node to the graph with optional operationType and weight.
 func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType) {
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType}
+	wildcards := make([]string, 0)
+	if nodeType == SpecificTypeWildcard {
+		wildcards = append(wildcards, uniqueLabel[:len(uniqueLabel)-2])
+	}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
 }
 
 func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, condition string) {
+	wildcards := make([]string, 0)
 	fromNode := wg.nodes[fromID]
 	toNode := wg.nodes[toID]
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, conditionedOn: condition}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, conditionedOn: condition, wildcards: wildcards}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 
@@ -69,6 +87,49 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 		}
 	}
 	return nil
+}
+
+func (wg *WeightedAuthorizationModelGraph) calculateEdgeWildcards(edge *WeightedAuthorizationModelEdge) {
+	if len(edge.wildcards) > 0 {
+		return
+	}
+	nodeWildcards := wg.nodes[edge.to.uniqueLabel].wildcards
+	if len(nodeWildcards) == 0 {
+		return
+	}
+	edge.wildcards = append(edge.wildcards, nodeWildcards...)
+}
+
+func (wg *WeightedAuthorizationModelGraph) addReferentialWildcardsToEdge(edge *WeightedAuthorizationModelEdge, referentialNodeID string) {
+	referentialNode := wg.nodes[referentialNodeID]
+	for _, wildcard := range referentialNode.wildcards {
+		if !slices.Contains(edge.wildcards, wildcard) {
+			edge.wildcards = append(edge.wildcards, wildcard)
+		}
+	}
+}
+
+func (wg *WeightedAuthorizationModelGraph) addReferentialWildcardsToNode(nodeID string, referentialNodeID string) {
+	referentialNode := wg.nodes[referentialNodeID]
+	node := wg.nodes[nodeID]
+	for _, wildcard := range referentialNode.wildcards {
+		if !slices.Contains(node.wildcards, wildcard) {
+			node.wildcards = append(node.wildcards, wildcard)
+		}
+	}
+}
+
+func (wg *WeightedAuthorizationModelGraph) addEdgeWildcardsToNode(nodeID string, edge *WeightedAuthorizationModelEdge) {
+	node := wg.nodes[nodeID]
+	if len(edge.wildcards) == 0 {
+		return
+	}
+
+	for _, wildcard := range edge.wildcards {
+		if !slices.Contains(node.wildcards, wildcard) {
+			node.wildcards = append(node.wildcards, wildcard)
+		}
+	}
 }
 
 // Calculate the weight of the node based on the weights of the edges that are connected to the node.
@@ -95,12 +156,16 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 			uniqueLabel := edge.to.uniqueLabel
 			if edge.to.nodeType == SpecificTypeWildcard {
 				uniqueLabel = uniqueLabel[:len(uniqueLabel)-2]
+				edge.wildcards = append(edge.wildcards, uniqueLabel)
+				wg.addEdgeWildcardsToNode(nodeID, edge)
 			}
 			edge.weights[uniqueLabel] = 1
 			continue
 		}
 
 		tcycle, err := wg.calculateEdgeWeight(edge, ancestorPath, visited, tupleCycleDependencies)
+		wg.calculateEdgeWildcards(edge)
+		wg.addEdgeWildcardsToNode(nodeID, edge)
 		if err != nil {
 			tupleCycles = append(tupleCycles, tcycle...)
 			return tupleCycles, err
@@ -109,6 +174,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 			tupleCycles = append(tupleCycles, tcycle...) // verify if does not exist first
 		}
 	}
+
 	return wg.calculateNodeWeightFromTheEdges(nodeID, tupleCycleDependencies, tupleCycles)
 }
 
@@ -197,7 +263,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	if len(tupleCycles) == 0 {
 		// for any node that is not AND or BUT NOT, we can calculate the weight using the max strategy
 		if node.nodeType != OperatorNode || node.label == UnionOperator {
-			wg.calculateNodeWeightWithMaxStrategy(nodeID) // max weight strategy
+			err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+			if err != nil {
+				return tupleCycles, err
+			}
 		} else {
 			// for and and but not, we need to enforce the type strategy, meaning all edges require to return the same type
 			err = wg.calculateNodeWeightWithEnforceTypeStrategy(nodeID)
@@ -221,7 +290,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 
 	if node.nodeType != OperatorNode {
 		// even when there is a cycle, if the relation is not recursive then we calculate the weight using the max strategy
-		wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		if err != nil {
+			return tupleCycles, err
+		}
 		return tupleCycles, nil
 	}
 
@@ -237,7 +309,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 			return tupleCycles, nil
 		}
 		// otherwise even when there is a cycle but the reference node is not the tuple cycle, we can calculate the weight
-		wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		if err != nil {
+			return tupleCycles, err
+		}
 		return tupleCycles, nil
 	}
 
@@ -247,11 +322,16 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 
 // The max weight strategy is to take all the types for all the edges and get the max value
 // if more than one edge have the same type in their weights.
-func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) {
+func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
+	edges := wg.edges[nodeID]
 
-	for _, edge := range wg.edges[nodeID] {
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	for _, edge := range edges {
 		for key, value := range edge.weights {
 			if _, ok := weights[key]; !ok {
 				weights[key] = value
@@ -261,6 +341,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 		}
 	}
 	node.weights = weights
+	return nil
 }
 
 // This strategy is used in AND or BUT NOT operations, and enforces that all the edges return the same type
@@ -270,8 +351,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
+	edges := wg.edges[nodeID]
 
-	for _, edge := range wg.edges[nodeID] {
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	for _, edge := range edges {
 		// the first time, take the weights of the edge
 		if len(weights) == 0 {
 			for key, value := range edge.weights {
@@ -315,13 +401,18 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
 	referenceNodeID := "R#" + nodeID
+	edges := wg.edges[nodeID]
 
 	if (node.nodeType == OperatorNode && node.label != UnionOperator) || (node.nodeType != SpecificTypeAndRelation && node.nodeType != OperatorNode) {
 		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation: %s", ErrTupleCycle, nodeID)
 	}
 
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
 	references := make([]string, 0)
-	for _, edge := range wg.edges[nodeID] {
+	for _, edge := range edges {
 		for key := range edge.weights {
 			if key == referenceNodeID {
 				continue
@@ -377,6 +468,7 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle str
 			}
 		}
 		edge.weights = edgeWeights
+		wg.addReferentialWildcardsToEdge(edge, nodeCycle)
 	}
 }
 
@@ -407,6 +499,7 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle str
 			}
 		}
 		fromNode.weights = nodeWeights
+		wg.addReferentialWildcardsToNode(edge.from.uniqueLabel, nodeCycle)
 	}
 }
 

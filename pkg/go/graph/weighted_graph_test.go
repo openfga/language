@@ -70,6 +70,22 @@ func TestValidWeight1OneTerminalType(t *testing.T) {
 	require.Len(t, graph.nodes["state-can_apply"].weights, 1)
 	require.Len(t, graph.nodes["state-can_apply-but"].weights, 1)
 	require.Len(t, graph.nodes["state-can_apply-or"].weights, 1)
+
+	require.Len(t, graph.nodes["state-approved_member"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-approved_member"].wildcards[0])
+	require.Len(t, graph.nodes["state-owner"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-owner"].wildcards[0])
+	require.Len(t, graph.nodes["state-owner-and"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-owner-and"].wildcards[0])
+	require.Len(t, graph.nodes["state-can_apply"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-can_apply"].wildcards[0])
+	require.Len(t, graph.nodes["state-can_apply-but"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-can_apply-but"].wildcards[0])
+	require.Len(t, graph.nodes["state-can_apply-or"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-can_apply-or"].wildcards[0])
+	require.Empty(t, graph.nodes["state-member"].wildcards)
+	require.Len(t, graph.nodes["state-can_view-or"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-can_view-or"].wildcards[0])
 }
 
 /*
@@ -98,6 +114,13 @@ func TestInvalidWeight1WithAndModelCycle(t *testing.T) {
 	graph.AddEdge("state-member", "user", DirectEdge, "")
 	graph.AddEdge("state-owner", "state-owner-and", RewriteEdge, "")
 	graph.AddEdge("state-owner-and", "state-can_view", ComputedEdge, "")
+
+	require.Empty(t, graph.nodes["state-can_view"].wildcards)
+	require.Empty(t, graph.nodes["state-can_view-or"].wildcards)
+	require.Empty(t, graph.nodes["state-member"].wildcards)
+	require.Empty(t, graph.nodes["state-owner"].wildcards)
+	require.Empty(t, graph.nodes["state-owner-and"].wildcards)
+	require.Empty(t, graph.nodes["user"].wildcards)
 
 	err := graph.AssignWeights()
 	require.ErrorIs(t, err, ErrModelCycle)
@@ -170,6 +193,16 @@ func TestValidWeight1MultipleTerminalTypes(t *testing.T) {
 	require.Len(t, graph.nodes["state-can_apply"].weights, 2)
 	require.Len(t, graph.nodes["state-can_apply-but"].weights, 1)
 	require.Len(t, graph.nodes["state-can_apply-or"].weights, 2)
+
+	require.Empty(t, graph.nodes["state-can_view"].wildcards)
+	require.Empty(t, graph.nodes["state-owner"].wildcards)
+	require.Empty(t, graph.nodes["state-member"].wildcards)
+	require.Empty(t, graph.nodes["state-can_view-or"].wildcards)
+	require.Empty(t, graph.nodes["state-owner-and"].wildcards)
+	require.Empty(t, graph.nodes["state-approved_member"].wildcards)
+	require.Empty(t, graph.nodes["state-can_apply"].wildcards)
+	require.Empty(t, graph.nodes["state-can_apply-but"].wildcards)
+	require.Empty(t, graph.nodes["state-can_apply-or"].wildcards)
 }
 
 /*
@@ -283,6 +316,17 @@ func TestValidWeight2TTUOneTerminalType(t *testing.T) {
 	require.Len(t, graph.nodes["transition-start"].weights, 1)
 	require.Len(t, graph.nodes["transition-can_apply"].weights, 1)
 	require.Len(t, graph.nodes["transition-can_apply-and"].weights, 1)
+
+	require.Len(t, graph.nodes["state-can_view"].wildcards, 1)
+	require.Len(t, graph.nodes["state-member"].wildcards, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].wildcards, 1)
+	require.Len(t, graph.nodes["transition-can_apply"].wildcards, 1)
+	require.Len(t, graph.nodes["transition-can_apply-and"].wildcards, 1)
+	require.Empty(t, graph.nodes["state-owner"].wildcards)
+	require.Empty(t, graph.nodes["state-owner-and"].wildcards)
+	require.Empty(t, graph.nodes["state-approved_member"].wildcards)
+	require.Empty(t, graph.nodes["transition-end"].wildcards)
+	require.Empty(t, graph.nodes["transition-start"].wildcards)
 }
 
 /*
@@ -343,6 +387,14 @@ func TestValidWeight2UserSetOneTerminalType(t *testing.T) {
 	require.Len(t, graph.nodes["state-owner-and"].weights, 1)
 	require.Len(t, graph.nodes["state-approved_member"].weights, 1)
 	require.Len(t, graph.nodes["transition-can_apply"].weights, 1)
+
+	require.Len(t, graph.nodes["state-can_view"].wildcards, 1)
+	require.Len(t, graph.nodes["state-member"].wildcards, 1)
+	require.Len(t, graph.nodes["state-can_view-or"].wildcards, 1)
+	require.Len(t, graph.nodes["transition-can_apply"].wildcards, 1)
+	require.Empty(t, graph.nodes["state-owner"].wildcards)
+	require.Empty(t, graph.nodes["state-owner-and"].wildcards)
+	require.Empty(t, graph.nodes["state-approved_member"].wildcards)
 }
 
 /*
@@ -411,6 +463,14 @@ func TestValidWeight2MultipleTerminalType(t *testing.T) {
 	require.Len(t, graph.nodes["group-approved_member"].weights, 1)
 	require.Len(t, graph.nodes["license-active_member"].weights, 2)
 	require.Len(t, graph.nodes["license-owner"].weights, 2)
+
+	require.Empty(t, graph.nodes["company-member"].wildcards)
+	require.Empty(t, graph.nodes["company-owner"].wildcards)
+	require.Empty(t, graph.nodes["company-approved_member"].wildcards)
+	require.Empty(t, graph.nodes["company-approved_member-or"].wildcards)
+	require.Empty(t, graph.nodes["group-approved_member"].wildcards)
+	require.Empty(t, graph.nodes["license-active_member"].wildcards)
+	require.Empty(t, graph.nodes["license-owner"].wildcards)
 }
 
 /*
@@ -537,6 +597,14 @@ func TestValidTupleCycle(t *testing.T) {
 	require.Len(t, graph.nodes["document-rel5"].weights, 1)
 	require.Len(t, graph.nodes["document-rel6"].weights, 2)
 	require.Len(t, graph.nodes["document-rel7"].weights, 2)
+
+	require.Empty(t, graph.nodes["document-rel1"].wildcards)
+	require.Empty(t, graph.nodes["document-rel2"].wildcards)
+	require.Empty(t, graph.nodes["document-rel3"].wildcards)
+	require.Empty(t, graph.nodes["document-rel4"].wildcards)
+	require.Empty(t, graph.nodes["document-rel5"].wildcards)
+	require.Empty(t, graph.nodes["document-rel6"].wildcards)
+	require.Empty(t, graph.nodes["document-rel7"].wildcards)
 }
 
 /*
@@ -655,6 +723,16 @@ func TestValidTupleCycleWithInterceptionNotInCycle(t *testing.T) {
 	require.Len(t, graph.nodes["document-rel5"].weights, 1)
 	require.Len(t, graph.nodes["document-rel6"].weights, 1)
 	require.Len(t, graph.nodes["document-rel7"].weights, 2)
+
+	require.Empty(t, graph.nodes["document-rel1"].wildcards)
+	require.Empty(t, graph.nodes["document-rel2"].wildcards)
+	require.Empty(t, graph.nodes["document-rel3"].wildcards)
+	require.Empty(t, graph.nodes["document-rel4"].wildcards)
+	require.Empty(t, graph.nodes["document-rel5"].wildcards)
+	require.Empty(t, graph.nodes["document-rel6"].wildcards)
+	require.Empty(t, graph.nodes["document-rel7"].wildcards)
+	require.Empty(t, graph.nodes["document-rel1-and"].wildcards)
+	require.Empty(t, graph.nodes["document-rel4-or"].wildcards)
 }
 
 /*
@@ -702,6 +780,12 @@ func TestValidRecursionUsersetAndTTU(t *testing.T) {
 	require.Len(t, graph.nodes["document-rel4-or"].weights, 1)
 	require.Len(t, graph.nodes["document-rel5"].weights, 1)
 	require.Len(t, graph.nodes["document-rel6"].weights, 1)
+
+	require.Empty(t, graph.nodes["document-rel3"].wildcards)
+	require.Empty(t, graph.nodes["document-rel4"].wildcards)
+	require.Empty(t, graph.nodes["document-rel5"].wildcards)
+	require.Empty(t, graph.nodes["document-rel6"].wildcards)
+	require.Empty(t, graph.nodes["document-rel4-or"].wildcards)
 }
 
 /*
@@ -765,13 +849,24 @@ func TestValidRecursionWithWeight3(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["group-max_owner"].weights["user"])
 
 	require.Len(t, graph.nodes["group-owner"].weights, 1)
+	require.Len(t, graph.nodes["state-member"].weights, 1)
 	require.Len(t, graph.nodes["state-can_view"].weights, 1)
 	require.Len(t, graph.nodes["state-can_view-or"].weights, 1)
 	require.Len(t, graph.nodes["transition-start"].weights, 1)
 	require.Len(t, graph.nodes["transition-end"].weights, 1)
-	require.Len(t, graph.nodes["transition-end"].weights, 1)
-	require.Len(t, graph.nodes["group-owner"].weights, 1)
 	require.Len(t, graph.nodes["group-max_owner"].weights, 1)
+	require.Len(t, graph.nodes["transition-can_apply-and"].weights, 1)
+	require.Len(t, graph.nodes["transition-can_apply"].weights, 1)
+
+	require.Empty(t, graph.nodes["group-owner"].wildcards)
+	require.Empty(t, graph.nodes["state-can_view"].wildcards)
+	require.Empty(t, graph.nodes["state-can_view-or"].wildcards)
+	require.Empty(t, graph.nodes["transition-start"].wildcards)
+	require.Empty(t, graph.nodes["transition-end"].wildcards)
+	require.Empty(t, graph.nodes["state-member"].wildcards)
+	require.Empty(t, graph.nodes["group-max_owner"].wildcards)
+	require.Empty(t, graph.nodes["transition-can_apply-and"].wildcards)
+	require.Empty(t, graph.nodes["transition-can_apply"].wildcards)
 }
 
 /*
@@ -1016,4 +1111,38 @@ func TestValidRecursionWithMultipleWeightsAndTypes(t *testing.T) {
 	require.Len(t, graph.nodes["feature-tier_can_access"].weights, 2)
 	require.Len(t, graph.nodes["feature-can_access"].weights, 2)
 	require.Len(t, graph.nodes["feature-can_access-and"].weights, 2)
+
+	require.Len(t, graph.nodes["company-approved_member"].wildcards, 1)
+	require.Len(t, graph.nodes["company-approved_member-and"].wildcards, 1)
+	require.Len(t, graph.nodes["company-member"].wildcards, 1)
+	require.Len(t, graph.nodes["company-facilitator"].wildcards, 1)
+	require.Len(t, graph.nodes["license-active_holder"].wildcards, 1)
+	require.Len(t, graph.nodes["license-active_holder-or"].wildcards, 1)
+	require.Len(t, graph.nodes["license-holder_member"].wildcards, 1)
+	require.Len(t, graph.nodes["license-holder_approved_member"].wildcards, 1)
+	require.Len(t, graph.nodes["license-trust_holder"].wildcards, 1)
+	require.Len(t, graph.nodes["license-trust_holder-or"].wildcards, 1)
+	require.Len(t, graph.nodes["tier-subscriber"].wildcards, 1)
+	require.Len(t, graph.nodes["tier-assignee_sub"].wildcards, 1)
+	require.Len(t, graph.nodes["tier-assignee_sub-and"].wildcards, 1)
+	require.Len(t, graph.nodes["module-module_holder"].wildcards, 1)
+	require.Len(t, graph.nodes["module-module_user"].wildcards, 1)
+	require.Len(t, graph.nodes["feature-tier_can_access"].wildcards, 1)
+	require.Len(t, graph.nodes["feature-can_access"].wildcards, 1)
+	require.Len(t, graph.nodes["feature-can_access-and"].wildcards, 1)
+	require.Empty(t, graph.nodes["company-user_in_context"].wildcards)
+	require.Empty(t, graph.nodes["group-approved_member"].wildcards)
+	require.Empty(t, graph.nodes["group-approved_member-butnot"].wildcards)
+	require.Empty(t, graph.nodes["group-member"].wildcards)
+	require.Empty(t, graph.nodes["group-user_in_context"].wildcards)
+	require.Empty(t, graph.nodes["group-reader"].wildcards)
+	require.Empty(t, graph.nodes["group-assignee"].wildcards)
+	require.Empty(t, graph.nodes["license-holder"].wildcards)
+	require.Empty(t, graph.nodes["license-parent"].wildcards)
+	require.Empty(t, graph.nodes["license-owner"].wildcards)
+	require.Empty(t, graph.nodes["tier-assignee"].wildcards)
+	require.Empty(t, graph.nodes["tier-subtier_owner"].wildcards)
+	require.Empty(t, graph.nodes["module-associated_license"].wildcards)
+	require.Empty(t, graph.nodes["feature-associated_module"].wildcards)
+	require.Empty(t, graph.nodes["feature-associated_tier"].wildcards)
 }

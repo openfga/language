@@ -1,5 +1,9 @@
 [
   {
+    "msg": "file is not a module",
+    "file":"nomodule.fga"
+  },
+  {
     "msg": "duplicate condition a_check",
     "file": "org.fga",
     "line": {

@@ -1,12 +1,49 @@
 package graph
 
+import (
+	"fmt"
+
+	"gonum.org/v1/gonum/graph/encoding"
+)
+
 type WeightedAuthorizationModelEdge struct {
-	weights       map[string]int
-	edgeType      EdgeType
-	conditionedOn string
-	from          *WeightedAuthorizationModelNode
-	to            *WeightedAuthorizationModelNode
-	wildcards     []string
+	*AuthorizationModelEdge
+	weights   WeightMap
+	wildcards []string
+}
+
+func NewWeightedAuthorizationModelEdge(edge *AuthorizationModelEdge) *WeightedAuthorizationModelEdge {
+	return &WeightedAuthorizationModelEdge{
+		AuthorizationModelEdge: edge,
+		weights:                make(WeightMap),
+		wildcards:              make([]string, 0),
+	}
+}
+
+var _ encoding.Attributer = (*WeightedAuthorizationModelEdge)(nil)
+
+func (edge *WeightedAuthorizationModelEdge) Attributes() []encoding.Attribute {
+	weightsStr := edge.weights
+	labelSet := false
+	attrs := make([]encoding.Attribute, 0, len(edge.AuthorizationModelEdge.Attributes()))
+	for _, attr := range edge.AuthorizationModelEdge.Attributes() {
+		if attr.Key == "label" {
+			labelSet = true
+			if len(weightsStr) > 0 {
+				attr.Value += fmt.Sprintf(" - %v", weightsStr)
+			}
+		}
+		attrs = append(attrs, attr)
+	}
+
+	if !labelSet {
+		attrs = append(attrs, encoding.Attribute{
+			Key:   "label",
+			Value: fmt.Sprintf("%v", weightsStr),
+		})
+	}
+
+	return attrs
 }
 
 // GetWeights returns the entire weights map.
@@ -32,12 +69,14 @@ func (edge *WeightedAuthorizationModelEdge) GetConditionedOn() string {
 
 // GetFrom returns the from node.
 func (edge *WeightedAuthorizationModelEdge) GetFrom() *WeightedAuthorizationModelNode {
-	return edge.from
+	from, _ := edge.AuthorizationModelEdge.From().(*WeightedAuthorizationModelNode)
+	return from
 }
 
 // GetTo returns the to node.
 func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelNode {
-	return edge.to
+	to, _ := edge.AuthorizationModelEdge.To().(*WeightedAuthorizationModelNode)
+	return to
 }
 
 // GetWildcards returns the wildcards.

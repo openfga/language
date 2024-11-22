@@ -484,3 +484,97 @@ func TestValidGraphModel(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
 }
+
+// TODO make output from DOT stable
+//func TestWeightedGraphBuilderDOT(t *testing.T) {
+//	t.Parallel()
+//
+//	testCases := map[string]struct {
+//		model          string
+//		expectedOutput string // can visualize in https://dreampuf.github.io/GraphvizOnline
+//		expectedError  error
+//	}{
+//		`multigraph`: {
+//			model: `
+//				model
+//					schema 1.1
+//				type user
+//				type state
+//					relations
+//						define can_view: [user] or member
+//						define member: [user]
+//				type transition
+//					relations
+//						define start: [state]
+//						define end: [state]
+//						define can_apply: [user] and can_view from start and can_view from end
+//				type group
+//					relations
+//						define owner: [user, transition#can_apply]
+//						define max_owner: [group#owner, group#max_owner]`,
+//			expectedOutput: `digraph {
+//graph [
+//rankdir=TB
+//];
+//
+//// Node definitions.
+//0 [label=group];
+//1 [label="group#max_owner - weights:[user=+∞]"];
+//2 [label="group#owner - weights:[user=3]"];
+//3 [label=user];
+//4 [label="transition#can_apply - weights:[user=2]"];
+//5 [label=state];
+//6 [label="state#can_view - weights:[user=1]"];
+//7 [label="union - weights:[user=1]"];
+//8 [label="state#member - weights:[user=1]"];
+//9 [label=transition];
+//10 [label="intersection - weights:[user=2]"];
+//11 [label="transition#end - weights:[state=1]"];
+//12 [label="transition#start - weights:[state=1]"];
+//
+//// Edge definitions.
+//1 -> 1 [label="direct - weights:[user=+∞]"];
+//1 -> 2 [label="direct - weights:[user=4]"];
+//2 -> 3 [label="direct - weights:[user=1]"];
+//2 -> 4 [label="direct - weights:[user=3]"];
+//4 -> 10 [label="weights:[user=2]"];
+//6 -> 7 [label="weights:[user=1]"];
+//7 -> 3 [label="direct - weights:[user=1]"];
+//7 -> 8 [label="weights:[user=1]"];
+//8 -> 3 [label="direct - weights:[user=1]"];
+//10 -> 3 [label="direct - weights:[user=1]"];
+//10 -> 6 [
+//headlabel="(transition#start)"
+//label="weights:[user=2]"
+//];
+//10 -> 6 [
+//headlabel="(transition#end)"
+//label="weights:[user=2]"
+//];
+//11 -> 5 [label="direct - weights:[state=1]"];
+//12 -> 5 [label="direct - weights:[state=1]"];
+//}`,
+//		},
+//	}
+//	for name, testCase := range testCases {
+//		t.Run(name, func(t *testing.T) {
+//			t.Parallel()
+//
+//			model := language.MustTransformDSLToProto(testCase.model)
+//			weightedGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(model)
+//			if testCase.expectedError != nil {
+//				require.ErrorIs(t, err, testCase.expectedError)
+//			} else {
+//				require.NoError(t, err)
+//
+//				actualDOT := weightedGraph.GetDOT()
+//				actualSorted := getSorted(actualDOT)
+//				expectedSorted := getSorted(testCase.expectedOutput)
+//
+//				diff := cmp.Diff(expectedSorted, actualSorted)
+//
+//				require.Empty(t, diff, "expected %s\ngot\n%s", testCase.expectedOutput, actualDOT)
+//			}
+//		})
+//	}
+//}

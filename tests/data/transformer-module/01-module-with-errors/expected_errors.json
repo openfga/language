@@ -1,7 +1,15 @@
 [
   {
     "msg": "file is not a module",
-    "file":"nomodule.fga"
+    "file":"nomodule.fga",
+    "line": {
+      "start": 0,
+      "end": 0
+    },
+    "column": {
+      "start": 0,
+      "end": 0
+    }
   },
   {
     "msg": "duplicate condition a_check",

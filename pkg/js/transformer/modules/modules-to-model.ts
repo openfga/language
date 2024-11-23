@@ -49,7 +49,17 @@ export const transformModuleFilesToModel = (
           extendedTypeDefs[name].push(typeDef);
           continue;
         }
-
+        if (!typeDef.metadata) {
+          errors.push(
+            new ModuleTransformationSingleError({
+              msg: "file is not a module",
+              line: { start: 0, end: 0 },
+              column: { start: 0, end: 0 },
+              file: "nomodule.fga",
+            }),
+          );
+          continue;
+        }
         typeDef.metadata!.source_info = {
           file: name,
         };

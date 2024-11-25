@@ -1,5 +1,14 @@
 # Changelog
 
+## pkg/js/v0.2.0-beta.23
+
+### [v0.2.0-beta.23](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.22...pkg/js/v0.2.0-beta.23) (2024-11-25)
+
+Fixed:
+
+- Error when a model file is provided as part of a modular model (#386) - thanks @fsedano!
+- Validation of Object IDs is aligned with the OpenFGA server (#348)
+
 ## pkg/js/v0.2.0-beta.22
 
 ### [v0.2.0-beta.22](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.21...pkg/js/v0.2.0-beta.22) (2024-09-27)

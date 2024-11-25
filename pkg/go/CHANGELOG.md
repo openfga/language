@@ -1,5 +1,22 @@
 # Changelog
 
+## pkg/go/v0.2.0-beta.3
+
+### [v0.2.0-beta.3](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.2...pkg/go/v0.2.0-beta.3) (2024-11-25)
+
+Added:
+
+- Ability to visualize graph in reverse (i.e. the direction of a Check request) (#345)
+- Model graph now has edges for computed usersets (#342)
+- Model graph now includes cycle detection (#344)
+- Model graph now exposes extra getters (#379)
+
+Fixed:
+
+- Error when a model file is provided as part of a modular model (#386) - thanks @fsedano!
+- Model graphing now correctly tracks wildcard relation types (#356)
+- Validation of Object IDs is aligned with the OpenFGA server (#348)
+
 ## pkg/go/v0.2.0-beta.2
 
 ### [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.1...pkg/go/v0.2.0-beta.2) (2024-09-09)

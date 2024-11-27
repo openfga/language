@@ -10,11 +10,11 @@ moduleHeader: (multiLineComment NEWLINE)? MODULE WHITESPACE moduleName=identifie
 
 // Type Definitions
 typeDefs: typeDef*;
-typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=identifier (NEWLINE RELATIONS relationDeclaration+)?;
+typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=extended_identifier (NEWLINE RELATIONS relationDeclaration+)?;
 
 // Relation definitions
 relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
-relationName: identifier;
+relationName: extended_identifier;
 
 relationDef: (relationDefDirectAssignment | relationDefGrouping | relationRecurse) (relationDefPartials)?;
 relationDefNoDirect: (relationDefGrouping | relationRecurseNoDirect) (relationDefPartials)?;
@@ -23,7 +23,7 @@ relationDefPartials:
     (WHITESPACE OR WHITESPACE (relationDefGrouping | relationRecurseNoDirect))+
     | (WHITESPACE AND WHITESPACE (relationDefGrouping | relationRecurseNoDirect))+
     | (WHITESPACE BUT_NOT WHITESPACE (relationDefGrouping | relationRecurseNoDirect));
-    
+
 relationDefGrouping: relationDefRewrite;
 
 relationRecurse:
@@ -39,15 +39,15 @@ relationRecurseNoDirect:
     ) WHITESPACE* RPAREN;
 
 relationDefDirectAssignment: LBRACKET WHITESPACE? relationDefTypeRestriction WHITESPACE? (COMMA WHITESPACE? relationDefTypeRestriction WHITESPACE?)* RPRACKET;
-relationDefRewrite: rewriteComputedusersetName=identifier (WHITESPACE FROM WHITESPACE rewriteTuplesetName=identifier)?;
+relationDefRewrite: rewriteComputedusersetName=extended_identifier (WHITESPACE FROM WHITESPACE rewriteTuplesetName=extended_identifier)?;
 
 relationDefTypeRestriction: NEWLINE? (
     relationDefTypeRestrictionBase
     | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE conditionName)
     ) NEWLINE?;
-relationDefTypeRestrictionBase: relationDefTypeRestrictionType=identifier
+relationDefTypeRestrictionBase: relationDefTypeRestrictionType=extended_identifier
     ((COLON relationDefTypeRestrictionWildcard=STAR)
-     | (HASH relationDefTypeRestrictionRelation=identifier))?;
+     | (HASH relationDefTypeRestrictionRelation=extended_identifier))?;
 
 // Conditions
 conditions: condition*;
@@ -65,6 +65,8 @@ parameterType: CONDITION_PARAM_TYPE | (CONDITION_PARAM_CONTAINER LESS CONDITION_
 multiLineComment: HASH (~NEWLINE)* (NEWLINE multiLineComment)?;
 
 identifier: MODEL | SCHEMA | TYPE | RELATION | IDENTIFIER | MODULE | EXTEND;
+
+extended_identifier: identifier | EXTENDED_IDENTIFIER;
 
 conditionExpression: ((
 IDENTIFIER |

@@ -17,6 +17,7 @@ import OpenFGAParser, {
   ConditionExpressionContext,
   ConditionParameterContext,
   MixinContext,
+  MixinDeclarationContext,
   MixinsContext,
   ModelHeaderContext,
   ModuleHeaderContext,
@@ -94,7 +95,7 @@ interface StackRelation {
 
 interface Mixin {
   name: string;
-  relations: {[key: string]: Userset};
+  relations: Map<string, Partial<Relation>>;
 }
 
 /**
@@ -195,7 +196,7 @@ class OpenFgaDslListener extends OpenFGAListener {
   };
 
   enterMixins = (ctx: MixinsContext) => {
-    this.mixins = new Map()
+    this.mixins = new Map();
   }
 
   exitMixins = () => {
@@ -204,10 +205,10 @@ class OpenFgaDslListener extends OpenFGAListener {
   enterMixin = (ctx: MixinContext) => {
     const mixin: Mixin = {
       name: ctx.mixinName().getText(),
-      relations: {}
+      relations: new Map()
     }
 
-    this.mixins.set(mixin.name, mixin)   
+    this.mixins.set(mixin.name, mixin);
     this.currentMixin = mixin;
   }
 
@@ -215,6 +216,36 @@ class OpenFgaDslListener extends OpenFGAListener {
     this.currentMixin = undefined;
     console.log(this.mixins);
     console.log(this.mixins.get("foo")?.relations)
+  }
+
+  // include foo
+  enterMixinDeclaration = (ctx: MixinDeclarationContext) => {
+    const mixinName = ctx.mixinName().getText();
+    const mixin = this.mixins.get(mixinName);
+
+    if (!mixin) {
+      ctx.parser?.notifyErrorListeners(`mixin '${mixinName}' is not defined`, ctx.mixinName().start, undefined);
+    }
+
+    if (mixin?.relations) {
+      mixin?.relations.forEach((relation, relationName) => {
+        const relationDef = parseExpression(relation.rewrites, relation.operator);
+
+        if (relationDef) {
+          this.currentTypeDef!.relations![relationName] = relationDef;
+          const directlyRelatedUserTypes = relation.typeInfo?.directly_related_user_types;
+
+          this.currentTypeDef!.metadata!.relations![relationName] = {
+            directly_related_user_types: directlyRelatedUserTypes,
+          };
+
+          // Only add the module name for a relation when we're parsing an extended type
+          if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {
+            this.currentTypeDef!.metadata!.relations![relationName].module = this.moduleName;
+          }
+        }
+      });
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -239,22 +270,22 @@ class OpenFgaDslListener extends OpenFGAListener {
 
     const relationName = ctx.relationName().getText();
     const rewrites = this.currentRelation?.rewrites;
-
     const relationDef = parseExpression(rewrites, this.currentRelation?.operator);
 
     if (relationDef) {
       if (this.currentMixin) {
-        if (this.currentMixin.relations[relationName]) {
-          // Throw error if same named relation occurs more than once in a relationship definition block
+        if (this.currentMixin.relations.has(relationName)) {
+          // Throw error if same named relation occurs more than once in a mixin block
           ctx.parser?.notifyErrorListeners(
-            `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
+            `'${relationName}' is already defined in mixin '${this.currentMixin.name}'`,
             ctx.relationName().start,
             undefined,
           );
         }
 
-        this.currentMixin.relations[relationName] = relationDef;
-
+        if (this.currentRelation) {
+          this.currentMixin.relations.set(relationName, this.currentRelation);
+        }
       } else if (this.currentTypeDef) {
         if (this.currentTypeDef!.relations![relationName]) {
           // Throw error if same named relation occurs more than once in a relationship definition block

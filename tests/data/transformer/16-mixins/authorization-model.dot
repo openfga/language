@@ -1,0 +1,57 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#allowed"];
+2 [label=user];
+3 [label="document#blocked"];
+4 [label="document#relation1"];
+5 [label=exclusion];
+6 [label=intersection];
+7 [label="document#relation2"];
+8 [label=intersection];
+9 [label=exclusion];
+10 [label="document#relation3"];
+11 [label=union];
+12 [label="user:*"];
+13 [label="user#follower"];
+14 [label=exclusion];
+15 [label=intersection];
+16 [label="document#relation4"];
+17 [label=exclusion];
+18 [label=union];
+19 [label=intersection];
+
+// Edge definitions.
+1 -> 6;
+1 -> 9;
+2 -> 1 [label=direct];
+2 -> 3 [label=direct];
+2 -> 6 [label=direct];
+2 -> 8 [label=direct];
+2 -> 11 [label=direct];
+2 -> 18 [label=direct];
+3 -> 5;
+3 -> 9;
+3 -> 14;
+4 -> 15;
+4 -> 19;
+5 -> 4;
+6 -> 5;
+7 -> 15;
+7 -> 19;
+8 -> 7;
+9 -> 8;
+10 -> 17;
+11 -> 10;
+12 -> 11 [label=direct];
+13 -> 11 [label=direct];
+14 -> 11;
+15 -> 14;
+17 -> 16;
+18 -> 17;
+19 -> 18;
+}

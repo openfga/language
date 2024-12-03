@@ -81,30 +81,31 @@ export default class OpenFGAParser extends Parser {
 	public static readonly RULE_moduleHeader = 2;
 	public static readonly RULE_typeDefs = 3;
 	public static readonly RULE_typeDef = 4;
-	public static readonly RULE_relationDeclaration = 5;
-	public static readonly RULE_relationName = 6;
-	public static readonly RULE_relationDef = 7;
-	public static readonly RULE_relationDefNoDirect = 8;
-	public static readonly RULE_relationDefPartials = 9;
-	public static readonly RULE_relationDefGrouping = 10;
-	public static readonly RULE_relationRecurse = 11;
-	public static readonly RULE_relationRecurseNoDirect = 12;
-	public static readonly RULE_relationDefDirectAssignment = 13;
-	public static readonly RULE_relationDefRewrite = 14;
-	public static readonly RULE_relationDefTypeRestriction = 15;
-	public static readonly RULE_relationDefTypeRestrictionBase = 16;
-	public static readonly RULE_conditions = 17;
-	public static readonly RULE_condition = 18;
-	public static readonly RULE_conditionName = 19;
-	public static readonly RULE_conditionParameter = 20;
-	public static readonly RULE_parameterName = 21;
-	public static readonly RULE_parameterType = 22;
-	public static readonly RULE_mixins = 23;
-	public static readonly RULE_mixin = 24;
-	public static readonly RULE_mixinName = 25;
-	public static readonly RULE_multiLineComment = 26;
-	public static readonly RULE_identifier = 27;
-	public static readonly RULE_conditionExpression = 28;
+	public static readonly RULE_mixinDeclaration = 5;
+	public static readonly RULE_relationDeclaration = 6;
+	public static readonly RULE_relationName = 7;
+	public static readonly RULE_relationDef = 8;
+	public static readonly RULE_relationDefNoDirect = 9;
+	public static readonly RULE_relationDefPartials = 10;
+	public static readonly RULE_relationDefGrouping = 11;
+	public static readonly RULE_relationRecurse = 12;
+	public static readonly RULE_relationRecurseNoDirect = 13;
+	public static readonly RULE_relationDefDirectAssignment = 14;
+	public static readonly RULE_relationDefRewrite = 15;
+	public static readonly RULE_relationDefTypeRestriction = 16;
+	public static readonly RULE_relationDefTypeRestrictionBase = 17;
+	public static readonly RULE_conditions = 18;
+	public static readonly RULE_condition = 19;
+	public static readonly RULE_conditionName = 20;
+	public static readonly RULE_conditionParameter = 21;
+	public static readonly RULE_parameterName = 22;
+	public static readonly RULE_parameterType = 23;
+	public static readonly RULE_mixins = 24;
+	public static readonly RULE_mixin = 25;
+	public static readonly RULE_mixinName = 26;
+	public static readonly RULE_multiLineComment = 27;
+	public static readonly RULE_identifier = 28;
+	public static readonly RULE_conditionExpression = 29;
 	public static readonly literalNames: (string | null)[] = [ null, "':'", 
                                                             "','", "'<'", 
                                                             "'>'", "'['", 
@@ -174,13 +175,13 @@ export default class OpenFGAParser extends Parser {
                                                              "CONDITION_PARAM_TYPE" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"main", "modelHeader", "moduleHeader", "typeDefs", "typeDef", "relationDeclaration", 
-		"relationName", "relationDef", "relationDefNoDirect", "relationDefPartials", 
-		"relationDefGrouping", "relationRecurse", "relationRecurseNoDirect", "relationDefDirectAssignment", 
-		"relationDefRewrite", "relationDefTypeRestriction", "relationDefTypeRestrictionBase", 
-		"conditions", "condition", "conditionName", "conditionParameter", "parameterName", 
-		"parameterType", "mixins", "mixin", "mixinName", "multiLineComment", "identifier", 
-		"conditionExpression",
+		"main", "modelHeader", "moduleHeader", "typeDefs", "typeDef", "mixinDeclaration", 
+		"relationDeclaration", "relationName", "relationDef", "relationDefNoDirect", 
+		"relationDefPartials", "relationDefGrouping", "relationRecurse", "relationRecurseNoDirect", 
+		"relationDefDirectAssignment", "relationDefRewrite", "relationDefTypeRestriction", 
+		"relationDefTypeRestrictionBase", "conditions", "condition", "conditionName", 
+		"conditionParameter", "parameterName", "parameterType", "mixins", "mixin", 
+		"mixinName", "multiLineComment", "identifier", "conditionExpression",
 	];
 	public get grammarFileName(): string { return "OpenFGAParser.g4"; }
 	public get literalNames(): (string | null)[] { return OpenFGAParser.literalNames; }
@@ -204,99 +205,99 @@ export default class OpenFGAParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 59;
+			this.state = 61;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 58;
+				this.state = 60;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 62;
+			this.state = 64;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 61;
+				this.state = 63;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 66;
+			this.state = 68;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 2, this._ctx) ) {
 			case 1:
 				{
-				this.state = 64;
+				this.state = 66;
 				this.modelHeader();
 				}
 				break;
 			case 2:
 				{
-				this.state = 65;
+				this.state = 67;
 				this.moduleHeader();
 				}
 				break;
 			}
-			this.state = 69;
+			this.state = 71;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 3, this._ctx) ) {
 			case 1:
 				{
-				this.state = 68;
+				this.state = 70;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 				break;
 			}
-			this.state = 71;
-			this.mixins();
 			this.state = 73;
+			this.mixins();
+			this.state = 75;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 4, this._ctx) ) {
 			case 1:
 				{
-				this.state = 72;
-				this.match(OpenFGAParser.NEWLINE);
-				}
-				break;
-			}
-			this.state = 76;
-			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 5, this._ctx) ) {
-			case 1:
-				{
-				this.state = 75;
+				this.state = 74;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 				break;
 			}
 			this.state = 78;
-			this.typeDefs();
-			this.state = 80;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 6, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 5, this._ctx) ) {
 			case 1:
 				{
-				this.state = 79;
+				this.state = 77;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 				break;
 			}
+			this.state = 80;
+			this.typeDefs();
 			this.state = 82;
-			this.conditions();
+			this._errHandler.sync(this);
+			switch ( this._interp.adaptivePredict(this._input, 6, this._ctx) ) {
+			case 1:
+				{
+				this.state = 81;
+				this.match(OpenFGAParser.NEWLINE);
+				}
+				break;
+			}
 			this.state = 84;
+			this.conditions();
+			this.state = 86;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 83;
+				this.state = 85;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 86;
+			this.state = 88;
 			this.match(OpenFGAParser.EOF);
 			}
 		}
@@ -322,34 +323,34 @@ export default class OpenFGAParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 91;
+			this.state = 93;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===11) {
 				{
-				this.state = 88;
+				this.state = 90;
 				this.multiLineComment();
-				this.state = 89;
+				this.state = 91;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 93;
-			this.match(OpenFGAParser.MODEL);
-			this.state = 94;
-			this.match(OpenFGAParser.NEWLINE);
 			this.state = 95;
-			this.match(OpenFGAParser.SCHEMA);
+			this.match(OpenFGAParser.MODEL);
 			this.state = 96;
-			this.match(OpenFGAParser.WHITESPACE);
+			this.match(OpenFGAParser.NEWLINE);
 			this.state = 97;
-			localctx._schemaVersion = this.match(OpenFGAParser.SCHEMA_VERSION);
+			this.match(OpenFGAParser.SCHEMA);
+			this.state = 98;
+			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 99;
+			localctx._schemaVersion = this.match(OpenFGAParser.SCHEMA_VERSION);
+			this.state = 101;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 98;
+				this.state = 100;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
@@ -378,30 +379,30 @@ export default class OpenFGAParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 104;
+			this.state = 106;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===11) {
 				{
-				this.state = 101;
+				this.state = 103;
 				this.multiLineComment();
-				this.state = 102;
+				this.state = 104;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 106;
-			this.match(OpenFGAParser.MODULE);
-			this.state = 107;
-			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 108;
-			localctx._moduleName = this.identifier();
+			this.match(OpenFGAParser.MODULE);
+			this.state = 109;
+			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 110;
+			localctx._moduleName = this.identifier();
+			this.state = 112;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 109;
+				this.state = 111;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
@@ -430,19 +431,19 @@ export default class OpenFGAParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 115;
+			this.state = 117;
 			this._errHandler.sync(this);
 			_alt = this._interp.adaptivePredict(this._input, 12, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 112;
+					this.state = 114;
 					this.typeDef();
 					}
 					}
 				}
-				this.state = 117;
+				this.state = 119;
 				this._errHandler.sync(this);
 				_alt = this._interp.adaptivePredict(this._input, 12, this._ctx);
 			}
@@ -471,66 +472,78 @@ export default class OpenFGAParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 120;
+			this.state = 122;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 13, this._ctx) ) {
 			case 1:
 				{
-				this.state = 118;
+				this.state = 120;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 119;
+				this.state = 121;
 				this.multiLineComment();
 				}
 				break;
 			}
-			this.state = 122;
+			this.state = 124;
 			this.match(OpenFGAParser.NEWLINE);
-			this.state = 125;
+			this.state = 127;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===20) {
 				{
-				this.state = 123;
+				this.state = 125;
 				this.match(OpenFGAParser.EXTEND);
-				this.state = 124;
+				this.state = 126;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 127;
-			this.match(OpenFGAParser.TYPE);
-			this.state = 128;
-			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 129;
+			this.match(OpenFGAParser.TYPE);
+			this.state = 130;
+			this.match(OpenFGAParser.WHITESPACE);
+			this.state = 131;
 			localctx._typeName = this.identifier();
-			this.state = 137;
+			this.state = 140;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 16, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 17, this._ctx) ) {
 			case 1:
 				{
-				this.state = 130;
+				this.state = 132;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 131;
-				this.match(OpenFGAParser.RELATIONS);
 				this.state = 133;
+				this.match(OpenFGAParser.RELATIONS);
+				this.state = 136;
 				this._errHandler.sync(this);
 				_alt = 1;
 				do {
 					switch (_alt) {
 					case 1:
 						{
-						{
-						this.state = 132;
-						this.relationDeclaration();
+						this.state = 136;
+						this._errHandler.sync(this);
+						switch ( this._interp.adaptivePredict(this._input, 15, this._ctx) ) {
+						case 1:
+							{
+							this.state = 134;
+							this.mixinDeclaration();
+							}
+							break;
+						case 2:
+							{
+							this.state = 135;
+							this.relationDeclaration();
+							}
+							break;
 						}
 						}
 						break;
 					default:
 						throw new NoViableAltException(this);
 					}
-					this.state = 135;
+					this.state = 138;
 					this._errHandler.sync(this);
-					_alt = this._interp.adaptivePredict(this._input, 15, this._ctx);
+					_alt = this._interp.adaptivePredict(this._input, 16, this._ctx);
 				} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
 				}
 				break;
@@ -552,57 +565,90 @@ export default class OpenFGAParser extends Parser {
 		return localctx;
 	}
 	// @RuleVersion(0)
+	public mixinDeclaration(): MixinDeclarationContext {
+		let localctx: MixinDeclarationContext = new MixinDeclarationContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 10, OpenFGAParser.RULE_mixinDeclaration);
+		try {
+			this.enterOuterAlt(localctx, 1);
+			{
+			{
+			this.state = 142;
+			this.match(OpenFGAParser.NEWLINE);
+			this.state = 143;
+			this.match(OpenFGAParser.INCLUDE);
+			this.state = 144;
+			this.match(OpenFGAParser.WHITESPACE);
+			this.state = 145;
+			this.mixinName();
+			}
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return localctx;
+	}
+	// @RuleVersion(0)
 	public relationDeclaration(): RelationDeclarationContext {
 		let localctx: RelationDeclarationContext = new RelationDeclarationContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 10, OpenFGAParser.RULE_relationDeclaration);
+		this.enterRule(localctx, 12, OpenFGAParser.RULE_relationDeclaration);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 141;
+			this.state = 149;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 17, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 18, this._ctx) ) {
 			case 1:
 				{
-				this.state = 139;
+				this.state = 147;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 140;
+				this.state = 148;
 				this.multiLineComment();
 				}
 				break;
 			}
-			this.state = 143;
+			this.state = 151;
 			this.match(OpenFGAParser.NEWLINE);
-			this.state = 144;
+			this.state = 152;
 			this.match(OpenFGAParser.DEFINE);
-			this.state = 145;
+			this.state = 153;
 			this.match(OpenFGAParser.WHITESPACE);
-			this.state = 146;
+			this.state = 154;
 			this.relationName();
-			this.state = 148;
+			this.state = 156;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 147;
+				this.state = 155;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 150;
+			this.state = 158;
 			this.match(OpenFGAParser.COLON);
-			this.state = 152;
+			this.state = 160;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 151;
+				this.state = 159;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
 			{
-			this.state = 154;
+			this.state = 162;
 			this.relationDef();
 			}
 			}
@@ -624,11 +670,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationName(): RelationNameContext {
 		let localctx: RelationNameContext = new RelationNameContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 12, OpenFGAParser.RULE_relationName);
+		this.enterRule(localctx, 14, OpenFGAParser.RULE_relationName);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 156;
+			this.state = 164;
 			this.identifier();
 			}
 		}
@@ -649,16 +695,16 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDef(): RelationDefContext {
 		let localctx: RelationDefContext = new RelationDefContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 14, OpenFGAParser.RULE_relationDef);
+		this.enterRule(localctx, 16, OpenFGAParser.RULE_relationDef);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 161;
+			this.state = 169;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 5:
 				{
-				this.state = 158;
+				this.state = 166;
 				this.relationDefDirectAssignment();
 				}
 				break;
@@ -670,25 +716,25 @@ export default class OpenFGAParser extends Parser {
 			case 21:
 			case 26:
 				{
-				this.state = 159;
+				this.state = 167;
 				this.relationDefGrouping();
 				}
 				break;
 			case 7:
 				{
-				this.state = 160;
+				this.state = 168;
 				this.relationRecurse();
 				}
 				break;
 			default:
 				throw new NoViableAltException(this);
 			}
-			this.state = 164;
+			this.state = 172;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 21, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 22, this._ctx) ) {
 			case 1:
 				{
-				this.state = 163;
+				this.state = 171;
 				this.relationDefPartials();
 				}
 				break;
@@ -712,11 +758,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefNoDirect(): RelationDefNoDirectContext {
 		let localctx: RelationDefNoDirectContext = new RelationDefNoDirectContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 16, OpenFGAParser.RULE_relationDefNoDirect);
+		this.enterRule(localctx, 18, OpenFGAParser.RULE_relationDefNoDirect);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 168;
+			this.state = 176;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 10:
@@ -727,25 +773,25 @@ export default class OpenFGAParser extends Parser {
 			case 21:
 			case 26:
 				{
-				this.state = 166;
+				this.state = 174;
 				this.relationDefGrouping();
 				}
 				break;
 			case 7:
 				{
-				this.state = 167;
+				this.state = 175;
 				this.relationRecurseNoDirect();
 				}
 				break;
 			default:
 				throw new NoViableAltException(this);
 			}
-			this.state = 171;
+			this.state = 179;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 23, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 24, this._ctx) ) {
 			case 1:
 				{
-				this.state = 170;
+				this.state = 178;
 				this.relationDefPartials();
 				}
 				break;
@@ -769,16 +815,16 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefPartials(): RelationDefPartialsContext {
 		let localctx: RelationDefPartialsContext = new RelationDefPartialsContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 18, OpenFGAParser.RULE_relationDefPartials);
+		this.enterRule(localctx, 20, OpenFGAParser.RULE_relationDefPartials);
 		try {
 			let _alt: number;
-			this.state = 202;
+			this.state = 210;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 29, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 30, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 180;
+				this.state = 188;
 				this._errHandler.sync(this);
 				_alt = 1;
 				do {
@@ -786,13 +832,13 @@ export default class OpenFGAParser extends Parser {
 					case 1:
 						{
 						{
-						this.state = 173;
+						this.state = 181;
 						this.match(OpenFGAParser.WHITESPACE);
-						this.state = 174;
+						this.state = 182;
 						this.match(OpenFGAParser.OR);
-						this.state = 175;
+						this.state = 183;
 						this.match(OpenFGAParser.WHITESPACE);
-						this.state = 178;
+						this.state = 186;
 						this._errHandler.sync(this);
 						switch (this._input.LA(1)) {
 						case 10:
@@ -803,13 +849,13 @@ export default class OpenFGAParser extends Parser {
 						case 21:
 						case 26:
 							{
-							this.state = 176;
+							this.state = 184;
 							this.relationDefGrouping();
 							}
 							break;
 						case 7:
 							{
-							this.state = 177;
+							this.state = 185;
 							this.relationRecurseNoDirect();
 							}
 							break;
@@ -822,16 +868,16 @@ export default class OpenFGAParser extends Parser {
 					default:
 						throw new NoViableAltException(this);
 					}
-					this.state = 182;
+					this.state = 190;
 					this._errHandler.sync(this);
-					_alt = this._interp.adaptivePredict(this._input, 25, this._ctx);
+					_alt = this._interp.adaptivePredict(this._input, 26, this._ctx);
 				} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
 				}
 				break;
 			case 2:
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 191;
+				this.state = 199;
 				this._errHandler.sync(this);
 				_alt = 1;
 				do {
@@ -839,13 +885,13 @@ export default class OpenFGAParser extends Parser {
 					case 1:
 						{
 						{
-						this.state = 184;
+						this.state = 192;
 						this.match(OpenFGAParser.WHITESPACE);
-						this.state = 185;
+						this.state = 193;
 						this.match(OpenFGAParser.AND);
-						this.state = 186;
+						this.state = 194;
 						this.match(OpenFGAParser.WHITESPACE);
-						this.state = 189;
+						this.state = 197;
 						this._errHandler.sync(this);
 						switch (this._input.LA(1)) {
 						case 10:
@@ -856,13 +902,13 @@ export default class OpenFGAParser extends Parser {
 						case 21:
 						case 26:
 							{
-							this.state = 187;
+							this.state = 195;
 							this.relationDefGrouping();
 							}
 							break;
 						case 7:
 							{
-							this.state = 188;
+							this.state = 196;
 							this.relationRecurseNoDirect();
 							}
 							break;
@@ -875,9 +921,9 @@ export default class OpenFGAParser extends Parser {
 					default:
 						throw new NoViableAltException(this);
 					}
-					this.state = 193;
+					this.state = 201;
 					this._errHandler.sync(this);
-					_alt = this._interp.adaptivePredict(this._input, 27, this._ctx);
+					_alt = this._interp.adaptivePredict(this._input, 28, this._ctx);
 				} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
 				}
 				break;
@@ -885,13 +931,13 @@ export default class OpenFGAParser extends Parser {
 				this.enterOuterAlt(localctx, 3);
 				{
 				{
-				this.state = 195;
+				this.state = 203;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 196;
+				this.state = 204;
 				this.match(OpenFGAParser.BUT_NOT);
-				this.state = 197;
+				this.state = 205;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 200;
+				this.state = 208;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
 				case 10:
@@ -902,13 +948,13 @@ export default class OpenFGAParser extends Parser {
 				case 21:
 				case 26:
 					{
-					this.state = 198;
+					this.state = 206;
 					this.relationDefGrouping();
 					}
 					break;
 				case 7:
 					{
-					this.state = 199;
+					this.state = 207;
 					this.relationRecurseNoDirect();
 					}
 					break;
@@ -937,11 +983,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefGrouping(): RelationDefGroupingContext {
 		let localctx: RelationDefGroupingContext = new RelationDefGroupingContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 20, OpenFGAParser.RULE_relationDefGrouping);
+		this.enterRule(localctx, 22, OpenFGAParser.RULE_relationDefGrouping);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 204;
+			this.state = 212;
 			this.relationDefRewrite();
 			}
 		}
@@ -962,58 +1008,58 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationRecurse(): RelationRecurseContext {
 		let localctx: RelationRecurseContext = new RelationRecurseContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 22, OpenFGAParser.RULE_relationRecurse);
+		this.enterRule(localctx, 24, OpenFGAParser.RULE_relationRecurse);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 206;
+			this.state = 214;
 			this.match(OpenFGAParser.LPAREN);
-			this.state = 210;
+			this.state = 218;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===9) {
 				{
 				{
-				this.state = 207;
+				this.state = 215;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 				}
-				this.state = 212;
+				this.state = 220;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 215;
+			this.state = 223;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 31, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 32, this._ctx) ) {
 			case 1:
 				{
-				this.state = 213;
+				this.state = 221;
 				this.relationDef();
 				}
 				break;
 			case 2:
 				{
-				this.state = 214;
+				this.state = 222;
 				this.relationRecurseNoDirect();
 				}
 				break;
 			}
-			this.state = 220;
+			this.state = 228;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===9) {
 				{
 				{
-				this.state = 217;
+				this.state = 225;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 				}
-				this.state = 222;
+				this.state = 230;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 223;
+			this.state = 231;
 			this.match(OpenFGAParser.RPAREN);
 			}
 		}
@@ -1034,58 +1080,58 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationRecurseNoDirect(): RelationRecurseNoDirectContext {
 		let localctx: RelationRecurseNoDirectContext = new RelationRecurseNoDirectContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 24, OpenFGAParser.RULE_relationRecurseNoDirect);
+		this.enterRule(localctx, 26, OpenFGAParser.RULE_relationRecurseNoDirect);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 225;
+			this.state = 233;
 			this.match(OpenFGAParser.LPAREN);
-			this.state = 229;
+			this.state = 237;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===9) {
 				{
 				{
-				this.state = 226;
+				this.state = 234;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 				}
-				this.state = 231;
+				this.state = 239;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 234;
+			this.state = 242;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 34, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 35, this._ctx) ) {
 			case 1:
 				{
-				this.state = 232;
+				this.state = 240;
 				this.relationDefNoDirect();
 				}
 				break;
 			case 2:
 				{
-				this.state = 233;
+				this.state = 241;
 				this.relationRecurseNoDirect();
 				}
 				break;
 			}
-			this.state = 239;
+			this.state = 247;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===9) {
 				{
 				{
-				this.state = 236;
+				this.state = 244;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 				}
-				this.state = 241;
+				this.state = 249;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 242;
+			this.state = 250;
 			this.match(OpenFGAParser.RPAREN);
 			}
 		}
@@ -1106,72 +1152,72 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefDirectAssignment(): RelationDefDirectAssignmentContext {
 		let localctx: RelationDefDirectAssignmentContext = new RelationDefDirectAssignmentContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 26, OpenFGAParser.RULE_relationDefDirectAssignment);
+		this.enterRule(localctx, 28, OpenFGAParser.RULE_relationDefDirectAssignment);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 244;
+			this.state = 252;
 			this.match(OpenFGAParser.LBRACKET);
-			this.state = 246;
+			this.state = 254;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 245;
+				this.state = 253;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 248;
+			this.state = 256;
 			this.relationDefTypeRestriction();
-			this.state = 250;
+			this.state = 258;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 249;
+				this.state = 257;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 262;
+			this.state = 270;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===2) {
 				{
 				{
-				this.state = 252;
+				this.state = 260;
 				this.match(OpenFGAParser.COMMA);
-				this.state = 254;
+				this.state = 262;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if (_la===9) {
 					{
-					this.state = 253;
+					this.state = 261;
 					this.match(OpenFGAParser.WHITESPACE);
 					}
 				}
 
-				this.state = 256;
-				this.relationDefTypeRestriction();
-				this.state = 258;
-				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-				if (_la===9) {
-					{
-					this.state = 257;
-					this.match(OpenFGAParser.WHITESPACE);
-					}
-				}
-
-				}
-				}
 				this.state = 264;
+				this.relationDefTypeRestriction();
+				this.state = 266;
+				this._errHandler.sync(this);
+				_la = this._input.LA(1);
+				if (_la===9) {
+					{
+					this.state = 265;
+					this.match(OpenFGAParser.WHITESPACE);
+					}
+				}
+
+				}
+				}
+				this.state = 272;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 265;
+			this.state = 273;
 			this.match(OpenFGAParser.RPRACKET);
 			}
 		}
@@ -1192,24 +1238,24 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefRewrite(): RelationDefRewriteContext {
 		let localctx: RelationDefRewriteContext = new RelationDefRewriteContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 28, OpenFGAParser.RULE_relationDefRewrite);
+		this.enterRule(localctx, 30, OpenFGAParser.RULE_relationDefRewrite);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 267;
+			this.state = 275;
 			localctx._rewriteComputedusersetName = this.identifier();
-			this.state = 272;
+			this.state = 280;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 41, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 42, this._ctx) ) {
 			case 1:
 				{
-				this.state = 268;
+				this.state = 276;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 269;
+				this.state = 277;
 				this.match(OpenFGAParser.FROM);
-				this.state = 270;
+				this.state = 278;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 271;
+				this.state = 279;
 				localctx._rewriteTuplesetName = this.identifier();
 				}
 				break;
@@ -1233,53 +1279,53 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefTypeRestriction(): RelationDefTypeRestrictionContext {
 		let localctx: RelationDefTypeRestrictionContext = new RelationDefTypeRestrictionContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 30, OpenFGAParser.RULE_relationDefTypeRestriction);
+		this.enterRule(localctx, 32, OpenFGAParser.RULE_relationDefTypeRestriction);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 275;
+			this.state = 283;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 274;
+				this.state = 282;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 284;
+			this.state = 292;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 43, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 44, this._ctx) ) {
 			case 1:
 				{
-				this.state = 277;
+				this.state = 285;
 				this.relationDefTypeRestrictionBase();
 				}
 				break;
 			case 2:
 				{
 				{
-				this.state = 278;
+				this.state = 286;
 				this.relationDefTypeRestrictionBase();
-				this.state = 279;
+				this.state = 287;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 280;
+				this.state = 288;
 				this.match(OpenFGAParser.KEYWORD_WITH);
-				this.state = 281;
+				this.state = 289;
 				this.match(OpenFGAParser.WHITESPACE);
-				this.state = 282;
+				this.state = 290;
 				this.conditionName();
 				}
 				}
 				break;
 			}
-			this.state = 287;
+			this.state = 295;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 286;
+				this.state = 294;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
@@ -1303,21 +1349,21 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public relationDefTypeRestrictionBase(): RelationDefTypeRestrictionBaseContext {
 		let localctx: RelationDefTypeRestrictionBaseContext = new RelationDefTypeRestrictionBaseContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 32, OpenFGAParser.RULE_relationDefTypeRestrictionBase);
+		this.enterRule(localctx, 34, OpenFGAParser.RULE_relationDefTypeRestrictionBase);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 289;
+			this.state = 297;
 			localctx._relationDefTypeRestrictionType = this.identifier();
-			this.state = 294;
+			this.state = 302;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 1:
 				{
 				{
-				this.state = 290;
+				this.state = 298;
 				this.match(OpenFGAParser.COLON);
-				this.state = 291;
+				this.state = 299;
 				localctx._relationDefTypeRestrictionWildcard = this.match(OpenFGAParser.STAR);
 				}
 				}
@@ -1325,9 +1371,9 @@ export default class OpenFGAParser extends Parser {
 			case 11:
 				{
 				{
-				this.state = 292;
+				this.state = 300;
 				this.match(OpenFGAParser.HASH);
-				this.state = 293;
+				this.state = 301;
 				localctx._relationDefTypeRestrictionRelation = this.identifier();
 				}
 				}
@@ -1359,26 +1405,26 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public conditions(): ConditionsContext {
 		let localctx: ConditionsContext = new ConditionsContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 34, OpenFGAParser.RULE_conditions);
+		this.enterRule(localctx, 36, OpenFGAParser.RULE_conditions);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 299;
+			this.state = 307;
 			this._errHandler.sync(this);
-			_alt = this._interp.adaptivePredict(this._input, 46, this._ctx);
+			_alt = this._interp.adaptivePredict(this._input, 47, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 296;
+					this.state = 304;
 					this.condition();
 					}
 					}
 				}
-				this.state = 301;
+				this.state = 309;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 46, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 47, this._ctx);
 			}
 			}
 		}
@@ -1399,55 +1445,31 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public condition(): ConditionContext {
 		let localctx: ConditionContext = new ConditionContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 36, OpenFGAParser.RULE_condition);
+		this.enterRule(localctx, 38, OpenFGAParser.RULE_condition);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 304;
+			this.state = 312;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 47, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 48, this._ctx) ) {
 			case 1:
 				{
-				this.state = 302;
+				this.state = 310;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 303;
+				this.state = 311;
 				this.multiLineComment();
 				}
 				break;
 			}
-			this.state = 306;
+			this.state = 314;
 			this.match(OpenFGAParser.NEWLINE);
-			this.state = 307;
-			this.match(OpenFGAParser.CONDITION);
-			this.state = 308;
-			this.match(OpenFGAParser.WHITESPACE);
-			this.state = 309;
-			this.conditionName();
-			this.state = 311;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la===9) {
-				{
-				this.state = 310;
-				this.match(OpenFGAParser.WHITESPACE);
-				}
-			}
-
-			this.state = 313;
-			this.match(OpenFGAParser.LPAREN);
 			this.state = 315;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la===9) {
-				{
-				this.state = 314;
-				this.match(OpenFGAParser.WHITESPACE);
-				}
-			}
-
+			this.match(OpenFGAParser.CONDITION);
+			this.state = 316;
+			this.match(OpenFGAParser.WHITESPACE);
 			this.state = 317;
-			this.conditionParameter();
+			this.conditionName();
 			this.state = 319;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
@@ -1458,99 +1480,123 @@ export default class OpenFGAParser extends Parser {
 				}
 			}
 
-			this.state = 331;
+			this.state = 321;
+			this.match(OpenFGAParser.LPAREN);
+			this.state = 323;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la===9) {
+				{
+				this.state = 322;
+				this.match(OpenFGAParser.WHITESPACE);
+				}
+			}
+
+			this.state = 325;
+			this.conditionParameter();
+			this.state = 327;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la===9) {
+				{
+				this.state = 326;
+				this.match(OpenFGAParser.WHITESPACE);
+				}
+			}
+
+			this.state = 339;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la===2) {
 				{
 				{
-				this.state = 321;
+				this.state = 329;
 				this.match(OpenFGAParser.COMMA);
-				this.state = 323;
+				this.state = 331;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if (_la===9) {
 					{
-					this.state = 322;
+					this.state = 330;
 					this.match(OpenFGAParser.WHITESPACE);
 					}
 				}
 
-				this.state = 325;
-				this.conditionParameter();
-				this.state = 327;
-				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-				if (_la===9) {
-					{
-					this.state = 326;
-					this.match(OpenFGAParser.WHITESPACE);
-					}
-				}
-
-				}
-				}
 				this.state = 333;
+				this.conditionParameter();
+				this.state = 335;
+				this._errHandler.sync(this);
+				_la = this._input.LA(1);
+				if (_la===9) {
+					{
+					this.state = 334;
+					this.match(OpenFGAParser.WHITESPACE);
+					}
+				}
+
+				}
+				}
+				this.state = 341;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 335;
+			this.state = 343;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
-				{
-				this.state = 334;
-				this.match(OpenFGAParser.NEWLINE);
-				}
-			}
-
-			this.state = 337;
-			this.match(OpenFGAParser.RPAREN);
-			this.state = 339;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la===9) {
-				{
-				this.state = 338;
-				this.match(OpenFGAParser.WHITESPACE);
-				}
-			}
-
-			this.state = 341;
-			this.match(OpenFGAParser.LBRACE);
-			this.state = 343;
-			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 56, this._ctx) ) {
-			case 1:
 				{
 				this.state = 342;
 				this.match(OpenFGAParser.NEWLINE);
 				}
-				break;
 			}
-			this.state = 346;
+
+			this.state = 345;
+			this.match(OpenFGAParser.RPAREN);
+			this.state = 347;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la===9) {
+				{
+				this.state = 346;
+				this.match(OpenFGAParser.WHITESPACE);
+				}
+			}
+
+			this.state = 349;
+			this.match(OpenFGAParser.LBRACE);
+			this.state = 351;
 			this._errHandler.sync(this);
 			switch ( this._interp.adaptivePredict(this._input, 57, this._ctx) ) {
 			case 1:
 				{
-				this.state = 345;
+				this.state = 350;
+				this.match(OpenFGAParser.NEWLINE);
+				}
+				break;
+			}
+			this.state = 354;
+			this._errHandler.sync(this);
+			switch ( this._interp.adaptivePredict(this._input, 58, this._ctx) ) {
+			case 1:
+				{
+				this.state = 353;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 				break;
 			}
-			this.state = 348;
+			this.state = 356;
 			this.conditionExpression();
-			this.state = 350;
+			this.state = 358;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 349;
+				this.state = 357;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 352;
+			this.state = 360;
 			this.match(OpenFGAParser.RBRACE);
 			}
 		}
@@ -1571,11 +1617,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public conditionName(): ConditionNameContext {
 		let localctx: ConditionNameContext = new ConditionNameContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 38, OpenFGAParser.RULE_conditionName);
+		this.enterRule(localctx, 40, OpenFGAParser.RULE_conditionName);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 354;
+			this.state = 362;
 			this.match(OpenFGAParser.IDENTIFIER);
 			}
 		}
@@ -1596,46 +1642,46 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public conditionParameter(): ConditionParameterContext {
 		let localctx: ConditionParameterContext = new ConditionParameterContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 40, OpenFGAParser.RULE_conditionParameter);
+		this.enterRule(localctx, 42, OpenFGAParser.RULE_conditionParameter);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 357;
+			this.state = 365;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===56) {
 				{
-				this.state = 356;
+				this.state = 364;
 				this.match(OpenFGAParser.NEWLINE);
 				}
 			}
 
-			this.state = 359;
-			this.parameterName();
-			this.state = 361;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la===9) {
-				{
-				this.state = 360;
-				this.match(OpenFGAParser.WHITESPACE);
-				}
-			}
-
-			this.state = 363;
-			this.match(OpenFGAParser.COLON);
-			this.state = 365;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			if (_la===9) {
-				{
-				this.state = 364;
-				this.match(OpenFGAParser.WHITESPACE);
-				}
-			}
-
 			this.state = 367;
+			this.parameterName();
+			this.state = 369;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la===9) {
+				{
+				this.state = 368;
+				this.match(OpenFGAParser.WHITESPACE);
+				}
+			}
+
+			this.state = 371;
+			this.match(OpenFGAParser.COLON);
+			this.state = 373;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la===9) {
+				{
+				this.state = 372;
+				this.match(OpenFGAParser.WHITESPACE);
+				}
+			}
+
+			this.state = 375;
 			this.parameterType();
 			}
 		}
@@ -1656,11 +1702,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public parameterName(): ParameterNameContext {
 		let localctx: ParameterNameContext = new ParameterNameContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 42, OpenFGAParser.RULE_parameterName);
+		this.enterRule(localctx, 44, OpenFGAParser.RULE_parameterName);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 369;
+			this.state = 377;
 			this.match(OpenFGAParser.IDENTIFIER);
 			}
 		}
@@ -1681,15 +1727,15 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public parameterType(): ParameterTypeContext {
 		let localctx: ParameterTypeContext = new ParameterTypeContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 44, OpenFGAParser.RULE_parameterType);
+		this.enterRule(localctx, 46, OpenFGAParser.RULE_parameterType);
 		try {
-			this.state = 376;
+			this.state = 384;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 58:
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 371;
+				this.state = 379;
 				this.match(OpenFGAParser.CONDITION_PARAM_TYPE);
 				}
 				break;
@@ -1697,13 +1743,13 @@ export default class OpenFGAParser extends Parser {
 				this.enterOuterAlt(localctx, 2);
 				{
 				{
-				this.state = 372;
+				this.state = 380;
 				this.match(OpenFGAParser.CONDITION_PARAM_CONTAINER);
-				this.state = 373;
+				this.state = 381;
 				this.match(OpenFGAParser.LESS);
-				this.state = 374;
+				this.state = 382;
 				this.match(OpenFGAParser.CONDITION_PARAM_TYPE);
-				this.state = 375;
+				this.state = 383;
 				this.match(OpenFGAParser.GREATER);
 				}
 				}
@@ -1729,26 +1775,26 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public mixins(): MixinsContext {
 		let localctx: MixinsContext = new MixinsContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 46, OpenFGAParser.RULE_mixins);
+		this.enterRule(localctx, 48, OpenFGAParser.RULE_mixins);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 381;
+			this.state = 389;
 			this._errHandler.sync(this);
-			_alt = this._interp.adaptivePredict(this._input, 63, this._ctx);
+			_alt = this._interp.adaptivePredict(this._input, 64, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 378;
+					this.state = 386;
 					this.mixin();
 					}
 					}
 				}
-				this.state = 383;
+				this.state = 391;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 63, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 64, this._ctx);
 			}
 			}
 		}
@@ -1769,47 +1815,47 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public mixin(): MixinContext {
 		let localctx: MixinContext = new MixinContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 48, OpenFGAParser.RULE_mixin);
+		this.enterRule(localctx, 50, OpenFGAParser.RULE_mixin);
 		let _la: number;
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 386;
+			this.state = 394;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 64, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 65, this._ctx) ) {
 			case 1:
 				{
-				this.state = 384;
+				this.state = 392;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 385;
+				this.state = 393;
 				this.multiLineComment();
 				}
 				break;
 			}
-			this.state = 388;
+			this.state = 396;
 			this.match(OpenFGAParser.NEWLINE);
-			this.state = 389;
+			this.state = 397;
 			this.match(OpenFGAParser.MIXIN);
-			this.state = 390;
+			this.state = 398;
 			this.match(OpenFGAParser.WHITESPACE);
-			this.state = 391;
+			this.state = 399;
 			this.mixinName();
-			this.state = 393;
+			this.state = 401;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la===9) {
 				{
-				this.state = 392;
+				this.state = 400;
 				this.match(OpenFGAParser.WHITESPACE);
 				}
 			}
 
-			this.state = 395;
+			this.state = 403;
 			this.match(OpenFGAParser.NEWLINE);
-			this.state = 396;
+			this.state = 404;
 			this.match(OpenFGAParser.RELATIONS);
-			this.state = 398;
+			this.state = 406;
 			this._errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -1817,7 +1863,7 @@ export default class OpenFGAParser extends Parser {
 				case 1:
 					{
 					{
-					this.state = 397;
+					this.state = 405;
 					this.relationDeclaration();
 					}
 					}
@@ -1825,9 +1871,9 @@ export default class OpenFGAParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				this.state = 400;
+				this.state = 408;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 66, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 67, this._ctx);
 			} while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
 			}
 		}
@@ -1848,11 +1894,11 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public mixinName(): MixinNameContext {
 		let localctx: MixinNameContext = new MixinNameContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 50, OpenFGAParser.RULE_mixinName);
+		this.enterRule(localctx, 52, OpenFGAParser.RULE_mixinName);
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 402;
+			this.state = 410;
 			this.match(OpenFGAParser.IDENTIFIER);
 			}
 		}
@@ -1873,20 +1919,20 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public multiLineComment(): MultiLineCommentContext {
 		let localctx: MultiLineCommentContext = new MultiLineCommentContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 52, OpenFGAParser.RULE_multiLineComment);
+		this.enterRule(localctx, 54, OpenFGAParser.RULE_multiLineComment);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 404;
+			this.state = 412;
 			this.match(OpenFGAParser.HASH);
-			this.state = 408;
+			this.state = 416;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4294967294) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & 117440511) !== 0)) {
 				{
 				{
-				this.state = 405;
+				this.state = 413;
 				_la = this._input.LA(1);
 				if(_la<=0 || _la===56) {
 				this._errHandler.recoverInline(this);
@@ -1897,18 +1943,18 @@ export default class OpenFGAParser extends Parser {
 				}
 				}
 				}
-				this.state = 410;
+				this.state = 418;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 413;
+			this.state = 421;
 			this._errHandler.sync(this);
-			switch ( this._interp.adaptivePredict(this._input, 68, this._ctx) ) {
+			switch ( this._interp.adaptivePredict(this._input, 69, this._ctx) ) {
 			case 1:
 				{
-				this.state = 411;
+				this.state = 419;
 				this.match(OpenFGAParser.NEWLINE);
-				this.state = 412;
+				this.state = 420;
 				this.multiLineComment();
 				}
 				break;
@@ -1932,12 +1978,12 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public identifier(): IdentifierContext {
 		let localctx: IdentifierContext = new IdentifierContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 54, OpenFGAParser.RULE_identifier);
+		this.enterRule(localctx, 56, OpenFGAParser.RULE_identifier);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 415;
+			this.state = 423;
 			_la = this._input.LA(1);
 			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 70714368) !== 0))) {
 			this._errHandler.recoverInline(this);
@@ -1965,24 +2011,24 @@ export default class OpenFGAParser extends Parser {
 	// @RuleVersion(0)
 	public conditionExpression(): ConditionExpressionContext {
 		let localctx: ConditionExpressionContext = new ConditionExpressionContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 56, OpenFGAParser.RULE_conditionExpression);
+		this.enterRule(localctx, 58, OpenFGAParser.RULE_conditionExpression);
 		let _la: number;
 		try {
 			let _alt: number;
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 421;
+			this.state = 429;
 			this._errHandler.sync(this);
-			_alt = this._interp.adaptivePredict(this._input, 70, this._ctx);
+			_alt = this._interp.adaptivePredict(this._input, 71, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
-					this.state = 419;
+					this.state = 427;
 					this._errHandler.sync(this);
-					switch ( this._interp.adaptivePredict(this._input, 69, this._ctx) ) {
+					switch ( this._interp.adaptivePredict(this._input, 70, this._ctx) ) {
 					case 1:
 						{
-						this.state = 417;
+						this.state = 425;
 						_la = this._input.LA(1);
 						if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 3758098360) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & 33554367) !== 0))) {
 						this._errHandler.recoverInline(this);
@@ -1995,7 +2041,7 @@ export default class OpenFGAParser extends Parser {
 						break;
 					case 2:
 						{
-						this.state = 418;
+						this.state = 426;
 						_la = this._input.LA(1);
 						if(_la<=0 || _la===38) {
 						this._errHandler.recoverInline(this);
@@ -2009,9 +2055,9 @@ export default class OpenFGAParser extends Parser {
 					}
 					}
 				}
-				this.state = 423;
+				this.state = 431;
 				this._errHandler.sync(this);
-				_alt = this._interp.adaptivePredict(this._input, 70, this._ctx);
+				_alt = this._interp.adaptivePredict(this._input, 71, this._ctx);
 			}
 			}
 		}
@@ -2030,149 +2076,152 @@ export default class OpenFGAParser extends Parser {
 		return localctx;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,58,425,2,0,7,0,2,
+	public static readonly _serializedATN: number[] = [4,1,58,433,2,0,7,0,2,
 	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,7,7,7,2,8,7,8,2,9,7,9,2,
 	10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,14,2,15,7,15,2,16,7,16,2,17,
 	7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,
-	24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,28,1,0,3,0,60,8,0,1,0,3,0,63,8,
-	0,1,0,1,0,3,0,67,8,0,1,0,3,0,70,8,0,1,0,1,0,3,0,74,8,0,1,0,3,0,77,8,0,1,
-	0,1,0,3,0,81,8,0,1,0,1,0,3,0,85,8,0,1,0,1,0,1,1,1,1,1,1,3,1,92,8,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,3,1,100,8,1,1,2,1,2,1,2,3,2,105,8,2,1,2,1,2,1,2,1,2,
-	3,2,111,8,2,1,3,5,3,114,8,3,10,3,12,3,117,9,3,1,4,1,4,3,4,121,8,4,1,4,1,
-	4,1,4,3,4,126,8,4,1,4,1,4,1,4,1,4,1,4,1,4,4,4,134,8,4,11,4,12,4,135,3,4,
-	138,8,4,1,5,1,5,3,5,142,8,5,1,5,1,5,1,5,1,5,1,5,3,5,149,8,5,1,5,1,5,3,5,
-	153,8,5,1,5,1,5,1,6,1,6,1,7,1,7,1,7,3,7,162,8,7,1,7,3,7,165,8,7,1,8,1,8,
-	3,8,169,8,8,1,8,3,8,172,8,8,1,9,1,9,1,9,1,9,1,9,3,9,179,8,9,4,9,181,8,9,
-	11,9,12,9,182,1,9,1,9,1,9,1,9,1,9,3,9,190,8,9,4,9,192,8,9,11,9,12,9,193,
-	1,9,1,9,1,9,1,9,1,9,3,9,201,8,9,3,9,203,8,9,1,10,1,10,1,11,1,11,5,11,209,
-	8,11,10,11,12,11,212,9,11,1,11,1,11,3,11,216,8,11,1,11,5,11,219,8,11,10,
-	11,12,11,222,9,11,1,11,1,11,1,12,1,12,5,12,228,8,12,10,12,12,12,231,9,12,
-	1,12,1,12,3,12,235,8,12,1,12,5,12,238,8,12,10,12,12,12,241,9,12,1,12,1,
-	12,1,13,1,13,3,13,247,8,13,1,13,1,13,3,13,251,8,13,1,13,1,13,3,13,255,8,
-	13,1,13,1,13,3,13,259,8,13,5,13,261,8,13,10,13,12,13,264,9,13,1,13,1,13,
-	1,14,1,14,1,14,1,14,1,14,3,14,273,8,14,1,15,3,15,276,8,15,1,15,1,15,1,15,
-	1,15,1,15,1,15,1,15,3,15,285,8,15,1,15,3,15,288,8,15,1,16,1,16,1,16,1,16,
-	1,16,3,16,295,8,16,1,17,5,17,298,8,17,10,17,12,17,301,9,17,1,18,1,18,3,
-	18,305,8,18,1,18,1,18,1,18,1,18,1,18,3,18,312,8,18,1,18,1,18,3,18,316,8,
-	18,1,18,1,18,3,18,320,8,18,1,18,1,18,3,18,324,8,18,1,18,1,18,3,18,328,8,
-	18,5,18,330,8,18,10,18,12,18,333,9,18,1,18,3,18,336,8,18,1,18,1,18,3,18,
-	340,8,18,1,18,1,18,3,18,344,8,18,1,18,3,18,347,8,18,1,18,1,18,3,18,351,
-	8,18,1,18,1,18,1,19,1,19,1,20,3,20,358,8,20,1,20,1,20,3,20,362,8,20,1,20,
-	1,20,3,20,366,8,20,1,20,1,20,1,21,1,21,1,22,1,22,1,22,1,22,1,22,3,22,377,
-	8,22,1,23,5,23,380,8,23,10,23,12,23,383,9,23,1,24,1,24,3,24,387,8,24,1,
-	24,1,24,1,24,1,24,1,24,3,24,394,8,24,1,24,1,24,1,24,4,24,399,8,24,11,24,
-	12,24,400,1,25,1,25,1,26,1,26,5,26,407,8,26,10,26,12,26,410,9,26,1,26,1,
-	26,3,26,414,8,26,1,27,1,27,1,28,1,28,5,28,420,8,28,10,28,12,28,423,9,28,
-	1,28,0,0,29,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
-	44,46,48,50,52,54,56,0,4,1,0,56,56,4,0,10,10,16,18,20,21,26,26,4,0,3,5,
-	7,10,29,37,39,56,1,0,38,38,469,0,59,1,0,0,0,2,91,1,0,0,0,4,104,1,0,0,0,
-	6,115,1,0,0,0,8,120,1,0,0,0,10,141,1,0,0,0,12,156,1,0,0,0,14,161,1,0,0,
-	0,16,168,1,0,0,0,18,202,1,0,0,0,20,204,1,0,0,0,22,206,1,0,0,0,24,225,1,
-	0,0,0,26,244,1,0,0,0,28,267,1,0,0,0,30,275,1,0,0,0,32,289,1,0,0,0,34,299,
-	1,0,0,0,36,304,1,0,0,0,38,354,1,0,0,0,40,357,1,0,0,0,42,369,1,0,0,0,44,
-	376,1,0,0,0,46,381,1,0,0,0,48,386,1,0,0,0,50,402,1,0,0,0,52,404,1,0,0,0,
-	54,415,1,0,0,0,56,421,1,0,0,0,58,60,5,9,0,0,59,58,1,0,0,0,59,60,1,0,0,0,
-	60,62,1,0,0,0,61,63,5,56,0,0,62,61,1,0,0,0,62,63,1,0,0,0,63,66,1,0,0,0,
-	64,67,3,2,1,0,65,67,3,4,2,0,66,64,1,0,0,0,66,65,1,0,0,0,67,69,1,0,0,0,68,
-	70,5,56,0,0,69,68,1,0,0,0,69,70,1,0,0,0,70,71,1,0,0,0,71,73,3,46,23,0,72,
-	74,5,56,0,0,73,72,1,0,0,0,73,74,1,0,0,0,74,76,1,0,0,0,75,77,5,56,0,0,76,
-	75,1,0,0,0,76,77,1,0,0,0,77,78,1,0,0,0,78,80,3,6,3,0,79,81,5,56,0,0,80,
-	79,1,0,0,0,80,81,1,0,0,0,81,82,1,0,0,0,82,84,3,34,17,0,83,85,5,56,0,0,84,
-	83,1,0,0,0,84,85,1,0,0,0,85,86,1,0,0,0,86,87,5,0,0,1,87,1,1,0,0,0,88,89,
-	3,52,26,0,89,90,5,56,0,0,90,92,1,0,0,0,91,88,1,0,0,0,91,92,1,0,0,0,92,93,
-	1,0,0,0,93,94,5,17,0,0,94,95,5,56,0,0,95,96,5,18,0,0,96,97,5,9,0,0,97,99,
-	5,19,0,0,98,100,5,9,0,0,99,98,1,0,0,0,99,100,1,0,0,0,100,3,1,0,0,0,101,
-	102,3,52,26,0,102,103,5,56,0,0,103,105,1,0,0,0,104,101,1,0,0,0,104,105,
-	1,0,0,0,105,106,1,0,0,0,106,107,5,16,0,0,107,108,5,9,0,0,108,110,3,54,27,
-	0,109,111,5,9,0,0,110,109,1,0,0,0,110,111,1,0,0,0,111,5,1,0,0,0,112,114,
-	3,8,4,0,113,112,1,0,0,0,114,117,1,0,0,0,115,113,1,0,0,0,115,116,1,0,0,0,
-	116,7,1,0,0,0,117,115,1,0,0,0,118,119,5,56,0,0,119,121,3,52,26,0,120,118,
-	1,0,0,0,120,121,1,0,0,0,121,122,1,0,0,0,122,125,5,56,0,0,123,124,5,20,0,
-	0,124,126,5,9,0,0,125,123,1,0,0,0,125,126,1,0,0,0,126,127,1,0,0,0,127,128,
-	5,21,0,0,128,129,5,9,0,0,129,137,3,54,27,0,130,131,5,56,0,0,131,133,5,25,
-	0,0,132,134,3,10,5,0,133,132,1,0,0,0,134,135,1,0,0,0,135,133,1,0,0,0,135,
-	136,1,0,0,0,136,138,1,0,0,0,137,130,1,0,0,0,137,138,1,0,0,0,138,9,1,0,0,
-	0,139,140,5,56,0,0,140,142,3,52,26,0,141,139,1,0,0,0,141,142,1,0,0,0,142,
-	143,1,0,0,0,143,144,5,56,0,0,144,145,5,27,0,0,145,146,5,9,0,0,146,148,3,
-	12,6,0,147,149,5,9,0,0,148,147,1,0,0,0,148,149,1,0,0,0,149,150,1,0,0,0,
-	150,152,5,1,0,0,151,153,5,9,0,0,152,151,1,0,0,0,152,153,1,0,0,0,153,154,
-	1,0,0,0,154,155,3,14,7,0,155,11,1,0,0,0,156,157,3,54,27,0,157,13,1,0,0,
-	0,158,162,3,26,13,0,159,162,3,20,10,0,160,162,3,22,11,0,161,158,1,0,0,0,
-	161,159,1,0,0,0,161,160,1,0,0,0,162,164,1,0,0,0,163,165,3,18,9,0,164,163,
-	1,0,0,0,164,165,1,0,0,0,165,15,1,0,0,0,166,169,3,20,10,0,167,169,3,24,12,
-	0,168,166,1,0,0,0,168,167,1,0,0,0,169,171,1,0,0,0,170,172,3,18,9,0,171,
-	170,1,0,0,0,171,172,1,0,0,0,172,17,1,0,0,0,173,174,5,9,0,0,174,175,5,13,
-	0,0,175,178,5,9,0,0,176,179,3,20,10,0,177,179,3,24,12,0,178,176,1,0,0,0,
-	178,177,1,0,0,0,179,181,1,0,0,0,180,173,1,0,0,0,181,182,1,0,0,0,182,180,
-	1,0,0,0,182,183,1,0,0,0,183,203,1,0,0,0,184,185,5,9,0,0,185,186,5,12,0,
-	0,186,189,5,9,0,0,187,190,3,20,10,0,188,190,3,24,12,0,189,187,1,0,0,0,189,
-	188,1,0,0,0,190,192,1,0,0,0,191,184,1,0,0,0,192,193,1,0,0,0,193,191,1,0,
-	0,0,193,194,1,0,0,0,194,203,1,0,0,0,195,196,5,9,0,0,196,197,5,14,0,0,197,
-	200,5,9,0,0,198,201,3,20,10,0,199,201,3,24,12,0,200,198,1,0,0,0,200,199,
-	1,0,0,0,201,203,1,0,0,0,202,180,1,0,0,0,202,191,1,0,0,0,202,195,1,0,0,0,
-	203,19,1,0,0,0,204,205,3,28,14,0,205,21,1,0,0,0,206,210,5,7,0,0,207,209,
-	5,9,0,0,208,207,1,0,0,0,209,212,1,0,0,0,210,208,1,0,0,0,210,211,1,0,0,0,
-	211,215,1,0,0,0,212,210,1,0,0,0,213,216,3,14,7,0,214,216,3,24,12,0,215,
-	213,1,0,0,0,215,214,1,0,0,0,216,220,1,0,0,0,217,219,5,9,0,0,218,217,1,0,
-	0,0,219,222,1,0,0,0,220,218,1,0,0,0,220,221,1,0,0,0,221,223,1,0,0,0,222,
-	220,1,0,0,0,223,224,5,8,0,0,224,23,1,0,0,0,225,229,5,7,0,0,226,228,5,9,
-	0,0,227,226,1,0,0,0,228,231,1,0,0,0,229,227,1,0,0,0,229,230,1,0,0,0,230,
-	234,1,0,0,0,231,229,1,0,0,0,232,235,3,16,8,0,233,235,3,24,12,0,234,232,
-	1,0,0,0,234,233,1,0,0,0,235,239,1,0,0,0,236,238,5,9,0,0,237,236,1,0,0,0,
-	238,241,1,0,0,0,239,237,1,0,0,0,239,240,1,0,0,0,240,242,1,0,0,0,241,239,
-	1,0,0,0,242,243,5,8,0,0,243,25,1,0,0,0,244,246,5,5,0,0,245,247,5,9,0,0,
-	246,245,1,0,0,0,246,247,1,0,0,0,247,248,1,0,0,0,248,250,3,30,15,0,249,251,
-	5,9,0,0,250,249,1,0,0,0,250,251,1,0,0,0,251,262,1,0,0,0,252,254,5,2,0,0,
-	253,255,5,9,0,0,254,253,1,0,0,0,254,255,1,0,0,0,255,256,1,0,0,0,256,258,
-	3,30,15,0,257,259,5,9,0,0,258,257,1,0,0,0,258,259,1,0,0,0,259,261,1,0,0,
-	0,260,252,1,0,0,0,261,264,1,0,0,0,262,260,1,0,0,0,262,263,1,0,0,0,263,265,
-	1,0,0,0,264,262,1,0,0,0,265,266,5,36,0,0,266,27,1,0,0,0,267,272,3,54,27,
-	0,268,269,5,9,0,0,269,270,5,15,0,0,270,271,5,9,0,0,271,273,3,54,27,0,272,
-	268,1,0,0,0,272,273,1,0,0,0,273,29,1,0,0,0,274,276,5,56,0,0,275,274,1,0,
-	0,0,275,276,1,0,0,0,276,284,1,0,0,0,277,285,3,32,16,0,278,279,3,32,16,0,
-	279,280,5,9,0,0,280,281,5,28,0,0,281,282,5,9,0,0,282,283,3,38,19,0,283,
-	285,1,0,0,0,284,277,1,0,0,0,284,278,1,0,0,0,285,287,1,0,0,0,286,288,5,56,
-	0,0,287,286,1,0,0,0,287,288,1,0,0,0,288,31,1,0,0,0,289,294,3,54,27,0,290,
-	291,5,1,0,0,291,295,5,44,0,0,292,293,5,11,0,0,293,295,3,54,27,0,294,290,
-	1,0,0,0,294,292,1,0,0,0,294,295,1,0,0,0,295,33,1,0,0,0,296,298,3,36,18,
-	0,297,296,1,0,0,0,298,301,1,0,0,0,299,297,1,0,0,0,299,300,1,0,0,0,300,35,
-	1,0,0,0,301,299,1,0,0,0,302,303,5,56,0,0,303,305,3,52,26,0,304,302,1,0,
-	0,0,304,305,1,0,0,0,305,306,1,0,0,0,306,307,5,56,0,0,307,308,5,22,0,0,308,
-	309,5,9,0,0,309,311,3,38,19,0,310,312,5,9,0,0,311,310,1,0,0,0,311,312,1,
-	0,0,0,312,313,1,0,0,0,313,315,5,7,0,0,314,316,5,9,0,0,315,314,1,0,0,0,315,
-	316,1,0,0,0,316,317,1,0,0,0,317,319,3,40,20,0,318,320,5,9,0,0,319,318,1,
-	0,0,0,319,320,1,0,0,0,320,331,1,0,0,0,321,323,5,2,0,0,322,324,5,9,0,0,323,
-	322,1,0,0,0,323,324,1,0,0,0,324,325,1,0,0,0,325,327,3,40,20,0,326,328,5,
-	9,0,0,327,326,1,0,0,0,327,328,1,0,0,0,328,330,1,0,0,0,329,321,1,0,0,0,330,
-	333,1,0,0,0,331,329,1,0,0,0,331,332,1,0,0,0,332,335,1,0,0,0,333,331,1,0,
-	0,0,334,336,5,56,0,0,335,334,1,0,0,0,335,336,1,0,0,0,336,337,1,0,0,0,337,
-	339,5,8,0,0,338,340,5,9,0,0,339,338,1,0,0,0,339,340,1,0,0,0,340,341,1,0,
-	0,0,341,343,5,37,0,0,342,344,5,56,0,0,343,342,1,0,0,0,343,344,1,0,0,0,344,
-	346,1,0,0,0,345,347,5,9,0,0,346,345,1,0,0,0,346,347,1,0,0,0,347,348,1,0,
-	0,0,348,350,3,56,28,0,349,351,5,56,0,0,350,349,1,0,0,0,350,351,1,0,0,0,
-	351,352,1,0,0,0,352,353,5,38,0,0,353,37,1,0,0,0,354,355,5,10,0,0,355,39,
-	1,0,0,0,356,358,5,56,0,0,357,356,1,0,0,0,357,358,1,0,0,0,358,359,1,0,0,
-	0,359,361,3,42,21,0,360,362,5,9,0,0,361,360,1,0,0,0,361,362,1,0,0,0,362,
-	363,1,0,0,0,363,365,5,1,0,0,364,366,5,9,0,0,365,364,1,0,0,0,365,366,1,0,
-	0,0,366,367,1,0,0,0,367,368,3,44,22,0,368,41,1,0,0,0,369,370,5,10,0,0,370,
-	43,1,0,0,0,371,377,5,58,0,0,372,373,5,57,0,0,373,374,5,3,0,0,374,375,5,
-	58,0,0,375,377,5,4,0,0,376,371,1,0,0,0,376,372,1,0,0,0,377,45,1,0,0,0,378,
-	380,3,48,24,0,379,378,1,0,0,0,380,383,1,0,0,0,381,379,1,0,0,0,381,382,1,
-	0,0,0,382,47,1,0,0,0,383,381,1,0,0,0,384,385,5,56,0,0,385,387,3,52,26,0,
-	386,384,1,0,0,0,386,387,1,0,0,0,387,388,1,0,0,0,388,389,5,56,0,0,389,390,
-	5,23,0,0,390,391,5,9,0,0,391,393,3,50,25,0,392,394,5,9,0,0,393,392,1,0,
-	0,0,393,394,1,0,0,0,394,395,1,0,0,0,395,396,5,56,0,0,396,398,5,25,0,0,397,
-	399,3,10,5,0,398,397,1,0,0,0,399,400,1,0,0,0,400,398,1,0,0,0,400,401,1,
-	0,0,0,401,49,1,0,0,0,402,403,5,10,0,0,403,51,1,0,0,0,404,408,5,11,0,0,405,
-	407,8,0,0,0,406,405,1,0,0,0,407,410,1,0,0,0,408,406,1,0,0,0,408,409,1,0,
-	0,0,409,413,1,0,0,0,410,408,1,0,0,0,411,412,5,56,0,0,412,414,3,52,26,0,
-	413,411,1,0,0,0,413,414,1,0,0,0,414,53,1,0,0,0,415,416,7,1,0,0,416,55,1,
-	0,0,0,417,420,7,2,0,0,418,420,8,3,0,0,419,417,1,0,0,0,419,418,1,0,0,0,420,
-	423,1,0,0,0,421,419,1,0,0,0,421,422,1,0,0,0,422,57,1,0,0,0,423,421,1,0,
-	0,0,71,59,62,66,69,73,76,80,84,91,99,104,110,115,120,125,135,137,141,148,
-	152,161,164,168,171,178,182,189,193,200,202,210,215,220,229,234,239,246,
-	250,254,258,262,272,275,284,287,294,299,304,311,315,319,323,327,331,335,
-	339,343,346,350,357,361,365,376,381,386,393,400,408,413,419,421];
+	24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,28,2,29,7,29,1,0,3,0,62,8,0,1,0,
+	3,0,65,8,0,1,0,1,0,3,0,69,8,0,1,0,3,0,72,8,0,1,0,1,0,3,0,76,8,0,1,0,3,0,
+	79,8,0,1,0,1,0,3,0,83,8,0,1,0,1,0,3,0,87,8,0,1,0,1,0,1,1,1,1,1,1,3,1,94,
+	8,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,102,8,1,1,2,1,2,1,2,3,2,107,8,2,1,2,1,2,
+	1,2,1,2,3,2,113,8,2,1,3,5,3,116,8,3,10,3,12,3,119,9,3,1,4,1,4,3,4,123,8,
+	4,1,4,1,4,1,4,3,4,128,8,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,4,4,137,8,4,11,4,
+	12,4,138,3,4,141,8,4,1,5,1,5,1,5,1,5,1,5,1,6,1,6,3,6,150,8,6,1,6,1,6,1,
+	6,1,6,1,6,3,6,157,8,6,1,6,1,6,3,6,161,8,6,1,6,1,6,1,7,1,7,1,8,1,8,1,8,3,
+	8,170,8,8,1,8,3,8,173,8,8,1,9,1,9,3,9,177,8,9,1,9,3,9,180,8,9,1,10,1,10,
+	1,10,1,10,1,10,3,10,187,8,10,4,10,189,8,10,11,10,12,10,190,1,10,1,10,1,
+	10,1,10,1,10,3,10,198,8,10,4,10,200,8,10,11,10,12,10,201,1,10,1,10,1,10,
+	1,10,1,10,3,10,209,8,10,3,10,211,8,10,1,11,1,11,1,12,1,12,5,12,217,8,12,
+	10,12,12,12,220,9,12,1,12,1,12,3,12,224,8,12,1,12,5,12,227,8,12,10,12,12,
+	12,230,9,12,1,12,1,12,1,13,1,13,5,13,236,8,13,10,13,12,13,239,9,13,1,13,
+	1,13,3,13,243,8,13,1,13,5,13,246,8,13,10,13,12,13,249,9,13,1,13,1,13,1,
+	14,1,14,3,14,255,8,14,1,14,1,14,3,14,259,8,14,1,14,1,14,3,14,263,8,14,1,
+	14,1,14,3,14,267,8,14,5,14,269,8,14,10,14,12,14,272,9,14,1,14,1,14,1,15,
+	1,15,1,15,1,15,1,15,3,15,281,8,15,1,16,3,16,284,8,16,1,16,1,16,1,16,1,16,
+	1,16,1,16,1,16,3,16,293,8,16,1,16,3,16,296,8,16,1,17,1,17,1,17,1,17,1,17,
+	3,17,303,8,17,1,18,5,18,306,8,18,10,18,12,18,309,9,18,1,19,1,19,3,19,313,
+	8,19,1,19,1,19,1,19,1,19,1,19,3,19,320,8,19,1,19,1,19,3,19,324,8,19,1,19,
+	1,19,3,19,328,8,19,1,19,1,19,3,19,332,8,19,1,19,1,19,3,19,336,8,19,5,19,
+	338,8,19,10,19,12,19,341,9,19,1,19,3,19,344,8,19,1,19,1,19,3,19,348,8,19,
+	1,19,1,19,3,19,352,8,19,1,19,3,19,355,8,19,1,19,1,19,3,19,359,8,19,1,19,
+	1,19,1,20,1,20,1,21,3,21,366,8,21,1,21,1,21,3,21,370,8,21,1,21,1,21,3,21,
+	374,8,21,1,21,1,21,1,22,1,22,1,23,1,23,1,23,1,23,1,23,3,23,385,8,23,1,24,
+	5,24,388,8,24,10,24,12,24,391,9,24,1,25,1,25,3,25,395,8,25,1,25,1,25,1,
+	25,1,25,1,25,3,25,402,8,25,1,25,1,25,1,25,4,25,407,8,25,11,25,12,25,408,
+	1,26,1,26,1,27,1,27,5,27,415,8,27,10,27,12,27,418,9,27,1,27,1,27,3,27,422,
+	8,27,1,28,1,28,1,29,1,29,5,29,428,8,29,10,29,12,29,431,9,29,1,29,0,0,30,
+	0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,
+	52,54,56,58,0,4,1,0,56,56,4,0,10,10,16,18,20,21,26,26,4,0,3,5,7,10,29,37,
+	39,56,1,0,38,38,477,0,61,1,0,0,0,2,93,1,0,0,0,4,106,1,0,0,0,6,117,1,0,0,
+	0,8,122,1,0,0,0,10,142,1,0,0,0,12,149,1,0,0,0,14,164,1,0,0,0,16,169,1,0,
+	0,0,18,176,1,0,0,0,20,210,1,0,0,0,22,212,1,0,0,0,24,214,1,0,0,0,26,233,
+	1,0,0,0,28,252,1,0,0,0,30,275,1,0,0,0,32,283,1,0,0,0,34,297,1,0,0,0,36,
+	307,1,0,0,0,38,312,1,0,0,0,40,362,1,0,0,0,42,365,1,0,0,0,44,377,1,0,0,0,
+	46,384,1,0,0,0,48,389,1,0,0,0,50,394,1,0,0,0,52,410,1,0,0,0,54,412,1,0,
+	0,0,56,423,1,0,0,0,58,429,1,0,0,0,60,62,5,9,0,0,61,60,1,0,0,0,61,62,1,0,
+	0,0,62,64,1,0,0,0,63,65,5,56,0,0,64,63,1,0,0,0,64,65,1,0,0,0,65,68,1,0,
+	0,0,66,69,3,2,1,0,67,69,3,4,2,0,68,66,1,0,0,0,68,67,1,0,0,0,69,71,1,0,0,
+	0,70,72,5,56,0,0,71,70,1,0,0,0,71,72,1,0,0,0,72,73,1,0,0,0,73,75,3,48,24,
+	0,74,76,5,56,0,0,75,74,1,0,0,0,75,76,1,0,0,0,76,78,1,0,0,0,77,79,5,56,0,
+	0,78,77,1,0,0,0,78,79,1,0,0,0,79,80,1,0,0,0,80,82,3,6,3,0,81,83,5,56,0,
+	0,82,81,1,0,0,0,82,83,1,0,0,0,83,84,1,0,0,0,84,86,3,36,18,0,85,87,5,56,
+	0,0,86,85,1,0,0,0,86,87,1,0,0,0,87,88,1,0,0,0,88,89,5,0,0,1,89,1,1,0,0,
+	0,90,91,3,54,27,0,91,92,5,56,0,0,92,94,1,0,0,0,93,90,1,0,0,0,93,94,1,0,
+	0,0,94,95,1,0,0,0,95,96,5,17,0,0,96,97,5,56,0,0,97,98,5,18,0,0,98,99,5,
+	9,0,0,99,101,5,19,0,0,100,102,5,9,0,0,101,100,1,0,0,0,101,102,1,0,0,0,102,
+	3,1,0,0,0,103,104,3,54,27,0,104,105,5,56,0,0,105,107,1,0,0,0,106,103,1,
+	0,0,0,106,107,1,0,0,0,107,108,1,0,0,0,108,109,5,16,0,0,109,110,5,9,0,0,
+	110,112,3,56,28,0,111,113,5,9,0,0,112,111,1,0,0,0,112,113,1,0,0,0,113,5,
+	1,0,0,0,114,116,3,8,4,0,115,114,1,0,0,0,116,119,1,0,0,0,117,115,1,0,0,0,
+	117,118,1,0,0,0,118,7,1,0,0,0,119,117,1,0,0,0,120,121,5,56,0,0,121,123,
+	3,54,27,0,122,120,1,0,0,0,122,123,1,0,0,0,123,124,1,0,0,0,124,127,5,56,
+	0,0,125,126,5,20,0,0,126,128,5,9,0,0,127,125,1,0,0,0,127,128,1,0,0,0,128,
+	129,1,0,0,0,129,130,5,21,0,0,130,131,5,9,0,0,131,140,3,56,28,0,132,133,
+	5,56,0,0,133,136,5,25,0,0,134,137,3,10,5,0,135,137,3,12,6,0,136,134,1,0,
+	0,0,136,135,1,0,0,0,137,138,1,0,0,0,138,136,1,0,0,0,138,139,1,0,0,0,139,
+	141,1,0,0,0,140,132,1,0,0,0,140,141,1,0,0,0,141,9,1,0,0,0,142,143,5,56,
+	0,0,143,144,5,24,0,0,144,145,5,9,0,0,145,146,3,52,26,0,146,11,1,0,0,0,147,
+	148,5,56,0,0,148,150,3,54,27,0,149,147,1,0,0,0,149,150,1,0,0,0,150,151,
+	1,0,0,0,151,152,5,56,0,0,152,153,5,27,0,0,153,154,5,9,0,0,154,156,3,14,
+	7,0,155,157,5,9,0,0,156,155,1,0,0,0,156,157,1,0,0,0,157,158,1,0,0,0,158,
+	160,5,1,0,0,159,161,5,9,0,0,160,159,1,0,0,0,160,161,1,0,0,0,161,162,1,0,
+	0,0,162,163,3,16,8,0,163,13,1,0,0,0,164,165,3,56,28,0,165,15,1,0,0,0,166,
+	170,3,28,14,0,167,170,3,22,11,0,168,170,3,24,12,0,169,166,1,0,0,0,169,167,
+	1,0,0,0,169,168,1,0,0,0,170,172,1,0,0,0,171,173,3,20,10,0,172,171,1,0,0,
+	0,172,173,1,0,0,0,173,17,1,0,0,0,174,177,3,22,11,0,175,177,3,26,13,0,176,
+	174,1,0,0,0,176,175,1,0,0,0,177,179,1,0,0,0,178,180,3,20,10,0,179,178,1,
+	0,0,0,179,180,1,0,0,0,180,19,1,0,0,0,181,182,5,9,0,0,182,183,5,13,0,0,183,
+	186,5,9,0,0,184,187,3,22,11,0,185,187,3,26,13,0,186,184,1,0,0,0,186,185,
+	1,0,0,0,187,189,1,0,0,0,188,181,1,0,0,0,189,190,1,0,0,0,190,188,1,0,0,0,
+	190,191,1,0,0,0,191,211,1,0,0,0,192,193,5,9,0,0,193,194,5,12,0,0,194,197,
+	5,9,0,0,195,198,3,22,11,0,196,198,3,26,13,0,197,195,1,0,0,0,197,196,1,0,
+	0,0,198,200,1,0,0,0,199,192,1,0,0,0,200,201,1,0,0,0,201,199,1,0,0,0,201,
+	202,1,0,0,0,202,211,1,0,0,0,203,204,5,9,0,0,204,205,5,14,0,0,205,208,5,
+	9,0,0,206,209,3,22,11,0,207,209,3,26,13,0,208,206,1,0,0,0,208,207,1,0,0,
+	0,209,211,1,0,0,0,210,188,1,0,0,0,210,199,1,0,0,0,210,203,1,0,0,0,211,21,
+	1,0,0,0,212,213,3,30,15,0,213,23,1,0,0,0,214,218,5,7,0,0,215,217,5,9,0,
+	0,216,215,1,0,0,0,217,220,1,0,0,0,218,216,1,0,0,0,218,219,1,0,0,0,219,223,
+	1,0,0,0,220,218,1,0,0,0,221,224,3,16,8,0,222,224,3,26,13,0,223,221,1,0,
+	0,0,223,222,1,0,0,0,224,228,1,0,0,0,225,227,5,9,0,0,226,225,1,0,0,0,227,
+	230,1,0,0,0,228,226,1,0,0,0,228,229,1,0,0,0,229,231,1,0,0,0,230,228,1,0,
+	0,0,231,232,5,8,0,0,232,25,1,0,0,0,233,237,5,7,0,0,234,236,5,9,0,0,235,
+	234,1,0,0,0,236,239,1,0,0,0,237,235,1,0,0,0,237,238,1,0,0,0,238,242,1,0,
+	0,0,239,237,1,0,0,0,240,243,3,18,9,0,241,243,3,26,13,0,242,240,1,0,0,0,
+	242,241,1,0,0,0,243,247,1,0,0,0,244,246,5,9,0,0,245,244,1,0,0,0,246,249,
+	1,0,0,0,247,245,1,0,0,0,247,248,1,0,0,0,248,250,1,0,0,0,249,247,1,0,0,0,
+	250,251,5,8,0,0,251,27,1,0,0,0,252,254,5,5,0,0,253,255,5,9,0,0,254,253,
+	1,0,0,0,254,255,1,0,0,0,255,256,1,0,0,0,256,258,3,32,16,0,257,259,5,9,0,
+	0,258,257,1,0,0,0,258,259,1,0,0,0,259,270,1,0,0,0,260,262,5,2,0,0,261,263,
+	5,9,0,0,262,261,1,0,0,0,262,263,1,0,0,0,263,264,1,0,0,0,264,266,3,32,16,
+	0,265,267,5,9,0,0,266,265,1,0,0,0,266,267,1,0,0,0,267,269,1,0,0,0,268,260,
+	1,0,0,0,269,272,1,0,0,0,270,268,1,0,0,0,270,271,1,0,0,0,271,273,1,0,0,0,
+	272,270,1,0,0,0,273,274,5,36,0,0,274,29,1,0,0,0,275,280,3,56,28,0,276,277,
+	5,9,0,0,277,278,5,15,0,0,278,279,5,9,0,0,279,281,3,56,28,0,280,276,1,0,
+	0,0,280,281,1,0,0,0,281,31,1,0,0,0,282,284,5,56,0,0,283,282,1,0,0,0,283,
+	284,1,0,0,0,284,292,1,0,0,0,285,293,3,34,17,0,286,287,3,34,17,0,287,288,
+	5,9,0,0,288,289,5,28,0,0,289,290,5,9,0,0,290,291,3,40,20,0,291,293,1,0,
+	0,0,292,285,1,0,0,0,292,286,1,0,0,0,293,295,1,0,0,0,294,296,5,56,0,0,295,
+	294,1,0,0,0,295,296,1,0,0,0,296,33,1,0,0,0,297,302,3,56,28,0,298,299,5,
+	1,0,0,299,303,5,44,0,0,300,301,5,11,0,0,301,303,3,56,28,0,302,298,1,0,0,
+	0,302,300,1,0,0,0,302,303,1,0,0,0,303,35,1,0,0,0,304,306,3,38,19,0,305,
+	304,1,0,0,0,306,309,1,0,0,0,307,305,1,0,0,0,307,308,1,0,0,0,308,37,1,0,
+	0,0,309,307,1,0,0,0,310,311,5,56,0,0,311,313,3,54,27,0,312,310,1,0,0,0,
+	312,313,1,0,0,0,313,314,1,0,0,0,314,315,5,56,0,0,315,316,5,22,0,0,316,317,
+	5,9,0,0,317,319,3,40,20,0,318,320,5,9,0,0,319,318,1,0,0,0,319,320,1,0,0,
+	0,320,321,1,0,0,0,321,323,5,7,0,0,322,324,5,9,0,0,323,322,1,0,0,0,323,324,
+	1,0,0,0,324,325,1,0,0,0,325,327,3,42,21,0,326,328,5,9,0,0,327,326,1,0,0,
+	0,327,328,1,0,0,0,328,339,1,0,0,0,329,331,5,2,0,0,330,332,5,9,0,0,331,330,
+	1,0,0,0,331,332,1,0,0,0,332,333,1,0,0,0,333,335,3,42,21,0,334,336,5,9,0,
+	0,335,334,1,0,0,0,335,336,1,0,0,0,336,338,1,0,0,0,337,329,1,0,0,0,338,341,
+	1,0,0,0,339,337,1,0,0,0,339,340,1,0,0,0,340,343,1,0,0,0,341,339,1,0,0,0,
+	342,344,5,56,0,0,343,342,1,0,0,0,343,344,1,0,0,0,344,345,1,0,0,0,345,347,
+	5,8,0,0,346,348,5,9,0,0,347,346,1,0,0,0,347,348,1,0,0,0,348,349,1,0,0,0,
+	349,351,5,37,0,0,350,352,5,56,0,0,351,350,1,0,0,0,351,352,1,0,0,0,352,354,
+	1,0,0,0,353,355,5,9,0,0,354,353,1,0,0,0,354,355,1,0,0,0,355,356,1,0,0,0,
+	356,358,3,58,29,0,357,359,5,56,0,0,358,357,1,0,0,0,358,359,1,0,0,0,359,
+	360,1,0,0,0,360,361,5,38,0,0,361,39,1,0,0,0,362,363,5,10,0,0,363,41,1,0,
+	0,0,364,366,5,56,0,0,365,364,1,0,0,0,365,366,1,0,0,0,366,367,1,0,0,0,367,
+	369,3,44,22,0,368,370,5,9,0,0,369,368,1,0,0,0,369,370,1,0,0,0,370,371,1,
+	0,0,0,371,373,5,1,0,0,372,374,5,9,0,0,373,372,1,0,0,0,373,374,1,0,0,0,374,
+	375,1,0,0,0,375,376,3,46,23,0,376,43,1,0,0,0,377,378,5,10,0,0,378,45,1,
+	0,0,0,379,385,5,58,0,0,380,381,5,57,0,0,381,382,5,3,0,0,382,383,5,58,0,
+	0,383,385,5,4,0,0,384,379,1,0,0,0,384,380,1,0,0,0,385,47,1,0,0,0,386,388,
+	3,50,25,0,387,386,1,0,0,0,388,391,1,0,0,0,389,387,1,0,0,0,389,390,1,0,0,
+	0,390,49,1,0,0,0,391,389,1,0,0,0,392,393,5,56,0,0,393,395,3,54,27,0,394,
+	392,1,0,0,0,394,395,1,0,0,0,395,396,1,0,0,0,396,397,5,56,0,0,397,398,5,
+	23,0,0,398,399,5,9,0,0,399,401,3,52,26,0,400,402,5,9,0,0,401,400,1,0,0,
+	0,401,402,1,0,0,0,402,403,1,0,0,0,403,404,5,56,0,0,404,406,5,25,0,0,405,
+	407,3,12,6,0,406,405,1,0,0,0,407,408,1,0,0,0,408,406,1,0,0,0,408,409,1,
+	0,0,0,409,51,1,0,0,0,410,411,5,10,0,0,411,53,1,0,0,0,412,416,5,11,0,0,413,
+	415,8,0,0,0,414,413,1,0,0,0,415,418,1,0,0,0,416,414,1,0,0,0,416,417,1,0,
+	0,0,417,421,1,0,0,0,418,416,1,0,0,0,419,420,5,56,0,0,420,422,3,54,27,0,
+	421,419,1,0,0,0,421,422,1,0,0,0,422,55,1,0,0,0,423,424,7,1,0,0,424,57,1,
+	0,0,0,425,428,7,2,0,0,426,428,8,3,0,0,427,425,1,0,0,0,427,426,1,0,0,0,428,
+	431,1,0,0,0,429,427,1,0,0,0,429,430,1,0,0,0,430,59,1,0,0,0,431,429,1,0,
+	0,0,72,61,64,68,71,75,78,82,86,93,101,106,112,117,122,127,136,138,140,149,
+	156,160,169,172,176,179,186,190,197,201,208,210,218,223,228,237,242,247,
+	254,258,262,266,270,280,283,292,295,302,307,312,319,323,327,331,335,339,
+	343,347,351,354,358,365,369,373,384,389,394,401,408,416,421,427,429];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {
@@ -2382,6 +2431,12 @@ export class TypeDefContext extends ParserRuleContext {
 	public RELATIONS(): TerminalNode {
 		return this.getToken(OpenFGAParser.RELATIONS, 0);
 	}
+	public mixinDeclaration_list(): MixinDeclarationContext[] {
+		return this.getTypedRuleContexts(MixinDeclarationContext) as MixinDeclarationContext[];
+	}
+	public mixinDeclaration(i: number): MixinDeclarationContext {
+		return this.getTypedRuleContext(MixinDeclarationContext, i) as MixinDeclarationContext;
+	}
 	public relationDeclaration_list(): RelationDeclarationContext[] {
 		return this.getTypedRuleContexts(RelationDeclarationContext) as RelationDeclarationContext[];
 	}
@@ -2399,6 +2454,39 @@ export class TypeDefContext extends ParserRuleContext {
 	public exitRule(listener: OpenFGAParserListener): void {
 	    if(listener.exitTypeDef) {
 	 		listener.exitTypeDef(this);
+		}
+	}
+}
+
+
+export class MixinDeclarationContext extends ParserRuleContext {
+	constructor(parser?: OpenFGAParser, parent?: ParserRuleContext, invokingState?: number) {
+		super(parent, invokingState);
+    	this.parser = parser;
+	}
+	public NEWLINE(): TerminalNode {
+		return this.getToken(OpenFGAParser.NEWLINE, 0);
+	}
+	public INCLUDE(): TerminalNode {
+		return this.getToken(OpenFGAParser.INCLUDE, 0);
+	}
+	public WHITESPACE(): TerminalNode {
+		return this.getToken(OpenFGAParser.WHITESPACE, 0);
+	}
+	public mixinName(): MixinNameContext {
+		return this.getTypedRuleContext(MixinNameContext, 0) as MixinNameContext;
+	}
+    public get ruleIndex(): number {
+    	return OpenFGAParser.RULE_mixinDeclaration;
+	}
+	public enterRule(listener: OpenFGAParserListener): void {
+	    if(listener.enterMixinDeclaration) {
+	 		listener.enterMixinDeclaration(this);
+		}
+	}
+	public exitRule(listener: OpenFGAParserListener): void {
+	    if(listener.exitMixinDeclaration) {
+	 		listener.exitMixinDeclaration(this);
 		}
 	}
 }

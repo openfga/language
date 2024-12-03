@@ -8,6 +8,7 @@ import { ModelHeaderContext } from "./OpenFGAParser";
 import { ModuleHeaderContext } from "./OpenFGAParser";
 import { TypeDefsContext } from "./OpenFGAParser";
 import { TypeDefContext } from "./OpenFGAParser";
+import { MixinDeclarationContext } from "./OpenFGAParser";
 import { RelationDeclarationContext } from "./OpenFGAParser";
 import { RelationNameContext } from "./OpenFGAParser";
 import { RelationDefContext } from "./OpenFGAParser";
@@ -89,6 +90,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeDef?: (ctx: TypeDefContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.mixinDeclaration`.
+	 * @param ctx the parse tree
+	 */
+	enterMixinDeclaration?: (ctx: MixinDeclarationContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.mixinDeclaration`.
+	 * @param ctx the parse tree
+	 */
+	exitMixinDeclaration?: (ctx: MixinDeclarationContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.relationDeclaration`.
 	 * @param ctx the parse tree

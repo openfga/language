@@ -1575,7 +1575,8 @@
         end: 15
 - name: valid mixin syntax
   dsl: |
-    model schema 1.1
+    model
+      schema 1.1
     mixin foo
       relations
         define relationship1: [user]
@@ -1583,3 +1584,4 @@
     type user
       relations
         include foo
+        define relationship3: [user]

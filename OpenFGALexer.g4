@@ -25,10 +25,12 @@ FROM: 'from';
 MODULE: 'module';
 MODEL: 'model';
 SCHEMA: 'schema';
-SCHEMA_VERSION: DIGIT+'.'DIGIT+;
+SCHEMA_VERSION: DIGIT+ '.' DIGIT+;
 EXTEND: 'extend';
 TYPE: 'type';
 CONDITION: 'condition' -> pushMode(CONDITION_DEF);
+MIXIN: 'mixin';
+INCLUDE: 'include';
 
 RELATIONS: 'relations';
 RELATION: 'relation';
@@ -130,7 +132,7 @@ STRING:
 BYTES: ('b' | 'B') STRING;
 
 IDENTIFIER: (LETTER | '_') (LETTER | DIGIT | '_' | MINUS)*;
-	// NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
+// NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
 
 // END CEL GRAMMAR
 

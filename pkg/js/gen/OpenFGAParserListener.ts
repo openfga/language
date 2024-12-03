@@ -26,6 +26,9 @@ import { ConditionNameContext } from "./OpenFGAParser";
 import { ConditionParameterContext } from "./OpenFGAParser";
 import { ParameterNameContext } from "./OpenFGAParser";
 import { ParameterTypeContext } from "./OpenFGAParser";
+import { MixinsContext } from "./OpenFGAParser";
+import { MixinContext } from "./OpenFGAParser";
+import { MixinNameContext } from "./OpenFGAParser";
 import { MultiLineCommentContext } from "./OpenFGAParser";
 import { IdentifierContext } from "./OpenFGAParser";
 import { ConditionExpressionContext } from "./OpenFGAParser";
@@ -266,6 +269,36 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitParameterType?: (ctx: ParameterTypeContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.mixins`.
+	 * @param ctx the parse tree
+	 */
+	enterMixins?: (ctx: MixinsContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.mixins`.
+	 * @param ctx the parse tree
+	 */
+	exitMixins?: (ctx: MixinsContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.mixin`.
+	 * @param ctx the parse tree
+	 */
+	enterMixin?: (ctx: MixinContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.mixin`.
+	 * @param ctx the parse tree
+	 */
+	exitMixin?: (ctx: MixinContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.mixinName`.
+	 * @param ctx the parse tree
+	 */
+	enterMixinName?: (ctx: MixinNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.mixinName`.
+	 * @param ctx the parse tree
+	 */
+	exitMixinName?: (ctx: MixinNameContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.multiLineComment`.
 	 * @param ctx the parse tree

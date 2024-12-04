@@ -23,14 +23,16 @@
               {
                 "type": "user"
               }
-            ]
+            ],
+            "mixin": "authorization"
           },
           "blocked": {
             "directly_related_user_types": [
               {
                 "type": "user"
               }
-            ]
+            ],
+            "mixin": "authorization"
           }
         }
       }

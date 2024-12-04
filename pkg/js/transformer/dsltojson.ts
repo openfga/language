@@ -214,8 +214,6 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   exitMixin = () => {
     this.currentMixin = undefined;
-    console.log(this.mixins);
-    console.log(this.mixins.get("foo")?.relations)
   }
 
   // include foo
@@ -237,7 +235,10 @@ class OpenFgaDslListener extends OpenFGAListener {
 
           this.currentTypeDef!.metadata!.relations![relationName] = {
             directly_related_user_types: directlyRelatedUserTypes,
+            mixin: mixinName,
           };
+
+          // this.currentTypeDef!.metadata!.mixin = mixinName;
 
           // Only add the module name for a relation when we're parsing an extended type
           if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {
@@ -254,11 +255,6 @@ class OpenFgaDslListener extends OpenFGAListener {
       rewrites: [],
       typeInfo: { directly_related_user_types: [] },
     };
-
-    if (_ctx.relationName()?.getText() === "relationship1") {
-      console.log(_ctx.relationName()?.getText())
-      console.log(_ctx.parentCtx?.getText())
-    }
 
     this.rewriteStack = [];
   };

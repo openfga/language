@@ -10,6 +10,7 @@ import type {
   Userset,
 } from "@openfga/sdk";
 import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError, UnsupportedModularModules } from "../errors";
+import { parse } from "path";
 
 class DirectAssignmentValidator {
   occured: number = 0;
@@ -229,7 +230,12 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
   return usersets;
 };
 
-const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSourceInformation = false): string => {
+type ParseTypeResult = {
+  typeString: string;
+  mixins?: Map<string, string[]>;
+}
+
+const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSourceInformation = false): ParseTypeResult => {
   const typeName = typeDef.type;
 
   const sourceString = constructSourceComment(typeDef.metadata, "", includeSourceInformation);
@@ -237,9 +243,11 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
 
   const relations = typeDef.relations || {};
   const metadata = typeDef.metadata;
+  const mixins = new Map<string, string[]>();
 
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
+
     const sortedRelations = Object.entries(relations).sort(([aName], [bName]) => {
       if (!isModularModel) {
         return 0;
@@ -249,6 +257,7 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
 
       return sortByModule(aName, bName, aMetadata, bMetadata);
     });
+
     for (const [name, definition] of sortedRelations) {
       const parsedRelationString = parseRelation(
         typeName,
@@ -257,11 +266,26 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
         metadata?.relations?.[name],
         includeSourceInformation,
       );
-      parsedTypeString += `\n${parsedRelationString}`;
+
+      const mixin = metadata?.relations?.[name]?.mixin;
+  
+      if (mixin) {
+        if (!mixins.has(mixin)) {
+          mixins.set(mixin, []);
+          parsedTypeString += `\n    include ${mixin}`;
+        }
+
+        mixins.get(mixin)?.push(parsedRelationString);
+      } else {
+        parsedTypeString += `\n${parsedRelationString}`;
+      }
     }
   }
 
-  return parsedTypeString;
+  return {
+    typeString: parsedTypeString,
+    mixins
+  }
 };
 
 const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef>): string => {
@@ -344,16 +368,38 @@ export interface TransformOptions {
 export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, options?: TransformOptions): string => {
   const schemaVersion = model?.schema_version || "1.1";
   const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
+  const mixins = new Map<string, string[]>();
 
   const typeDefinitions = (
     isModularModel
       ? model?.type_definitions.sort((a, b) => sortByModule(a.type, b.type, a.metadata, b.metadata))
       : model?.type_definitions
-  )?.map((typeDef) => parseType(typeDef, isModularModel, options?.includeSourceInformation));
+  )?.map((typeDef) => {
+    const result = parseType(typeDef, isModularModel, options?.includeSourceInformation);
+    
+    result.mixins?.forEach((relations, mixin) => {
+      if (!mixins.has(mixin)) {
+        mixins.set(mixin, []);
+      }
+
+      mixins.get(mixin)?.push(...relations);
+    });
+
+    return result.typeString;
+  });
+
   const parsedConditionsString = parseConditions(model, isModularModel, options?.includeSourceInformation);
 
+  let mixinsString = "";
+  mixins.forEach((relations, mixin) => {
+    mixinsString += `mixin ${mixin}\n  relations\n${relations.join("\n")}`;
+  });
+
+  if (mixinsString.length)
+    console.log(mixinsString);
+
   return `model
-  schema ${schemaVersion}
+  schema ${schemaVersion}${mixins.size ? `\n\n${mixinsString}` : ""}
 ${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;
 };
 

@@ -1639,6 +1639,27 @@
         end: 15
       metadata:
         symbol: "bar"
+- name: does not allow defining relations with the same name inside a mixin
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+        define relationship1: [user]
+    type user
+      relations
+        include foo
+  expected_errors:
+    - msg: "'relationship1' is already defined in mixin 'foo'"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 24
+      metadata:
+        symbol: "relationship1"
 - name: does not allow defining multiple mixins with the same name
   dsl: |
     model
@@ -1662,3 +1683,24 @@
         end: 9
       metadata:
         symbol: "foo"
+- name: does not allow refining relationships that are already on a mixin
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+    type user
+      relations
+        include foo
+        define relationship1: [user]
+  expected_errors:
+    - msg: "'relationship1' is already defined in mixin 'foo'"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 11
+        end: 24
+      metadata:
+        symbol: "relationship1"

@@ -295,11 +295,20 @@ class OpenFgaDslListener extends OpenFGAListener {
       } else if (this.currentTypeDef) {
         if (this.currentTypeDef!.relations![relationName]) {
           // Throw error if same named relation occurs more than once in a relationship definition block
-          ctx.parser?.notifyErrorListeners(
-            `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
-            ctx.relationName().start,
-            undefined,
-          );
+          if (this.currentTypeDef!.metadata!.relations![relationName]?.mixin) {
+            // .. but if it's a duplicate because it was defined in a mixin, tweak the message
+            ctx.parser?.notifyErrorListeners(
+              `'${relationName}' is already defined in mixin '${this.currentTypeDef!.metadata!.relations![relationName].mixin}'`,
+              ctx.relationName().start,
+              undefined,
+            );
+          } else  {
+            ctx.parser?.notifyErrorListeners(
+              `'${relationName}' is already defined in '${this.currentTypeDef?.type}'`,
+              ctx.relationName().start,
+              undefined,
+            );
+          }
         }
 
         this.currentTypeDef!.relations![relationName] = relationDef;

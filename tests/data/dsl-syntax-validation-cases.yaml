@@ -1585,3 +1585,80 @@
       relations
         include foo
         define relationship3: [user]
+- name: valid mixin syntax with multiple mixins
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+        define relationship2: [user]
+    mixin bar
+      relations
+        define relationship3: [user]
+        define relationship4: [user]
+    type user
+      relations
+        include foo
+        include bar
+        define relationship5: [user]
+- name: valid mixin syntax with multiple mixins with mixed up order
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+        define relationship2: [user]
+    mixin bar
+      relations
+        define relationship3: [user]
+        define relationship4: [user]
+    type user
+      relations
+        include bar
+        define relationship5: [user]
+        include foo
+- name: including an invalid mixin produces an error
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+    type user
+      relations
+        include bar
+  expected_errors:
+    - msg: "mixin 'bar' is not defined"
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 12
+        end: 15
+      metadata:
+        symbol: "bar"
+- name: does not allow defining multiple mixins with the same name
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+    mixin foo
+      relations
+        define relationship2: [user]
+    type user
+      relations
+        include foo
+  expected_errors:
+    - msg: "mixin 'foo' is already defined"
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 6
+        end: 9
+      metadata:
+        symbol: "foo"

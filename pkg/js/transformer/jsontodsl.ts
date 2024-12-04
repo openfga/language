@@ -395,9 +395,6 @@ export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, option
     mixinsString += `mixin ${mixin}\n  relations\n${relations.join("\n")}`;
   });
 
-  if (mixinsString.length)
-    console.log(mixinsString);
-
   return `model
   schema ${schemaVersion}${mixins.size ? `\n\n${mixinsString}` : ""}
 ${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;

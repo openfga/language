@@ -202,9 +202,21 @@ class OpenFgaDslListener extends OpenFGAListener {
   exitMixins = () => {
   }
 
+  /*
+    mixin foo
+      relations
+        define relationship1 : [user]
+  */
   enterMixin = (ctx: MixinContext) => {
+    const mixinName = ctx.mixinName().getText();
+    
+    // Cannot define multiple mixinx with the same name
+    if (this.mixins.has(mixinName)) {
+      ctx.parser?.notifyErrorListeners(`mixin '${mixinName}' is already defined`, ctx.mixinName().start, undefined);
+    }
+
     const mixin: Mixin = {
-      name: ctx.mixinName().getText(),
+      name: mixinName,
       relations: new Map()
     }
 
@@ -237,8 +249,6 @@ class OpenFgaDslListener extends OpenFGAListener {
             directly_related_user_types: directlyRelatedUserTypes,
             mixin: mixinName,
           };
-
-          // this.currentTypeDef!.metadata!.mixin = mixinName;
 
           // Only add the module name for a relation when we're parsing an extended type
           if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {

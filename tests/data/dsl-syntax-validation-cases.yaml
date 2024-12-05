@@ -1619,6 +1619,39 @@
         include bar
         define relationship5: [user]
         include foo
+- name: including the same mixin on multiple types dedupes the relations when serializing back to DSL
+  dsl: |
+    model
+      schema 1.2
+    mixin foo
+      relations
+        define relationship1: [user]
+        define relationship2: [user]
+    type user
+    type type1
+      relations
+        include foo
+- name: including the same mixin multiple times throws an error
+  dsl: |
+    model
+      schema 1.2
+    mixin foo
+      relations
+        define relationship1: [user]
+    type bar
+      relations
+        include foo
+        include foo
+  expected_errors:
+    - msg: "mixin 'foo' is already included"
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 12
+        end: 15
+      metadata:
+        symbol: "foo"
 - name: including an invalid mixin produces an error
   dsl: |
     model
@@ -1699,6 +1732,27 @@
       line:
         start: 8
         end: 8
+      column:
+        start: 11
+        end: 24
+      metadata:
+        symbol: "relationship1"
+- name: does not allow refining relationships that are defined before including a mixin
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+    type user
+      relations
+        define relationship1: [user]
+        include foo
+  expected_errors:
+    - msg: "'relationship1' is already defined in mixin 'foo'"
+      line:
+        start: 7
+        end: 7
       column:
         start: 11
         end: 24

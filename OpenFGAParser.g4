@@ -13,7 +13,7 @@ typeDefs: typeDef*;
 typeDef:  (NEWLINE multiLineComment)? NEWLINE (EXTEND WHITESPACE)? TYPE WHITESPACE typeName=identifier (NEWLINE RELATIONS (mixinDeclaration | relationDeclaration)+)?;
 
 // Relation definitions
-mixinDeclaration: (NEWLINE INCLUDE WHITESPACE mixinName);
+mixinDeclaration: (NEWLINE INCLUDE WHITESPACE mixinName (WHITESPACE? COMMA WHITESPACE? mixinName)*);
 relationDeclaration: (NEWLINE multiLineComment)? NEWLINE DEFINE WHITESPACE relationName WHITESPACE? COLON WHITESPACE? (relationDef);
 relationName: identifier;
 

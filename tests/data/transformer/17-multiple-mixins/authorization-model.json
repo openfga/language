@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.2",
+  "type_definitions": [
+    {
+      "type": "user",
+      "relations": {},
+      "metadata": null
+    },
+    {
+      "type": "folder",
+      "relations": {
+        "parent": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "parent": {
+            "directly_related_user_types": [
+              {
+                "type": "folder"
+              }
+            ],
+            "mixin": "tree"
+          }
+        }
+      }
+    },
+    {
+      "type": "document",
+      "relations": {
+        "allowed": {
+          "this": {}
+        },
+        "blocked": {
+          "this": {}
+        },
+        "parent": {
+          "this": {}
+        }
+      },
+      "metadata": {
+        "relations": {
+          "parent": {
+            "directly_related_user_types": [
+              {
+                "type": "folder"
+              }
+            ],
+            "mixin": "tree"
+          },
+          "allowed": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "mixin": "authorization"
+          },
+          "blocked": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "mixin": "authorization"
+          }
+        }
+      }
+    }
+  ]
+}

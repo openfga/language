@@ -232,7 +232,7 @@ const prioritizeDirectAssignment = (usersets: Userset[] | undefined): Userset[] 
 
 type ParseTypeResult = {
   typeString: string;
-  mixins?: Map<string, string[]>;
+  mixins?: Record<string, { relationName: string, relation: string }[]>;
 }
 
 const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSourceInformation = false): ParseTypeResult => {
@@ -243,7 +243,7 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
 
   const relations = typeDef.relations || {};
   const metadata = typeDef.metadata;
-  const mixins = new Map<string, string[]>();
+  const mixins: ParseTypeResult["mixins"] = {}
 
   if (Object.keys(relations)?.length) {
     parsedTypeString += "\n  relations";
@@ -270,12 +270,12 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
       const mixin = metadata?.relations?.[name]?.mixin;
   
       if (mixin) {
-        if (!mixins.has(mixin)) {
-          mixins.set(mixin, []);
+        if (!mixins[mixin]) {
+          mixins[mixin] = [];
           parsedTypeString += `\n    include ${mixin}`;
         }
 
-        mixins.get(mixin)?.push(parsedRelationString);
+        mixins[mixin]?.push({ relation: parsedRelationString, relationName: name });
       } else {
         parsedTypeString += `\n${parsedRelationString}`;
       }
@@ -368,7 +368,7 @@ export interface TransformOptions {
 export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, options?: TransformOptions): string => {
   const schemaVersion = model?.schema_version || "1.1";
   const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
-  const mixins = new Map<string, string[]>();
+  const mixins: ParseTypeResult["mixins"] = {};
 
   const typeDefinitions = (
     isModularModel
@@ -376,33 +376,45 @@ export const transformJSONToDSL = (model: Omit<AuthorizationModel, "id">, option
       : model?.type_definitions
   )?.map((typeDef) => {
     const result = parseType(typeDef, isModularModel, options?.includeSourceInformation);
-    
-    result.mixins?.forEach((relations, mixin) => {
-      if (!mixins.has(mixin)) {
-        mixins.set(mixin, []);
-      }
 
-      mixins.get(mixin)?.push(...relations);
-    });
+    if (result.mixins) {
+      // Build a map of mixins and relations, taking care to dedupe any
+      // relations on mixins where a mixin may have been included on multiple types.
+      Object.entries(result.mixins)
+        .reduce((acc, [mixinKey, relations]) => {
+          if (!acc[mixinKey])
+              acc[mixinKey] = [];
+
+          relations.forEach(relation => {
+            // Don't include duplicate relations
+            if (!acc[mixinKey].find(r => r.relationName === relation.relationName)) {
+              acc[mixinKey].push(relation);
+            }
+          });
+          
+          return acc;
+        }, mixins);
+    }
 
     return result.typeString;
   });
 
   const parsedConditionsString = parseConditions(model, isModularModel, options?.includeSourceInformation);
+  const mixinArray: string[] = [];
 
-  let mixinsString = "";
-  mixins.forEach((relations, mixin) => {
-    mixinsString += `mixin ${mixin}\n  relations\n${relations.join("\n")}`;
+  Object.entries(mixins).forEach(([mixinName, relations]) => {
+    mixinArray.push(`mixin ${mixinName}\n  relations\n${relations.map(r => `${r.relation}`).join("\n")}`);
   });
 
+  const mixinsString = Object.keys(mixins).length ? `\n\n${mixinArray.join("\n\n")}` : "";
+
   return `model
-  schema ${schemaVersion}${mixins.size ? `\n\n${mixinsString}` : ""}
+  schema ${schemaVersion}${mixinsString}
 ${typeDefinitions ? `${typeDefinitions.join("\n")}\n` : ""}${parsedConditionsString}`;
 };
 
 export const transformJSONStringToDSL = (modelString: string, options?: TransformOptions): string => {
   const model = JSON.parse(modelString);
-
   return transformJSONToDSL(model, options);
 };
 

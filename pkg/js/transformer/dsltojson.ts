@@ -248,60 +248,64 @@ class OpenFgaDslListener extends OpenFGAListener {
 
   // include foo
   enterMixinDeclaration = (ctx: MixinDeclarationContext) => {
-    const mixinName = ctx.mixinName().getText();
-    const mixin = this.mixins.get(mixinName);
+    let i = 0;
+    for (const mixin of ctx.mixinName_list()) {
+      const mixinName = mixin.getText();
+      const mixinDef = this.mixins.get(mixinName);
 
-    if (!mixin) {
-      ctx.parser?.notifyErrorListeners(`mixin '${mixinName}' is not defined`, ctx.mixinName().start, undefined);
-    }
-
-    // If this mixin has already been included, produce an error.
-    if(this.currentTypeDef?.metadata?.relations) {
-      const relations = this.currentTypeDef.metadata.relations;
-
-      for (const key of Object.keys(relations)) {
-        const relation = relations[key];
-
-        if (relation.mixin === mixinName) {
-          ctx.parser?.notifyErrorListeners(
-            `mixin '${mixinName}' is already included`,
-            ctx.mixinName().start,
-            undefined,
-          );
-          return;
-        }
+      if (!mixinDef) {
+        ctx.parser?.notifyErrorListeners(`mixin '${mixin.getText()}' is not defined`, mixin.start, undefined);
       }
-    }
 
-    if (mixin?.relations) {
-      mixin?.relations.forEach((relation, relationName) => {
-        const relationDef = parseExpression(relation.rewrites, relation.operator);
+      // If this mixin has already been included, produce an error.
+      if(this.currentTypeDef?.metadata?.relations) {
+        const relations = this.currentTypeDef.metadata.relations;
 
-        // If this relation is already defined on the type, produce an error.
-        if (this.currentTypeDef?.relations![relationName]) {
-          ctx.parser?.notifyErrorListeners(
-            `'${relationName}' is already defined in mixin '${mixin.name}'`,
-            lookupToken(this.currentTypeDef.type!, relationName)!,
-            undefined,
-          );
-        }
+        for (const key of Object.keys(relations)) {
+          const relation = relations[key];
 
-        if (relationDef) {
-          this.currentTypeDef!.relations![relationName] = relationDef;
-          const directlyRelatedUserTypes = relation.typeInfo?.directly_related_user_types;
-
-          this.currentTypeDef!.metadata!.relations![relationName] = {
-            directly_related_user_types: directlyRelatedUserTypes,
-            mixin: mixinName,
-          };
-
-          // Only add the module name for a relation when we're parsing an extended type
-          if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {
-            this.currentTypeDef!.metadata!.relations![relationName].module = this.moduleName;
+          if (relation.mixin === mixinName) {
+            ctx.parser?.notifyErrorListeners(
+              `mixin '${mixinName}' is already included`,
+              mixin.start,
+              undefined,
+            );
+            return;
           }
         }
-      });
+      }
+
+      if (mixinDef?.relations) {
+        mixinDef?.relations.forEach((relation, relationName) => {
+          const relationDef = parseExpression(relation.rewrites, relation.operator);
+
+          // If this relation is already defined on the type, produce an error.
+          if (this.currentTypeDef?.relations![relationName]) {
+            ctx.parser?.notifyErrorListeners(
+              `'${relationName}' is already defined in mixin '${mixinDef.name}'`,
+              lookupToken(this.currentTypeDef.type!, relationName)!,
+              undefined,
+            );
+          }
+
+          if (relationDef) {
+            this.currentTypeDef!.relations![relationName] = relationDef;
+            const directlyRelatedUserTypes = relation.typeInfo?.directly_related_user_types;
+
+            this.currentTypeDef!.metadata!.relations![relationName] = {
+              directly_related_user_types: directlyRelatedUserTypes,
+              mixin: mixinName,
+            };
+
+            // Only add the module name for a relation when we're parsing an extended type
+            if (this.isModularModel && (ctx.parentCtx as TypeDefContext).EXTEND()) {
+              this.currentTypeDef!.metadata!.relations![relationName].module = this.moduleName;
+            }
+          }
+        });
+      }
     }
+    i++;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -646,7 +650,8 @@ export function transformDSLToJSONObject(data: string): Omit<AuthorizationModel,
  * @returns {string}
  */
 export function transformDSLToJSON(data: string): string {
-  return JSON.stringify(transformDSLToJSONObject(data));
+  const json = JSON.stringify(transformDSLToJSONObject(data));  
+  return json;
 }
 
 interface ModularDSLTransformResult {

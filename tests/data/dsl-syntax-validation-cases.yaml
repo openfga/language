@@ -1602,6 +1602,21 @@
         include foo
         include bar
         define relationship5: [user]
+- name: valid mixin with alternate include syntax
+  dsl: |
+    model
+      schema 1.1
+    mixin foo
+      relations
+        define relationship1: [user]
+        define relationship2: [user]
+    mixin bar
+      relations
+        define relationship3: [user]
+        define relationship4: [user]
+    type user
+      relations
+        include foo, bar
 - name: valid mixin syntax with multiple mixins with mixed up order
   dsl: |
     model

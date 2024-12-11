@@ -1,6 +1,10 @@
 model
   schema 1.2
 
+mixin tree
+  relations
+    define parent: [folder]
+
 mixin authorization
   relations
     define allowed: [user]
@@ -8,6 +12,11 @@ mixin authorization
 
 type user
 
+type folder
+  relations
+    include tree
+
 type document
   relations
     include authorization
+    include tree

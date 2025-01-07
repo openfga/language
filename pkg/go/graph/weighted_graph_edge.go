@@ -6,7 +6,7 @@ type WeightedAuthorizationModelEdge struct {
 	conditionedOn string
 	from          *WeightedAuthorizationModelNode
 	to            *WeightedAuthorizationModelNode
-	wildcards     []string
+	wildcards     []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
 }
 
 // GetWeights returns the entire weights map.
@@ -40,7 +40,7 @@ func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelN
 	return edge.to
 }
 
-// GetWildcards returns an array of types.
+// GetWildcards returns an array of types, e.g. "user". This means that in the direction of this edge there is a path to node user:*
 func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
 	return edge.wildcards
 }

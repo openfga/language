@@ -25,8 +25,7 @@ func (wg *WeightedAuthorizationModelGraph) GetEdges() map[string][]*WeightedAuth
 	return wg.edges
 }
 
-// GetEdges returns the edges map.
-func (wg *WeightedAuthorizationModelGraph) GetEdgesByNode(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, bool) {
+func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNode(node *WeightedAuthorizationModelNode) ([]*WeightedAuthorizationModelEdge, bool) {
 	v, ok := wg.edges[node.uniqueLabel]
 	return v, ok
 }
@@ -36,7 +35,6 @@ func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthor
 	return wg.nodes
 }
 
-// GetNodes returns the nodes map.
 func (wg *WeightedAuthorizationModelGraph) GetNodeByID(uniqueLabel string) (*WeightedAuthorizationModelNode, bool) {
 	v, ok := wg.nodes[uniqueLabel]
 	return v, ok
@@ -50,7 +48,7 @@ func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	}
 }
 
-// AddNode adds a node to the graph with optional operationType and weight.
+// AddNode adds a node to the graph with optional nodeType and weight.
 func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType) {
 	wildcards := make([]string, 0)
 	if nodeType == SpecificTypeWildcard {

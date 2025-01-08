@@ -6,7 +6,7 @@ type WeightedAuthorizationModelEdge struct {
 	conditionedOn string
 	from          *WeightedAuthorizationModelNode
 	to            *WeightedAuthorizationModelNode
-	wildcards     []string
+	wildcards     []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
 }
 
 // GetWeights returns the entire weights map.
@@ -14,7 +14,7 @@ func (edge *WeightedAuthorizationModelEdge) GetWeights() map[string]int {
 	return edge.weights
 }
 
-// GetWeight returns the weight for a specific key.
+// GetWeight returns the weight for a specific type. It can return Infinite to indicate recursion.
 func (edge *WeightedAuthorizationModelEdge) GetWeight(key string) (int, bool) {
 	weight, exists := edge.weights[key]
 	return weight, exists
@@ -25,7 +25,7 @@ func (edge *WeightedAuthorizationModelEdge) GetEdgeType() EdgeType {
 	return edge.edgeType
 }
 
-// GetConditionedOn returns the conditionedOn field.
+// GetConditionedOn returns the conditionedOn field, e.g. "document#parent".
 func (edge *WeightedAuthorizationModelEdge) GetConditionedOn() string {
 	return edge.conditionedOn
 }
@@ -40,7 +40,7 @@ func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelN
 	return edge.to
 }
 
-// GetWildcards returns the wildcards.
+// GetWildcards returns an array of types, e.g. "user". This means that in the direction of this edge there is a path to node user:*
 func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
 	return edge.wildcards
 }

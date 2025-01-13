@@ -10,7 +10,7 @@ require (
 	github.com/openfga/api/proto v0.0.0-20240905181937-3583905f61a6
 	github.com/stretchr/testify v1.10.0
 	gonum.org/v1/gonum v0.15.1
-	google.golang.org/protobuf v1.36.1
+	google.golang.org/protobuf v1.36.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 

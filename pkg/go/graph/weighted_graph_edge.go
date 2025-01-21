@@ -40,7 +40,7 @@ func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelN
 	return edge.to
 }
 
-// GetWildcards returns an array of types, e.g. "user". This means that in the direction of this edge there is a path to node user:*
+// GetWildcards returns an array of types, e.g. "user". This means that in the direction of this edge there is a path to node user:*.
 func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
 	return edge.wildcards
 }

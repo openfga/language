@@ -116,7 +116,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			}
 
 			types = append(types, typeDef.GetType())
-			if typeDef.Metadata != nil {
+			if typeDef.GetMetadata() != nil {
 				typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
 					File: module.Name,
 				}

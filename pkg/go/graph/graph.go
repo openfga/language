@@ -35,7 +35,7 @@ func (g *AuthorizationModelGraph) GetDrawingDirection() DrawingDirection {
 	return g.drawingDirection
 }
 
-// GetNodeByLabel provides O(1) access to a node.
+// GetNodeByLabel provides O(1) access to a node. If the node doesn't exist, it returns ErrQueryingGraph.
 func (g *AuthorizationModelGraph) GetNodeByLabel(label string) (*AuthorizationModelNode, error) {
 	id, ok := g.ids[label]
 	if !ok {
@@ -99,6 +99,25 @@ func (g *AuthorizationModelGraph) Reversed() (*AuthorizationModelGraph, error) {
 	}
 
 	return nil, fmt.Errorf("%w: could not cast to directed graph", ErrBuildingGraph)
+}
+
+// PathExists returns true if both nodes exist and there is a path starting at 'fromLabel' extending to 'toLabel'.
+// If both labels are equal, it returns true.
+// If either node doesn't exist, it returns false and ErrQueryingGraph.
+// Note: if somewhere in the path there is an IntersectionOperator or ExclusionOperator, it will NOT return false
+// if there is some child that does NOT reach 'toLabel'.
+func (g *AuthorizationModelGraph) PathExists(fromLabel, toLabel string) (bool, error) {
+	fromNode, err := g.GetNodeByLabel(fromLabel)
+	if err != nil {
+		return false, err
+	}
+
+	toNode, err := g.GetNodeByLabel(toLabel)
+	if err != nil {
+		return false, err
+	}
+
+	return topo.PathExistsIn(g.DirectedGraph, fromNode, toNode), nil
 }
 
 var _ dot.Attributers = (*AuthorizationModelGraph)(nil)

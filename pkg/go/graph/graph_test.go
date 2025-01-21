@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -230,4 +231,523 @@ func TestGetNodeTypes(t *testing.T) {
 	require.Len(t, unionNodes, 1)
 	require.Len(t, differenceNodes, 1)
 	require.Len(t, intersectionNodes, 1)
+}
+
+func TestPathExists(t *testing.T) {
+	type pathTest struct {
+		fromLabel   string
+		toLabel     string
+		expectPath  bool
+		expectedErr error
+	}
+	tests := []struct {
+		name      string
+		model     string
+		pathTests []pathTest
+	}{
+		{
+			name: "userset_computed_userset",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type wild
+type employee
+type group
+	relations
+		define rootMember: [user, user:*, employee, wild:*]
+		define member: rootMember
+type folder
+	relations
+		define viewer: [group#member]
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:   "foo",
+					toLabel:     "group#member",
+					expectPath:  false,
+					expectedErr: ErrQueryingGraph,
+				},
+				{
+					fromLabel:   "user",
+					toLabel:     "group#undefined",
+					expectPath:  false,
+					expectedErr: ErrQueryingGraph,
+				},
+				{
+					// TODO: ideally this should be false.  However, for now, this
+					// will return true as there is some path.
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#rootMember",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+		{
+			name: "nested_computed_userset",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type employee
+type wild
+type group
+	relations
+		define member: [user, user:*, employee, wild:*, group#member]
+type folder
+	relations
+		define viewer: [group#member]
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+		{
+			name: "union_relation",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type employee
+type wild
+type group
+	relations
+		define child1: [user, user:*]
+		define child2: [employee]
+		define child3: [wild:*]
+		define member: child1 or child2 or child3
+type folder
+	relations
+		define viewer: [group#member]
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					// TODO: ideally this should be false.  However, for now, this
+					// will return true as there is some path.
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+		{
+			name: "intersection_relation",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type employee
+type wild
+type group
+	relations
+		define child1: [user]
+		define child2: [user, employee, wild:*]
+		define member: child1 and child2
+type folder
+	relations
+		define viewer: [group#member]
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					// Ideally, we will reject employee because type needs to appear
+					// in both child for an intersection. For now, the graph
+					// package is not smart enough to handle intersection as a special case.
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					// Ideally, we will reject wild because type needs to appear
+					// in both child for an intersection. For now, the graph
+					// package is not smart enough to handle intersection as a special case.
+					fromLabel:  "wild:*",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					// TODO: ideally this should be false.  However, for now, this
+					// will return true as there is some path.
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+		{
+			name: "exclusion_relation",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type employee
+type group
+	relations
+		define child1: [user]
+		define child2: [user, employee]
+		define member: child1 but not child2
+type folder
+	relations
+		define viewer: [group#member]
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					// Ideally, we will reject employee because type needs to appear
+					// in both child for exclusion. For now, the graph
+					// package is not smart enough to handle exclusion as a special case.
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					// TODO: ideally this should be false.  However, for now, this
+					// will return true as there is some path.
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+		{
+			name: "ttu",
+			model: `
+model
+	schema 1.1
+type other
+type user
+type employee
+type wild
+type group
+	relations
+		define rootMember: [user, user:*, employee, wild:*]
+		define member: rootMember
+type folder
+	relations
+		define parent: [group]
+		define viewer: member from parent
+`,
+			pathTests: []pathTest{
+				{
+					fromLabel:  "user",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					fromLabel:  "group",
+					toLabel:    "group#member",
+					expectPath: false,
+				},
+				{
+					// TODO: ideally this should be false.  However, for now, this
+					// will return true as there is some path.
+					fromLabel:  "group#member",
+					toLabel:    "group#member",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#member",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "group#rootMember",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "user",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "employee",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "wild:*",
+					toLabel:    "folder#viewer",
+					expectPath: true,
+				},
+				{
+					fromLabel:  "other",
+					toLabel:    "folder#viewer",
+					expectPath: false,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			model := language.MustTransformDSLToProto(test.model)
+			graph, err := NewAuthorizationModelGraph(model)
+			require.NoError(t, err)
+
+			for _, test := range test.pathTests {
+				t.Run(fmt.Sprintf("%s -> %s", test.fromLabel, test.toLabel), func(t *testing.T) {
+					actual, err := graph.PathExists(test.fromLabel, test.toLabel)
+					if test.expectedErr == nil {
+						require.NoError(t, err)
+						require.Equal(t, test.expectPath, actual)
+					} else {
+						require.ErrorIs(t, err, test.expectedErr)
+					}
+				})
+			}
+		})
+	}
 }

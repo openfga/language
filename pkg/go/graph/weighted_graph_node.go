@@ -35,7 +35,7 @@ func (node *WeightedAuthorizationModelNode) GetUniqueLabel() string {
 	return node.uniqueLabel
 }
 
-// GetWildcards returns an array of types, e.g. "user". This means that from this node there is a path to node user:*
+// GetWildcards returns an array of types, e.g. "user". This means that from this node there is a path to node user:*.
 func (node *WeightedAuthorizationModelNode) GetWildcards() []string {
 	return node.wildcards
 }

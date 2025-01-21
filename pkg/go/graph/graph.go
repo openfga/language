@@ -104,6 +104,8 @@ func (g *AuthorizationModelGraph) Reversed() (*AuthorizationModelGraph, error) {
 // PathExists returns true if both nodes exist and there is a path starting at 'fromLabel' extending to 'toLabel'.
 // If both labels are equal, it returns true.
 // If either node doesn't exist, it returns false and ErrQueryingGraph.
+// Note: if somewhere in the path there is an IntersectionOperator or ExclusionOperator, it will NOT return false
+// if there is some child that does NOT reach 'toLabel'.
 func (g *AuthorizationModelGraph) PathExists(fromLabel, toLabel string) (bool, error) {
 	fromNode, err := g.GetNodeByLabel(fromLabel)
 	if err != nil {

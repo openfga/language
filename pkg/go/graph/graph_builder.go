@@ -117,7 +117,7 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 	}
 }
 
-func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) error {
+func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
 	directlyRelated := make([]*openfgav1.RelationReference, 0)
 	var curNode *AuthorizationModelNode
 
@@ -146,12 +146,8 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 		// we only draw one edge from user to x#viewer, but with two conditions: none and condX
-		_, err := graphBuilder.upsertEdge(curNode, parentNode, DirectEdge, "", directlyRelatedDef.Condition)
-		if err != nil {
-			return err
-		}
+		graphBuilder.upsertEdge(curNode, parentNode, DirectEdge, "", directlyRelatedDef.GetCondition())
 	}
-	return nil
 }
 
 func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode *AuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) {
@@ -167,7 +163,7 @@ func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Aut
 	graphBuilder.AddEdge(newNode, parentNode, nodeType, "", "")
 }
 
-func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) error {
+func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) {
 	// e.g. define viewer: admin from parent
 	// "parent" is the tupleset
 	tuplesetRelation := rewrite.GetTupleset().GetRelation()
@@ -181,7 +177,6 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 	}
 
 	for _, relatedType := range directlyRelated {
-
 		tuplesetType := relatedType.GetType()
 
 		if !typeAndRelationExists(model, tuplesetType, computedRelation) {
@@ -192,11 +187,7 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 		nodeSource := graphBuilder.getOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 		typeTuplesetRelation := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
 
-		ok, err := graphBuilder.hasEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation)
-		if err != nil {
-			return err
-		}
-		if ok {
+		if graphBuilder.hasEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation) {
 			// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 			// we only draw one edge from user to x#viewer
 			continue
@@ -205,7 +196,6 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 		// new edge from "xxx#admin" to "yyy#viewer" tuplesetRelation on "yyy#parent"
 		graphBuilder.upsertEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation, relatedType.GetCondition())
 	}
-	return nil
 }
 
 func (g *AuthorizationModelGraphBuilder) getOrAddNode(uniqueLabel, label string, nodeType NodeType) *AuthorizationModelNode {
@@ -257,53 +247,44 @@ func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType E
 	return newLine
 }
 
-func (g *AuthorizationModelGraphBuilder) upsertEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, condition string) (*AuthorizationModelEdge, error) {
+func (g *AuthorizationModelGraphBuilder) upsertEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, condition string) {
 	if from == nil || to == nil {
-		return nil, nil
+		return
 	}
 
 	iter := g.Lines(from.ID(), to.ID())
 	for iter.Next() {
 		l := iter.Line()
-		edge, ok := l.(*AuthorizationModelEdge)
-		if !ok {
-			// if it is not a valid AuthorizationModelEdge then return error
-			return nil, ErrBuildingGraph
-		}
+		edge, _ := l.(*AuthorizationModelEdge)
 		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
 			for _, cond := range edge.conditions {
 				if cond == condition {
-					return edge, nil
+					return
 				}
 			}
 			edge.conditions = append(edge.conditions, condition)
-			return edge, nil
+			return
 		}
 	}
 
-	return g.AddEdge(from, to, edgeType, tuplesetRelation, condition), nil
-
+	g.AddEdge(from, to, edgeType, tuplesetRelation, condition)
 }
 
-func (g *AuthorizationModelGraphBuilder) hasEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string) (bool, error) {
+func (g *AuthorizationModelGraphBuilder) hasEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string) bool {
 	if from == nil || to == nil {
-		return false, nil
+		return false
 	}
 
 	iter := g.Lines(from.ID(), to.ID())
 	for iter.Next() {
 		l := iter.Line()
-		edge, ok := l.(*AuthorizationModelEdge)
-		if !ok {
-			// if it is not a valid AuthorizationModelEdge then return error
-			return false, ErrBuildingGraph
-		}
+		edge, _ := l.(*AuthorizationModelEdge)
 		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 func typeAndRelationExists(model *openfgav1.AuthorizationModel, typeName, relation string) bool {

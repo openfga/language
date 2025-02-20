@@ -517,7 +517,7 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	edges, _ := graph.GetEdgesFromNode(graph.nodes["permission#assignee"])
 	require.Len(t, edges, 1)
 	conditions := edges[0].conditions
-	require.Len(t, edges[0].tuplesetRelation, 0)
+	require.Empty(t, edges[0].tuplesetRelation)
 	require.Len(t, conditions, 2)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_read"])
 	require.Len(t, edges, 1)
@@ -584,5 +584,4 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["permission#member"].weights["user"])
 	require.Equal(t, Infinite, graph.nodes["job#can_view"].weights["user"])
 	require.Equal(t, 1, graph.nodes["job#owner"].weights["job"])
-
 }

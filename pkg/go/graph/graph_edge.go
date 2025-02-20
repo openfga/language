@@ -12,11 +12,11 @@ const (
 	RewriteEdge  EdgeType = 1
 	TTUEdge      EdgeType = 2
 	ComputedEdge EdgeType = 3
-	// when an edge does not have cond in the model, it will have a condition with value none.
-	// this is required to differentiate when an edge need to support condition and no condition
+	// When an edge does not have cond in the model, it will have a condition with value none.
+	// This is required to differentiate when an edge need to support condition and no condition
 	// like define rel1: [user, user with condX], in this case the edge will have [none, condX]
 	// or an edge needs to support only condition like define rel1: [user with condX], the edge will have [condX]
-	// in the case the edge does not have any condition like define rel1: [user], the edge will have [none]
+	// in the case the edge does not have any condition like define rel1: [user], the edge will have [none].
 	NoCond string = "none"
 )
 

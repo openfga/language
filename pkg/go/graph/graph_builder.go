@@ -111,7 +111,7 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 
 	// add one edge "operator" -> "relation that defined the operator"
 	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
-	graphBuilder.AddEdge(operatorNodeParent, parentNode, RewriteEdge, "")
+	graphBuilder.AddEdge(operatorNodeParent, parentNode, RewriteEdge, "", "")
 	for _, child := range children {
 		checkRewrite(graphBuilder, operatorNodeParent, model, child, typeDef, relation)
 	}
@@ -144,13 +144,9 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 			curNode = graphBuilder.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
 		}
 
-		if graphBuilder.HasEdge(curNode, parentNode, DirectEdge, "") {
-			// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
-			// we only draw one edge from user to x#viewer
-			continue
-		}
-
-		graphBuilder.AddEdge(curNode, parentNode, DirectEdge, "")
+		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
+		// we only draw one edge from user to x#viewer, but with two conditions: none and condX
+		graphBuilder.UpsertEdge(curNode, parentNode, DirectEdge, "", directlyRelatedDef.Condition)
 	}
 }
 
@@ -164,7 +160,7 @@ func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Aut
 	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {
 		nodeType = ComputedEdge
 	}
-	graphBuilder.AddEdge(newNode, parentNode, nodeType, "")
+	graphBuilder.AddEdge(newNode, parentNode, nodeType, "", "")
 }
 
 func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) {
@@ -181,6 +177,7 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 	}
 
 	for _, relatedType := range directlyRelated {
+
 		tuplesetType := relatedType.GetType()
 
 		if !typeAndRelationExists(model, tuplesetType, computedRelation) {
@@ -189,10 +186,16 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 
 		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
 		nodeSource := graphBuilder.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		conditionedOnNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
+		typeTuplesetRelation := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
 
-		// new edge from "xxx#admin" to "yyy#viewer" conditioned on "yyy#parent"
-		graphBuilder.AddEdge(nodeSource, parentNode, TTUEdge, conditionedOnNodeName)
+		if graphBuilder.HasEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation) {
+			// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
+			// we only draw one edge from user to x#viewer
+			continue
+		}
+
+		// new edge from "xxx#admin" to "yyy#viewer" tuplesetRelation on "yyy#parent"
+		graphBuilder.UpsertEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation, relatedType.GetCondition())
 	}
 }
 
@@ -229,19 +232,50 @@ func (g *AuthorizationModelGraphBuilder) GetNodeFor(uniqueLabel string) *Authori
 	return authModelNode
 }
 
-func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType EdgeType, conditionedOn string) *AuthorizationModelEdge {
+func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, condition string) *AuthorizationModelEdge {
 	if from == nil || to == nil {
 		return nil
 	}
+	if len(condition) == 0 {
+		condition = NoCond
+	}
+	conditions := []string{condition}
 
 	l := g.NewLine(from, to)
-	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, conditionedOn: conditionedOn}
+	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, tuplesetRelation: tuplesetRelation, conditions: conditions}
 	g.SetLine(newLine)
 
 	return newLine
 }
 
-func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType EdgeType, conditionedOn string) bool {
+func (g *AuthorizationModelGraphBuilder) UpsertEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, condition string) *AuthorizationModelEdge {
+	if from == nil || to == nil {
+		return nil
+	}
+
+	iter := g.Lines(from.ID(), to.ID())
+	for iter.Next() {
+		l := iter.Line()
+		edge, ok := l.(*AuthorizationModelEdge)
+		if !ok {
+			return g.AddEdge(from, to, edgeType, tuplesetRelation, condition)
+		}
+		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+			for _, cond := range edge.conditions {
+				if cond == condition {
+					return edge
+				}
+			}
+			edge.conditions = append(edge.conditions, condition)
+			return edge
+		}
+	}
+
+	return g.AddEdge(from, to, edgeType, tuplesetRelation, condition)
+
+}
+
+func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string) bool {
 	if from == nil || to == nil {
 		return false
 	}
@@ -253,7 +287,7 @@ func (g *AuthorizationModelGraphBuilder) HasEdge(from, to graph.Node, edgeType E
 		if !ok {
 			return false
 		}
-		if edge.edgeType == edgeType && edge.conditionedOn == conditionedOn {
+		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
 			return true
 		}
 	}

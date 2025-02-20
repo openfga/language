@@ -83,7 +83,8 @@ func (g *AuthorizationModelGraph) Reversed() (*AuthorizationModelGraph, error) {
 			if !ok {
 				return nil, fmt.Errorf("%w: could not cast to AuthorizationModelEdge", ErrBuildingGraph)
 			}
-			graphBuilder.AddEdge(nextLine.To(), nextLine.From(), casted.edgeType, casted.conditionedOn)
+			newEdge := graphBuilder.AddEdge(nextLine.To(), nextLine.From(), casted.edgeType, casted.tuplesetRelation, "")
+			newEdge.conditions = casted.conditions
 		}
 	}
 

@@ -289,6 +289,71 @@ rankdir=BT
 5 -> 4 [label=direct];
 }`,
 		},
+		`tuple_to_userset_conditional`: {
+			model: `
+				model
+					schema 1.1
+				type user
+				type document
+					relations
+						define parentt: [folder, folder with condX]
+						define viewer: admin from parentt
+				type folder
+					relations
+						define admin: [user]
+				condition condX (x:int) {
+					x > 0
+				}`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#parentt"];
+2 [label=folder];
+3 [label="document#viewer"];
+4 [label="folder#admin"];
+5 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+4 -> 3 [headlabel="(document#parentt)"];
+5 -> 4 [label=direct];
+}`,
+		},
+		`userset_conditional`: {
+			model: `
+				model
+					schema 1.1
+				type folder
+					relations
+						define viewer: [group#member, group#member with condX]
+				type group
+					relations
+						define member: [user]
+				type user
+				condition condX (x:int) {
+					x > 0
+				}`,
+			expectedOutput: `digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=folder];
+1 [label="folder#viewer"];
+2 [label="group#member"];
+3 [label=group];
+4 [label=user];
+
+// Edge definitions.
+2 -> 1 [label=direct];
+4 -> 2 [label=direct];
+}`,
+		},
 		`tuple_to_userset_recursive`: {
 			model: `
 				model

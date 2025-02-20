@@ -57,11 +57,14 @@ func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, no
 	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
 }
 
-func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, condition string) {
+func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, tuplesetRelation string, conditions []string) {
 	wildcards := make([]string, 0)
 	fromNode := wg.nodes[fromID]
 	toNode := wg.nodes[toID]
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, conditionedOn: condition, wildcards: wildcards}
+	if conditions == nil {
+		conditions = []string{NoCond}
+	}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: wildcards, conditions: conditions}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 

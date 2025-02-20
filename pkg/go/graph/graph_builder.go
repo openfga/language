@@ -245,7 +245,7 @@ func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType E
 	if from == nil || to == nil {
 		return nil
 	}
-	if len(condition) == 0 {
+	if condition == "" {
 		condition = NoCond
 	}
 	conditions := []string{condition}

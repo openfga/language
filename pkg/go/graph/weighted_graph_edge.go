@@ -3,7 +3,7 @@ package graph
 type WeightedAuthorizationModelEdge struct {
 	weights          map[string]int
 	edgeType         EdgeType
-	tuplesetRelation string
+	tuplesetRelation string // only present when the edgeType is a TTUEdge
 	from             *WeightedAuthorizationModelNode
 	to               *WeightedAuthorizationModelNode
 	wildcards        []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*

@@ -61,7 +61,7 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 	wildcards := make([]string, 0)
 	fromNode := wg.nodes[fromID]
 	toNode := wg.nodes[toID]
-	if conditions == nil {
+	if len(conditions) == 0 {
 		conditions = []string{NoCond}
 	}
 	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: wildcards, conditions: conditions}

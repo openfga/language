@@ -64,7 +64,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 			if !ok {
 				return nil, fmt.Errorf("%w: could not cast %v to AuthorizationModelNode", ErrBuildingGraph, castedEdge.To())
 			}
-			wb.AddEdge(castedFromNode.uniqueLabel, castedToNode.uniqueLabel, castedEdge.edgeType, castedEdge.conditionedOn)
+			wb.AddEdge(castedFromNode.uniqueLabel, castedToNode.uniqueLabel, castedEdge.edgeType, castedEdge.tuplesetRelation, castedEdge.conditions)
 		}
 	}
 

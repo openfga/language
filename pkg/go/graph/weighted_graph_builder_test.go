@@ -484,3 +484,104 @@ func TestValidGraphModel(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
 }
+
+func TestValidConditionalGraphModel(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+        type role
+            relations
+                define assignee: [user]
+        type permission
+            relations
+                define assignee: [role#assignee, role#assignee with condX]
+				define member: [user, permission#member, permission#member with condX]
+        type job
+            relations
+                define can_read: assignee from permission
+				define can_view: [user] or can_view from owner
+				define owner: [job, job with condX]
+                define permission: [permission, permission with condX]
+		condition condX (x:int) {
+					x > 0
+				}
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+	require.Len(t, graph.nodes, 12)
+	require.Len(t, graph.edges, 8)
+	edges, _ := graph.GetEdgesFromNode(graph.nodes["permission#assignee"])
+	require.Len(t, edges, 1)
+	conditions := edges[0].conditions
+	require.Empty(t, edges[0].tuplesetRelation)
+	require.Len(t, conditions, 2)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_read"])
+	require.Len(t, edges, 1)
+	conditions = edges[0].conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "job#permission", edges[0].tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#permission"])
+	require.Len(t, edges, 1)
+	conditions = edges[0].conditions
+	require.Len(t, conditions, 2)
+	require.Equal(t, "", edges[0].tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["role#assignee"])
+	require.Len(t, edges, 1)
+	conditions = edges[0].conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "", edges[0].tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["permission#member"])
+	require.Len(t, edges, 2)
+	var recursiveEdge *WeightedAuthorizationModelEdge
+	var userEdge *WeightedAuthorizationModelEdge
+	if edges[0].weights["user"] == Infinite {
+		recursiveEdge = edges[0]
+		userEdge = edges[1]
+	} else {
+		recursiveEdge = edges[1]
+		userEdge = edges[0]
+	}
+	conditions = recursiveEdge.conditions
+	require.Len(t, conditions, 2)
+	require.Equal(t, "", recursiveEdge.tuplesetRelation)
+	conditions = userEdge.conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "", userEdge.tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#owner"])
+	require.Len(t, edges, 1)
+	conditions = edges[0].conditions
+	require.Len(t, conditions, 2)
+	require.Equal(t, "", edges[0].tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_view"])
+	require.Len(t, edges, 1)
+	conditions = edges[0].conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "", edges[0].tuplesetRelation)
+	edges, _ = graph.GetEdgesFromNode(edges[0].to) // OR node
+	require.Len(t, edges, 2)
+	if edges[0].weights["user"] == Infinite {
+		recursiveEdge = edges[0]
+		userEdge = edges[1]
+	} else {
+		recursiveEdge = edges[1]
+		userEdge = edges[0]
+	}
+	conditions = recursiveEdge.conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "job#owner", recursiveEdge.tuplesetRelation)
+	conditions = userEdge.conditions
+	require.Len(t, conditions, 1)
+	require.Equal(t, "", userEdge.tuplesetRelation)
+
+	require.Equal(t, 2, graph.nodes["permission#assignee"].weights["user"])
+	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
+	require.Equal(t, 1, graph.nodes["role#assignee"].weights["user"])
+	require.Equal(t, 1, graph.nodes["job#permission"].weights["permission"])
+	require.Equal(t, Infinite, graph.nodes["permission#member"].weights["user"])
+	require.Equal(t, Infinite, graph.nodes["job#can_view"].weights["user"])
+	require.Equal(t, 1, graph.nodes["job#owner"].weights["job"])
+}

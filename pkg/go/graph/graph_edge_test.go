@@ -41,5 +41,5 @@ func TestEdgeConditionedOn(t *testing.T) {
 	edge, ok := edges.Line().(*AuthorizationModelEdge)
 	require.True(t, ok)
 
-	require.Equal(t, "document#parent", edge.ConditionedOn())
+	require.Equal(t, "document#parent", edge.TuplesetRelation())
 }

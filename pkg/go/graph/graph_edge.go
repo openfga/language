@@ -12,6 +12,12 @@ const (
 	RewriteEdge  EdgeType = 1
 	TTUEdge      EdgeType = 2
 	ComputedEdge EdgeType = 3
+	// When an edge does not have cond in the model, it will have a condition with value none.
+	// This is required to differentiate when an edge need to support condition and no condition
+	// like define rel1: [user, user with condX], in this case the edge will have [none, condX]
+	// or an edge needs to support only condition like define rel1: [user with condX], the edge will have [condX]
+	// in the case the edge does not have any condition like define rel1: [user], the edge will have [none].
+	NoCond string = "none"
 )
 
 type AuthorizationModelEdge struct {
@@ -21,7 +27,15 @@ type AuthorizationModelEdge struct {
 	edgeType EdgeType
 
 	// only when edgeType == TTUEdge
-	conditionedOn string
+	tuplesetRelation string
+
+	// conditions on the edge. This is a flattened graph with dedupx edges,
+	// if you have a node with multiple edges to another node will be deduplicate and instead
+	// only one edge but with multiple conditions,
+	// define rel1: [user, user with condX]
+	// then the node rel1 will have an edge pointing to the node user and with two conditions
+	// one that will be none and another one that will be condX
+	conditions []string
 }
 
 var _ encoding.Attributer = (*AuthorizationModelEdge)(nil)
@@ -30,12 +44,12 @@ func (n *AuthorizationModelEdge) EdgeType() EdgeType {
 	return n.edgeType
 }
 
-// ConditionedOn returns the TTU relation. For example, relation
+// TuplesetRelation returns the TTU relation. For example, relation
 // define viewer: viewer from parent
 // gives the graph "document#viewer" -> "document#viewer" and the edge
 // is conditioned on "document#parent".
-func (n *AuthorizationModelEdge) ConditionedOn() string {
-	return n.conditionedOn
+func (n *AuthorizationModelEdge) TuplesetRelation() string {
+	return n.tuplesetRelation
 }
 
 func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
@@ -55,7 +69,7 @@ func (n *AuthorizationModelEdge) Attributes() []encoding.Attribute {
 			},
 		}
 	case TTUEdge:
-		headLabelAttrValue := n.conditionedOn
+		headLabelAttrValue := n.tuplesetRelation
 		if headLabelAttrValue == "" {
 			headLabelAttrValue = "missing"
 		}

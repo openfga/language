@@ -111,7 +111,7 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 
 	// add one edge "operator" -> "relation that defined the operator"
 	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
-	graphBuilder.AddEdge(operatorNodeParent, parentNode, RewriteEdge, "", "")
+	graphBuilder.AddEdge(operatorNodeParent, parentNode, RewriteEdge, "", nil)
 	for _, child := range children {
 		checkRewrite(graphBuilder, operatorNodeParent, model, child, typeDef, relation)
 	}
@@ -160,7 +160,7 @@ func parseComputed(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Aut
 	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {
 		nodeType = ComputedEdge
 	}
-	graphBuilder.AddEdge(newNode, parentNode, nodeType, "", "")
+	graphBuilder.AddEdge(newNode, parentNode, nodeType, "", nil)
 }
 
 func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) {
@@ -188,8 +188,15 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 		typeTuplesetRelation := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
 
 		if graphBuilder.hasEdge(nodeSource, parentNode, TTUEdge, typeTuplesetRelation) {
-			// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
-			// we only draw one edge from user to x#viewer
+			// we don't need to do any condition update, only de-dup the edge. In case of TTU
+			// the direct relation will have the conditions
+			// for example, in the case of
+			// type group
+			//   relations
+			// 		define rel1: [user] or rel1 from parent
+			//		define parent: [group, group with condX]
+			// In the graph we only have one TTU edge from the OR node to the group#rel1 node, but there is not condition associtated to it
+			// the conditions are associated to the edge from group#parent node to the group node. This direct edge has two conditions: none and condX
 			continue
 		}
 
@@ -231,14 +238,13 @@ func (g *AuthorizationModelGraphBuilder) getNodeByLabel(uniqueLabel string) *Aut
 	return authModelNode
 }
 
-func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, condition string) *AuthorizationModelEdge {
+func (g *AuthorizationModelGraphBuilder) AddEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string, conditions []string) *AuthorizationModelEdge {
 	if from == nil || to == nil {
 		return nil
 	}
-	if condition == "" {
-		condition = NoCond
+	if len(conditions) == 0 {
+		conditions = []string{NoCond}
 	}
-	conditions := []string{condition}
 
 	l := g.NewLine(from, to)
 	newLine := &AuthorizationModelEdge{Line: l, edgeType: edgeType, tuplesetRelation: tuplesetRelation, conditions: conditions}
@@ -267,7 +273,10 @@ func (g *AuthorizationModelGraphBuilder) upsertEdge(from, to graph.Node, edgeTyp
 		}
 	}
 
-	g.AddEdge(from, to, edgeType, tuplesetRelation, condition)
+	if condition == "" {
+		condition = NoCond
+	}
+	g.AddEdge(from, to, edgeType, tuplesetRelation, []string{condition})
 }
 
 func (g *AuthorizationModelGraphBuilder) hasEdge(from, to graph.Node, edgeType EdgeType, tuplesetRelation string) bool {

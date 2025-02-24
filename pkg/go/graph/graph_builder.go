@@ -195,7 +195,7 @@ func parseTupleToUserset(graphBuilder *AuthorizationModelGraphBuilder, parentNod
 			//   relations
 			// 		define rel1: [user] or rel1 from parent
 			//		define parent: [group, group with condX]
-			// In the graph we only have one TTU edge from the OR node to the group#rel1 node, but there is not condition associtated to it
+			// In the graph we only have one TTU edge from the OR node to the group#rel1 node, but there are no conditions associated to it
 			// the conditions are associated to the edge from group#parent node to the group node. This direct edge has two conditions: none and condX
 			continue
 		}

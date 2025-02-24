@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/openfga/api/proto v0.0.0-20240905181937-3583905f61a6

@@ -519,20 +519,27 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	conditions := edges[0].conditions
 	require.Empty(t, edges[0].tuplesetRelation)
 	require.Len(t, conditions, 2)
+	require.Equal(t, "none", conditions[0])
+	require.Equal(t, "condX", conditions[1])
+
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_read"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
+	require.Equal(t, "none", conditions[0])
 	require.Equal(t, "job#permission", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#permission"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 2)
+	require.Equal(t, "none", conditions[0])
+	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["role#assignee"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
+	require.Equal(t, "none", conditions[0])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["permission#member"])
 	require.Len(t, edges, 2)
@@ -547,19 +554,25 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	}
 	conditions = recursiveEdge.conditions
 	require.Len(t, conditions, 2)
+	require.Equal(t, "none", conditions[0])
+	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
+	require.Equal(t, "none", conditions[0])
 	require.Equal(t, "", userEdge.tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#owner"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 2)
+	require.Equal(t, "none", conditions[0])
+	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_view"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
+	require.Equal(t, "none", conditions[0])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(edges[0].to) // OR node
 	require.Len(t, edges, 2)
@@ -572,10 +585,12 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	}
 	conditions = recursiveEdge.conditions
 	require.Len(t, conditions, 1)
+	require.Equal(t, "none", conditions[0])
 	require.Equal(t, "job#owner", recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
 	require.Equal(t, "", userEdge.tuplesetRelation)
+	require.Equal(t, "none", conditions[0])
 
 	require.Equal(t, 2, graph.nodes["permission#assignee"].weights["user"])
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])

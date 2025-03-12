@@ -7,8 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	pb "github.com/openfga/api/proto/openfga/v1"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 
 	"github.com/openfga/language/pkg/go/errors"
 )
@@ -25,7 +26,7 @@ func (v *DirectAssignmentValidator) occurrences() int {
 	return v.occurred
 }
 
-func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool { //nolint:cyclop
+func (v *DirectAssignmentValidator) isFirstPosition(userset *openfgav1.Userset) bool { //nolint:cyclop
 	if userset.GetThis() != nil {
 		return true
 	}
@@ -67,7 +68,7 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *pb.Userset) bool { 
 	return false
 }
 
-func parseTypeRestriction(restriction *pb.RelationReference) string {
+func parseTypeRestriction(restriction *openfgav1.RelationReference) string {
 	typeName := restriction.GetType()
 	relation := restriction.GetRelation()
 	wildcard := restriction.GetWildcard()
@@ -89,7 +90,7 @@ func parseTypeRestriction(restriction *pb.RelationReference) string {
 	return typeRestriction
 }
 
-func parseTypeRestrictions(restrictions []*pb.RelationReference) []string {
+func parseTypeRestrictions(restrictions []*openfgav1.RelationReference) []string {
 	parsedTypeRestrictions := []string{}
 	for index := 0; index < len(restrictions); index++ {
 		parsedTypeRestrictions = append(parsedTypeRestrictions, parseTypeRestriction(restrictions[index]))
@@ -98,13 +99,13 @@ func parseTypeRestrictions(restrictions []*pb.RelationReference) []string {
 	return parsedTypeRestrictions
 }
 
-func parseThis(typeRestrictions []*pb.RelationReference) string {
+func parseThis(typeRestrictions []*openfgav1.RelationReference) string {
 	parsedTypeRestrictions := parseTypeRestrictions(typeRestrictions)
 
 	return fmt.Sprintf("[%v]", strings.Join(parsedTypeRestrictions, ", "))
 }
 
-func parseTupleToUserset(relationDefinition *pb.Userset) string {
+func parseTupleToUserset(relationDefinition *openfgav1.Userset) string {
 	return fmt.Sprintf(
 		"%v from %v",
 		relationDefinition.GetTupleToUserset().GetComputedUserset().GetRelation(),
@@ -112,15 +113,15 @@ func parseTupleToUserset(relationDefinition *pb.Userset) string {
 	)
 }
 
-func parseComputedUserset(relationDefinition *pb.Userset) string {
+func parseComputedUserset(relationDefinition *openfgav1.Userset) string {
 	return relationDefinition.GetComputedUserset().GetRelation()
 }
 
 func parseDifference(
 	typeName string,
 	relationName string,
-	relationDefinition *pb.Userset,
-	typeRestrictions []*pb.RelationReference,
+	relationDefinition *openfgav1.Userset,
+	typeRestrictions []*openfgav1.RelationReference,
 	validator *DirectAssignmentValidator,
 ) (string, error) {
 	parsedSubStringBase, err := parseSubRelation(
@@ -155,8 +156,8 @@ func parseDifference(
 func parseUnion(
 	typeName string,
 	relationName string,
-	relationDefinition *pb.Userset,
-	typeRestrictions []*pb.RelationReference,
+	relationDefinition *openfgav1.Userset,
+	typeRestrictions []*openfgav1.RelationReference,
 	validator *DirectAssignmentValidator,
 ) (string, error) {
 	parsedString := []string{}
@@ -177,8 +178,8 @@ func parseUnion(
 func parseIntersection(
 	typeName string,
 	relationName string,
-	relationDefinition *pb.Userset,
-	typeRestrictions []*pb.RelationReference,
+	relationDefinition *openfgav1.Userset,
+	typeRestrictions []*openfgav1.RelationReference,
 	validator *DirectAssignmentValidator,
 ) (string, error) {
 	parsedString := []string{}
@@ -199,8 +200,8 @@ func parseIntersection(
 func parseSubRelation(
 	typeName string,
 	relationName string,
-	relationDefinition *pb.Userset,
-	typeRestrictions []*pb.RelationReference,
+	relationDefinition *openfgav1.Userset,
+	typeRestrictions []*openfgav1.RelationReference,
 	validator *DirectAssignmentValidator,
 ) (string, error) {
 	if relationDefinition.GetThis() != nil {
@@ -251,8 +252,8 @@ func parseSubRelation(
 func parseRelation(
 	typeName string,
 	relationName string,
-	relationDefinition *pb.Userset,
-	relationMetadata *pb.RelationMetadata,
+	relationDefinition *openfgav1.Userset,
+	relationMetadata *openfgav1.RelationMetadata,
 	includeSourceInformation bool,
 ) (string, error) {
 	validator := DirectAssignmentValidator{
@@ -292,7 +293,7 @@ func parseRelation(
 	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
 }
 
-func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
+func prioritizeDirectAssignment(usersets []*openfgav1.Userset) []*openfgav1.Userset {
 	if len(usersets) > 0 {
 		thisPosition := -1
 
@@ -305,7 +306,7 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 		}
 
 		if thisPosition > 0 {
-			newUsersets := []*pb.Userset{usersets[thisPosition]}
+			newUsersets := []*openfgav1.Userset{usersets[thisPosition]}
 			newUsersets = append(newUsersets, usersets[:thisPosition]...)
 			newUsersets = append(newUsersets, usersets[thisPosition+1:]...)
 
@@ -316,7 +317,7 @@ func prioritizeDirectAssignment(usersets []*pb.Userset) []*pb.Userset {
 	return usersets
 }
 
-func parseType(typeDefinition *pb.TypeDefinition, isModularModel, includeSourceInformation bool) (string, error) {
+func parseType(typeDefinition *openfgav1.TypeDefinition, isModularModel, includeSourceInformation bool) (string, error) {
 	typeName := typeDefinition.GetType()
 	sourceString := constructSourceComment(
 		typeDefinition.GetMetadata().GetModule(),
@@ -371,7 +372,7 @@ func parseType(typeDefinition *pb.TypeDefinition, isModularModel, includeSourceI
 	return parsedTypeString, nil
 }
 
-func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) string {
+func parseConditionParams(parameterMap map[string]*openfgav1.ConditionParamTypeRef) string {
 	parametersStringArray := []string{}
 
 	parameterNames := []string{}
@@ -401,7 +402,7 @@ func parseConditionParams(parameterMap map[string]*pb.ConditionParamTypeRef) str
 	return strings.Join(parametersStringArray, ", ")
 }
 
-func parseCondition(conditionName string, conditionDef *pb.Condition, includeSourceInformation bool) (string, error) {
+func parseCondition(conditionName string, conditionDef *openfgav1.Condition, includeSourceInformation bool) (string, error) {
 	if conditionName != conditionDef.GetName() {
 		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
 	}
@@ -422,7 +423,7 @@ func parseCondition(conditionName string, conditionDef *pb.Condition, includeSou
 	), nil
 }
 
-func parseConditions(model *pb.AuthorizationModel, includeSourceInformation bool) (string, error) {
+func parseConditions(model *openfgav1.AuthorizationModel, includeSourceInformation bool) (string, error) {
 	conditionsMap := model.GetConditions()
 	if len(conditionsMap) == 0 {
 		return "", nil
@@ -484,7 +485,7 @@ func WithIncludeSourceInformation(includeSourceInformation bool) TransformOption
 }
 
 // TransformJSONProtoToDSL - Converts models from the protobuf representation of the JSON syntax to the OpenFGA DSL.
-func TransformJSONProtoToDSL(model *pb.AuthorizationModel, opts ...TransformOption) (string, error) {
+func TransformJSONProtoToDSL(model *openfgav1.AuthorizationModel, opts ...TransformOption) (string, error) {
 	schemaVersion := model.GetSchemaVersion()
 
 	transformOpts := &transformOptions{
@@ -510,7 +511,7 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel, opts ...TransformOpti
 	}
 
 	if isModularModel {
-		slices.SortStableFunc(typeDefs, func(a, b *pb.TypeDefinition) int {
+		slices.SortStableFunc(typeDefs, func(a, b *openfgav1.TypeDefinition) int {
 			return sortByModule(
 				a.GetType(), b.GetType(),
 				a.GetMetadata().GetModule(), b.GetMetadata().GetModule(),
@@ -546,8 +547,8 @@ func TransformJSONProtoToDSL(model *pb.AuthorizationModel, opts ...TransformOpti
 }
 
 // LoadJSONStringToProto - Converts models authored in OpenFGA JSON syntax to the protobuf representation.
-func LoadJSONStringToProto(modelString string) (*pb.AuthorizationModel, error) {
-	model := &pb.AuthorizationModel{}
+func LoadJSONStringToProto(modelString string) (*openfgav1.AuthorizationModel, error) {
+	model := &openfgav1.AuthorizationModel{}
 	unmarshaller := protojson.UnmarshalOptions{
 		AllowPartial:   false,
 		DiscardUnknown: true,

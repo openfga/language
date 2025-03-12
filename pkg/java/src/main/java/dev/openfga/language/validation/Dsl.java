@@ -20,6 +20,10 @@ class Dsl {
     }
 
     private int findLine(Predicate<String> predicate, int skipIndex) {
+        if (lines == null) {
+            return -1;
+        }
+
         return IntStream.range(skipIndex, lines.length)
                 .filter(index -> predicate.test(lines[index]))
                 .findFirst()
@@ -47,7 +51,7 @@ class Dsl {
     }
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
-        return findLine(line -> line.trim().startsWith("type " + typeName), skipIndex);
+        return findLine(line -> line.trim().matches("type " + typeName), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

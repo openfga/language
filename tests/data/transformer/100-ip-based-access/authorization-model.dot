@@ -1,0 +1,25 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=document];
+1 [label="document#can_view"];
+2 [label=intersection];
+3 [label="document#viewer"];
+4 [label="organization#ip_based_access_policy"];
+5 [label="document#organization"];
+6 [label=organization];
+7 [label=user];
+8 [label="organization#member"];
+
+// Edge definitions.
+2 -> 1;
+3 -> 2;
+4 -> 2 [headlabel="(document#organization)"];
+6 -> 5 [label=direct];
+7 -> 3 [label=direct];
+7 -> 8 [label=direct];
+8 -> 4 [label=direct];
+}

@@ -3,11 +3,7 @@ import { Keyword, ReservedKeywords } from "./keywords";
 import { parseDSL } from "../transformer/dsltojson";
 import { ConfigurationError, DSLSyntaxError, ModelValidationError, ModelValidationSingleError } from "../errors";
 import { ExceptionCollector } from "../util/exceptions";
-
-// eslint-disable-next-line no-useless-escape
-const defaultTypeRule = "^[^:#@\\s]{1,254}$";
-// eslint-disable-next-line no-useless-escape
-const defaultRelationRule = "^[^:#@\\s]{1,50}$";
+import { Rules } from "./validate-rules";
 
 enum RelationDefOperator {
   Union = "union",
@@ -93,6 +89,7 @@ const deepCopy = <T>(object: T): T => {
   return JSON.parse(JSON.stringify(object));
 };
 
+// Ensure a relation is assignable, the rest of the checks are to ensure that no model has this as well as additional properties defined
 const relationIsSingle = (currentRelation: Userset): boolean => {
   return (
     !Object.prototype.hasOwnProperty.call(currentRelation, RelationDefOperator.Union) &&
@@ -150,13 +147,13 @@ function hasEntryPointOrLoop(
   relationName: string | undefined,
   rewrite: Userset,
   visitedRecords: Record<string, Record<string, boolean>>,
-): [boolean, boolean] {
+): { hasEntry: boolean; loop: boolean } {
   // Deep copy
   const visited = deepCopy(visitedRecords);
 
   if (!relationName) {
     // nothing to do if relation is undefined
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   if (!visited[typeName]) {
@@ -166,13 +163,13 @@ function hasEntryPointOrLoop(
 
   const currentRelation = typeMap[typeName].relations;
   if (!currentRelation || !currentRelation[relationName]) {
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   const relationMetadata = typeMap[typeName].metadata?.relations;
 
   if (!typeMap[typeName].relations || !typeMap[typeName].relations![relationName]) {
-    return [false, false];
+    return { hasEntry: false, loop: false };
   }
 
   if (rewrite.this) {
@@ -181,58 +178,57 @@ function hasEntryPointOrLoop(
     )) {
       const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(assignableType);
       if (!decodedRelation || isWildcard) {
-        return [true, false];
+        return { hasEntry: true, loop: false };
       }
 
       const assignableRelation = typeMap[decodedType].relations![decodedRelation];
       if (!assignableRelation) {
-        return [false, false];
+        return { hasEntry: false, loop: false };
       }
 
       if (visited[decodedType]?.[decodedRelation]) {
         continue;
       }
 
-      const [hasEntry] = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
+      const { hasEntry } = hasEntryPointOrLoop(typeMap, decodedType, decodedRelation, assignableRelation, visited);
       if (hasEntry) {
-        return [true, false];
+        return { hasEntry: true, loop: false };
       }
     }
 
-    return [false, false];
+    return { hasEntry: false, loop: false };
   } else if (rewrite.computedUserset) {
     const computedRelationName = rewrite.computedUserset.relation;
     if (!computedRelationName) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     if (!typeMap[typeName].relations![computedRelationName]) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     const computedRelation = typeMap[typeName].relations![computedRelationName];
     if (!computedRelation) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     // Loop detected
     if (visited[typeName][computedRelationName]) {
-      return [false, true];
+      return { hasEntry: false, loop: true };
     }
 
-    const [hasEntry, loop] = hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
-    return [hasEntry, loop];
+    return hasEntryPointOrLoop(typeMap, typeName, computedRelationName, computedRelation, visited);
   } else if (rewrite.tupleToUserset) {
     const tuplesetRelationName = rewrite.tupleToUserset.tupleset.relation;
     const computedRelationName = rewrite.tupleToUserset.computedUserset.relation;
 
     if (!tuplesetRelationName || !computedRelationName) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     const tuplesetRelation = typeMap[typeName].relations![tuplesetRelationName];
     if (!tuplesetRelation) {
-      return [false, false];
+      return { hasEntry: false, loop: false };
     }
 
     for (const assignableType of getTypeRestrictions(
@@ -244,7 +240,7 @@ function hasEntryPointOrLoop(
           continue;
         }
 
-        const [hasEntry] = hasEntryPointOrLoop(
+        const { hasEntry } = hasEntryPointOrLoop(
           typeMap,
           assignableType,
           computedRelationName,
@@ -252,60 +248,47 @@ function hasEntryPointOrLoop(
           visited,
         );
         if (hasEntry) {
-          return [true, false];
+          return { hasEntry: true, loop: false };
         }
       }
     }
-    return [false, false];
+    return { hasEntry: false, loop: false };
   } else if (rewrite.union) {
-    let loop = false;
+    let hasLoop = false;
 
     for (const child of rewrite.union.child) {
-      const [entryPoint, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
-      if (entryPoint) {
-        return [true, false];
+      const { hasEntry, loop } = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      if (hasEntry) {
+        return { hasEntry: true, loop: false };
       }
-      loop = loop || childLoop;
+      hasLoop = hasLoop || loop;
     }
-    return [false, loop];
+    return { hasEntry: false, loop: hasLoop };
   } else if (rewrite.intersection) {
     for (const child of rewrite.intersection.child) {
-      const [hasEntry, childLoop] = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
+      const { hasEntry, loop } = hasEntryPointOrLoop(typeMap, typeName, relationName, child, deepCopy(visited));
       if (!hasEntry) {
-        return [false, childLoop];
+        return { hasEntry: false, loop };
       }
     }
-
-    return [true, false];
+    return { hasEntry: true, loop: false };
   } else if (rewrite.difference) {
     const visited = deepCopy(visitedRecords);
 
-    const [hasEntryBase, loopBase] = hasEntryPointOrLoop(
-      typeMap,
-      typeName,
-      relationName,
-      rewrite.difference.base,
-      visited,
-    );
-    if (!hasEntryBase) {
-      return [false, loopBase];
+    const baseResult = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.base, visited);
+    if (!baseResult.hasEntry) {
+      return { hasEntry: false, loop: baseResult.loop };
     }
 
-    const [hasEntrySubtract, loopSubtract] = hasEntryPointOrLoop(
-      typeMap,
-      typeName,
-      relationName,
-      rewrite.difference.subtract,
-      visited,
-    );
-    if (!hasEntrySubtract) {
-      return [false, loopSubtract];
+    const subtractResult = hasEntryPointOrLoop(typeMap, typeName, relationName, rewrite.difference.subtract, visited);
+    if (!subtractResult.hasEntry) {
+      return { hasEntry: false, loop: subtractResult.loop };
     }
 
-    return [true, false];
+    return { hasEntry: true, loop: false };
   }
 
-  return [false, false];
+  return { hasEntry: false, loop: false };
 }
 
 const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {
@@ -327,7 +310,7 @@ const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: numbe
   if (!lines) {
     return undefined;
   }
-  return lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`type ${typeName}`)) + skipIndex;
+  return lines.slice(skipIndex).findIndex((line: string) => line.trim().match(`^type ${typeName}$`)) + skipIndex;
 };
 
 const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: number) => {
@@ -340,7 +323,7 @@ const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: n
   return (
     lines
       .slice(skipIndex)
-      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`define ${relation}`)) + skipIndex
+      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`)) + skipIndex
   );
 };
 
@@ -349,7 +332,7 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
     return undefined;
   }
 
-  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").startsWith(`schema ${schema}`));
+  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^schema ${schema}$`));
 
   // As findIndex returns -1 when it doesn't find the line, we want to return 0 instead
   if (index >= 1) {
@@ -469,7 +452,7 @@ function childDefDefined(
       for (const item of fromPossibleTypes) {
         const { decodedType, decodedRelation, isWildcard, decodedConditionName } = destructTupleToUserset(item);
         if (!typeMap[decodedType]) {
-          // type is not defined
+          // Split line at definition as InvalidType should mark the value, not the key
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);
           collector.raiseInvalidType(decodedType, type, relation, { file, module }, lineIndex);
@@ -504,6 +487,7 @@ function childDefDefined(
               decodedType,
               relation,
               decodedRelation,
+              type,
               lineIndex,
               { file, module },
             );
@@ -528,7 +512,9 @@ function childDefDefined(
     case RewriteType.TupleToUserset: {
       // for this case, we need to consider both the "from" and "relation"
       if (childDef.from && childDef.target) {
-        // First, check to see if the childDef.from exists
+        // 1. Check to see if the childDef.from exists
+        //    Ensure that the relation referenced in the from exists
+        //    (e.g. ensures that `b` exists as a relation on the type in the case of `a from b`)
         if (!relations[childDef.from]) {
           const typeIndex = getTypeLineNumber(type, lines); // org
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex); // has_assigned
@@ -537,12 +523,19 @@ function childDefDefined(
             type,
             relation,
             childDef.from,
+            type,
             lineIndex,
             { file, module },
           );
         } else {
+          // 2. Ensure that the childDef.from relation is directly assignable
+          //    That means that the relation referenced is:
+          //    a. directly assignable
+          //    b. not a rewrite (not union, intersection or exclusion)
+          //    c. none of the directly assignable types contains a wildcard or a relation
+          //    d. on every valid assignable type, ensure that the computed relation (e.g. a in a from b) is a relation on those types
           const [fromTypes, isValid] = allowableTypes(typeMap, type, childDef.from);
-          if (isValid) {
+          if (isValid && fromTypes.length) {
             const childRelationNotValid = [];
             for (const item of fromTypes) {
               const { decodedType, decodedRelation, isWildcard } = destructTupleToUserset(item);
@@ -727,7 +720,7 @@ function modelValidation(
           fileToModuleMap[file].add(module);
         }
 
-        const [hasEntry, loop] = hasEntryPointOrLoop(
+        const { hasEntry, loop } = hasEntryPointOrLoop(
           typeMap,
           typeName,
           relationName,
@@ -854,8 +847,8 @@ export function validateJSON(
   const lines = dslString?.split("\n");
   const errors: ModelValidationSingleError[] = [];
   const collector = new ExceptionCollector(errors, lines);
-  const typeValidation = options.typeValidation || defaultTypeRule;
-  const relationValidation = options.relationValidation || defaultRelationRule;
+  const typeValidation = options.typeValidation || `^${Rules.type}$`;
+  const relationValidation = options.relationValidation || `^${Rules.relation}$`;
   const defaultRegex = new RegExp("[a-zA-Z]*");
   const fileToModuleMap: Record<string, Set<string>> = {};
 

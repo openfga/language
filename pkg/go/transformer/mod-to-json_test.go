@@ -17,7 +17,6 @@ func TestModFileToJSONTransformer(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 

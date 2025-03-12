@@ -23,7 +23,9 @@ public enum ValidationError {
     SelfError("self-error"),
     TuplesetNotDirect("tupleuserset-not-direct"),
     TypeRestrictionCannotHaveWildcardAndRelation("type-wildcard-relation"),
-    InvalidRelationOnTupleset("invalid-relation-on-tupleset");
+    InvalidRelationOnTupleset("invalid-relation-on-tupleset"),
+    DifferentNestedConditionName("different-nested-condition-name"),
+    MultipleModulesInFile("multiple-modules-in-file");
 
     private final String value;
 

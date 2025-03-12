@@ -1,0 +1,38 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=channel];
+1 [label="channel#commenter"];
+2 [label=union];
+3 [label=user];
+4 [label="workspace#member"];
+5 [label="channel#writer"];
+6 [label="channel#parent_workspace"];
+7 [label=workspace];
+8 [label="workspace#channels_admin"];
+9 [label=union];
+10 [label="workspace#legacy_admin"];
+11 [label="workspace#guest"];
+12 [label=union];
+
+// Edge definitions.
+2 -> 1;
+3 -> 2 [label=direct];
+3 -> 5 [label=direct];
+3 -> 9 [label=direct];
+3 -> 10 [label=direct];
+3 -> 11 [label=direct];
+3 -> 12 [label=direct];
+4 -> 2 [label=direct];
+4 -> 5 [label=direct];
+5 -> 2;
+7 -> 6 [label=direct];
+8 -> 12;
+9 -> 8;
+10 -> 9;
+10 -> 12;
+12 -> 4;
+}

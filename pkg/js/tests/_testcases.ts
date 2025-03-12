@@ -8,6 +8,7 @@ import {
   ModelValidationSingleError,
 } from "../errors";
 import { ModuleFile } from "../transformer";
+import { ErrorObject } from "ajv";
 
 interface ValidTestCase {
   name: string;
@@ -57,7 +58,15 @@ interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
 interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
   dslWithSourceInfo?: string;
+  expected_modules?: string[];
   expected_errors?: BaseError[];
+}
+
+interface MultipleInvalidStoreTestCase {
+  name: string;
+  store: string;
+  skip?: boolean;
+  expected_errors: ErrorObject[];
 }
 
 export function loadValidTransformerTestCases(): ValidTestCase[] {
@@ -80,6 +89,7 @@ export function loadValidTransformerTestCases(): ValidTestCase[] {
       if (skipFile) {
         testCase.skip = true;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // do nothing
     }
@@ -149,6 +159,7 @@ export function loadModuleTestCases(): ModuleTestCase[] {
       if (skipFile) {
         testCase.skip = true;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // do nothing
     }
@@ -157,6 +168,12 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     if (fs.existsSync(modelPath)) {
       const jsonData = fs.readFileSync(modelPath);
       testCase.json = jsonData.toString("utf8");
+    }
+
+    const expectedModulesPath = path.join(testDataPath, testCase.name!, "expected_modules.json");
+    if (fs.existsSync(expectedModulesPath)) {
+      const expectedModules = fs.readFileSync(expectedModulesPath);
+      testCase.expected_modules = JSON.parse(expectedModules.toString("utf8"));
     }
 
     const errorsPath = path.join(testDataPath, testCase.name!, "expected_errors.json");
@@ -178,26 +195,58 @@ export function loadModuleTestCases(): ModuleTestCase[] {
     }
 
     const modules: ModuleFile[] = [];
-    const files = fs.readdirSync(path.join(testDataPath, testCase.name!, "module"), {
-      withFileTypes: true,
-      recursive: true,
-    });
+    const modulesPath = path.join(testDataPath, testCase.name!, "module");
+    if (fs.existsSync(modulesPath)) {
+      const files = fs.readdirSync(modulesPath, {
+        withFileTypes: true,
+        recursive: true,
+      });
 
-    for (const file of files) {
-      if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
-        continue;
+      for (const file of files) {
+        if (!file.isFile() || !file.name || !file.name.endsWith(".fga")) {
+          continue;
+        }
+
+        modules.push({
+          name: file.name,
+          contents: fs.readFileSync(path.join(testDataPath, testCase.name!, "module", file.name), "utf8"),
+        });
       }
 
-      modules.push({
-        name: file.name,
-        contents: fs.readFileSync(path.join(testDataPath, testCase.name!, "module", file.name), "utf8"),
-      });
+      testCase.modules = modules;
     }
-
-    testCase.modules = modules;
 
     testCases.push(testCase as ModuleTestCase);
   }
 
   return testCases;
+}
+
+export function loadStoreTestCases(): MultipleInvalidStoreTestCase[] {
+  const testDataPath = path.join(__dirname, "../../../tests", "data", "stores");
+  const entries = fs.readdirSync(testDataPath, { withFileTypes: true });
+
+  const errors: MultipleInvalidStoreTestCase[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const testCase: Partial<MultipleInvalidStoreTestCase> = {
+      name: entry.name,
+    };
+
+    testCase.store = path.join(testDataPath, testCase.name!, "store.fga.yaml");
+
+    const errorsPath = path.join(testDataPath, testCase.name!, "expected_errors.json");
+    if (fs.existsSync(errorsPath)) {
+      const expectedErrors = fs.readFileSync(errorsPath);
+      testCase.expected_errors = JSON.parse(expectedErrors.toString("utf8"));
+    }
+
+    errors.push(testCase as MultipleInvalidStoreTestCase);
+  }
+
+  return errors;
 }

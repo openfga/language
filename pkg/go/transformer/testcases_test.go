@@ -281,27 +281,25 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop,gocognit
 
 		moduleDirectory := filepath.Join(testDataPath, testCase.Name, "module")
 
-		moduleFiles, err := os.ReadDir(moduleDirectory)
-		if err != nil {
-			return nil, err //nolint:wrapcheck
-		}
+		if moduleFiles, err := os.ReadDir(moduleDirectory); err == nil {
+			modules := []transformer.ModuleFile{}
 
-		modules := []transformer.ModuleFile{}
+			for _, file := range moduleFiles {
+				if file.IsDir() || !strings.HasSuffix(file.Name(), ".fga") {
+					continue
+				}
 
-		for _, file := range moduleFiles {
-			if file.IsDir() || !strings.HasSuffix(file.Name(), ".fga") {
-				continue
+				moduleFile, _ := os.ReadFile(filepath.Join(moduleDirectory, file.Name()))
+
+				modules = append(modules, transformer.ModuleFile{
+					Name:     file.Name(),
+					Contents: string(moduleFile),
+				})
 			}
 
-			moduleFile, _ := os.ReadFile(filepath.Join(moduleDirectory, file.Name()))
-
-			modules = append(modules, transformer.ModuleFile{
-				Name:     file.Name(),
-				Contents: string(moduleFile),
-			})
+			testCase.Modules = modules
 		}
 
-		testCase.Modules = modules
 		testCases = append(testCases, testCase)
 	}
 

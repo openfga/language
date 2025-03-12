@@ -49,7 +49,17 @@ export const transformModuleFilesToModel = (
           extendedTypeDefs[name].push(typeDef);
           continue;
         }
-
+        if (!typeDef.metadata) {
+          errors.push(
+            new ModuleTransformationSingleError({
+              msg: "file is not a module",
+              line: { start: 0, end: 0 },
+              column: { start: 0, end: 0 },
+              file: "nomodule.fga",
+            }),
+          );
+          continue;
+        }
         typeDef.metadata!.source_info = {
           file: name,
         };
@@ -249,8 +259,14 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
     case ValidationError.ReservedRelationKeywords:
       lineIndex = getRelationLineNumber(metadata.symbol, lines);
       break;
-    case ValidationError.InvalidRelationOnTupleset:
     case ValidationError.InvalidRelationType:
+      let offendingTypeIndex = getTypeLineNumber(metadata.offendingType!, lines);
+      if (offendingTypeIndex === -1) {
+        offendingTypeIndex = getTypeLineNumber(metadata.offendingType!, lines, undefined, true);
+      }
+      lineIndex = getRelationLineNumber(metadata.relation!, lines, offendingTypeIndex);
+      break;
+    case ValidationError.InvalidRelationOnTupleset:
     case ValidationError.MissingDefinition:
     case ValidationError.InvalidType:
     case ValidationError.ConditionNotDefined:
@@ -287,14 +303,20 @@ function resolveWordIndex(e: ModelValidationSingleError, line: string): number {
     return -1;
   }
 
+  const re = new RegExp("\\b" + metadata.symbol + "\\b");
+
   let wordIdx;
   switch (metadata.errorType) {
+    case ValidationError.InvalidType:
+      // Split line at definition as InvalidType should mark the value, not the key
+      const splitLine = line.split(":");
+      wordIdx = splitLine[0].length + splitLine[1].search(re) + 1;
+      break;
     case ValidationError.TuplesetNotDirect:
       const clauseStartsAt = line.indexOf("from") + "from".length;
       wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol);
       break;
     default:
-      const re = new RegExp("\\b" + metadata.symbol + "\\b");
       wordIdx = line?.search(re);
   }
 

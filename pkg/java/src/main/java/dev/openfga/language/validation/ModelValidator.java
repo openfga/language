@@ -1,5 +1,6 @@
 package dev.openfga.language.validation;
 
+import static dev.openfga.language.Utils.getNullSafe;
 import static dev.openfga.language.Utils.getNullSafeList;
 import static dev.openfga.language.validation.Dsl.*;
 import static java.util.Collections.emptyList;
@@ -10,7 +11,7 @@ import dev.openfga.sdk.api.model.*;
 import java.io.IOException;
 import java.util.*;
 
-public class DslValidator {
+public class ModelValidator {
 
     private final ValidationOptions options;
     private final AuthorizationModel authorizationModel;
@@ -18,19 +19,29 @@ public class DslValidator {
     private final ValidationErrorsBuilder errors;
     private ValidationRegex typeRegex;
     private ValidationRegex relationRegex;
+    private Map<String, Set<String>> fileToModules = new HashMap<>();
 
-    public DslValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
+    public ModelValidator(ValidationOptions options, AuthorizationModel authorizationModel, String[] lines) {
         this.options = options;
         this.authorizationModel = authorizationModel;
         dsl = new Dsl(lines);
         errors = new ValidationErrorsBuilder(lines);
     }
 
-    public static void validate(String dsl) throws DslErrorsException, IOException {
-        validate(dsl, new ValidationOptions());
+    public static void validateJson(AuthorizationModel authorizationModel) throws DslErrorsException {
+        validateJson(authorizationModel, new ValidationOptions());
     }
 
-    public static void validate(String dsl, ValidationOptions options) throws DslErrorsException {
+    public static void validateJson(AuthorizationModel authorizationModel, ValidationOptions options)
+            throws DslErrorsException {
+        new ModelValidator(options, authorizationModel, null).validate();
+    }
+
+    public static void validateDsl(String dsl) throws DslErrorsException, IOException {
+        validateDsl(dsl, new ValidationOptions());
+    }
+
+    public static void validateDsl(String dsl, ValidationOptions options) throws DslErrorsException {
         var transformer = new DslToJsonTransformer();
         var result = transformer.parseDsl(dsl);
         if (result.IsFailure()) {
@@ -39,7 +50,7 @@ public class DslValidator {
         var authorizationModel = result.getAuthorizationModel();
         var lines = dsl.split("\n");
 
-        new DslValidator(options, authorizationModel, lines).validate();
+        new ModelValidator(options, authorizationModel, lines).validate();
     }
 
     private void validate() throws DslErrorsException {
@@ -53,11 +64,19 @@ public class DslValidator {
             errors.raiseSchemaVersionRequired(0, "");
         }
 
-        if (schemaVersion != null && schemaVersion.equals("1.1")) {
+        if (schemaVersion != null && (schemaVersion.equals("1.1") || schemaVersion.equals("1.2"))) {
             modelValidation();
         } else if (schemaVersion != null) {
             var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
             errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);
+        }
+
+        for (Map.Entry<String, Set<String>> entry : fileToModules.entrySet()) {
+            String file = entry.getKey();
+            Set<String> modules = entry.getValue();
+            if (modules.size() > 1) {
+                errors.raiseMultipleModulesInSingleFile(file, modules);
+            }
         }
 
         errors.throwIfNotEmpty();
@@ -66,6 +85,8 @@ public class DslValidator {
     private void populateRelations() {
         authorizationModel.getTypeDefinitions().forEach(typeDef -> {
             var typeName = typeDef.getType();
+
+            trackModulesInFile(typeDef.getMetadata());
 
             if (typeName.equals(Keyword.SELF) || typeName.equals(Keyword.THIS)) {
                 var lineIndex = dsl.getTypeLineNumber(typeName);
@@ -154,14 +175,20 @@ public class DslValidator {
         }
 
         // next, ensure all relation have entry point
-        // we can skip if there are errors because errors (such as missing relations) will likely lead to no entries
+        // we can skip if there are errors because errors (such as missing relations)
+        // will likely lead to no entries
         if (errors.isEmpty()) {
             authorizationModel.getTypeDefinitions().forEach(typeDef -> {
                 var typeName = typeDef.getType();
+                var currentRelations = typeMap.get(typeName).getRelations();
+                var typeDefMetadata = typeDef.getMetadata();
+                var typeDefRelationsMetadata = getNullSafe(typeMap.get(typeName).getMetadata(), Metadata::getRelations);
                 for (var relationName : typeDef.getRelations().keySet()) {
-                    var currentRelations = typeMap.get(typeName).getRelations();
                     var result = EntryPointOrLoop.compute(
                             typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
+
+                    trackModulesInFile(typeDefMetadata, typeDefRelationsMetadata.get(relationName));
+
                     if (!result.hasEntry()) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
@@ -176,6 +203,12 @@ public class DslValidator {
         }
 
         authorizationModel.getConditions().forEach((conditionName, condition) -> {
+            trackModulesInFile(condition.getMetadata());
+
+            if (!conditionName.equals(condition.getName())) {
+                errors.raiseDifferentNestedConditionName(conditionName, condition.getName());
+            }
+
             if (!usedConditionNamesSet.contains(conditionName)) {
                 var conditionIndex = dsl.getConditionLineNumber(conditionName);
                 errors.raiseUnusedCondition(conditionIndex, conditionName);
@@ -337,6 +370,7 @@ public class DslValidator {
             }
             case TupleToUserset: {
                 if (childDef.getFrom() != null && childDef.getTarget() != null) {
+
                     if (!relations.containsKey(childDef.getFrom())) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);
@@ -347,7 +381,8 @@ public class DslValidator {
                                 childDef.getFrom());
                     } else {
                         var allowableTypesResult = allowableTypes(typeMap, typeName, childDef.getFrom());
-                        if (allowableTypesResult.isValid()) {
+                        if (allowableTypesResult.isValid()
+                                && !allowableTypesResult.getAllowableTypes().isEmpty()) {
                             var childRelationNotValid = new ArrayList<InvalidChildRelationMetadata>();
                             var fromTypes = allowableTypesResult.getAllowableTypes();
                             for (var item : fromTypes) {
@@ -423,5 +458,51 @@ public class DslValidator {
         return currentRelation.getUnion() == null
                 && currentRelation.getIntersection() == null
                 && currentRelation.getDifference() == null;
+    }
+
+    private void trackModulesInFile(Metadata metadata) {
+        if (metadata == null) {
+            return;
+        }
+
+        var sourceInfo = metadata.getSourceInfo();
+        var module = metadata.getModule();
+        trackModulesInFile(module, sourceInfo);
+    }
+
+    private void trackModulesInFile(Metadata metadata, RelationMetadata relationMetadata) {
+
+        String module = null;
+        SourceInfo sourceInfo = null;
+        if (relationMetadata != null) {
+            module = relationMetadata.getModule();
+            sourceInfo = relationMetadata.getSourceInfo();
+        }
+
+        if (module == null) {
+            module = metadata.getModule();
+            sourceInfo = metadata.getSourceInfo();
+        }
+
+        trackModulesInFile(module, sourceInfo);
+    }
+
+    private void trackModulesInFile(ConditionMetadata metadata) {
+        if (metadata == null) {
+            return;
+        }
+
+        var sourceInfo = metadata.getSourceInfo();
+        var module = metadata.getModule();
+        trackModulesInFile(module, sourceInfo);
+    }
+
+    private void trackModulesInFile(String module, SourceInfo sourceInfo) {
+        if (module == null || sourceInfo == null) {
+            return;
+        }
+        fileToModules
+                .computeIfAbsent(sourceInfo.getFile(), t -> new LinkedHashSet<>())
+                .add(module);
     }
 }

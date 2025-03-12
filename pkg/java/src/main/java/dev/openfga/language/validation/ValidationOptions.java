@@ -1,12 +1,11 @@
 package dev.openfga.language.validation;
 
+import dev.openfga.language.validation.Validator.Rules;
+
 public class ValidationOptions {
 
-    private static final String DEFAULT_TYPE_PATTERN = "^[^:#@\\s]{1,254}$";
-    private static final String DEFAULT_RELATION_PATTERN = "^[^:#@\\s]{1,50}$";
-
-    private String typePattern = DEFAULT_TYPE_PATTERN;
-    private String relationPattern = DEFAULT_RELATION_PATTERN;
+    private String typePattern = String.format("^%s$", Rules.TYPE);
+    private String relationPattern = String.format("^%s$", Rules.RELATION);
 
     public String getTypePattern() {
         return typePattern;

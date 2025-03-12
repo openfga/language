@@ -46,6 +46,7 @@ export interface ErrorMetadata {
   type?: string;
   relation?: string;
   condition?: string;
+  offendingType?: string;
 }
 
 /**
@@ -178,6 +179,12 @@ export class ConditionNameDoesntMatchError extends Error {
     public conditionNestedName: string,
   ) {
     super(`the '${conditionName}' condition has a different nested condition name ('${conditionNestedName}')`);
+  }
+}
+
+export class UnsupportedModularModules extends Error {
+  constructor(public schemaVersion: string) {
+    super(`model schema version ${schemaVersion} does not support modules`);
   }
 }
 

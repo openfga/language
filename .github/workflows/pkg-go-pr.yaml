@@ -1,0 +1,22 @@
+name: PR (Go)
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "pkg/go/**"
+      - "OpenFGAParser.g4"
+      - "OpenFGALexer.g4"
+      - "tests/**"
+      - ".github/workflows/pkg-go-pr.yaml"
+      - ".github/workflows/pkg-go-build.yaml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/pkg-go-build.yaml
+    secrets: inherit

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	pb "github.com/openfga/api/proto/openfga/v1"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 
 	"github.com/openfga/language/pkg/go/utils"
 )
@@ -60,17 +60,17 @@ func (e *ModuleValidationMultipleError) Error() string {
 func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 	modules []ModuleFile,
 	schemaVersion string,
-) (*pb.AuthorizationModel, error) {
-	model := &pb.AuthorizationModel{
+) (*openfgav1.AuthorizationModel, error) {
+	model := &openfgav1.AuthorizationModel{
 		SchemaVersion:   schemaVersion,
-		TypeDefinitions: []*pb.TypeDefinition{},
-		Conditions:      map[string]*pb.Condition{},
+		TypeDefinitions: []*openfgav1.TypeDefinition{},
+		Conditions:      map[string]*openfgav1.Condition{},
 	}
 
-	rawTypeDefs := []*pb.TypeDefinition{}
+	rawTypeDefs := []*openfgav1.TypeDefinition{}
 	types := []string{}
-	extendedTypeDefs := map[string][]*pb.TypeDefinition{}
-	conditions := map[string]*pb.Condition{}
+	extendedTypeDefs := map[string][]*openfgav1.TypeDefinition{}
+	conditions := map[string]*openfgav1.Condition{}
 	moduleFiles := map[string][]string{}
 
 	transformErrors := &multierror.Error{}
@@ -107,7 +107,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 
 			if extension {
 				if extendedTypeDefs[module.Name] == nil {
-					extendedTypeDefs[module.Name] = []*pb.TypeDefinition{}
+					extendedTypeDefs[module.Name] = []*openfgav1.TypeDefinition{}
 				}
 
 				extendedTypeDefs[module.Name] = append(extendedTypeDefs[module.Name], typeDef)
@@ -116,8 +116,15 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			}
 
 			types = append(types, typeDef.GetType())
-			typeDef.Metadata.SourceInfo = &pb.SourceInfo{
-				File: module.Name,
+			if typeDef.GetMetadata() != nil {
+				typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
+					File: module.Name,
+				}
+			} else {
+				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+					Msg: "file is not a module",
+				})
+				continue
 			}
 			rawTypeDefs = append(rawTypeDefs, typeDef)
 		}
@@ -136,7 +143,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				continue
 			}
 
-			condition.Metadata.SourceInfo = &pb.SourceInfo{
+			condition.Metadata.SourceInfo = &openfgav1.SourceInfo{
 				File: module.Name,
 			}
 			conditions[name] = condition
@@ -147,7 +154,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 		lines := moduleFiles[filename]
 
 		for _, typeDef := range typeDefs {
-			originalIndex := slices.IndexFunc(rawTypeDefs, func(t *pb.TypeDefinition) bool {
+			originalIndex := slices.IndexFunc(rawTypeDefs, func(t *openfgav1.TypeDefinition) bool {
 				return t.GetType() == typeDef.GetType()
 			})
 
@@ -170,14 +177,14 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				original.Relations = typeDef.GetRelations()
 
 				if original.GetMetadata() == nil {
-					original.Metadata = &pb.Metadata{}
+					original.Metadata = &openfgav1.Metadata{}
 				}
 
 				original.Metadata.Relations = typeDef.GetMetadata().GetRelations()
 
 				if original.Metadata.Relations != nil {
 					for name := range original.GetMetadata().GetRelations() {
-						original.Metadata.Relations[name].SourceInfo = &pb.SourceInfo{
+						original.Metadata.Relations[name].SourceInfo = &openfgav1.SourceInfo{
 							File: filename,
 						}
 					}
@@ -207,7 +214,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 					continue
 				}
 
-				var relationsMeta *pb.RelationMetadata
+				var relationsMeta *openfgav1.RelationMetadata
 
 				for relationMetName, relationM := range typeDef.GetMetadata().GetRelations() {
 					if relationMetName == name {
@@ -217,7 +224,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 					}
 				}
 
-				relationsMeta.SourceInfo = &pb.SourceInfo{
+				relationsMeta.SourceInfo = &openfgav1.SourceInfo{
 					File: filename,
 				}
 				original.Relations[name] = relation

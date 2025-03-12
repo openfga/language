@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	pb "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 
 	"github.com/openfga/language/pkg/go/transformer"
 )
@@ -22,8 +23,6 @@ func TestTransformModuleToJSON(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
-
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
@@ -31,11 +30,15 @@ func TestTransformModuleToJSON(t *testing.T) {
 				t.Skip()
 			}
 
+			if testCase.Modules == nil {
+				return
+			}
+
 			actual, err := transformer.TransformModuleFilesToModel(testCase.Modules, "1.2")
 			if len(testCase.ExpectedErrors) == 0 {
 				require.NoError(t, err)
 
-				expectedAuthModel := &pb.AuthorizationModel{}
+				expectedAuthModel := &openfgav1.AuthorizationModel{}
 				err = protojson.Unmarshal([]byte(testCase.JSON), expectedAuthModel)
 				require.NoError(t, err)
 

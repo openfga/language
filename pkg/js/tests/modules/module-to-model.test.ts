@@ -13,6 +13,10 @@ describe("transformModuleFilesToModel - module test cases", () => {
   moduleTestCases.forEach((testCase) => {
     const testFn = testCase.skip ? it.skip : it;
 
+    if (!testCase.modules) {
+      return;
+    }
+
     testFn(`transformModuleFilesToModel ${testCase.name}`, () => {
       if (!testCase.expected_errors) {
         expect(transformModuleFilesToModel(testCase.modules, "1.2")).toEqual(JSON.parse(testCase.json));

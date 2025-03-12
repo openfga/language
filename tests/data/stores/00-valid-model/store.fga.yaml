@@ -1,0 +1,40 @@
+name: Valid Store File
+
+model: |
+  model
+    schema 1.1
+  type user
+  type organization
+    relations
+      define member: [user]
+
+tuples:
+  - user: user:daniel
+    relation: member
+    object: organization:auth0
+  - user: user:jeffery
+    relation: member
+    object: organization:auth0
+tests:
+  - name: Tests for organization members
+    check:
+      - user: user:daniel
+        object: organization:auth0
+        assertions:
+          member: true
+    list_objects:
+      - user: user:daniel
+        type: organization
+        assertions:
+          member:
+            - organization:auth0
+  - name: Tests for user member of organization
+    list_users:
+      - object: organization:auth0
+        user_filter:
+          - type: user
+        assertions:
+          member:
+            users:
+              - user:daniel
+              - user:jeffery

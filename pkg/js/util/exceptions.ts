@@ -17,6 +17,7 @@ interface ValidationErrorProps {
     conditionName?: string;
     file?: string;
     module?: string;
+    offendingType?: string;
   };
   lines?: string[];
   lineIndex?: number;
@@ -120,6 +121,7 @@ const createInvalidTypeRelationError = (
   typeName: string,
   relationName: string,
   offendingRelation: string,
+  offendingType: string,
 ) => {
   const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
@@ -134,6 +136,7 @@ const createInvalidTypeRelationError = (
         typeName,
         file,
         module,
+        offendingType,
       },
     }),
   );
@@ -209,6 +212,12 @@ const createInvalidTypeError = (props: BaseProps, typeName: string) => {
       lines,
       lineIndex,
       metadata: { symbol, errorType: ValidationError.InvalidType, typeName: typeName, file, module, relation },
+      customResolver: (wordIndex: number, rawLine: string, symbol: string): number => {
+        // Split line at definition as InvalidType should mark the value, not the key
+        const re = new RegExp("\\b" + symbol + "\\b");
+        const splitLine = rawLine.split(":");
+        return splitLine[0].length + splitLine[1].search(re) + 1;
+      },
     }),
   );
 };
@@ -425,6 +434,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
     module: metadata.module,
     relation: metadata.relation,
     type: metadata.typeName,
+    offendingType: metadata.offendingType,
   };
 
   if (lines?.length && lineIndex != undefined) {
@@ -592,6 +602,7 @@ export class ExceptionCollector {
     typeName: string,
     relationName: string,
     offendingRelation: string,
+    offendingType: string,
     lineIndex?: number,
     meta?: Meta,
   ) {
@@ -607,6 +618,7 @@ export class ExceptionCollector {
       typeName,
       relationName,
       offendingRelation,
+      offendingType,
     );
   }
 

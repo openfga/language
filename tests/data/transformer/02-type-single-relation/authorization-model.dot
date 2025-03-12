@@ -1,0 +1,12 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=user];
+1 [label="user#viewer"];
+
+// Edge definitions.
+0 -> 1 [label=direct];
+}

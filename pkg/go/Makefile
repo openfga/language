@@ -1,6 +1,11 @@
 BINARY_NAME=openfga-language
 DOCKER_BINARY=docker
 GO_BIN ?= $(shell go env GOPATH)/bin
+.DEFAULT_GOAL := help
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Rules (https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction)
@@ -28,8 +33,8 @@ build:
 clean: ## Clean project files
 	go clean
 
-test: ## Run tests
-	go test ./... -count=1
+test: ## Run Go tests
+	go test ./... -count=1 -race
 
 lint: $(GO_BIN)/golangci-lint ## Lint Go source files
 	@echo "==> Linting Go source files"
@@ -43,4 +48,4 @@ format: $(GO_BIN)/gofumpt ## Format Go source files
 	@echo "==> Formatting project files"
 	gofumpt -w transformer/ errors/
 
-all-tests: build audit lint test
+all-tests: build audit lint test ## Run linting and tests

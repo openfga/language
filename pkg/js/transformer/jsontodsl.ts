@@ -9,7 +9,7 @@ import type {
   TypeDefinition,
   Userset,
 } from "@openfga/sdk";
-import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError } from "../errors";
+import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError, UnsupportedModularModules } from "../errors";
 
 class DirectAssignmentValidator {
   occured: number = 0;
@@ -389,4 +389,46 @@ function sortByModule(aName: string, bName: string, aMeta?: Metadata, bMeta?: Me
 
   // If the module name and file name are the same then sort based on name
   return aName.localeCompare(bName);
+}
+
+/* This function gets the modules from the JSON model and
+ * returns them as an alphabetically sorted array
+ */
+export function getModulesFromJSON(model: Omit<AuthorizationModel, "id">): string[] {
+  const schemaVersion = model?.schema_version || "1.1";
+
+  if (schemaVersion !== "1.2") {
+    throw new UnsupportedModularModules(schemaVersion);
+  }
+
+  const isModularModel = model.type_definitions?.some((typeDef) => typeDef.metadata?.module);
+
+  if (!isModularModel) {
+    return [];
+  }
+
+  const modulesMap: Record<string, boolean> = {};
+  model.type_definitions?.forEach((typeDef) => {
+    const key = typeDef.metadata?.module;
+    if (key) {
+      modulesMap[key] = true;
+    }
+
+    for (const relationMeta in typeDef?.metadata?.relations) {
+      const key = typeDef?.metadata?.relations[relationMeta]?.module;
+      if (key) {
+        modulesMap[key] = true;
+      }
+    }
+  });
+
+  const conditions = model.conditions || {};
+  for (const conditionMeta in conditions) {
+    const key = conditions[conditionMeta].metadata?.module;
+    if (key) {
+      modulesMap[key] = true;
+    }
+  }
+
+  return Object.keys(modulesMap).sort();
 }

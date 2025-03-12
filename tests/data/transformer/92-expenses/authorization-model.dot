@@ -1,0 +1,22 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=employee];
+1 [label="employee#can_manage"];
+2 [label=union];
+3 [label="employee#manager"];
+4 [label=report];
+5 [label="report#approver"];
+6 [label="report#submitter"];
+
+// Edge definitions.
+0 -> 3 [label=direct];
+0 -> 6 [label=direct];
+1 -> 2 [headlabel="(employee#manager)"];
+1 -> 5 [headlabel="(report#submitter)"];
+2 -> 1;
+3 -> 2;
+}

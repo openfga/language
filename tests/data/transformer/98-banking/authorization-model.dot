@@ -1,0 +1,36 @@
+digraph {
+graph [
+rankdir=BT
+];
+
+// Node definitions.
+0 [label=account];
+1 [label="account#account_manager"];
+2 [label=employee];
+3 [label="account#bank"];
+4 [label=bank];
+5 [label="account#can_make_bank_transfer"];
+6 [label=intersection];
+7 [label="account#owner_or_account_manager"];
+8 [label="bank#transfer_limit_policy"];
+9 [label="account#owner"];
+10 [label=customer];
+11 [label=union];
+12 [label="bank#account_manager"];
+13 [label="bank#customer"];
+
+// Edge definitions.
+1 -> 11;
+2 -> 1 [label=direct];
+2 -> 12 [label=direct];
+4 -> 3 [label=direct];
+6 -> 5;
+7 -> 6;
+8 -> 6 [headlabel="(account#bank)"];
+9 -> 11;
+10 -> 9 [label=direct];
+10 -> 13 [label=direct];
+11 -> 7;
+12 -> 8 [label=direct];
+13 -> 8 [label=direct];
+}

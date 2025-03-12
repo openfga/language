@@ -1,0 +1,80 @@
+name: Test (Java)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  testCheckout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+  lint:
+    name: Lint Java
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 20
+          distribution: "temurin"
+          cache: gradle
+          cache-dependency-path: |
+            ./pkg/java/*.gradle*
+            ./pkg/java/**/gradle-wrapper.properties
+
+      - name: Lint Java source
+        run: make lint-java
+
+  check-gen:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Generate Antlr code and validate up to date
+        run: |
+            make antlr-gen-java
+            git diff --text --exit-code ./pkg/java/src/main/gen
+      
+
+  test:
+    name: Test Java
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java: ["11", "17", "20"]
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: "temurin"
+          cache: gradle
+          cache-dependency-path: |
+            ./pkg/java/*.gradle*
+            ./pkg/java/**/gradle-wrapper.properties
+
+      - name: Test and Build with Gradle
+        run: make test-java

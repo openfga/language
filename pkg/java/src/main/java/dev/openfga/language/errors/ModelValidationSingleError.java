@@ -8,7 +8,7 @@ public class ModelValidationSingleError extends ParsingError {
     public ModelValidationSingleError() {}
 
     public ModelValidationSingleError(ErrorProperties properties, ValidationMetadata metadata) {
-        super("syntax", properties);
+        super("validation", properties);
         this.metadata = metadata;
     }
 

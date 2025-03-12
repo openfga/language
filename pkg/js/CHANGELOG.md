@@ -1,6 +1,58 @@
 # Changelog
 
-## v0.2.0-beta.17
+## pkg/js/v0.2.0-beta.22
+
+### [v0.2.0-beta.22](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.21...pkg/js/v0.2.0-beta.22) (2024-09-27)
+
+Fixed:
+
+- Improve validation of object ids (#348)
+
+## pkg/js/v0.2.0-beta.21
+
+### [v0.2.0-beta.21](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.20...pkg/js/v0.2.0-beta.21) (2024-09-09)
+
+Fixed:
+
+- Updated generated antlr code to fix issue when parsing modules (#339)
+
+## pkg/js/v0.2.0-beta.20
+
+### [v0.2.0-beta.20](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.19...pkg/js/v0.2.0-beta.20) (2024-09-06)
+
+Added:
+
+- Add `getModuleForObjectTypeRelation` utility method (#336)
+- Add `isRelationAssignable` utility method (#336)
+
+Fixed:
+
+- correct reported location of errors in some cases (#127)
+- `tupleuserset-not-direct` is now prioritized above `no-entrypoint` error (#314)
+- condition name is now correctly restrict to 50 characters (#320)
+
+## pkg/js/v0.2.0-beta.19
+
+### [v0.2.0-beta.19](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.18...pkg/js/v0.2.0-beta.19) (2024-07-25)
+
+Added:
+
+- migrated validation code for store files (#286)
+- getModulesFromJSON: function to get modules from json (#287)
+
+## pkg/js/v0.2.0-beta.18
+
+### [v0.2.0-beta.18](https://github.com/openfga/language/compare/34a1a85f8307547cfd44d270472c317cc64962dd...6bf7c3e4910b7acc1ff80d8c66a8e1277e949fe6) (2024-06-12)
+
+Fixed:
+
+- Incorrectly assigned error for invalid-relation-type (#260)
+
+Added:
+
+- Implement fga.mod transformer (#243)
+
+## pkg/js/v0.2.0-beta.17
 
 ### [v0.2.0-beta.17](https://github.com/openfga/language/compare/f45e80a9f169370f7cbeb5da9d147e5ff0e7305e...7b0b7f08393b13d8c53509447ff6e3847542eefc) (2024-04-12)
 

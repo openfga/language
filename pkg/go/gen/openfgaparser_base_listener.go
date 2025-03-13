@@ -171,6 +171,12 @@ func (s *BaseOpenFGAParserListener) EnterIdentifier(ctx *IdentifierContext) {}
 // ExitIdentifier is called when production identifier is exited.
 func (s *BaseOpenFGAParserListener) ExitIdentifier(ctx *IdentifierContext) {}
 
+// EnterExtended_identifier is called when production extended_identifier is entered.
+func (s *BaseOpenFGAParserListener) EnterExtended_identifier(ctx *Extended_identifierContext) {}
+
+// ExitExtended_identifier is called when production extended_identifier is exited.
+func (s *BaseOpenFGAParserListener) ExitExtended_identifier(ctx *Extended_identifierContext) {}
+
 // EnterConditionExpression is called when production conditionExpression is entered.
 func (s *BaseOpenFGAParserListener) EnterConditionExpression(ctx *ConditionExpressionContext) {}
 

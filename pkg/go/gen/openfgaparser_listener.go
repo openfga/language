@@ -84,6 +84,9 @@ type OpenFGAParserListener interface {
 	// EnterIdentifier is called when entering the identifier production.
 	EnterIdentifier(c *IdentifierContext)
 
+	// EnterExtended_identifier is called when entering the extended_identifier production.
+	EnterExtended_identifier(c *Extended_identifierContext)
+
 	// EnterConditionExpression is called when entering the conditionExpression production.
 	EnterConditionExpression(c *ConditionExpressionContext)
 
@@ -161,6 +164,9 @@ type OpenFGAParserListener interface {
 
 	// ExitIdentifier is called when exiting the identifier production.
 	ExitIdentifier(c *IdentifierContext)
+
+	// ExitExtended_identifier is called when exiting the extended_identifier production.
+	ExitExtended_identifier(c *Extended_identifierContext)
 
 	// ExitConditionExpression is called when exiting the conditionExpression production.
 	ExitConditionExpression(c *ConditionExpressionContext)

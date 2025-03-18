@@ -317,6 +317,18 @@ public class OpenFGAParserBaseListener implements OpenFGAParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterExtended_identifier(OpenFGAParser.Extended_identifierContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitExtended_identifier(OpenFGAParser.Extended_identifierContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterConditionExpression(OpenFGAParser.ConditionExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}

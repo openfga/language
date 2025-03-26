@@ -28,6 +28,7 @@ import { ParameterNameContext } from "./OpenFGAParser";
 import { ParameterTypeContext } from "./OpenFGAParser";
 import { MultiLineCommentContext } from "./OpenFGAParser";
 import { IdentifierContext } from "./OpenFGAParser";
+import { Extended_identifierContext } from "./OpenFGAParser";
 import { ConditionExpressionContext } from "./OpenFGAParser";
 
 
@@ -286,6 +287,16 @@ export default class OpenFGAParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIdentifier?: (ctx: IdentifierContext) => void;
+	/**
+	 * Enter a parse tree produced by `OpenFGAParser.extended_identifier`.
+	 * @param ctx the parse tree
+	 */
+	enterExtended_identifier?: (ctx: Extended_identifierContext) => void;
+	/**
+	 * Exit a parse tree produced by `OpenFGAParser.extended_identifier`.
+	 * @param ctx the parse tree
+	 */
+	exitExtended_identifier?: (ctx: Extended_identifierContext) => void;
 	/**
 	 * Enter a parse tree produced by `OpenFGAParser.conditionExpression`.
 	 * @param ctx the parse tree

@@ -114,12 +114,11 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 	computedRelation := rewrite.GetComputedUserset().GetRelation()
 
 	// find all the directly related types to the tupleset
-	directlyRelated := make([]*openfgav1.RelationReference, 0)
 	relationMetadata, ok := typeDef.GetMetadata().GetRelations()[tuplesetRelation]
 	if !ok {
 		return fmt.Errorf("%w: Model cannot be parsed. %s invalid tupleset relation", ErrInvalidModel, tuplesetRelation)
 	}
-	directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
+	directlyRelated := relationMetadata.GetDirectlyRelatedUserTypes()
 
 	validTTU := false
 	for _, relatedType := range directlyRelated {

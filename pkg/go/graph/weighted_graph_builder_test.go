@@ -600,3 +600,913 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["job#can_view"].weights["user"])
 	require.Equal(t, 1, graph.nodes["job#owner"].weights["job"])
 }
+
+func TestGraphConstructionOrderedExclusion(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+		type employee
+        type role
+            relations
+                define assignee: [user]
+        type permission
+            relations
+                define assignee: [employee]
+        type job
+            relations
+                define can_read: [user, employee, role#assignee, permission#assignee] but not cannot_read
+                define cannot_read: [user]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 10)
+	require.Len(t, graph.edges, 5)
+	exclusionNodeId := graph.edges["job#can_read"][0].to.uniqueLabel
+	require.Len(t, graph.edges[exclusionNodeId], 5)
+	cannotreadID := graph.edges[exclusionNodeId][4].to.uniqueLabel
+	require.Equal(t, "job#cannot_read", cannotreadID)
+}
+
+func TestGraphConstructionDirectAssignation(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 3)
+	require.Len(t, graph.edges, 1)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
+}
+
+func TestGraphConstructionWildcardAssignation(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user:*]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 4)
+	require.Len(t, graph.edges, 1)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["user:*"].nodeType == SpecificTypeWildcard)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user:*")
+}
+
+func TestGraphConstructionDirectAssignmentWildardAndType(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user:*, user]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 4)
+	require.Len(t, graph.edges, 1)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["user:*"].nodeType == SpecificTypeWildcard)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#viewer"], 2)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user:*")
+	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "user")
+}
+
+func TestGraphConstructionDirectAssignmentWithUsersets(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [group#member]
+                type group
+                    relations
+                        define member: [user]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 5)
+	require.Len(t, graph.edges, 2)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["group"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["group#member"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#viewer"], 1)
+	require.Len(t, graph.edges["group#member"], 1)
+}
+
+func TestGraphConstructionDirectAssignmentWithUsersetRecursive(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user, folder#viewer]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 3)
+	require.Len(t, graph.edges, 1)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#viewer"], 2)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#viewer")
+}
+
+func TestGraphConstructionDirectAssignmentWithConditions(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user with condX, user]
+                type user
+				condition condX (x:int) {
+                    x > 0
+                }
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 3)
+	require.Len(t, graph.edges, 1)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#viewer"], 1)
+	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges["folder#viewer"][0].conditions[0] == "condX")
+	require.True(t, graph.edges["folder#viewer"][0].conditions[1] == "none")
+}
+
+func TestGraphConstructioComputedRelation(t *testing.T) {
+	t.Parallel()
+	model := `
+	     model
+                    schema 1.1
+                type folder
+                    relations
+                        define x: y
+                        define y: [user]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 4)
+	require.Len(t, graph.edges, 2)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#x"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#y"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#x"], 1)
+	require.Len(t, graph.edges["folder#y"], 1)
+	require.True(t, graph.edges["folder#x"][0].edgeType == ComputedEdge)
+	require.Len(t, graph.edges["folder#y"][0].conditions, 1)
+	require.True(t, graph.edges["folder#y"][0].conditions[0] == "none")
+	require.True(t, graph.edges["folder#y"][0].edgeType == DirectEdge)
+}
+
+func TestGraphConstructioComputedWithCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	     model
+                schema 1.1
+                type folder
+                    relations
+                        define x: y
+                        define y: z
+                        define z: x
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrModelCycle)
+}
+
+func TestGraphConstructionTTU(t *testing.T) {
+	t.Parallel()
+	model := `
+	       model
+                    schema 1.1
+                type user
+                type document
+                    relations
+                        define parent: [folder]
+                        define viewer: admin from parent
+                type folder
+                    relations
+                        define admin: [user]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 6)
+	require.Len(t, graph.edges, 3)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["document"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
+	require.True(t, graph.edges["document#viewer"][0].tuplesetRelation == "document#parent")
+	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
+
+}
+
+func TestGraphConstructionTTUConditional(t *testing.T) {
+	t.Parallel()
+	model := `
+	       model
+                    schema 1.1
+                type user
+                type document
+                    relations
+                        define parent: [folder, folder with condX]
+                        define viewer: admin from parent
+                type folder
+                    relations
+                        define admin: [user]
+                condition condX (x:int) {
+                    x > 0
+                }
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 6)
+	require.Len(t, graph.edges, 3)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["document"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["document#viewer"], 1)
+	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
+	require.True(t, graph.edges["document#viewer"][0].tuplesetRelation == "document#parent")
+	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
+	require.Len(t, graph.edges["document#viewer"][0].conditions, 1)
+	require.Len(t, graph.edges["document#parent"], 1)
+	require.Len(t, graph.edges["document#parent"][0].conditions, 2)
+	require.True(t, graph.edges["document#parent"][0].conditions[0] == "none")
+	require.True(t, graph.edges["document#parent"][0].conditions[1] == "condX")
+}
+
+func TestGraphConstructionUsersetConditional(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [group#member, group#member with condX]
+                type group
+                    relations
+                        define member: [user]
+                type user
+                condition condX (x:int) {
+                    x > 0
+                }
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 5)
+	require.Len(t, graph.edges, 2)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["group"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["group#member"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["folder#viewer"], 1)
+	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "group#member")
+	require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
+	require.True(t, graph.edges["folder#viewer"][0].conditions[0] == "none")
+	require.True(t, graph.edges["folder#viewer"][0].conditions[1] == "condX")
+}
+
+func TestGraphConstructionTTURecursive(t *testing.T) {
+	t.Parallel()
+	model := `
+	     model
+                    schema 1.1
+                type user
+                type folder
+                    relations
+                        define parent: [folder]
+                        define viewer: [user] or viewer from parent
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 5)
+	require.Len(t, graph.edges, 3)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#parent"].nodeType == SpecificTypeAndRelation)
+
+	require.Len(t, graph.edges["folder#parent"], 1)
+	require.Len(t, graph.edges["folder#viewer"], 1)
+	require.True(t, graph.edges["folder#viewer"][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges["folder#viewer"][0].to.nodeType == OperatorNode)
+	unionNode := graph.edges["folder#viewer"][0].to
+	require.True(t, unionNode.label == "union")
+	require.Len(t, graph.edges[unionNode.uniqueLabel], 2)
+	require.True(t, graph.edges[unionNode.uniqueLabel][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges[unionNode.uniqueLabel][1].edgeType == TTUEdge)
+	require.True(t, graph.edges[unionNode.uniqueLabel][1].tuplesetRelation == "folder#parent")
+	require.True(t, graph.edges[unionNode.uniqueLabel][1].to.uniqueLabel == "folder#viewer")
+}
+
+func TestGraphConstructionTTUWithTwoParents(t *testing.T) {
+	t.Parallel()
+	model := `
+	     model
+                    schema 1.1
+                type user
+                type document
+                    relations
+                        define parent: [folder, folder2]
+                        define viewer: admin from parent
+                type folder
+                    relations
+                        define admin: [user]
+                type folder2
+                    relations
+                        define admin: [user]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 8)
+	require.Len(t, graph.edges, 4)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["document"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder2"].nodeType == SpecificType)
+	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder2#admin"].nodeType == SpecificTypeAndRelation)
+	require.Len(t, graph.edges["document#parent"], 2)
+	require.Len(t, graph.edges["document#viewer"], 2)
+	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
+	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
+
+	require.True(t, graph.edges["document#viewer"][1].edgeType == TTUEdge)
+	require.True(t, graph.edges["document#viewer"][1].to.uniqueLabel == "folder2#admin")
+}
+
+func TestGraphConstructionInvalidTTU(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+                    schema 1.1
+                type user
+                type document
+                    relations
+                        define parent: [folder, folder2]
+                        define viewer: admin from parent
+                type folder
+                    relations
+                        define admin: [user]
+                type folder2
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrInvalidModel)
+
+}
+
+func TestGraphConstructionIntersection(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user]
+                     define c: a and b
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 6)
+	require.Len(t, graph.edges, 4)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	andNode := graph.edges["folder#c"][0].to
+	require.True(t, andNode.nodeType == OperatorNode)
+	require.True(t, andNode.label == "intersection")
+	require.Len(t, graph.edges[andNode.uniqueLabel], 2)
+	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Len(t, graph.edges["folder#a"], 1)
+	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#b"], 1)
+	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#c"], 1)
+	require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+}
+
+func TestGraphConstructionIntersectionWithType(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user] and a
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 5)
+	require.Len(t, graph.edges, 3)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	andNode := graph.edges["folder#b"][0].to
+	require.True(t, andNode.nodeType == OperatorNode)
+	require.True(t, andNode.label == "intersection")
+	require.Len(t, graph.edges[andNode.uniqueLabel], 2)
+	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == DirectEdge)
+	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#a")
+	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Len(t, graph.edges["folder#a"], 1)
+	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+}
+
+func TestGraphConstructionNestedIntersection(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user]
+                     define c: [user]
+                     define d: [user]
+                     define e: (a and b and c) and d
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 9)
+	require.Len(t, graph.edges, 7)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+
+	outerAndNode := graph.edges["folder#e"][0].to
+	require.True(t, outerAndNode.nodeType == OperatorNode)
+	require.True(t, outerAndNode.label == "intersection")
+	require.Len(t, graph.edges[outerAndNode.uniqueLabel], 2)
+	require.True(t, graph.edges[outerAndNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
+	require.True(t, graph.edges[outerAndNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.True(t, graph.edges[outerAndNode.uniqueLabel][0].edgeType == RewriteEdge)
+	innerAndNode := graph.edges[outerAndNode.uniqueLabel][0].to
+	require.True(t, innerAndNode.nodeType == OperatorNode)
+	require.True(t, innerAndNode.label == "intersection")
+	require.Len(t, graph.edges[innerAndNode.uniqueLabel], 3)
+
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][2].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerAndNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
+}
+
+func TestGraphConstructionNestedUnion(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user]
+                     define c: [user]
+                     define d: [user]
+                     define e: (a or b or c) or d
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 9)
+	require.Len(t, graph.edges, 7)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+
+	outerOrNode := graph.edges["folder#e"][0].to
+	require.True(t, outerOrNode.nodeType == OperatorNode)
+	require.True(t, outerOrNode.label == "union")
+	require.Len(t, graph.edges[outerOrNode.uniqueLabel], 2)
+	require.True(t, graph.edges[outerOrNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
+	require.True(t, graph.edges[outerOrNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.True(t, graph.edges[outerOrNode.uniqueLabel][0].edgeType == RewriteEdge)
+	innerOrNode := graph.edges[outerOrNode.uniqueLabel][0].to
+	require.True(t, innerOrNode.nodeType == OperatorNode)
+	require.True(t, innerOrNode.label == "union")
+	require.Len(t, graph.edges[innerOrNode.uniqueLabel], 3)
+
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][2].edgeType == RewriteEdge)
+	require.True(t, graph.edges[innerOrNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
+}
+
+func TestGraphConstructionInvalidRecursiveUnion(t *testing.T) {
+	t.Parallel()
+
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("TestUserFail should have panicked!")
+			}
+		}()
+		// This function should cause a panic
+		model := `
+	      model
+                    schema 1.1
+                type user
+                types folder
+                   relations
+                     define a: [user] or b
+                     define b: [user] or c
+                     define c: [user] or a
+	`
+		language.MustTransformDSLToProto(model)
+	}()
+}
+
+func TestGraphConstructionMultigraph(t *testing.T) {
+	t.Parallel()
+	model := `
+	        model
+                  schema 1.1
+                
+                type user
+                
+                type state
+                  relations
+                    define can_view: [user]
+                
+                type transition
+                  relations
+                    define start: [state]
+                    define end: [state]
+                    define can_apply: [user] and can_view from start and can_view from end
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 8)
+	require.Len(t, graph.edges, 5)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["state"].nodeType == SpecificType)
+	require.True(t, graph.nodes["transition"].nodeType == SpecificType)
+	require.True(t, graph.nodes["state#can_view"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["transition#start"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["transition#end"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["transition#can_apply"].nodeType == SpecificTypeAndRelation)
+
+	andNode := graph.edges["transition#can_apply"][0].to
+	require.True(t, andNode.nodeType == OperatorNode)
+	require.True(t, andNode.label == "intersection")
+	require.Len(t, graph.edges[andNode.uniqueLabel], 3)
+	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == DirectEdge)
+	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == TTUEdge)
+	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "state#can_view")
+	require.True(t, graph.edges[andNode.uniqueLabel][1].tuplesetRelation == "transition#start")
+
+	require.True(t, graph.edges[andNode.uniqueLabel][2].edgeType == TTUEdge)
+	require.True(t, graph.edges[andNode.uniqueLabel][2].to.uniqueLabel == "state#can_view")
+	require.True(t, graph.edges[andNode.uniqueLabel][2].tuplesetRelation == "transition#end")
+}
+
+func TestGraphConstructionExclusion(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user]
+                     define c: a but not b
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 6)
+	require.Len(t, graph.edges, 4)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	exclusionNode := graph.edges["folder#c"][0].to
+	require.True(t, exclusionNode.nodeType == OperatorNode)
+	require.True(t, exclusionNode.label == "exclusion")
+	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Len(t, graph.edges["folder#a"], 1)
+	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#b"], 1)
+	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#c"], 1)
+	require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+}
+
+func TestGraphConstructionExclusionWithType(t *testing.T) {
+	t.Parallel()
+	model := `
+	      model
+                    schema 1.1
+                type user
+                type folder
+                   relations
+                     define a: [user]
+                     define b: [user] but not a
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 5)
+	require.Len(t, graph.edges, 3)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	exclusionNode := graph.edges["folder#b"][0].to
+	require.True(t, exclusionNode.nodeType == OperatorNode)
+	require.True(t, exclusionNode.label == "exclusion")
+	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel == "user")
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].edgeType == DirectEdge)
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#a")
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Len(t, graph.edges["folder#a"], 1)
+	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#b"], 1)
+	require.True(t, graph.edges["folder#b"][0].edgeType == RewriteEdge)
+}
+
+func TestGraphConstructionMixedAlg(t *testing.T) {
+	t.Parallel()
+	model := `
+		                model
+                    schema 1.1
+                type user
+                type folder
+                    relations
+                        define a: [user]
+                        define b: [user]
+                        define c: [user]
+                        define d: [user]
+                        define e: (a or b or c) but not d  
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 9)
+	require.Len(t, graph.edges, 7)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+
+	exclusionNode := graph.edges["folder#e"][0].to
+	require.True(t, exclusionNode.nodeType == OperatorNode)
+	require.True(t, exclusionNode.label == "exclusion")
+	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
+	orNode := graph.edges[exclusionNode.uniqueLabel][0].to
+	require.True(t, orNode.nodeType == OperatorNode)
+	require.True(t, orNode.label == "union")
+	require.Len(t, graph.edges[orNode.uniqueLabel], 3)
+	require.True(t, graph.edges[orNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+	require.True(t, graph.edges[orNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.True(t, graph.edges[orNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+	require.True(t, graph.edges[orNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.True(t, graph.edges[orNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
+	require.True(t, graph.edges[orNode.uniqueLabel][2].edgeType == RewriteEdge)
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
+	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Len(t, graph.edges["folder#a"], 1)
+	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#b"], 1)
+	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#c"], 1)
+	require.True(t, graph.edges["folder#c"][0].edgeType == DirectEdge)
+	require.Len(t, graph.edges["folder#d"], 1)
+	require.True(t, graph.edges["folder#d"][0].edgeType == DirectEdge)
+}
+
+func TestGraphConstructionInvalidDSL(t *testing.T) {
+	t.Parallel()
+	func() {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("TestUserFail should have panicked!")
+			}
+		}()
+		// This function should cause a panic
+		model := `
+	      model
+                    schema 1.1
+                type user
+                types folder
+                   relations
+                      define x: y
+                        define y: x
+                        define a: [user] or x or b
+                        define b: [user] or c
+                        define c: [user] or a
+	`
+		language.MustTransformDSLToProto(model)
+	}()
+}
+
+func TestGraphConstructionInvalidTupleCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	                model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user] or memberA or memberB or memberC
+        define memberA: [user] or member or memberB or memberC
+        define memberB: [user] or member or memberA or memberC
+        define memberC: [user] or member or memberA or memberB
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrModelCycle)
+
+}
+
+func TestGraphConstructionInvalidTupleCycle2(t *testing.T) {
+	t.Parallel()
+	model := `
+	   model
+      schema 1.1
+    type user
+    type account
+      relations
+        define admin: [user] or member or super_admin or owner
+        define member: [user] or owner or admin or super_admin
+        define super_admin: [user] or admin or member or owner
+        define owner: [user]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrModelCycle)
+
+}
+
+func TestGraphConstructionInvalidTupleCycle3(t *testing.T) {
+	t.Parallel()
+	model := `
+	   model
+      schema 1.1
+      type user
+
+    type document
+      relations
+        define admin: [user]
+        define action1: admin and action2 and action3
+        define action2: admin and action1 and action3
+        define action3: admin and action1 and action2
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorIs(t, err, ErrModelCycle)
+
+}

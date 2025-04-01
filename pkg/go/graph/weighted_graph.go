@@ -57,6 +57,19 @@ func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, no
 	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
 }
 
+// AddNode adds a node to the graph with optional nodeType and weight.
+func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *WeightedAuthorizationModelNode {
+	if existingNode := wg.nodes[uniqueLabel]; existingNode != nil {
+		return existingNode
+	}
+	wildcards := make([]string, 0)
+	if nodeType == SpecificTypeWildcard {
+		wildcards = append(wildcards, uniqueLabel[:len(uniqueLabel)-2])
+	}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
+	return wg.nodes[uniqueLabel]
+}
+
 func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, tuplesetRelation string, conditions []string) {
 	wildcards := make([]string, 0)
 	fromNode := wg.nodes[fromID]
@@ -66,6 +79,54 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 	}
 	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: wildcards, conditions: conditions}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
+}
+
+func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, tuplesetRelation string, condition string) error {
+	if fromNode == nil || toNode == nil {
+		return fmt.Errorf("%w: Model cannot be parsed", ErrInvalidModel)
+	}
+
+	if condition == "" {
+		condition = NoCond
+	}
+
+	edges := wg.edges[fromNode.uniqueLabel]
+	for _, edge := range edges {
+		if edge.to.uniqueLabel == toNode.uniqueLabel {
+			if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+				for _, cond := range edge.conditions {
+					if cond == condition {
+						return nil
+					}
+				}
+				edge.conditions = append(edge.conditions, condition)
+				return nil
+			}
+		}
+	}
+
+	conditions := []string{condition}
+	wildcards := make([]string, 0)
+
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: wildcards, conditions: conditions}
+	wg.edges[fromNode.uniqueLabel] = append(wg.edges[fromNode.uniqueLabel], edge)
+	return nil
+}
+
+func (wg *WeightedAuthorizationModelGraph) HasEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, tuplesetRelation string) bool {
+	if fromNode == nil || toNode == nil {
+		return false
+	}
+	edges := wg.edges[fromNode.uniqueLabel]
+	for _, edge := range edges {
+		if edge.to.uniqueLabel == toNode.uniqueLabel {
+			if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // AssignWeights assigns weights to all the edges and nodes of the graph.
@@ -278,7 +339,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
-	// recursive case
+	// tuple cycle where the node is responsible for the cycle and it needs to fix the cycle
 	if node.nodeType == SpecificTypeAndRelation && wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
 		// calculate the weight of the node and fix all the dependencies that are in the tuple cycle.
 		err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
@@ -289,6 +350,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
+	// there is a cycle but the node is not responsible for the cycle and it is not an operator node
 	if node.nodeType != OperatorNode {
 		// even when there is a cycle, if the relation is not recursive then we calculate the weight using the max strategy
 		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
@@ -359,6 +421,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 	}
 
 	for _, edge := range edges {
+		// for but not ensure that the first edge is the left edge
 		// the first time, take the weights of the edge
 		if len(weights) == 0 {
 			for key, value := range edge.weights {

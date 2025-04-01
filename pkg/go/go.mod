@@ -2,7 +2,7 @@ module github.com/openfga/language/pkg/go
 
 go 1.23.0
 
-toolchain go1.24.0
+toolchain go1.24.1
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
@@ -12,7 +12,7 @@ require (
 	github.com/openfga/api/proto v0.0.0-20250127102726-f9709139a369
 	github.com/stretchr/testify v1.10.0
 	gonum.org/v1/gonum v0.16.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
 )
 

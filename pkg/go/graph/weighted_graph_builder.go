@@ -169,7 +169,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAut
 }
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) error {
-	directlyRelated := make([]*openfgav1.RelationReference, 0)
+	var directlyRelated []*openfgav1.RelationReference
 	var curNode *WeightedAuthorizationModelNode
 
 	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
@@ -177,15 +177,16 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 	}
 
 	for _, directlyRelatedDef := range directlyRelated {
-		if directlyRelatedDef.GetRelationOrWildcard() == nil {
+		switch {
+		case directlyRelatedDef.GetRelationOrWildcard() == nil:
 			// direct assignment to concrete type
 			assignableType := directlyRelatedDef.GetType()
 			curNode = wg.GetOrAddNode(assignableType, assignableType, SpecificType)
-		} else if directlyRelatedDef.GetWildcard() != nil {
+		case directlyRelatedDef.GetWildcard() != nil:
 			// direct assignment to wildcard
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
 			curNode = wg.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
-		} else {
+		default:
 			// direct assignment to userset
 			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
 			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)

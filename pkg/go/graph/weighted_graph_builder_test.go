@@ -626,9 +626,9 @@ func TestGraphConstructionOrderedExclusion(t *testing.T) {
 
 	require.Len(t, graph.nodes, 10)
 	require.Len(t, graph.edges, 5)
-	exclusionNodeId := graph.edges["job#can_read"][0].to.uniqueLabel
-	require.Len(t, graph.edges[exclusionNodeId], 5)
-	cannotreadID := graph.edges[exclusionNodeId][4].to.uniqueLabel
+	exclusionNodeID := graph.edges["job#can_read"][0].to.uniqueLabel
+	require.Len(t, graph.edges[exclusionNodeID], 5)
+	cannotreadID := graph.edges[exclusionNodeID][4].to.uniqueLabel
 	require.Equal(t, "job#cannot_read", cannotreadID)
 }
 

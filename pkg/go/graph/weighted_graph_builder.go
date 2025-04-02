@@ -42,7 +42,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 		slices.Sort(sortedRelations)
 
 		for _, relation := range sortedRelations {
-			uniqueLabel := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
+			uniqueLabel := typeDef.GetType() + '#' + relation
 			parentNode := wb.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
 			rewrite := typeDef.GetRelations()[relation]
 			err := wgb.parseRewrite(wb, parentNode, model, rewrite, typeDef, relation)

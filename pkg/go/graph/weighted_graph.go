@@ -117,10 +117,8 @@ func (wg *WeightedAuthorizationModelGraph) HasEdge(fromNode, toNode *WeightedAut
 	}
 	edges := wg.edges[fromNode.uniqueLabel]
 	for _, edge := range edges {
-		if edge.to.uniqueLabel == toNode.uniqueLabel {
-			if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
-				return true
-			}
+		if edge.to.uniqueLabel == toNode.uniqueLabel && edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+			return true
 		}
 	}
 

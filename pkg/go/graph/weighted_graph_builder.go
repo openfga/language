@@ -72,8 +72,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 		wgb.parseComputed(wg, parentNode, typeDef, rw.ComputedUserset.GetRelation())
 		return nil
 	case *openfgav1.Userset_TupleToUserset:
-		err := wgb.parseTupleToUserset(wg, parentNode, model, typeDef, rw.TupleToUserset)
-		return err
+		return wgb.parseTupleToUserset(wg, parentNode, model, typeDef, rw.TupleToUserset)
 	case *openfgav1.Userset_Union:
 		operator = UnionOperator
 		children = rw.Union.GetChild()

@@ -89,7 +89,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 		}
 	}
 
-	operatorNodeName := fmt.Sprintf("%s:%s", operator, ulid.Make().String())
+	operatorNodeName := operator + ":" + ulid.Make().String()
 	operatorNode := wg.GetOrAddNode(operatorNodeName, operator, OperatorNode)
 
 	// add one edge "relation" -> "operation that defined the operator"

@@ -92,16 +92,14 @@ func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *Weighted
 
 	edges := wg.edges[fromNode.uniqueLabel]
 	for _, edge := range edges {
-		if edge.to.uniqueLabel == toNode.uniqueLabel {
-			if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
-				for _, cond := range edge.conditions {
-					if cond == condition {
-						return nil
-					}
+		if edge.to.uniqueLabel == toNode.uniqueLabel && edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+			for _, cond := range edge.conditions {
+				if cond == condition {
+					return nil
 				}
-				edge.conditions = append(edge.conditions, condition)
-				return nil
 			}
+			edge.conditions = append(edge.conditions, condition)
+			return nil
 		}
 	}
 

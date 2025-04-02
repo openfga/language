@@ -117,8 +117,10 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		return fmt.Errorf("%w: Model cannot be parsed. %s invalid tupleset relation", ErrInvalidModel, tuplesetRelation)
 	}
 	directlyRelated := relationMetadata.GetDirectlyRelatedUserTypes()
+	if len(directlyRelated) == 0 {
+		return fmt.Errorf("%w: Model cannot be parsed. No type and relation link exists for tupleset relation %s and computed relation %s", ErrInvalidModel, tuplesetRelation, computedRelation)
+	}
 
-	validTTU := false
 	for _, relatedType := range directlyRelated {
 		tuplesetType := relatedType.GetType()
 
@@ -126,8 +128,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 			return fmt.Errorf("%w: Model cannot be parsed. %s type does not have defined %s relation", ErrInvalidModel, tuplesetType, computedRelation)
 		}
 
-		validTTU = true
-		rewrittenNodeName := tuplesetType + "#" + computedRelation
+		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
 		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 		typeTuplesetRelation := typeDef.GetType() + "#" + tuplesetRelation
 
@@ -146,9 +147,6 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 
 		// new edge from "xxx#admin" to "yyy#viewer" tuplesetRelation on "yyy#parent"
 		wg.UpsertEdge(parentNode, nodeSource, TTUEdge, typeTuplesetRelation, relatedType.GetCondition())
-	}
-	if !validTTU {
-		return fmt.Errorf("%w: Model cannot be parsed. No type and relation link exists for tupleset relation %s and computed relation %s", ErrInvalidModel, tuplesetRelation, computedRelation)
 	}
 	return nil
 }

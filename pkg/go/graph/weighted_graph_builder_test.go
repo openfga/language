@@ -1450,7 +1450,7 @@ func TestGraphConstructionInvalidDSL(t *testing.T) {
 	}()
 }
 
-func TestGraphConstructionInvalidTupleCycle(t *testing.T) {
+func TestGraphConstructionInvalidModelCycle(t *testing.T) {
 	t.Parallel()
 	model := `
 	                model
@@ -1470,7 +1470,7 @@ func TestGraphConstructionInvalidTupleCycle(t *testing.T) {
 
 }
 
-func TestGraphConstructionInvalidTupleCycle2(t *testing.T) {
+func TestGraphConstructionInvalidModelCycle2(t *testing.T) {
 	t.Parallel()
 	model := `
 	   model
@@ -1490,7 +1490,7 @@ func TestGraphConstructionInvalidTupleCycle2(t *testing.T) {
 
 }
 
-func TestGraphConstructionInvalidTupleCycle3(t *testing.T) {
+func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
 	t.Parallel()
 	model := `
 	   model
@@ -1508,5 +1508,44 @@ func TestGraphConstructionInvalidTupleCycle3(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrModelCycle)
+
+}
+
+func TestGraphConstructionTupleCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+                    schema 1.1
+                type folder
+                    relations
+                        define viewer: [user, folder#can_view]
+                        define can_view: [user, folder#viewer]
+                type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 4)
+	require.Len(t, graph.edges, 2)
+	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+
+	require.Len(t, graph.edges["folder#can_view"], 2)
+	require.Len(t, graph.edges["folder#viewer"], 2)
+	require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
+	require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
+	require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
+	require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+
+	require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
+	require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
+	require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
+	require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
+	require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
 
 }

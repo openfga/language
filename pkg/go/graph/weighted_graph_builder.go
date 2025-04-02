@@ -67,8 +67,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 
 	switch rw := rewrite.GetUserset().(type) {
 	case *openfgav1.Userset_This:
-		err := wgb.parseThis(wg, parentNode, typeDef, relation)
-		return err
+		return wgb.parseThis(wg, parentNode, typeDef, relation)
 	case *openfgav1.Userset_ComputedUserset:
 		wgb.parseComputed(wg, parentNode, typeDef, rw.ComputedUserset.GetRelation())
 		return nil

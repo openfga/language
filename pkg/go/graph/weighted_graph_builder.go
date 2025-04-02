@@ -129,7 +129,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		validTTU = true
 		rewrittenNodeName := tuplesetType + "#" + computedRelation
 		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		typeTuplesetRelation := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
+		typeTuplesetRelation := typeDef.GetType() + "#" + tuplesetRelation
 
 		if wg.HasEdge(parentNode, nodeSource, TTUEdge, typeTuplesetRelation) {
 			// we don't need to do any condition update, only de-dup the edge. In case of TTU

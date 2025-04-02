@@ -156,7 +156,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) {
 	nodeType := RewriteEdge
 	// e.g. define x: y. Here y is the rewritten relation
-	rewrittenNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
+	rewrittenNodeName := typeDef.GetType() + "#" + relation
 	newNode := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 	// new edge from x to y
 	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {

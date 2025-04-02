@@ -127,7 +127,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		}
 
 		validTTU = true
-		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
+		rewrittenNodeName := tuplesetType + "#" + computedRelation
 		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
 		typeTuplesetRelation := fmt.Sprintf("%s#%s", typeDef.GetType(), tuplesetRelation)
 

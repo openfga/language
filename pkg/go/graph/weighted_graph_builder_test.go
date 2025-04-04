@@ -649,7 +649,7 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 
 	require.Len(t, graph.nodes, 3)
 	require.Len(t, graph.edges, 1)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
 	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
 	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
 	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")

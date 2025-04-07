@@ -511,7 +511,7 @@ type company
 	  define approved_member: [user, company#member]
 	  define can_execute: executive but not approved_member
 */
-func TestInvalidWeight2ButNotMistmatchType(t *testing.T) {
+func TestWeight2ButNotMistmatchType(t *testing.T) {
 	t.Parallel()
 	graph := NewWeightedAuthorizationModelGraph()
 	graph.AddNode("company-member", "member", SpecificTypeAndRelation)
@@ -531,8 +531,13 @@ func TestInvalidWeight2ButNotMistmatchType(t *testing.T) {
 	graph.AddEdge("company-can_execute-but", "company-approved_member", ComputedEdge, "", nil)
 
 	err := graph.AssignWeights()
-	require.ErrorIs(t, err, ErrInvalidModel)
-	require.True(t, strings.HasPrefix(err.Error(), "invalid model: not all paths return the same type for the node"))
+	require.NoError(t, err)
+	require.Equal(t, 1, graph.nodes["company-member"].weights["user"])
+	require.Equal(t, 1, graph.nodes["company-executive"].weights["employee"])
+	require.Equal(t, 2, graph.nodes["company-approved_member"].weights["user"])
+	require.Equal(t, 1, graph.nodes["company-can_execute"].weights["employee"])
+	_, found := graph.nodes["company-can_execute"].weights["user"]
+	require.False(t, found)
 }
 
 /*

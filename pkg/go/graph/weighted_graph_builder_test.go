@@ -485,6 +485,92 @@ func TestValidGraphModel(t *testing.T) {
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
 }
 
+func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
+	t.Parallel()
+	t.Run("B_appears_in_A_infinite", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: [user, employee] or admin from parent
+				define banned: [user] or banned from parent
+				define allowed: ([user, employee, other] or admin) but not banned
+		type role
+			relations
+				define owner: [group]
+				define allowed: allowed from owner
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		require.Len(t, graph.nodes["role#allowed"].weights, 3)
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
+		require.Equal(t, 2, graph.nodes["role#allowed"].weights["other"])
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
+	})
+	t.Run("B_appears_in_A_finite", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: [user, employee] or admin from parent
+				define banned: [other]
+				define allowed: ([user, employee, other] or admin) but not banned
+		type role
+			relations
+				define owner: [group]
+				define allowed: allowed from owner
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		require.Len(t, graph.nodes["role#allowed"].weights, 3)
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
+		require.Equal(t, 2, graph.nodes["role#allowed"].weights["other"])
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
+	})
+	t.Run("B_not_appear_in_A", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: [user, employee] or admin from parent
+				define banned: [other] or banned from parent
+				define allowed: ([user, employee] or admin) but not banned
+		type role
+			relations
+				define owner: [group]
+				define allowed: allowed from owner
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		require.Len(t, graph.nodes["role#allowed"].weights, 2)
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
+		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
+		_, found := graph.nodes["role#allowed"].weights["other"]
+		require.False(t, found)
+	})
+}
+
 func TestValidConditionalGraphModel(t *testing.T) {
 	t.Parallel()
 	model := `

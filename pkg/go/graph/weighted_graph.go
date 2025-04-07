@@ -356,20 +356,41 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	var err error
 	node := wg.nodes[nodeID]
 
-	// if there is not cycle, we can calculate the weight without taking in consideration the cycle complexity.
+	// if there is not a cycle, we can calculate the weight without taking in consideration the cycle complexity.
 	if len(tupleCycles) == 0 {
-		// for any node that is not AND or BUT NOT, we can calculate the weight using the max strategy
-		if node.nodeType != OperatorNode || node.label == UnionOperator {
-			err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
+		// for any non-operator node, we can calculate the weight using the max strategy because
+		// a type is valid as long as it appears in one of the branch.
+		if node.nodeType != OperatorNode {
+			err := wg.calculateNodeWeightWithMaxStrategy(nodeID)
 			if err != nil {
 				return tupleCycles, err
 			}
 		} else {
-			// for and and but not, we need to enforce the type strategy, meaning all edges require to return the same type
-			err = wg.calculateNodeWeightWithEnforceTypeStrategy(nodeID)
-			if err != nil {
-				return tupleCycles, err
+			switch node.label {
+			case UnionOperator:
+				// union requires max strategy because if a type appears in any of the "OR" branch,
+				// it is valid.
+				err := wg.calculateNodeWeightWithMaxStrategy(nodeID)
+				if err != nil {
+					return tupleCycles, err
+				}
+			case IntersectionOperator:
+				// intersection requires enforce type strategy because a type is valid only if it appears in
+				// all the "AND" branches.
+				err := wg.calculateNodeWeightWithEnforceTypeStrategy(nodeID)
+				if err != nil {
+					return tupleCycles, err
+				}
+			case ExclusionOperator:
+				// exclusion (A but not B) requires mix strategy where A is max but B requires enforce type because
+				// if a type appears in any of the A branch, it is valid.  However, if a type appears in any of the B
+				// branch, it is only valid if it is also in A.
+				err := wg.calculateNodeWeightWithMixedStrategy(nodeID)
+				if err != nil {
+					return tupleCycles, err
+				}
 			}
+
 		}
 		return tupleCycles, nil
 	}
@@ -442,7 +463,37 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 	return nil
 }
 
-// This strategy is used in AND or BUT NOT operations, and enforces that all the edges return the same type
+// calculateNodeWeightWithMixedStrategy is a mixed weight strategy used for exclusion node (A but not B).
+// For all A edges, we take all the types for all the edges and get the max value
+// if more than one edge have the same type in their weights.
+// For all
+func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(nodeID string) error {
+	node := wg.nodes[nodeID]
+	weights := make(map[string]int)
+	edges := wg.edges[nodeID]
+
+	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
+		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	for idx, edge := range edges {
+		for key, value := range edge.weights {
+			if _, ok := weights[key]; !ok {
+				if idx != len(edges)-1 {
+					// This is the A edge.  We take the max weight of all key
+					weights[key] = value
+				} // otherwise, B edge requires weight to be present in A. Otherwise, we will ignore.
+			} else {
+				weights[key] = int(math.Max(float64(weights[key]), float64(value)))
+			}
+		}
+	}
+
+	node.weights = weights
+	return nil
+}
+
+// This strategy is used in AND operations and enforces that all the edges return the same type
 // if an edge does not return the same type, the key is removed from the weights.
 // While doing that process we does not have any type to get in the weight it means that for this operation
 // not all paths return the same type and the model is not valid.
@@ -465,7 +516,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 			continue
 		}
 
-		// for AndOperation or ButnotOperation, remove the key if it is not in the edge, not all edges return the same type
+		// for AndOperation, remove the key if it is not in the edge, not all edges return the same type
 		for key := range weights {
 			if value, ok := edge.weights[key]; !ok {
 				delete(weights, key)

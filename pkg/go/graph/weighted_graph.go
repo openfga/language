@@ -668,8 +668,8 @@ func Traverse(
 	wg *WeightedAuthorizationModelGraph,
 	terminalType string,
 	currentNode *WeightedAuthorizationModelNode,
-	// resultChan chan<- *ReverseExpandResult,
-	// resolutionMetadata *ResolutionMetadata,
+// resultChan chan<- *ReverseExpandResult,
+// resolutionMetadata *ResolutionMetadata,
 ) error {
 	println("JUSTIN ENTERED TRAVERSE METHOD")
 	//wg := c.typesystem.GetWeightedGraph()
@@ -684,37 +684,67 @@ func Traverse(
 		return errors.New("currentNode is nil")
 	}
 
-	// TODO: this does not hold true for wildcards
-	// "employee" != "employee:*"
-	// it might be better to do this in the edge loop on
-	// DirectEdge where the To is the terminal type?
-	// But what about wildcards?
-	if currentNode.GetUniqueLabel() == terminalType {
-		// TODO: this is wrong. You can determine whether you're at a leaf
-		// by whether there are no outgoing edges from the node. You can't get to that state
-		// without pruning your way there
-		println(fmt.Sprintf("LEAF BASED ON LABEL: %s", currentNode.GetUniqueLabel()))
-		return nil
-	}
+	//// TODO: this does not hold true for wildcards
+	//// "employee" != "employee:*"
+	//// it might be better to do this in the edge loop on
+	//// DirectEdge where the To is the terminal type?
+	//// But what about wildcards?
+	//if currentNode.GetUniqueLabel() == terminalType {
+	//	// TODO: this is wrong. You can determine whether you're at a leaf
+	//	// by whether there are no outgoing edges from the node. You can't get to that state
+	//	// without pruning your way there
+	//	println(fmt.Sprintf("LEAF BASED ON LABEL: %s", currentNode.GetUniqueLabel()))
+	//	return nil
+	//}
 
 	// This means we cannot reach the user type requested
+	// Should only be reachable at the initial iteration of Traverse. Otherwise
+	// Edges leading to useless nodes will be pruned out in LoopOnEdges below
 	if _, ok := currentNode.GetWeight(terminalType); !ok {
 		return nil
 	}
 
-	// When len(edges) == 0, we're at a terminal node
-	// don't
-
-	// You might not be able to just wholesale grab edges,
-	// I think you actually need to switch on node.Type
-	// exclusion nodes operate very differently from intersection, ttu, etc
-	// that's how you would know to disregard the last edge for an exclusion, for example,
-	// assuming it had a weight for the type you're after
 	edges, ok := wg.GetEdgesFromNode(currentNode)
 
 	//if currentNode.GetNodeType() is intersection or exclusion, mark metadata
 	if len(edges) == 0 {
 		println(fmt.Sprintf("LEAF BASED ON EDGE COUNT: %s", currentNode.GetUniqueLabel()))
+	}
+
+	// TODO: might want to pull this into its own method
+	if currentNode.GetNodeType() == OperatorNode {
+		fmt.Printf(" Operator Node Type: %d\n", currentNode.GetNodeType())
+		switch currentNode.GetLabel() {
+		case ExclusionOperator: // e.g. rel1: [user, other] BUT NOT b
+			butNotEdge := edges[len(edges)-1] // this is the edge to 'b'
+			_, hasPathThatMatters := butNotEdge.GetWeight(terminalType)
+
+			// if the 'b' in BUT NOT b has a weight for the terminal type we're seeking
+			// we need to mark this as "needs check" at the end
+			if hasPathThatMatters {
+				// needs check
+			}
+
+			// prune off the "BUT NOT B" portion of these edges and keep going
+			edges = edges[1:]
+		case IntersectionOperator:
+			// For AND relations, mark as "needs check" and just pick the lowest weight edge
+			lowest := Infinite
+			var lowestWeightEdge *WeightedAuthorizationModelEdge
+			for _, edge := range edges {
+				edgeWeight, ok := edge.GetWeight(terminalType)
+				if !ok {
+					continue
+				}
+				if edgeWeight < lowest {
+					lowest = edgeWeight
+					lowestWeightEdge = edge
+				}
+			}
+
+			// Now only loop over the lowest weight edge
+			edges = []*WeightedAuthorizationModelEdge{lowestWeightEdge}
+		}
 	}
 
 	// now we have to loop on edges and recurse
@@ -731,9 +761,11 @@ func Traverse(
 		}
 
 		nextNode := edge.GetTo()
+		// TODO: existing reverse_expand delegates recursion through a .dispatch() method for throttling
 		switch edge.GetEdgeType() {
 		case DirectEdge:
 			fmt.Printf("JUSTIN DIRECT EDGE: %s\n", nextNode.GetUniqueLabel())
+			// query for e.g. folder#y@user:justin
 			return nil
 		case ComputedEdge:
 			// e.g. folder#x is computed to mean folder#y
@@ -745,9 +777,11 @@ func Traverse(
 			return Traverse(wg, terminalType, nextNode)
 		case TTUEdge:
 			fmt.Printf("JUSTIN TTU EDGE: %s\n", nextNode.GetUniqueLabel())
+			// we don't actually ahve to traverse anymore here, we just need to query with
+			// additional filtering
 			return Traverse(wg, terminalType, nextNode)
 		case RewriteEdge:
-			println("Rewrite edge")
+			fmt.Printf("JUSTIN Rewrite EDGE: %s\n", nextNode.GetUniqueLabel())
 			return Traverse(wg, terminalType, nextNode)
 		default:
 			return errors.New("unknown edge type")

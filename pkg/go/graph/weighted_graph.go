@@ -663,3 +663,96 @@ func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID stri
 	}
 	return result
 }
+
+func Traverse(
+	wg *WeightedAuthorizationModelGraph,
+	terminalType string,
+	currentNode *WeightedAuthorizationModelNode,
+	// resultChan chan<- *ReverseExpandResult,
+	// resolutionMetadata *ResolutionMetadata,
+) error {
+	println("JUSTIN ENTERED TRAVERSE METHOD")
+	//wg := c.typesystem.GetWeightedGraph()
+	if wg == nil {
+		// this should never happen
+		// TODO: some specific error type
+		return errors.New("weighted graph is nil")
+	}
+
+	if currentNode == nil {
+		// This should never happen
+		return errors.New("currentNode is nil")
+	}
+
+	// TODO: this does not hold true for wildcards
+	// "employee" != "employee:*"
+	// it might be better to do this in the edge loop on
+	// DirectEdge where the To is the terminal type?
+	// But what about wildcards?
+	if currentNode.GetUniqueLabel() == terminalType {
+		// TODO: this is wrong. You can determine whether you're at a leaf
+		// by whether there are no outgoing edges from the node. You can't get to that state
+		// without pruning your way there
+		println(fmt.Sprintf("LEAF BASED ON LABEL: %s", currentNode.GetUniqueLabel()))
+		return nil
+	}
+
+	// This means we cannot reach the user type requested
+	if _, ok := currentNode.GetWeight(terminalType); !ok {
+		return nil
+	}
+
+	// When len(edges) == 0, we're at a terminal node
+	// don't
+
+	// You might not be able to just wholesale grab edges,
+	// I think you actually need to switch on node.Type
+	// exclusion nodes operate very differently from intersection, ttu, etc
+	// that's how you would know to disregard the last edge for an exclusion, for example,
+	// assuming it had a weight for the type you're after
+	edges, ok := wg.GetEdgesFromNode(currentNode)
+
+	//if currentNode.GetNodeType() is intersection or exclusion, mark metadata
+	if len(edges) == 0 {
+		println(fmt.Sprintf("LEAF BASED ON EDGE COUNT: %s", currentNode.GetUniqueLabel()))
+	}
+
+	// now we have to loop on edges and recurse
+	for _, edge := range edges {
+		fmt.Printf(
+			"JUSTIN EDGE from: %s, to %s\n",
+			edge.GetFrom().GetUniqueLabel(),
+			edge.GetTo().GetUniqueLabel(),
+		)
+		// We can't reach our destination with this edge, skip it
+		if _, ok = edge.GetWeight(terminalType); !ok {
+			println("Cannot reach destination via this edge, skipping")
+			continue
+		}
+
+		nextNode := edge.GetTo()
+		switch edge.GetEdgeType() {
+		case DirectEdge:
+			fmt.Printf("JUSTIN DIRECT EDGE: %s\n", nextNode.GetUniqueLabel())
+			return nil
+		case ComputedEdge:
+			// e.g. folder#x is computed to mean folder#y
+			// type folder
+			//  relations
+			//   define x: y
+			//   define y: [user]
+			fmt.Printf("JUSTIN COMPUTED EDGE: %s\n", nextNode.GetUniqueLabel())
+			return Traverse(wg, terminalType, nextNode)
+		case TTUEdge:
+			fmt.Printf("JUSTIN TTU EDGE: %s\n", nextNode.GetUniqueLabel())
+			return Traverse(wg, terminalType, nextNode)
+		case RewriteEdge:
+			println("Rewrite edge")
+			return Traverse(wg, terminalType, nextNode)
+		default:
+			return errors.New("unknown edge type")
+		}
+	}
+
+	return nil
+}

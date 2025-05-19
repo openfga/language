@@ -485,6 +485,43 @@ func TestValidGraphModel(t *testing.T) {
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
 }
 
+func TestGithubModel(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+	  schema 1.1
+	
+	type organization
+	  relations
+		define member: [user] or owner
+		define owner: [user]
+		define repo_admin: [user, organization#member]
+		define repo_reader: [user, organization#member]
+		define repo_writer: [user, organization#member]
+	
+	type repo
+	  relations
+		define admin: [user, team#member] or repo_admin from owner
+		define maintainer: [user, team#member] or admin
+		define owner: [organization]
+		define reader: [user, team#member] or triager or repo_reader from owner
+		define triager: [user, team#member] or writer
+		define writer: [user, team#member] or maintainer or repo_writer from owner
+	
+	type team
+	  relations
+		define member: [user, team#member]
+	
+	type user
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+	println(graph)
+	//require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
+}
+
 func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 	t.Parallel()
 	t.Run("B_appears_in_A_infinite", func(t *testing.T) {
@@ -535,6 +572,19 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
 		graph, err := wgb.Build(authorizationModel)
+		//for k, edgeMap := range graph.GetEdges() {
+		//	fmt.Printf(k)
+		//	for _, edge := range edgeMap {
+		//		label := edge.GetTo().GetUniqueLabel()
+		//		fmt.Printf(" - Type: %+v, To's: %s\n", edge.GetEdgeType(), label)
+		//		//node, _ := graph.GetNodeByID(label)
+		//		//fmt.Printf("that TOs node Tos %s", node.GetWeights())
+		//	}
+		//}
+		rootNode, ok := graph.GetNodeByID("role#allowed")
+		require.True(t, ok)
+		_ = Traverse(graph, "user", rootNode)
+
 		require.NoError(t, err)
 		require.Len(t, graph.nodes["role#allowed"].weights, 3)
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
@@ -890,6 +940,10 @@ func TestGraphConstructioComputedRelation(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
+
+	rootNode, ok := graph.GetNodeByID("folder#x")
+	require.True(t, ok)
+	_ = Traverse(graph, "user", rootNode)
 
 	require.Len(t, graph.nodes, 4)
 	require.Len(t, graph.edges, 2)

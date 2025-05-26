@@ -8,7 +8,7 @@ require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/oklog/ulid/v2 v2.1.0
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/openfga/api/proto v0.0.0-20250127102726-f9709139a369
 	github.com/stretchr/testify v1.10.0
 	gonum.org/v1/gonum v0.16.0

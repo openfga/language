@@ -1597,41 +1597,342 @@ func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
 
 }
 
-func TestGraphConstructionTupleCycle(t *testing.T) {
-	t.Parallel()
-	model := `
-	    model
-                    schema 1.1
-                type folder
-                    relations
-                        define viewer: [user, folder#can_view]
-                        define can_view: [user, folder#viewer]
-                type user
-	`
-	authorizationModel := language.MustTransformDSLToProto(model)
-	wgb := NewWeightedAuthorizationModelGraphBuilder()
-	graph, err := wgb.Build(authorizationModel)
-	require.NoError(t, err)
+func TestGraphConstructionTupleCycles(t *testing.T) {
+	t.Run("no_cycles", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user
+		type document
+			relations
+				define viewer: [user]
+				define can_view: [document#viewer, user]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 4)
-	require.Len(t, graph.edges, 2)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["document#viewer"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["document#can_view"].GetRecursiveRelation())
+	})
 
-	require.Len(t, graph.edges["folder#can_view"], 2)
-	require.Len(t, graph.edges["folder#viewer"], 2)
-	require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
-	require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+	t.Run("tuple_two_usersets", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define viewer: [user, folder#can_view]
+				define can_view: [user, folder#viewer]`
 
-	require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
-	require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
 
+		require.Len(t, graph.nodes, 4)
+		require.Len(t, graph.edges, 2)
+		require.True(t, graph.nodes["user"].nodeType == SpecificType)
+		require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+		require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["folder#viewer"].GetRecursiveRelation())
+		require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["folder#can_view"].GetRecursiveRelation())
+
+		require.Len(t, graph.edges["folder#can_view"], 2)
+		require.Len(t, graph.edges["folder#viewer"], 2)
+		require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
+		require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
+		require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+
+		require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
+		require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
+		require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
+	})
+
+	t.Run("recursive_cycles_with_intermediate_relation", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user] or inherited_member
+					define parent: [group]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 6)
+		require.Len(t, graph.edges, 4)
+
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+	})
+
+	t.Run("recursive_cycle_userset", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define member: [user, group#member]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 3)
+		require.Len(t, graph.edges, 1)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+	})
+
+	t.Run("recursive_cycle_ttu", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define member: [user] or member from parent
+					define parent: [group]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 5)
+		require.Len(t, graph.edges, 3)
+
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.edges["group#parent"][0].GetRecursiveRelation())
+	})
+
+	t.Run("both_recursion_and_tuple_cycles", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user, group#member] or inherited_member
+					define parent: [group]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		for _, edge := range graph.edges["group#member"] {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+		}
+	})
+}
+
+func TestAssignRecursiveCycleMetadata(t *testing.T) {
+	t.Run("tuple_cycle_not_recursive", func(t *testing.T) {
+		edgesInCycle := []*WeightedAuthorizationModelEdge{
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+			},
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#inherited_member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#inherited_member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+		}
+
+		assignRecursiveCycleMetadata(edgesInCycle)
+
+		require.Len(t, edgesInCycle, 3)
+		for _, edge := range edgesInCycle {
+			require.Empty(t, edge.GetRecursiveRelation())
+			require.Empty(t, edge.to.GetRecursiveRelation())
+			require.Empty(t, edge.from.GetRecursiveRelation())
+		}
+	})
+
+	t.Run("recursive_userset", func(t *testing.T) {
+		edgesInCycle := []*WeightedAuthorizationModelEdge{
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+		}
+
+		assignRecursiveCycleMetadata(edgesInCycle)
+
+		require.Len(t, edgesInCycle, 1)
+		for _, edge := range edgesInCycle {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+			require.Equal(t, "group#member", edge.from.GetRecursiveRelation())
+			require.Equal(t, "group#member", edge.to.GetRecursiveRelation())
+		}
+	})
+
+	t.Run("recursive_ttu", func(t *testing.T) {
+		edgesInCycle := []*WeightedAuthorizationModelEdge{
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+			},
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+		}
+
+		assignRecursiveCycleMetadata(edgesInCycle)
+
+		require.Len(t, edgesInCycle, 2)
+		for _, edge := range edgesInCycle {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+			if edge.to.uniqueLabel == "group#member" {
+				require.Equal(t, "group#member", edge.to.GetRecursiveRelation())
+				require.Empty(t, edge.from.GetRecursiveRelation())
+			} else {
+				require.Equal(t, "group#member", edge.from.GetRecursiveRelation())
+				require.Empty(t, edge.to.GetRecursiveRelation())
+			}
+		}
+	})
+
+	t.Run("two_cyclical_usersets", func(t *testing.T) {
+		edgesInCycle := []*WeightedAuthorizationModelEdge{
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member_other",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member_other",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+		}
+
+		assignRecursiveCycleMetadata(edgesInCycle)
+
+		require.Len(t, edgesInCycle, 2)
+		for _, edge := range edgesInCycle {
+			require.Empty(t, edge.GetRecursiveRelation())
+			require.Empty(t, edge.from.GetRecursiveRelation())
+			require.Empty(t, edge.to.GetRecursiveRelation())
+		}
+	})
+
+	t.Run("recursive_ttu_union_node_first", func(t *testing.T) {
+		edgesInCycle := []*WeightedAuthorizationModelEdge{
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+			},
+			{
+				from: &WeightedAuthorizationModelNode{
+					uniqueLabel: "group#member",
+					nodeType:    SpecificTypeAndRelation,
+				},
+				to: &WeightedAuthorizationModelNode{
+					uniqueLabel: "union:01JW673J2MPBQGZGPB44NGWV5V",
+					nodeType:    OperatorNode,
+				},
+			},
+		}
+
+		assignRecursiveCycleMetadata(edgesInCycle)
+
+		require.Len(t, edgesInCycle, 2)
+		for _, edge := range edgesInCycle {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+			if edge.to.uniqueLabel == "group#member" {
+				require.Equal(t, "group#member", edge.to.GetRecursiveRelation())
+				require.Empty(t, edge.from.GetRecursiveRelation())
+			} else {
+				require.Equal(t, "group#member", edge.from.GetRecursiveRelation())
+				require.Empty(t, edge.to.GetRecursiveRelation())
+			}
+		}
+	})
+
+	t.Run("empty_edge_list", func(t *testing.T) {
+		require.NotPanics(t, func() {
+			assignRecursiveCycleMetadata([]*WeightedAuthorizationModelEdge{})
+		})
+	})
 }

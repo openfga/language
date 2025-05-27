@@ -575,10 +575,51 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	}
 	node.weights = weights
 
+	assignRecursiveCycleMetadata(tupleCycleDependencies[nodeID])
 	wg.fixDependantEdgesWeight(nodeID, referenceNodeID, references, tupleCycleDependencies)
 	wg.fixDependantNodesWeight(nodeID, referenceNodeID, tupleCycleDependencies)
 	delete(tupleCycleDependencies, nodeID)
 	return nil
+}
+
+func isRecursiveCycle(edgesInCycle []*WeightedAuthorizationModelEdge) (bool, string) {
+	switch len(edgesInCycle) {
+	case 1:
+		recursiveRelation := edgesInCycle[0].from.GetUniqueLabel()
+		return true, recursiveRelation
+	case 2:
+		firstEdge := edgesInCycle[0]
+
+		bothSpecificTypeAndRelation := firstEdge.from.GetNodeType() == SpecificTypeAndRelation && firstEdge.to.GetNodeType() == SpecificTypeAndRelation
+		if bothSpecificTypeAndRelation {
+			return false, ""
+		}
+
+		if firstEdge.from.GetNodeType() == SpecificTypeAndRelation {
+			return true, firstEdge.from.GetUniqueLabel()
+		}
+		return true, firstEdge.to.GetUniqueLabel()
+	default:
+		return false, ""
+	}
+}
+
+func assignRecursiveCycleMetadata(edgesInCycle []*WeightedAuthorizationModelEdge) {
+	isARecursiveCycle, recursiveRelation := isRecursiveCycle(edgesInCycle)
+
+	if !isARecursiveCycle {
+		return
+	}
+
+	for _, edge := range edgesInCycle {
+		edge.recursiveRelation = recursiveRelation
+		if edge.from.GetUniqueLabel() == recursiveRelation {
+			edge.from.recursiveRelation = recursiveRelation
+		}
+		if edge.to.GetUniqueLabel() == recursiveRelation {
+			edge.to.recursiveRelation = recursiveRelation
+		}
+	}
 }
 
 // This function will fix the weight of the edges that are dependent on the reference node

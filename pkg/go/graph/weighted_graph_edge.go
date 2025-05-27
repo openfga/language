@@ -1,12 +1,13 @@
 package graph
 
 type WeightedAuthorizationModelEdge struct {
-	weights          map[string]int
-	edgeType         EdgeType
-	tuplesetRelation string // only present when the edgeType is a TTUEdge
-	from             *WeightedAuthorizationModelNode
-	to               *WeightedAuthorizationModelNode
-	wildcards        []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
+	weights           map[string]int
+	edgeType          EdgeType
+	tuplesetRelation  string // only present when the edgeType is a TTUEdge
+	from              *WeightedAuthorizationModelNode
+	to                *WeightedAuthorizationModelNode
+	wildcards         []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
+	recursiveRelation string
 	// conditions on the edge. This is a flattened graph with dedupx edges,
 	// if you have a node with multiple edges to another node will be deduplicate and instead
 	// only one edge but with multiple conditions,
@@ -55,4 +56,10 @@ func (edge *WeightedAuthorizationModelEdge) GetTo() *WeightedAuthorizationModelN
 // GetWildcards returns an array of types, e.g. "user". This means that in the direction of this edge there is a path to node user:*.
 func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
 	return edge.wildcards
+}
+
+// GetRecursiveRelation returns a string of the recursive relation in a tuple cycle. A recursive relation only
+// exists when the node is self-referential without any intermediate nodes of SpecificTypeAndRelation.
+func (edge *WeightedAuthorizationModelEdge) GetRecursiveRelation() string {
+	return edge.recursiveRelation
 }

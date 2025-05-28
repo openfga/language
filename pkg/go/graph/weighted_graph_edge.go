@@ -8,6 +8,7 @@ type WeightedAuthorizationModelEdge struct {
 	to                *WeightedAuthorizationModelNode
 	wildcards         []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
 	recursiveRelation string
+	tupleCycle        bool
 	// conditions on the edge. This is a flattened graph with dedupx edges,
 	// if you have a node with multiple edges to another node will be deduplicate and instead
 	// only one edge but with multiple conditions,
@@ -62,4 +63,9 @@ func (edge *WeightedAuthorizationModelEdge) GetWildcards() []string {
 // exists when the node is self-referential without any intermediate nodes of SpecificTypeAndRelation.
 func (edge *WeightedAuthorizationModelEdge) GetRecursiveRelation() string {
 	return edge.recursiveRelation
+}
+
+// IsPartOfTupleCycle returns a true if the edge is part of a cycle path that involves more than one node of type SpecificTypeAndRelation
+func (node *WeightedAuthorizationModelEdge) IsPartOfTupleCycle() bool {
+	return node.tupleCycle
 }

@@ -1761,4 +1761,30 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 			require.Equal(t, "group#member", edge.GetRecursiveRelation())
 		}
 	})
+
+	t.Run("both_recursion_and_tuple_cycles_wildcard", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user:*, group#member] or inherited_member
+					define parent: [group]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		require.True(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.True(t, graph.nodes["group#inherited_member"].IsPartOfTupleCycle())
+		for _, edge := range graph.edges["group#member"] {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+		}
+	})
 }

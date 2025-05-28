@@ -1597,41 +1597,194 @@ func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
 
 }
 
-func TestGraphConstructionTupleCycle(t *testing.T) {
-	t.Parallel()
-	model := `
-	    model
-                    schema 1.1
-                type folder
-                    relations
-                        define viewer: [user, folder#can_view]
-                        define can_view: [user, folder#viewer]
-                type user
-	`
-	authorizationModel := language.MustTransformDSLToProto(model)
-	wgb := NewWeightedAuthorizationModelGraphBuilder()
-	graph, err := wgb.Build(authorizationModel)
-	require.NoError(t, err)
+func TestGraphConstructionTupleCycles(t *testing.T) {
+	t.Run("no_cycles", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user
+		type document
+			relations
+				define viewer: [user]
+				define can_view: [document#viewer, user]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 4)
-	require.Len(t, graph.edges, 2)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["document#viewer"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["document#can_view"].GetRecursiveRelation())
+		require.False(t, graph.nodes["document#viewer"].IsPartOfTupleCycle())
+		require.False(t, graph.nodes["document#can_view"].IsPartOfTupleCycle())
 
-	require.Len(t, graph.edges["folder#can_view"], 2)
-	require.Len(t, graph.edges["folder#viewer"], 2)
-	require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
-	require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+	})
 
-	require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
-	require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
-	require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
+	t.Run("tuple_two_usersets", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define viewer: [user, folder#can_view]
+				define can_view: [user, folder#viewer]`
 
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 4)
+		require.Len(t, graph.edges, 2)
+		require.True(t, graph.nodes["user"].nodeType == SpecificType)
+		require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+		require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["folder#viewer"].GetRecursiveRelation())
+		require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+		require.Empty(t, graph.nodes["folder#can_view"].GetRecursiveRelation())
+
+		require.True(t, graph.nodes["folder#can_view"].IsPartOfTupleCycle())
+		require.True(t, graph.nodes["folder#viewer"].IsPartOfTupleCycle())
+
+		require.Len(t, graph.edges["folder#can_view"], 2)
+		require.Len(t, graph.edges["folder#viewer"], 2)
+		require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
+		require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
+		require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+
+		require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
+		require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
+		require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
+		require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
+	})
+
+	t.Run("recursive_cycles_with_intermediate_relation", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user] or inherited_member
+					define parent: [group]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 6)
+		require.Len(t, graph.edges, 4)
+
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+
+		require.True(t, graph.nodes["group#inherited_member"].IsPartOfTupleCycle())
+		require.True(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+
+	})
+
+	t.Run("recursive_cycle_userset", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define member: [user, group#member]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 3)
+		require.Len(t, graph.edges, 1)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		require.False(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+	})
+
+	t.Run("recursive_cycle_ttu", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define member: [user] or member from parent
+					define parent: [group]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 5)
+		require.Len(t, graph.edges, 3)
+
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.edges["group#parent"][0].GetRecursiveRelation())
+		require.False(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+	})
+
+	t.Run("both_recursion_and_tuple_cycles", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user, group#member] or inherited_member
+					define parent: [group]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		require.True(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.True(t, graph.nodes["group#inherited_member"].IsPartOfTupleCycle())
+		for _, edge := range graph.edges["group#member"] {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+		}
+	})
+
+	t.Run("both_recursion_and_tuple_cycles_wildcard", func(t *testing.T) {
+		model := `
+			model
+				schema 1.1
+			type user
+			type group
+				relations
+					define inherited_member: member from parent
+					define member: [user:*, group#member] or inherited_member
+					define parent: [group]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
+		require.True(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.True(t, graph.nodes["group#inherited_member"].IsPartOfTupleCycle())
+		for _, edge := range graph.edges["group#member"] {
+			require.Equal(t, "group#member", edge.GetRecursiveRelation())
+		}
+	})
 }

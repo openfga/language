@@ -509,7 +509,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 	for _, edge := range edges {
 		// for but not ensure that the first edge is the left edge
 		// the first time, take the weights of the edge
-		if len(weights) == 0 {
+		if len(weights) == 0 || edge.edgeType == DirectEdge {
 			for key, value := range edge.weights {
 				weights[key] = value
 			}

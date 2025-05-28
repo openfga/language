@@ -1129,47 +1129,220 @@ func TestGraphConstructionInvalidTTU(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrInvalidModel)
-
 }
 
 func TestGraphConstructionIntersection(t *testing.T) {
-	t.Parallel()
-	model := `
+	t.Run("two_operands", func(t *testing.T) {
+		t.Run("balanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
 	      model
-                    schema 1.1
-                type user
-                type folder
-                   relations
-                     define a: [user]
-                     define b: [user]
-                     define c: a and b
-	`
-	authorizationModel := language.MustTransformDSLToProto(model)
-	wgb := NewWeightedAuthorizationModelGraphBuilder()
-	graph, err := wgb.Build(authorizationModel)
-	require.NoError(t, err)
+		  	schema 1.1
+		  type user
+		  type folder
+		  	  relations
+				define a: [user]
+				define b: [user]
+				define c: a and b
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 6)
-	require.Len(t, graph.edges, 4)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
-	andNode := graph.edges["folder#c"][0].to
-	require.True(t, andNode.nodeType == OperatorNode)
-	require.True(t, andNode.label == "intersection")
-	require.Len(t, graph.edges[andNode.uniqueLabel], 2)
-	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
-	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
-	require.Len(t, graph.edges["folder#b"], 1)
-	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
-	require.Len(t, graph.edges["folder#c"], 1)
-	require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+			require.Len(t, graph.nodes, 6)
+			require.Len(t, graph.edges, 4)
+			require.True(t, graph.nodes["user"].nodeType == SpecificType)
+			require.True(t, graph.nodes["folder"].nodeType == SpecificType)
+			require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
+			require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+			require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+			andNode := graph.edges["folder#c"][0].to
+			require.True(t, andNode.nodeType == OperatorNode)
+			require.True(t, andNode.label == "intersection")
+			require.Len(t, graph.edges[andNode.uniqueLabel], 2)
+			require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+			require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == RewriteEdge)
+			require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+			require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
+			require.Len(t, graph.edges["folder#a"], 1)
+			require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+			require.Len(t, graph.edges["folder#b"], 1)
+			require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+			require.Len(t, graph.edges["folder#c"], 1)
+			require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+		})
+
+		t.Run("unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type folder
+		  	  relations
+				define a: [user1,user2]
+				define b: [user1]
+				define c: a and b
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["folder#c"], 1)
+			require.Equal(t, map[string]int{"user1": 1}, graph.edges["folder#c"][0].GetWeights()) // Because only [user1] on both sides of AND
+		})
+	})
+	t.Run("three_operands_balanced_direct", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: [user1,user2,user3] and can_view
+				define can_view: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 7)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
+	})
+
+	t.Run("three_operands_unbalanced_direct", func(t *testing.T) {
+		t.Run("left_unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+	
+			type document
+				relations
+					define viewer: [user1,user3] and can_view
+					define can_view: [user1,user2,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on left of AND
+		})
+		t.Run("right_unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+	
+			type document
+				relations
+					define viewer: [user1,user2,user3] and can_view
+					define can_view: [user1,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on right of AND
+		})
+	})
+
+	t.Run("three_operands_unbalanced_rewrite", func(t *testing.T) {
+		t.Parallel()
+		t.Run("left_unbalanced", func(t *testing.T) {
+			model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: viewer1 and viewer2
+				define viewer1: [user1,user3]
+				define viewer2: [user1,user2,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on left of AND
+		})
+		t.Run("right_unbalanced", func(t *testing.T) {
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user2,user3]
+					define viewer2: [user1,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on right of AND
+		})
+	})
+
+	t.Run("three_operands_balanced_rewrite", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: viewer1 and viewer2
+				define viewer1: [user1,user2,user3]
+				define viewer2: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 8)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
+	})
 }
 
 func TestGraphConstructionIntersectionWithType(t *testing.T) {

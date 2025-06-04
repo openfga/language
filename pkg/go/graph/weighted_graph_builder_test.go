@@ -1343,6 +1343,49 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		require.Len(t, graph.edges["document#viewer"], 1)
 		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
 	})
+
+	t.Run("invalid_model", func(t *testing.T) {
+		t.Run("with_direct_types", func(t *testing.T) {
+
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: [user1,user2] and owner
+					define owner: [user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+		})
+		t.Run("without_direct_types", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user2]
+					define viewer2: [user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+		})
+	})
 }
 
 func TestGraphConstructionIntersectionWithType(t *testing.T) {

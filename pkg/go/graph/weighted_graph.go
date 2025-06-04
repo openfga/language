@@ -499,32 +499,35 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 // not all paths return the same type and the model is not valid.
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
-	weights := make(map[string]int)
 	edges := wg.edges[nodeID]
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	for _, edge := range edges {
-		// for but not ensure that the first edge is the left edge
-		// the first time, take the weights of the edge
-		if len(weights) == 0 || edge.edgeType == DirectEdge {
-			for key, value := range edge.weights {
-				weights[key] = value
-			}
-			continue
-		}
+	leftSideWeights := make(map[string]int)
+	rightSideWeights := make(map[string]int)
 
-		// for AndOperation, remove the key if it is not in the edge, not all edges return the same type
-		for key := range weights {
-			if value, ok := edge.weights[key]; !ok {
-				delete(weights, key)
+	for i, edge := range edges {
+		isLastElement := len(edges) == i+1
+
+		for key, value := range edge.weights {
+			if isLastElement {
+				rightSideWeights[key] = value
 			} else {
-				weights[key] = int(math.Max(float64(weights[key]), float64(value)))
+				leftSideWeights[key] = value
 			}
 		}
 	}
+
+	weights := make(map[string]int)
+
+	for key := range leftSideWeights {
+		if _, bothExist := rightSideWeights[key]; bothExist {
+			weights[key] = int(math.Max(float64(leftSideWeights[key]), float64(rightSideWeights[key])))
+		}
+	}
+
 	if len(weights) == 0 {
 		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
 	}

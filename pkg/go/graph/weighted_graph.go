@@ -297,8 +297,6 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 		return tupleCycle, err
 	}
 
-	//fmt.Println("calculating", "From:", edge.from.uniqueLabel, "to:", edge.to.uniqueLabel, "weights:", len(edge.to.weights))
-
 	// if the node that is connected to the edge does not have any weight, we need to check if is a tuple cycle or a model cycle
 	if len(edge.to.weights) == 0 {
 		if isTupleCycle(edge.to.uniqueLabel, ancestorPath) {
@@ -349,13 +347,6 @@ func isTupleCycle(nodeID string, ancestorPath []*WeightedAuthorizationModelEdge)
 	recursiveRelation := ""
 	recursion := true
 	cyclePath := make([]*WeightedAuthorizationModelEdge, 0)
-
-	if strings.Contains(nodeID, "union") {
-		fmt.Println("THIS SHOULDN'T BE SEEN")
-	}
-	// for _, e := range ancestorPath {
-	// 	fmt.Println("NodeID:", nodeID, "From:", e.from.GetUniqueLabel(), "TO:", e.to.GetUniqueLabel())
-	// }
 
 	for _, edge := range ancestorPath {
 		if !startTracking && edge.from.uniqueLabel == nodeID {

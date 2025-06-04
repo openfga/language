@@ -1614,11 +1614,17 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		graph, err := wgb.Build(authorizationModel)
 		require.NoError(t, err)
 
-		require.Empty(t, graph.nodes["document#viewer"].GetRecursiveRelation())
-		require.Empty(t, graph.nodes["document#can_view"].GetRecursiveRelation())
-		require.False(t, graph.nodes["document#viewer"].IsPartOfTupleCycle())
-		require.False(t, graph.nodes["document#can_view"].IsPartOfTupleCycle())
+		for _, node := range graph.nodes {
+			require.Empty(t, node.GetRecursiveRelation())
+			require.Empty(t, node.IsPartOfTupleCycle())
+		}
 
+		for _, edges := range graph.edges {
+			for _, edge := range edges {
+				require.Empty(t, edge.GetRecursiveRelation())
+				require.Empty(t, edge.IsPartOfTupleCycle())
+			}
+		}
 	})
 
 	t.Run("tuple_two_usersets", func(t *testing.T) {
@@ -1642,10 +1648,11 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		require.True(t, graph.nodes["user"].nodeType == SpecificType)
 		require.True(t, graph.nodes["folder"].nodeType == SpecificType)
 		require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-		require.Empty(t, graph.nodes["folder#viewer"].GetRecursiveRelation())
 		require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
-		require.Empty(t, graph.nodes["folder#can_view"].GetRecursiveRelation())
 
+		for _, node := range graph.nodes {
+			require.Empty(t, node.GetRecursiveRelation())
+		}
 		require.True(t, graph.nodes["folder#can_view"].IsPartOfTupleCycle())
 		require.True(t, graph.nodes["folder#viewer"].IsPartOfTupleCycle())
 
@@ -1683,13 +1690,20 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		require.Len(t, graph.nodes, 6)
 		require.Len(t, graph.edges, 4)
 
-		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
-		require.Empty(t, graph.nodes["group#member"].GetRecursiveRelation())
-		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
+		for _, node := range graph.nodes {
+			require.Empty(t, node.GetRecursiveRelation())
+		}
 
 		require.True(t, graph.nodes["group#inherited_member"].IsPartOfTupleCycle())
 		require.True(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.False(t, graph.nodes["group#parent"].IsPartOfTupleCycle())
 
+		require.Empty(t, graph.edges["group#parent"][0].GetRecursiveRelation())
+		require.False(t, graph.edges["group#parent"][0].IsPartOfTupleCycle())
+		require.Empty(t, graph.edges["group#inherited_member"][0].GetRecursiveRelation())
+		require.True(t, graph.edges["group#inherited_member"][0].IsPartOfTupleCycle())
+		require.Empty(t, graph.edges["group#member"][0].GetRecursiveRelation())
+		require.True(t, graph.edges["group#member"][0].IsPartOfTupleCycle())
 	})
 
 	t.Run("recursive_cycle_userset", func(t *testing.T) {
@@ -1711,6 +1725,9 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 
 		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
 		require.False(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.Empty(t, graph.edges["group#member"][0].GetRecursiveRelation())
+		require.Equal(t, "group#member", graph.edges["group#member"][1].GetRecursiveRelation())
+		require.False(t, graph.edges["group#member"][0].IsPartOfTupleCycle())
 	})
 
 	t.Run("recursive_cycle_ttu", func(t *testing.T) {
@@ -1731,9 +1748,25 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		require.Len(t, graph.nodes, 5)
 		require.Len(t, graph.edges, 3)
 
+		var unionNodeID string
+		for _, node := range graph.nodes {
+			if node.GetNodeType() == OperatorNode {
+				unionNodeID = node.GetUniqueLabel()
+			}
+		}
+
+		require.Equal(t, "group#member", graph.nodes[unionNodeID].GetRecursiveRelation())
+		require.False(t, graph.nodes[unionNodeID].IsPartOfTupleCycle())
 		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
 		require.Empty(t, graph.edges["group#parent"][0].GetRecursiveRelation())
 		require.False(t, graph.nodes["group#member"].IsPartOfTupleCycle())
+		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
+		for _, node := range graph.nodes {
+			if node.GetLabel() == "union" {
+				require.Equal(t, "group#member", node.GetRecursiveRelation())
+			}
+		}
+		require.Equal(t, "group#member", graph.edges["group#member"][0].GetRecursiveRelation())
 	})
 
 	t.Run("both_recursion_and_tuple_cycles", func(t *testing.T) {
@@ -1752,6 +1785,15 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		graph, err := wgb.Build(authorizationModel)
 		require.NoError(t, err)
 
+		var unionNodeID string
+		for _, node := range graph.nodes {
+			if node.GetNodeType() == OperatorNode {
+				unionNodeID = node.GetUniqueLabel()
+			}
+		}
+
+		require.True(t, graph.nodes[unionNodeID].IsPartOfTupleCycle())
+		require.Equal(t, "group#member", graph.nodes[unionNodeID].GetRecursiveRelation())
 		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
 		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
 		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())
@@ -1778,6 +1820,15 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 		graph, err := wgb.Build(authorizationModel)
 		require.NoError(t, err)
 
+		var unionNodeID string
+		for _, node := range graph.nodes {
+			if node.GetNodeType() == OperatorNode {
+				unionNodeID = node.GetUniqueLabel()
+			}
+		}
+
+		require.True(t, graph.nodes[unionNodeID].IsPartOfTupleCycle())
+		require.Equal(t, "group#member", graph.nodes[unionNodeID].GetRecursiveRelation())
 		require.Equal(t, "group#member", graph.nodes["group#member"].GetRecursiveRelation())
 		require.Empty(t, graph.nodes["group#parent"].GetRecursiveRelation())
 		require.Empty(t, graph.nodes["group#inherited_member"].GetRecursiveRelation())

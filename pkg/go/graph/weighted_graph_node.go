@@ -48,7 +48,7 @@ func (node *WeightedAuthorizationModelNode) GetRecursiveRelation() string {
 	return node.recursiveRelation
 }
 
-// IsPartOfTupleCycle returns a true if the node is part of a cycle that involves more than one node of type SpecificTypeAndRelation
+// IsPartOfTupleCycle returns a true if the node is part of a cycle that involves more than one node of type SpecificTypeAndRelation.
 func (node *WeightedAuthorizationModelNode) IsPartOfTupleCycle() bool {
 	return node.tupleCycle
 }

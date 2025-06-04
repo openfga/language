@@ -65,7 +65,7 @@ func (edge *WeightedAuthorizationModelEdge) GetRecursiveRelation() string {
 	return edge.recursiveRelation
 }
 
-// IsPartOfTupleCycle returns a true if the edge is part of a cycle path that involves more than one node of type SpecificTypeAndRelation
-func (node *WeightedAuthorizationModelEdge) IsPartOfTupleCycle() bool {
-	return node.tupleCycle
+// IsPartOfTupleCycle returns a true if the edge is part of a cycle path that involves more than one node of type SpecificTypeAndRelation.
+func (edge *WeightedAuthorizationModelEdge) IsPartOfTupleCycle() bool {
+	return edge.tupleCycle
 }

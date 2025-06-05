@@ -927,15 +927,15 @@ func TestGraphConstructionTTU(t *testing.T) {
 	t.Parallel()
 	model := `
 	       model
-                    schema 1.1
-                type user
-                type document
-                    relations
-                        define parent: [folder]
-                        define viewer: admin from parent
-                type folder
-                    relations
-                        define admin: [user]
+				schema 1.1
+			type user
+			type document
+				relations
+					define parent: [folder]
+					define viewer: admin from parent
+			type folder
+				relations
+					define admin: [user]
 	`
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1459,6 +1459,58 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
 			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+		})
+	})
+
+	t.Run("multiple_intersections", func(t *testing.T) {
+		t.Run("balanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type user3
+		  type document
+		  	  relations
+				define a: [user1,user2,user3] and b and c
+				define b: [user1,user2,user3]
+				define c: [user1,user2,user3]
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.edges["document#a"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#a"][0].GetWeights())
+		})
+
+		t.Run("unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type user3
+		  type document
+		  	  relations
+				define a: [user1,user2] and b and c
+				define b: [user1,user3]
+				define c: [user1,user2]
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.edges["document#a"], 1)
+			require.Equal(t, map[string]int{"user1": 1}, graph.edges["document#a"][0].GetWeights())
 		})
 	})
 }

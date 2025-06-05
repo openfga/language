@@ -505,27 +505,42 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	leftSideWeights := make(map[string]int)
-	rightSideWeights := make(map[string]int)
+	directlyAssignableWeights := make(map[string]int)
+	rewriteWeights := make(map[string]int)
 
-	for i, edge := range edges {
-		isLastElement := len(edges) == i+1
-
-		for key, value := range edge.weights {
-			if isLastElement {
-				rightSideWeights[key] = value
-			} else {
-				leftSideWeights[key] = value
+	for _, edge := range edges {
+		if edge.GetEdgeType() == DirectEdge {
+			for key, weight := range edge.weights {
+				directlyAssignableWeights[key] = weight
+			}
+			continue
+		}
+		if len(rewriteWeights) == 0 {
+			for key, weight := range edge.weights {
+				rewriteWeights[key] = weight
+			}
+		} else {
+			for key, rewriteWeight := range rewriteWeights {
+				if _, existsAlready := edge.GetWeights()[key]; existsAlready {
+					rewriteWeights[key] = int(math.Max(float64(edge.weights[key]), float64(rewriteWeight)))
+				} else {
+					delete(rewriteWeights, key)
+				}
 			}
 		}
 	}
 
 	weights := make(map[string]int)
 
-	for key := range leftSideWeights {
-		if _, bothExist := rightSideWeights[key]; bothExist {
-			weights[key] = int(math.Max(float64(leftSideWeights[key]), float64(rightSideWeights[key])))
+	directlyAssignableTypesExist := len(directlyAssignableWeights) > 0
+	if directlyAssignableTypesExist {
+		for key := range directlyAssignableWeights {
+			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
+				weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
+			}
 		}
+	} else {
+		weights = rewriteWeights
 	}
 
 	if len(weights) == 0 {

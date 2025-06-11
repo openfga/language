@@ -499,32 +499,50 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 // not all paths return the same type and the model is not valid.
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
-	weights := make(map[string]int)
 	edges := wg.edges[nodeID]
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
+	directlyAssignableWeights := make(map[string]int)
+	rewriteWeights := make(map[string]int)
+
 	for _, edge := range edges {
-		// for but not ensure that the first edge is the left edge
-		// the first time, take the weights of the edge
-		if len(weights) == 0 {
-			for key, value := range edge.weights {
-				weights[key] = value
+		if edge.GetEdgeType() == DirectEdge {
+			for key, weight := range edge.weights {
+				directlyAssignableWeights[key] = weight
 			}
 			continue
 		}
-
-		// for AndOperation, remove the key if it is not in the edge, not all edges return the same type
-		for key := range weights {
-			if value, ok := edge.weights[key]; !ok {
-				delete(weights, key)
-			} else {
-				weights[key] = int(math.Max(float64(weights[key]), float64(value)))
+		if len(rewriteWeights) == 0 {
+			for key, weight := range edge.weights {
+				rewriteWeights[key] = weight
+			}
+		} else {
+			for key, rewriteWeight := range rewriteWeights {
+				if _, existsAlready := edge.GetWeights()[key]; existsAlready {
+					rewriteWeights[key] = int(math.Max(float64(edge.weights[key]), float64(rewriteWeight)))
+				} else {
+					delete(rewriteWeights, key)
+				}
 			}
 		}
 	}
+
+	weights := make(map[string]int)
+
+	directlyAssignableTypesExist := len(directlyAssignableWeights) > 0
+	if directlyAssignableTypesExist {
+		for key := range directlyAssignableWeights {
+			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
+				weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
+			}
+		}
+	} else {
+		weights = rewriteWeights
+	}
+
 	if len(weights) == 0 {
 		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
 	}

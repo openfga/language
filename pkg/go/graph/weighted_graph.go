@@ -505,6 +505,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
+	// In intersection, directly-assignable types must be handled separately from rewritten types.
+	// All types flatten to edges, but directly-assignable weights are OR'd together, and that result
+	// is then AND'd with the combined weights of the rewritten edges for validity and weight assignment.
 	directlyAssignableWeights := make(map[string]int, len(edges))
 	rewriteWeights := make(map[string]int, len(edges))
 

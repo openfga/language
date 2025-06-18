@@ -505,8 +505,8 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	directlyAssignableWeights := make(map[string]int)
-	rewriteWeights := make(map[string]int)
+	directlyAssignableWeights := make(map[string]int, len(edges))
+	rewriteWeights := make(map[string]int, len(edges))
 
 	for _, edge := range edges {
 		if edge.GetEdgeType() == DirectEdge {
@@ -530,23 +530,24 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		}
 	}
 
-	weights := make(map[string]int)
-
 	directlyAssignableTypesExist := len(directlyAssignableWeights) > 0
 	if directlyAssignableTypesExist {
 		for key := range directlyAssignableWeights {
 			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
-				weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
+				if node.weights == nil {
+					node.weights = make(map[string]int)
+				}
+				node.weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
 			}
 		}
 	} else {
-		weights = rewriteWeights
+		node.weights = rewriteWeights
 	}
 
-	if len(weights) == 0 {
+	if len(node.weights) == 0 {
 		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
 	}
-	node.weights = weights
+
 	return nil
 }
 

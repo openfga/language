@@ -533,8 +533,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		}
 	}
 
-	directlyAssignableTypesExist := len(directlyAssignableWeights) > 0
-	if directlyAssignableTypesExist {
+	if len(directlyAssignableWeights) > 0 {
 		for key := range directlyAssignableWeights {
 			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
 				if node.weights == nil {

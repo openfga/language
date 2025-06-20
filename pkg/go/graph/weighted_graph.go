@@ -499,36 +499,57 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 // not all paths return the same type and the model is not valid.
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
-	weights := make(map[string]int)
 	edges := wg.edges[nodeID]
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
+	// In intersection, directly-assignable types must be handled separately from rewritten types.
+	// All types flatten to edges, but directly-assignable weights are OR'd together, and that result
+	// is then AND'd with the combined weights of the rewritten edges for validity and weight assignment.
+	directlyAssignableWeights := make(map[string]int, len(edges))
+	rewriteWeights := make(map[string]int, len(edges))
+
 	for _, edge := range edges {
-		// for but not ensure that the first edge is the left edge
-		// the first time, take the weights of the edge
-		if len(weights) == 0 {
-			for key, value := range edge.weights {
-				weights[key] = value
+		if edge.GetEdgeType() == DirectEdge {
+			for key, weight := range edge.weights {
+				directlyAssignableWeights[key] = weight
 			}
 			continue
 		}
-
-		// for AndOperation, remove the key if it is not in the edge, not all edges return the same type
-		for key := range weights {
-			if value, ok := edge.weights[key]; !ok {
-				delete(weights, key)
-			} else {
-				weights[key] = int(math.Max(float64(weights[key]), float64(value)))
+		if len(rewriteWeights) == 0 {
+			for key, weight := range edge.weights {
+				rewriteWeights[key] = weight
+			}
+		} else {
+			for key, rewriteWeight := range rewriteWeights {
+				if _, existsAlready := edge.GetWeights()[key]; existsAlready {
+					rewriteWeights[key] = int(math.Max(float64(edge.weights[key]), float64(rewriteWeight)))
+				} else {
+					delete(rewriteWeights, key)
+				}
 			}
 		}
 	}
-	if len(weights) == 0 {
+
+	if len(directlyAssignableWeights) > 0 {
+		for key := range directlyAssignableWeights {
+			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
+				if node.weights == nil {
+					node.weights = make(map[string]int, int(math.Min(float64(len(rewriteWeights)), float64(len(directlyAssignableWeights)))))
+				}
+				node.weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
+			}
+		}
+	} else {
+		node.weights = rewriteWeights
+	}
+
+	if len(node.weights) == 0 {
 		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
 	}
-	node.weights = weights
+
 	return nil
 }
 

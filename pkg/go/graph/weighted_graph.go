@@ -537,7 +537,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		for key := range directlyAssignableWeights {
 			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
 				if node.weights == nil {
-					node.weights = make(map[string]int)
+					node.weights = make(map[string]int, int(math.Min(float64(len(rewriteWeights)), float64(len(directlyAssignableWeights)))))
 				}
 				node.weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
 			}

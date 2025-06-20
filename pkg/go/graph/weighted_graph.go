@@ -130,8 +130,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 
 	for nodeID, node := range wg.nodes {
 		if node.GetNodeType() == OperatorNode {
-			// Inititally defer weight assignment of operator nodes to
-			// later; their weights will still be handled later in fixDependantNodesWeight().
+			// Inititally defer weight assignment of operator nodes to later in `fixDependantNodesWeight()`.
 			// This enables more deterministic behavior of intermediate functions.
 			continue
 		}

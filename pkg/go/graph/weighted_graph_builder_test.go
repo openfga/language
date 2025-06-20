@@ -736,9 +736,9 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 	require.Len(t, graph.nodes, 3)
 	require.Len(t, graph.edges, 1)
 	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
 }
 
 func TestGraphConstructionWildcardAssignation(t *testing.T) {
@@ -758,11 +758,11 @@ func TestGraphConstructionWildcardAssignation(t *testing.T) {
 
 	require.Len(t, graph.nodes, 4)
 	require.Len(t, graph.edges, 1)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["user:*"].nodeType == SpecificTypeWildcard)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user:*")
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificTypeWildcard, graph.nodes["user:*"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+	require.Equal(t, "user:*", graph.edges["folder#viewer"][0].to.uniqueLabel)
 }
 
 func TestGraphConstructionDirectAssignmentWildardAndType(t *testing.T) {
@@ -782,13 +782,13 @@ func TestGraphConstructionDirectAssignmentWildardAndType(t *testing.T) {
 
 	require.Len(t, graph.nodes, 4)
 	require.Len(t, graph.edges, 1)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["user:*"].nodeType == SpecificTypeWildcard)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificTypeWildcard, graph.nodes["user:*"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
 	require.Len(t, graph.edges["folder#viewer"], 2)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user:*")
-	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "user")
+	require.Equal(t, "user:*", graph.edges["folder#viewer"][0].to.uniqueLabel)
+	require.Equal(t, "user", graph.edges["folder#viewer"][1].to.uniqueLabel)
 }
 
 func TestGraphConstructionDirectAssignmentWithUsersets(t *testing.T) {
@@ -811,11 +811,11 @@ func TestGraphConstructionDirectAssignmentWithUsersets(t *testing.T) {
 
 	require.Len(t, graph.nodes, 5)
 	require.Len(t, graph.edges, 2)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["group"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["group#member"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["group"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["group#member"].nodeType)
 	require.Len(t, graph.edges["folder#viewer"], 1)
 	require.Len(t, graph.edges["group#member"], 1)
 }
@@ -837,12 +837,12 @@ func TestGraphConstructionDirectAssignmentWithUsersetRecursive(t *testing.T) {
 
 	require.Len(t, graph.nodes, 3)
 	require.Len(t, graph.edges, 1)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
 	require.Len(t, graph.edges["folder#viewer"], 2)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#viewer")
+	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
+	require.Equal(t, "folder#viewer", graph.edges["folder#viewer"][1].to.uniqueLabel)
 }
 
 func TestGraphConstructionDirectAssignmentWithConditions(t *testing.T) {
@@ -865,14 +865,14 @@ func TestGraphConstructionDirectAssignmentWithConditions(t *testing.T) {
 
 	require.Len(t, graph.nodes, 3)
 	require.Len(t, graph.edges, 1)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
 	require.Len(t, graph.edges["folder#viewer"], 1)
 	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges["folder#viewer"][0].conditions[0] == "condX")
-	require.True(t, graph.edges["folder#viewer"][0].conditions[1] == "none")
+	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
+	require.Equal(t, "condX", graph.edges["folder#viewer"][0].conditions[0])
+	require.Equal(t, "none", graph.edges["folder#viewer"][0].conditions[1])
 }
 
 func TestGraphConstructioComputedRelation(t *testing.T) {
@@ -893,16 +893,16 @@ func TestGraphConstructioComputedRelation(t *testing.T) {
 
 	require.Len(t, graph.nodes, 4)
 	require.Len(t, graph.edges, 2)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#x"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#y"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#x"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#y"].nodeType)
 	require.Len(t, graph.edges["folder#x"], 1)
 	require.Len(t, graph.edges["folder#y"], 1)
-	require.True(t, graph.edges["folder#x"][0].edgeType == ComputedEdge)
+	require.Equal(t, ComputedEdge, graph.edges["folder#x"][0].edgeType)
 	require.Len(t, graph.edges["folder#y"][0].conditions, 1)
-	require.True(t, graph.edges["folder#y"][0].conditions[0] == "none")
-	require.True(t, graph.edges["folder#y"][0].edgeType == DirectEdge)
+	require.Equal(t, "none", graph.edges["folder#y"][0].conditions[0])
+	require.Equal(t, DirectEdge, graph.edges["folder#y"][0].edgeType)
 }
 
 func TestGraphConstructioComputedWithCycle(t *testing.T) {
@@ -927,15 +927,15 @@ func TestGraphConstructionTTU(t *testing.T) {
 	t.Parallel()
 	model := `
 	       model
-                    schema 1.1
-                type user
-                type document
-                    relations
-                        define parent: [folder]
-                        define viewer: admin from parent
-                type folder
-                    relations
-                        define admin: [user]
+				schema 1.1
+			type user
+			type document
+				relations
+					define parent: [folder]
+					define viewer: admin from parent
+			type folder
+				relations
+					define admin: [user]
 	`
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -944,15 +944,15 @@ func TestGraphConstructionTTU(t *testing.T) {
 
 	require.Len(t, graph.nodes, 6)
 	require.Len(t, graph.edges, 3)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["document"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
-	require.True(t, graph.edges["document#viewer"][0].tuplesetRelation == "document#parent")
-	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["document"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#admin"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#parent"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#viewer"].nodeType)
+	require.Equal(t, "folder#admin", graph.edges["document#viewer"][0].to.uniqueLabel)
+	require.Equal(t, "document#parent", graph.edges["document#viewer"][0].tuplesetRelation)
+	require.Equal(t, TTUEdge, graph.edges["document#viewer"][0].edgeType)
 
 }
 
@@ -980,21 +980,21 @@ func TestGraphConstructionTTUConditional(t *testing.T) {
 
 	require.Len(t, graph.nodes, 6)
 	require.Len(t, graph.edges, 3)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["document"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["document"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#admin"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#parent"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#viewer"].nodeType)
 	require.Len(t, graph.edges["document#viewer"], 1)
-	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
-	require.True(t, graph.edges["document#viewer"][0].tuplesetRelation == "document#parent")
-	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
+	require.Equal(t, "folder#admin", graph.edges["document#viewer"][0].to.uniqueLabel)
+	require.Equal(t, "document#parent", graph.edges["document#viewer"][0].tuplesetRelation)
+	require.Equal(t, TTUEdge, graph.edges["document#viewer"][0].edgeType)
 	require.Len(t, graph.edges["document#viewer"][0].conditions, 1)
 	require.Len(t, graph.edges["document#parent"], 1)
 	require.Len(t, graph.edges["document#parent"][0].conditions, 2)
-	require.True(t, graph.edges["document#parent"][0].conditions[0] == "none")
-	require.True(t, graph.edges["document#parent"][0].conditions[1] == "condX")
+	require.Equal(t, "none", graph.edges["document#parent"][0].conditions[0])
+	require.Equal(t, "condX", graph.edges["document#parent"][0].conditions[1])
 }
 
 func TestGraphConstructionUsersetConditional(t *testing.T) {
@@ -1020,17 +1020,17 @@ func TestGraphConstructionUsersetConditional(t *testing.T) {
 
 	require.Len(t, graph.nodes, 5)
 	require.Len(t, graph.edges, 2)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["group"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["group#member"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["group"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["group#member"].nodeType)
 	require.Len(t, graph.edges["folder#viewer"], 1)
-	require.True(t, graph.edges["folder#viewer"][0].to.uniqueLabel == "group#member")
-	require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
+	require.Equal(t, "group#member", graph.edges["folder#viewer"][0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, graph.edges["folder#viewer"][0].edgeType)
 	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
-	require.True(t, graph.edges["folder#viewer"][0].conditions[0] == "none")
-	require.True(t, graph.edges["folder#viewer"][0].conditions[1] == "condX")
+	require.Equal(t, "none", graph.edges["folder#viewer"][0].conditions[0])
+	require.Equal(t, "condX", graph.edges["folder#viewer"][0].conditions[1])
 }
 
 func TestGraphConstructionTTURecursive(t *testing.T) {
@@ -1051,22 +1051,22 @@ func TestGraphConstructionTTURecursive(t *testing.T) {
 
 	require.Len(t, graph.nodes, 5)
 	require.Len(t, graph.edges, 3)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#parent"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#parent"].nodeType)
 
 	require.Len(t, graph.edges["folder#parent"], 1)
 	require.Len(t, graph.edges["folder#viewer"], 1)
-	require.True(t, graph.edges["folder#viewer"][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges["folder#viewer"][0].to.nodeType == OperatorNode)
+	require.Equal(t, RewriteEdge, graph.edges["folder#viewer"][0].edgeType)
+	require.Equal(t, OperatorNode, graph.edges["folder#viewer"][0].to.nodeType)
 	unionNode := graph.edges["folder#viewer"][0].to
-	require.True(t, unionNode.label == "union")
+	require.Equal(t, "union", unionNode.label)
 	require.Len(t, graph.edges[unionNode.uniqueLabel], 2)
-	require.True(t, graph.edges[unionNode.uniqueLabel][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges[unionNode.uniqueLabel][1].edgeType == TTUEdge)
-	require.True(t, graph.edges[unionNode.uniqueLabel][1].tuplesetRelation == "folder#parent")
-	require.True(t, graph.edges[unionNode.uniqueLabel][1].to.uniqueLabel == "folder#viewer")
+	require.Equal(t, "user", graph.edges[unionNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, TTUEdge, graph.edges[unionNode.uniqueLabel][1].edgeType)
+	require.Equal(t, "folder#parent", graph.edges[unionNode.uniqueLabel][1].tuplesetRelation)
+	require.Equal(t, "folder#viewer", graph.edges[unionNode.uniqueLabel][1].to.uniqueLabel)
 }
 
 func TestGraphConstructionTTUWithTwoParents(t *testing.T) {
@@ -1093,21 +1093,21 @@ func TestGraphConstructionTTUWithTwoParents(t *testing.T) {
 
 	require.Len(t, graph.nodes, 8)
 	require.Len(t, graph.edges, 4)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["document"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder2"].nodeType == SpecificType)
-	require.True(t, graph.nodes["document#parent"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["document#viewer"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#admin"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder2#admin"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["document"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder2"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#parent"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["document#viewer"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#admin"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder2#admin"].nodeType)
 	require.Len(t, graph.edges["document#parent"], 2)
 	require.Len(t, graph.edges["document#viewer"], 2)
-	require.True(t, graph.edges["document#viewer"][0].edgeType == TTUEdge)
-	require.True(t, graph.edges["document#viewer"][0].to.uniqueLabel == "folder#admin")
+	require.Equal(t, TTUEdge, graph.edges["document#viewer"][0].edgeType)
+	require.Equal(t, "folder#admin", graph.edges["document#viewer"][0].to.uniqueLabel)
 
-	require.True(t, graph.edges["document#viewer"][1].edgeType == TTUEdge)
-	require.True(t, graph.edges["document#viewer"][1].to.uniqueLabel == "folder2#admin")
+	require.Equal(t, TTUEdge, graph.edges["document#viewer"][1].edgeType)
+	require.Equal(t, "folder2#admin", graph.edges["document#viewer"][1].to.uniqueLabel)
 }
 
 func TestGraphConstructionInvalidTTU(t *testing.T) {
@@ -1129,47 +1129,390 @@ func TestGraphConstructionInvalidTTU(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrInvalidModel)
-
 }
 
 func TestGraphConstructionIntersection(t *testing.T) {
-	t.Parallel()
-	model := `
+	t.Run("two_operands", func(t *testing.T) {
+		t.Run("balanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
 	      model
-                    schema 1.1
-                type user
-                type folder
-                   relations
-                     define a: [user]
-                     define b: [user]
-                     define c: a and b
-	`
-	authorizationModel := language.MustTransformDSLToProto(model)
-	wgb := NewWeightedAuthorizationModelGraphBuilder()
-	graph, err := wgb.Build(authorizationModel)
-	require.NoError(t, err)
+		  	schema 1.1
+		  type user
+		  type folder
+		  	  relations
+				define a: [user]
+				define b: [user]
+				define c: a and b
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 6)
-	require.Len(t, graph.edges, 4)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
-	andNode := graph.edges["folder#c"][0].to
-	require.True(t, andNode.nodeType == OperatorNode)
-	require.True(t, andNode.label == "intersection")
-	require.Len(t, graph.edges[andNode.uniqueLabel], 2)
-	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
-	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
-	require.Len(t, graph.edges["folder#b"], 1)
-	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
-	require.Len(t, graph.edges["folder#c"], 1)
-	require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+			require.Len(t, graph.nodes, 6)
+			require.Len(t, graph.edges, 4)
+			require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+			require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+			require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+			require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
+			require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#c"].nodeType)
+			andNode := graph.edges["folder#c"][0].to
+			require.Equal(t, OperatorNode, andNode.nodeType)
+			require.Equal(t, "intersection", andNode.label)
+			require.Len(t, graph.edges[andNode.uniqueLabel], 2)
+			require.Equal(t, "folder#a", graph.edges[andNode.uniqueLabel][0].to.uniqueLabel)
+			require.Equal(t, RewriteEdge, graph.edges[andNode.uniqueLabel][0].edgeType)
+			require.Equal(t, "folder#b", graph.edges[andNode.uniqueLabel][1].to.uniqueLabel)
+			require.Equal(t, RewriteEdge, graph.edges[andNode.uniqueLabel][1].edgeType)
+			require.Len(t, graph.edges["folder#a"], 1)
+			require.Equal(t, DirectEdge, graph.edges["folder#a"][0].edgeType)
+			require.Len(t, graph.edges["folder#b"], 1)
+			require.Equal(t, DirectEdge, graph.edges["folder#b"][0].edgeType)
+			require.Len(t, graph.edges["folder#c"], 1)
+			require.Equal(t, RewriteEdge, graph.edges["folder#c"][0].edgeType)
+		})
+
+		t.Run("unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type folder
+		  	  relations
+				define a: [user1,user2]
+				define b: [user1]
+				define c: a and b
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["folder#c"], 1)
+			require.Equal(t, map[string]int{"user1": 1}, graph.edges["folder#c"][0].GetWeights()) // Because only [user1] on both sides of AND
+		})
+	})
+	t.Run("three_operands_balanced_direct", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: [user1,user2,user3] and can_view
+				define can_view: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 7)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
+	})
+
+	t.Run("three_operands_unbalanced_direct", func(t *testing.T) {
+		t.Run("left_unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+	
+			type document
+				relations
+					define viewer: [user1,user3] and can_view
+					define can_view: [user1,user2,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on left of AND
+		})
+		t.Run("right_unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+	
+			type document
+				relations
+					define viewer: [user1,user2,user3] and can_view
+					define can_view: [user1,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on right of AND
+		})
+	})
+
+	t.Run("three_operands_unbalanced_rewrite", func(t *testing.T) {
+		t.Parallel()
+		t.Run("left_unbalanced", func(t *testing.T) {
+			model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: viewer1 and viewer2
+				define viewer1: [user1,user3]
+				define viewer2: [user1,user2,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on left of AND
+		})
+		t.Run("right_unbalanced", func(t *testing.T) {
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user3]
+					define viewer2: [user1,user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges["document#viewer"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on right of AND
+		})
+	})
+
+	t.Run("three_operands_balanced_rewrite", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: viewer1 and viewer2
+				define viewer1: [user1,user2,user3]
+				define viewer2: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 8)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
+	})
+
+	t.Run("three_operands_balanced_rewrite_userset_directly_assigned", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: [document#viewer1] and viewer2
+				define viewer1: [user1,user2,user3]
+				define viewer2: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 8)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 2, "user2": 2, "user3": 2}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3, document#viewer1] on both sides of AND
+	})
+
+	t.Run("three_operands_balanced_rewrite_userset_directly_assigned_mixed", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: [user1,user2, user3, document#viewer1] and viewer2
+				define viewer1: [user1,user2,user3]
+				define viewer2: [user1,user2,user3]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 8)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 2, "user2": 2, "user3": 2}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3, document#viewer1] on both sides of AND
+	})
+
+	t.Run("three_operands_balanced_rewrite_mixed_wildcards", func(t *testing.T) {
+		t.Parallel()
+		model := `
+		model
+			schema 1.1
+		type user1
+		type user2
+		type user3
+
+		type document
+			relations
+				define viewer: viewer1 and viewer2
+				define viewer1: [user1,user2:*,user3]
+				define viewer2: [user1:*,user2,user3:*]`
+
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+
+		require.Len(t, graph.nodes, 11)
+		require.Len(t, graph.edges["document#viewer"], 1)
+		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
+	})
+
+	t.Run("invalid_model", func(t *testing.T) {
+		t.Run("with_direct_types", func(t *testing.T) {
+
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: [user1,user2] and owner
+					define owner: [user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+		})
+		t.Run("without_direct_types", func(t *testing.T) {
+			t.Parallel()
+			model := `
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
+			
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user2]
+					define viewer2: [user3]`
+
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+		})
+	})
+
+	t.Run("multiple_intersections", func(t *testing.T) {
+		t.Run("balanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type user3
+		  type document
+		  	  relations
+				define a: [user1,user2,user3] and b and c
+				define b: [user1,user2,user3]
+				define c: [user1,user2,user3]
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.edges["document#a"], 1)
+			require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#a"][0].GetWeights())
+		})
+
+		t.Run("unbalanced", func(t *testing.T) {
+			t.Parallel()
+			model := `
+	      model
+		  	schema 1.1
+		  type user1
+		  type user2
+		  type user3
+		  type document
+		  	  relations
+				define a: [user1,user2] and b and c
+				define b: [user1,user3]
+				define c: [user1,user2]
+		  `
+			authorizationModel := language.MustTransformDSLToProto(model)
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(authorizationModel)
+			require.NoError(t, err)
+
+			require.Len(t, graph.nodes, 8)
+			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.edges["document#a"], 1)
+			require.Equal(t, map[string]int{"user1": 1}, graph.edges["document#a"][0].GetWeights())
+		})
+	})
 }
 
 func TestGraphConstructionIntersectionWithType(t *testing.T) {
@@ -1190,20 +1533,20 @@ func TestGraphConstructionIntersectionWithType(t *testing.T) {
 
 	require.Len(t, graph.nodes, 5)
 	require.Len(t, graph.edges, 3)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
 	andNode := graph.edges["folder#b"][0].to
-	require.True(t, andNode.nodeType == OperatorNode)
-	require.True(t, andNode.label == "intersection")
+	require.Equal(t, OperatorNode, andNode.nodeType)
+	require.Equal(t, "intersection", andNode.label)
 	require.Len(t, graph.edges[andNode.uniqueLabel], 2)
-	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == DirectEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Equal(t, "user", graph.edges[andNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, graph.edges[andNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#a", graph.edges[andNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[andNode.uniqueLabel][1].edgeType)
 	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#a"][0].edgeType)
 }
 
 func TestGraphConstructionNestedIntersection(t *testing.T) {
@@ -1227,34 +1570,34 @@ func TestGraphConstructionNestedIntersection(t *testing.T) {
 
 	require.Len(t, graph.nodes, 9)
 	require.Len(t, graph.edges, 7)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#c"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#d"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#e"].nodeType)
 
 	outerAndNode := graph.edges["folder#e"][0].to
-	require.True(t, outerAndNode.nodeType == OperatorNode)
-	require.True(t, outerAndNode.label == "intersection")
+	require.Equal(t, OperatorNode, outerAndNode.nodeType)
+	require.Equal(t, "intersection", outerAndNode.label)
 	require.Len(t, graph.edges[outerAndNode.uniqueLabel], 2)
-	require.True(t, graph.edges[outerAndNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
-	require.True(t, graph.edges[outerAndNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.True(t, graph.edges[outerAndNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.Equal(t, "folder#d", graph.edges[outerAndNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[outerAndNode.uniqueLabel][1].edgeType)
+	require.Equal(t, RewriteEdge, graph.edges[outerAndNode.uniqueLabel][0].edgeType)
 	innerAndNode := graph.edges[outerAndNode.uniqueLabel][0].to
-	require.True(t, innerAndNode.nodeType == OperatorNode)
-	require.True(t, innerAndNode.label == "intersection")
+	require.Equal(t, OperatorNode, innerAndNode.nodeType)
+	require.Equal(t, "intersection", innerAndNode.label)
 	require.Len(t, graph.edges[innerAndNode.uniqueLabel], 3)
 
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+	require.Equal(t, RewriteEdge, graph.edges[innerAndNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#a", graph.edges[innerAndNode.uniqueLabel][0].to.uniqueLabel)
 
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+	require.Equal(t, RewriteEdge, graph.edges[innerAndNode.uniqueLabel][1].edgeType)
+	require.Equal(t, "folder#b", graph.edges[innerAndNode.uniqueLabel][1].to.uniqueLabel)
 
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][2].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerAndNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
+	require.Equal(t, RewriteEdge, graph.edges[innerAndNode.uniqueLabel][2].edgeType)
+	require.Equal(t, "folder#c", graph.edges[innerAndNode.uniqueLabel][2].to.uniqueLabel)
 }
 
 func TestGraphConstructionNestedUnion(t *testing.T) {
@@ -1278,34 +1621,34 @@ func TestGraphConstructionNestedUnion(t *testing.T) {
 
 	require.Len(t, graph.nodes, 9)
 	require.Len(t, graph.edges, 7)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#c"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#d"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#e"].nodeType)
 
 	outerOrNode := graph.edges["folder#e"][0].to
-	require.True(t, outerOrNode.nodeType == OperatorNode)
-	require.True(t, outerOrNode.label == "union")
+	require.Equal(t, OperatorNode, outerOrNode.nodeType)
+	require.Equal(t, "union", outerOrNode.label)
 	require.Len(t, graph.edges[outerOrNode.uniqueLabel], 2)
-	require.True(t, graph.edges[outerOrNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
-	require.True(t, graph.edges[outerOrNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.True(t, graph.edges[outerOrNode.uniqueLabel][0].edgeType == RewriteEdge)
+	require.Equal(t, "folder#d", graph.edges[outerOrNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[outerOrNode.uniqueLabel][1].edgeType)
+	require.Equal(t, RewriteEdge, graph.edges[outerOrNode.uniqueLabel][0].edgeType)
 	innerOrNode := graph.edges[outerOrNode.uniqueLabel][0].to
-	require.True(t, innerOrNode.nodeType == OperatorNode)
-	require.True(t, innerOrNode.label == "union")
+	require.Equal(t, OperatorNode, innerOrNode.nodeType)
+	require.Equal(t, "union", innerOrNode.label)
 	require.Len(t, graph.edges[innerOrNode.uniqueLabel], 3)
 
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
+	require.Equal(t, RewriteEdge, graph.edges[innerOrNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#a", graph.edges[innerOrNode.uniqueLabel][0].to.uniqueLabel)
 
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
+	require.Equal(t, RewriteEdge, graph.edges[innerOrNode.uniqueLabel][1].edgeType)
+	require.Equal(t, "folder#b", graph.edges[innerOrNode.uniqueLabel][1].to.uniqueLabel)
 
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][2].edgeType == RewriteEdge)
-	require.True(t, graph.edges[innerOrNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
+	require.Equal(t, RewriteEdge, graph.edges[innerOrNode.uniqueLabel][2].edgeType)
+	require.Equal(t, "folder#c", graph.edges[innerOrNode.uniqueLabel][2].to.uniqueLabel)
 }
 
 func TestGraphConstructionInvalidRecursiveUnion(t *testing.T) {
@@ -1357,40 +1700,40 @@ func TestGraphConstructionMultigraph(t *testing.T) {
 
 	require.Len(t, graph.nodes, 8)
 	require.Len(t, graph.edges, 5)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["state"].nodeType == SpecificType)
-	require.True(t, graph.nodes["transition"].nodeType == SpecificType)
-	require.True(t, graph.nodes["state#can_view"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["transition#start"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["transition#end"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["transition#can_apply"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["state"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["transition"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["state#can_view"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["transition#start"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["transition#end"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["transition#can_apply"].nodeType)
 
 	andNode := graph.edges["transition#can_apply"][0].to
-	require.True(t, andNode.nodeType == OperatorNode)
-	require.True(t, andNode.label == "intersection")
+	require.Equal(t, OperatorNode, andNode.nodeType)
+	require.Equal(t, "intersection", andNode.label)
 	require.Len(t, graph.edges[andNode.uniqueLabel], 3)
-	require.True(t, graph.edges[andNode.uniqueLabel][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges[andNode.uniqueLabel][0].edgeType == DirectEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][1].edgeType == TTUEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][1].to.uniqueLabel == "state#can_view")
-	require.True(t, graph.edges[andNode.uniqueLabel][1].tuplesetRelation == "transition#start")
+	require.Equal(t, "user", graph.edges[andNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, graph.edges[andNode.uniqueLabel][0].edgeType)
+	require.Equal(t, TTUEdge, graph.edges[andNode.uniqueLabel][1].edgeType)
+	require.Equal(t, "state#can_view", graph.edges[andNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, "transition#start", graph.edges[andNode.uniqueLabel][1].tuplesetRelation)
 
-	require.True(t, graph.edges[andNode.uniqueLabel][2].edgeType == TTUEdge)
-	require.True(t, graph.edges[andNode.uniqueLabel][2].to.uniqueLabel == "state#can_view")
-	require.True(t, graph.edges[andNode.uniqueLabel][2].tuplesetRelation == "transition#end")
+	require.Equal(t, TTUEdge, graph.edges[andNode.uniqueLabel][2].edgeType)
+	require.Equal(t, "state#can_view", graph.edges[andNode.uniqueLabel][2].to.uniqueLabel)
+	require.Equal(t, "transition#end", graph.edges[andNode.uniqueLabel][2].tuplesetRelation)
 }
 
 func TestGraphConstructionExclusion(t *testing.T) {
 	t.Parallel()
 	model := `
 	      model
-                    schema 1.1
-                type user
-                type folder
-                   relations
-                     define a: [user]
-                     define b: [user]
-                     define c: a but not b
+			schema 1.1
+		type user
+		type folder
+			relations
+				define a: [user]
+				define b: [user]
+				define c: a but not b
 	`
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1399,25 +1742,25 @@ func TestGraphConstructionExclusion(t *testing.T) {
 
 	require.Len(t, graph.nodes, 6)
 	require.Len(t, graph.edges, 4)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#c"].nodeType)
 	exclusionNode := graph.edges["folder#c"][0].to
-	require.True(t, exclusionNode.nodeType == OperatorNode)
-	require.True(t, exclusionNode.label == "exclusion")
+	require.Equal(t, OperatorNode, exclusionNode.nodeType)
+	require.Equal(t, "exclusion", exclusionNode.label)
 	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Equal(t, "folder#a", graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[exclusionNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#b", graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[exclusionNode.uniqueLabel][1].edgeType)
 	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#a"][0].edgeType)
 	require.Len(t, graph.edges["folder#b"], 1)
-	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#b"][0].edgeType)
 	require.Len(t, graph.edges["folder#c"], 1)
-	require.True(t, graph.edges["folder#c"][0].edgeType == RewriteEdge)
+	require.Equal(t, RewriteEdge, graph.edges["folder#c"][0].edgeType)
 }
 
 func TestGraphConstructionExclusionWithType(t *testing.T) {
@@ -1438,22 +1781,22 @@ func TestGraphConstructionExclusionWithType(t *testing.T) {
 
 	require.Len(t, graph.nodes, 5)
 	require.Len(t, graph.edges, 3)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
 	exclusionNode := graph.edges["folder#b"][0].to
-	require.True(t, exclusionNode.nodeType == OperatorNode)
-	require.True(t, exclusionNode.label == "exclusion")
+	require.Equal(t, OperatorNode, exclusionNode.nodeType)
+	require.Equal(t, "exclusion", exclusionNode.label)
 	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel == "user")
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][0].edgeType == DirectEdge)
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Equal(t, "user", graph.edges[exclusionNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, graph.edges[exclusionNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#a", graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[exclusionNode.uniqueLabel][1].edgeType)
 	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#a"][0].edgeType)
 	require.Len(t, graph.edges["folder#b"], 1)
-	require.True(t, graph.edges["folder#b"][0].edgeType == RewriteEdge)
+	require.Equal(t, RewriteEdge, graph.edges["folder#b"][0].edgeType)
 }
 
 func TestGraphConstructionMixedAlg(t *testing.T) {
@@ -1477,38 +1820,38 @@ func TestGraphConstructionMixedAlg(t *testing.T) {
 
 	require.Len(t, graph.nodes, 9)
 	require.Len(t, graph.edges, 7)
-	require.True(t, graph.nodes["user"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-	require.True(t, graph.nodes["folder#a"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#b"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#c"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#d"].nodeType == SpecificTypeAndRelation)
-	require.True(t, graph.nodes["folder#e"].nodeType == SpecificTypeAndRelation)
+	require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#a"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#b"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#c"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#d"].nodeType)
+	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#e"].nodeType)
 
 	exclusionNode := graph.edges["folder#e"][0].to
-	require.True(t, exclusionNode.nodeType == OperatorNode)
-	require.True(t, exclusionNode.label == "exclusion")
+	require.Equal(t, OperatorNode, exclusionNode.nodeType)
+	require.Equal(t, "exclusion", exclusionNode.label)
 	require.Len(t, graph.edges[exclusionNode.uniqueLabel], 2)
 	orNode := graph.edges[exclusionNode.uniqueLabel][0].to
-	require.True(t, orNode.nodeType == OperatorNode)
-	require.True(t, orNode.label == "union")
+	require.Equal(t, OperatorNode, orNode.nodeType)
+	require.Equal(t, "union", orNode.label)
 	require.Len(t, graph.edges[orNode.uniqueLabel], 3)
-	require.True(t, graph.edges[orNode.uniqueLabel][0].to.uniqueLabel == "folder#a")
-	require.True(t, graph.edges[orNode.uniqueLabel][0].edgeType == RewriteEdge)
-	require.True(t, graph.edges[orNode.uniqueLabel][1].to.uniqueLabel == "folder#b")
-	require.True(t, graph.edges[orNode.uniqueLabel][1].edgeType == RewriteEdge)
-	require.True(t, graph.edges[orNode.uniqueLabel][2].to.uniqueLabel == "folder#c")
-	require.True(t, graph.edges[orNode.uniqueLabel][2].edgeType == RewriteEdge)
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel == "folder#d")
-	require.True(t, graph.edges[exclusionNode.uniqueLabel][1].edgeType == RewriteEdge)
+	require.Equal(t, "folder#a", graph.edges[orNode.uniqueLabel][0].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[orNode.uniqueLabel][0].edgeType)
+	require.Equal(t, "folder#b", graph.edges[orNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[orNode.uniqueLabel][1].edgeType)
+	require.Equal(t, "folder#c", graph.edges[orNode.uniqueLabel][2].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[orNode.uniqueLabel][2].edgeType)
+	require.Equal(t, "folder#d", graph.edges[exclusionNode.uniqueLabel][1].to.uniqueLabel)
+	require.Equal(t, RewriteEdge, graph.edges[exclusionNode.uniqueLabel][1].edgeType)
 	require.Len(t, graph.edges["folder#a"], 1)
-	require.True(t, graph.edges["folder#a"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#a"][0].edgeType)
 	require.Len(t, graph.edges["folder#b"], 1)
-	require.True(t, graph.edges["folder#b"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#b"][0].edgeType)
 	require.Len(t, graph.edges["folder#c"], 1)
-	require.True(t, graph.edges["folder#c"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#c"][0].edgeType)
 	require.Len(t, graph.edges["folder#d"], 1)
-	require.True(t, graph.edges["folder#d"][0].edgeType == DirectEdge)
+	require.Equal(t, DirectEdge, graph.edges["folder#d"][0].edgeType)
 }
 
 func TestGraphConstructionInvalidDSL(t *testing.T) {

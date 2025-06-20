@@ -1,11 +1,13 @@
 package graph
 
 type WeightedAuthorizationModelNode struct {
-	weights     map[string]int
-	nodeType    NodeType
-	label       string   // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
-	uniqueLabel string   // e.g. "group#member", or "union:01JH0MR4H1MBFGVN37E4PRMPM3"
-	wildcards   []string // e.g. "user". This means that from this node there is a path to node user:*
+	weights           map[string]int
+	nodeType          NodeType
+	label             string   // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
+	uniqueLabel       string   // e.g. "group#member", or "union:01JH0MR4H1MBFGVN37E4PRMPM3"
+	wildcards         []string // e.g. "user". This means that from this node there is a path to node user:*
+	recursiveRelation string
+	tupleCycle        bool
 }
 
 // GetWeights returns the entire weights map.
@@ -38,4 +40,15 @@ func (node *WeightedAuthorizationModelNode) GetUniqueLabel() string {
 // GetWildcards returns an array of types, e.g. "user". This means that from this node there is a path to node user:*.
 func (node *WeightedAuthorizationModelNode) GetWildcards() []string {
 	return node.wildcards
+}
+
+// GetRecursiveRelation returns a string of the recursive relation in a tuple cycle. A recursive relation only
+// exists when the node is self-referential without any intermediate nodes of SpecificTypeAndRelation.
+func (node *WeightedAuthorizationModelNode) GetRecursiveRelation() string {
+	return node.recursiveRelation
+}
+
+// IsPartOfTupleCycle returns a true if the node is part of a cycle that involves more than one node of type SpecificTypeAndRelation.
+func (node *WeightedAuthorizationModelNode) IsPartOfTupleCycle() bool {
+	return node.tupleCycle
 }

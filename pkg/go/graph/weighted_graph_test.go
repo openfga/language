@@ -1151,3 +1151,66 @@ func TestValidRecursionWithMultipleWeightsAndTypes(t *testing.T) {
 	require.Empty(t, graph.nodes["feature-associated_module"].wildcards)
 	require.Empty(t, graph.nodes["feature-associated_tier"].wildcards)
 }
+
+/*
+type user
+type state
+
+	relations
+	    define member: ([user] or member from parent) or parent_member from parent
+	    define parent: [state]
+	    define parent_member: [user:*, state#member]
+*/
+func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
+	t.Parallel()
+	graph := NewWeightedAuthorizationModelGraph()
+	graph.AddNode("state-member", "member", SpecificTypeAndRelation)
+	graph.AddNode("state-member-or", UnionOperator, OperatorNode)
+	graph.AddNode("state-member-or-or", UnionOperator, OperatorNode)
+	graph.AddNode("state-parent", "parent", SpecificTypeAndRelation)
+	graph.AddNode("state-parent_member", "parent_member", SpecificTypeAndRelation)
+	graph.AddNode("user", "user", SpecificType)
+	graph.AddNode("user:*", "user", SpecificTypeWildcard)
+	graph.AddNode("state", "state", SpecificType)
+
+	graph.AddEdge("state-member", "state-member-or", RewriteEdge, "", nil)
+	graph.AddEdge("state-member-or", "state-member-or-or", RewriteEdge, "", nil)
+	graph.AddEdge("state-member-or", "state-parent_member", TTUEdge, "state-parent", nil)
+	graph.AddEdge("state-member-or-or", "user", DirectEdge, "", nil)
+	graph.AddEdge("state-member-or-or", "state-member", TTUEdge, "state-parent", nil)
+	graph.AddEdge("state-parent_member", "user:*", DirectEdge, "", nil)
+	graph.AddEdge("state-parent_member", "state-member", DirectEdge, "", nil)
+	graph.AddEdge("state-parent", "state", DirectEdge, "", nil)
+
+	err := graph.AssignWeights()
+	require.NoError(t, err)
+	require.Equal(t, Infinite, graph.nodes["state-member"].weights["user"])
+	require.Equal(t, Infinite, graph.nodes["state-member-or"].weights["user"])
+	require.Equal(t, Infinite, graph.nodes["state-member-or-or"].weights["user"])
+	require.Equal(t, 1, graph.nodes["state-parent"].weights["state"])
+	require.Equal(t, Infinite, graph.nodes["state-parent_member"].weights["user"])
+
+	require.Len(t, graph.nodes["state-member"].weights, 1)
+	require.Len(t, graph.nodes["state-member-or"].weights, 1)
+	require.Len(t, graph.nodes["state-member-or-or"].weights, 1)
+	require.Len(t, graph.nodes["state-parent"].weights, 1)
+	require.Len(t, graph.nodes["state-parent_member"].weights, 1)
+
+	require.Len(t, graph.nodes["state-member"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-member"].wildcards[0])
+	require.Len(t, graph.nodes["state-parent_member"].wildcards, 1)
+	require.Equal(t, "user", graph.nodes["state-parent_member"].wildcards[0])
+
+	require.Equal(t, "state-member", graph.nodes["state-member"].recursiveRelation)
+	require.Equal(t, "state-member", graph.nodes["state-member-or"].recursiveRelation)
+	require.Equal(t, "state-member", graph.nodes["state-member-or-or"].recursiveRelation)
+	require.Equal(t, "", graph.nodes["state-parent"].recursiveRelation)
+	require.Equal(t, "", graph.nodes["state-parent_member"].recursiveRelation)
+
+	require.True(t, graph.nodes["state-member"].tupleCycle)
+	require.True(t, graph.nodes["state-member-or"].tupleCycle)
+	require.False(t, graph.nodes["state-member-or-or"].tupleCycle)
+	require.False(t, graph.nodes["state-parent"].tupleCycle)
+	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
+
+}

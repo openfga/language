@@ -63,5 +63,5 @@ jobs:
           cache-dependency-path: ./pkg/js/package-lock.json  
     
       - name: Build
-        run: make all-tests-js
+        run: make test-js
     

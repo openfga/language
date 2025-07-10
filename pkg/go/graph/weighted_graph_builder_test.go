@@ -1427,7 +1427,6 @@ func TestGraphConstructionTTU(t *testing.T) {
 	require.Equal(t, "folder#admin", graph.edges["document#viewer"][0].to.uniqueLabel)
 	require.Equal(t, "document#parent", graph.edges["document#viewer"][0].tuplesetRelation)
 	require.Equal(t, TTUEdge, graph.edges["document#viewer"][0].edgeType)
-
 }
 
 func TestGraphConstructionTTUConditional(t *testing.T) {
@@ -1896,7 +1895,6 @@ func TestGraphConstructionIntersection(t *testing.T) {
 
 	t.Run("invalid_model", func(t *testing.T) {
 		t.Run("with_direct_types", func(t *testing.T) {
-
 			t.Parallel()
 			model := `
 				model
@@ -2372,7 +2370,6 @@ func TestGraphConstructionInvalidModelCycle(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrModelCycle)
-
 }
 
 func TestGraphConstructionInvalidModelCycle2(t *testing.T) {
@@ -2392,7 +2389,6 @@ func TestGraphConstructionInvalidModelCycle2(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrModelCycle)
-
 }
 
 func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
@@ -2413,7 +2409,6 @@ func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
 	require.ErrorIs(t, err, ErrModelCycle)
-
 }
 
 func TestGraphConstructionTupleCycles(t *testing.T) {
@@ -2464,10 +2459,10 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 
 		require.Len(t, graph.nodes, 4)
 		require.Len(t, graph.edges, 2)
-		require.True(t, graph.nodes["user"].nodeType == SpecificType)
-		require.True(t, graph.nodes["folder"].nodeType == SpecificType)
-		require.True(t, graph.nodes["folder#viewer"].nodeType == SpecificTypeAndRelation)
-		require.True(t, graph.nodes["folder#can_view"].nodeType == SpecificTypeAndRelation)
+		require.Equal(t, graph.nodes["user"].nodeType, SpecificType)
+		require.Equal(t, graph.nodes["folder"].nodeType, SpecificType)
+		require.Equal(t, graph.nodes["folder#viewer"].nodeType, SpecificTypeAndRelation)
+		require.Equal(t, graph.nodes["folder#can_view"].nodeType, SpecificTypeAndRelation)
 
 		for _, node := range graph.nodes {
 			require.Empty(t, node.GetRecursiveRelation())
@@ -2477,17 +2472,17 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 
 		require.Len(t, graph.edges["folder#can_view"], 2)
 		require.Len(t, graph.edges["folder#viewer"], 2)
-		require.True(t, graph.edges["folder#viewer"][0].edgeType == DirectEdge)
-		require.True(t, graph.edges["folder#viewer"][0].to.nodeType == SpecificType)
-		require.True(t, graph.edges["folder#viewer"][1].edgeType == DirectEdge)
-		require.True(t, graph.edges["folder#viewer"][1].to.nodeType == SpecificTypeAndRelation)
-		require.True(t, graph.edges["folder#viewer"][1].to.uniqueLabel == "folder#can_view")
+		require.Equal(t, graph.edges["folder#viewer"][0].edgeType, DirectEdge)
+		require.Equal(t, graph.edges["folder#viewer"][0].to.nodeType, SpecificType)
+		require.Equal(t, graph.edges["folder#viewer"][1].edgeType, DirectEdge)
+		require.Equal(t, graph.edges["folder#viewer"][1].to.nodeType, SpecificTypeAndRelation)
+		require.Equal(t, graph.edges["folder#viewer"][1].to.uniqueLabel, "folder#can_view")
 
-		require.True(t, graph.edges["folder#can_view"][0].edgeType == DirectEdge)
-		require.True(t, graph.edges["folder#can_view"][0].to.nodeType == SpecificType)
-		require.True(t, graph.edges["folder#can_view"][1].edgeType == DirectEdge)
-		require.True(t, graph.edges["folder#can_view"][1].to.nodeType == SpecificTypeAndRelation)
-		require.True(t, graph.edges["folder#can_view"][1].to.uniqueLabel == "folder#viewer")
+		require.Equal(t, graph.edges["folder#can_view"][0].edgeType, DirectEdge)
+		require.Equal(t, graph.edges["folder#can_view"][0].to.nodeType, SpecificType)
+		require.Equal(t, graph.edges["folder#can_view"][1].edgeType, DirectEdge)
+		require.Equal(t, graph.edges["folder#can_view"][1].to.nodeType, SpecificTypeAndRelation)
+		require.Equal(t, graph.edges["folder#can_view"][1].to.uniqueLabel, "folder#viewer")
 	})
 
 	t.Run("recursive_cycles_with_intermediate_relation", func(t *testing.T) {

@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.2...main)
+
 ## pkg/go/v0.2.0-beta.2
 
 ### [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/go/v0.2.0-beta.1...pkg/go/v0.2.0-beta.2) (2024-09-09)

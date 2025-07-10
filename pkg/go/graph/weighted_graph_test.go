@@ -1212,5 +1212,4 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.True(t, graph.nodes["state-member-or-or"].tupleCycle)
 	require.False(t, graph.nodes["state-parent"].tupleCycle)
 	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
-
 }

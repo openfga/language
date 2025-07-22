@@ -1,5 +1,18 @@
 # Changelog
 
+## pkg/js/v0.2.0
+
+### [v0.2.0](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.22...pkg/js/v0.2.0) (2025-07-22)
+
+Added:
+
+- Allow '/' and '.' in type and relation names when parsing (#254) - thanks @bubianchi-criteo
+  (Note: #437 is the follow-up issue to this change to account for this when validating a type)
+
+Fixed:
+
+- Throw error if a non-module file is passed to `transformModuleFilesToModel` (#386) - thanks @fsedano
+
 ## pkg/js/v0.2.0-beta.22
 
 ### [v0.2.0-beta.22](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.21...pkg/js/v0.2.0-beta.22) (2024-09-27)

@@ -14,43 +14,43 @@ repository:
   accepts-automated-change-request: true
   no-third-party-packages: false
   core-team:
-  - name: Raghd Hamzeh
-    affiliation: Okta
-    email: raghd.hamzeh@okta.com
-    social: https://github.com/rhamzeh
-    primary: true
-  - name: Adrian Tam
-    affiliation: Okta
-    email: adrian.tam@okta.com
-    social: https://github.com/adriantam
-  - name: Ewan Harris
-    affiliation: Okta
-    email: ewan.harris@okta.com
-    social: https://github.com/ewanharris
-  - name: Joshua Jones
-    affiliation: Okta
-    email: joshua.jones@okta.com
-    social: https://github.com/senojj
-  - name: Justin Cohen
-    affiliation: Okta
-    email: justin.cohen@okta.com
-    social: https://github.com/justincoh
-  - name: Victoria Johns
-    affiliation: Okta
-    email: victoria.johns@okta.com
-    social: https://github.com/vic-dev
-  - name: Will Vedder
-    affiliation: Okta
-    email: will.vedder@okta.com
-    social: https://github.com/willvedd
-  - name: Yissell Garma
-    affiliation: Okta
-    email: yissell.garma@okta.com
-    social: https://github.com/yissellokta
-  - name: Zilvinas Vilutis
-    affiliation: Okta
-    email: zilvinas.vilutis@okta.com
-    social: https://github.com/cikasfm
+    - name: Raghd Hamzeh
+      affiliation: Okta
+      email: raghd.hamzeh@okta.com
+      social: https://github.com/rhamzeh
+      primary: true
+    - name: Adrian Tam
+      affiliation: Okta
+      email: adrian.tam@okta.com
+      social: https://github.com/adriantam
+    - name: Ewan Harris
+      affiliation: Okta
+      email: ewan.harris@okta.com
+      social: https://github.com/ewanharris
+    - name: Joshua Jones
+      affiliation: Okta
+      email: joshua.jones@okta.com
+      social: https://github.com/senojj
+    - name: Justin Cohen
+      affiliation: Okta
+      email: justin.cohen@okta.com
+      social: https://github.com/justincoh
+    - name: Victoria Johns
+      affiliation: Okta
+      email: victoria.johns@okta.com
+      social: https://github.com/vic-dev
+    - name: Will Vedder
+      affiliation: Okta
+      email: will.vedder@okta.com
+      social: https://github.com/willvedd
+    - name: Yissell Garma
+      affiliation: Okta
+      email: yissell.garma@okta.com
+      social: https://github.com/yissellokta
+    - name: Zilvinas Vilutis
+      affiliation: Okta
+      email: zilvinas.vilutis@okta.com
+      social: https://github.com/cikasfm
 
   license:
     url: https://raw.githubusercontent.com/openfga/language/main/LICENSE

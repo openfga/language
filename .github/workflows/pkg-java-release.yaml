@@ -37,10 +37,10 @@ jobs:
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4
+        uses: gradle/actions/wrapper-validation@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4
 
         # Tasks created by https://github.com/gradle-nexus/publish-plugin
       - name: Publish package
@@ -76,10 +76,10 @@ jobs:
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4
+        uses: gradle/actions/wrapper-validation@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4
 
       # Tasks created by https://docs.gradle.org/current/userguide/publishing_maven.html
       - name: Publish package

@@ -20,6 +20,23 @@ type WeightedAuthorizationModelGraph struct {
 	nodes map[string]*WeightedAuthorizationModelNode
 }
 
+func (g *WeightedAuthorizationModelGraph) deleteNode(nodeId string) {
+	delete(g.nodes, nodeId)
+}
+
+func (g *WeightedAuthorizationModelGraph) calculateWildcardNodeBasedOnEdges(nodeId string) error {
+	edges := g.edges[nodeId]
+	if len(edges) == 0 {
+		return ErrInvalidModel
+	}
+
+	for _, edge := range edges {
+		g.addEdgeWildcardsToNode(nodeId, edge)
+	}
+
+	return nil
+}
+
 // GetEdges returns the edges map.
 func (wg *WeightedAuthorizationModelGraph) GetEdges() map[string][]*WeightedAuthorizationModelEdge {
 	return wg.edges
@@ -78,6 +95,31 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 	}
 	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
+}
+
+// DeleteEdge removes a specific edge from a node's edge list in the graph.
+// This function preserves the order of the remaining edges.
+func (wg *WeightedAuthorizationModelGraph) deleteEdge(fromID string, edgeToRemove *WeightedAuthorizationModelEdge) {
+	edges, ok := wg.edges[fromID]
+	if !ok {
+		return
+	}
+
+	// Find the index of the edge to remove.
+	targetIndex := -1
+	for i, edge := range edges {
+		if edge == edgeToRemove { // Direct pointer comparison
+			targetIndex = i
+			break
+		}
+	}
+
+	if targetIndex != -1 {
+		// To preserve order, we append the slices before and after the target index.
+		// This is less performant than a "swap and pop" but maintains order.
+		newEdges := append(edges[:targetIndex], edges[targetIndex+1:]...)
+		wg.edges[fromID] = newEdges
+	}
 }
 
 func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, tuplesetRelation string, condition string) error {
@@ -233,6 +275,34 @@ func (wg *WeightedAuthorizationModelGraph) addWildcardToEdge(wildcardType string
 	if !slices.Contains(edge.wildcards, wildcardType) {
 		edge.wildcards = append(edge.wildcards, wildcardType)
 	}
+}
+
+// Calculate the weight of the node based on the weights of the edges that are connected to the node.
+func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightBasedOnPrecomputedEdges(node *WeightedAuthorizationModelNode) error {
+
+	if node == nil {
+		return ErrInvalidModel
+	}
+
+	if node.nodeType == SpecificType || node.nodeType == SpecificTypeWildcard {
+		return ErrBuildingGraph
+	}
+
+	if node.nodeType == SpecificTypeAndRelation {
+		wg.calculateNodeWeightWithMaxStrategy(node.uniqueLabel)
+	}
+
+	if node.nodeType == OperatorNode {
+		if node.label == UnionOperator {
+			wg.calculateNodeWeightWithMaxStrategy(node.uniqueLabel)
+		} else if node.label == IntersectionOperator {
+			wg.calculateNodeWeightWithEnforceTypeStrategy(node.uniqueLabel)
+		} else if node.label == ExclusionOperator {
+			wg.calculateNodeWeightWithMixedStrategy(node.uniqueLabel)
+		}
+	}
+
+	return nil
 }
 
 // Calculate the weight of the node based on the weights of the edges that are connected to the node.

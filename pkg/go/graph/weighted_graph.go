@@ -97,6 +97,35 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 
+func (wg *WeightedAuthorizationModelGraph) addEdgeWithWeight(fromID, toID string, edgeType EdgeType, tuplesetRelation string, conditions []string) {
+	fromNode := wg.nodes[fromID]
+	toNode := wg.nodes[toID]
+	if len(conditions) == 0 {
+		conditions = []string{NoCond}
+	}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions}
+	edge.weights = toNode.weights
+	if (edgeType == DirectEdge || edgeType == TTUEdge) && toNode.nodeType == SpecificTypeAndRelation {
+		for key, value := range edge.weights {
+			if value != Infinite {
+				edge.weights[key] = value + 1
+			}
+		}
+	}
+	edge.wildcards = toNode.wildcards
+	wg.edges[fromID] = append(wg.edges[fromID], edge)
+}
+
+func (wg *WeightedAuthorizationModelGraph) copyEdge(edgeToCopy *WeightedAuthorizationModelEdge, fromID string) *WeightedAuthorizationModelEdge {
+	fromNode := wg.nodes[fromID]
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: edgeToCopy.to, edgeType: edgeToCopy.edgeType, tuplesetRelation: edgeToCopy.tuplesetRelation, wildcards: edgeToCopy.wildcards, conditions: edgeToCopy.conditions}
+	edge.recursiveRelation = edgeToCopy.recursiveRelation
+	edge.tupleCycle = edgeToCopy.tupleCycle
+	edge.weights = edgeToCopy.weights
+	wg.edges[fromID] = append(wg.edges[fromID], edge)
+	return edge
+}
+
 // DeleteEdge removes a specific edge from a node's edge list in the graph.
 // This function preserves the order of the remaining edges.
 func (wg *WeightedAuthorizationModelGraph) deleteEdge(fromID string, edgeToRemove *WeightedAuthorizationModelEdge) {

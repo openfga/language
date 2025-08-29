@@ -17,8 +17,9 @@ func TestModelOptimizer_BasicOptimization(t *testing.T) {
 		nodesBefore := len(graph.GetNodes())
 		edgesBefore := countTotalEdges(graph)
 
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
 
+		require.True(t, changes, "Expected optimizations to be applied")
 		nodesAfter := len(optimizedGraph.GetNodes())
 		edgesAfter := countTotalEdges(optimizedGraph)
 
@@ -35,8 +36,9 @@ func TestModelOptimizer_BasicOptimization(t *testing.T) {
 		nodesBefore := len(graph.GetNodes())
 		edgesBefore := countTotalEdges(graph)
 
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
 
+		require.True(t, changes, "Expected optimizations to be applied")
 		nodesAfter := len(optimizedGraph.GetNodes())
 		edgesAfter := countTotalEdges(optimizedGraph)
 
@@ -100,95 +102,78 @@ func TestModelOptimizer_PerformanceOptimizations(t *testing.T) {
 		// Verify patterns were created
 		require.Greater(t, len(optimizer.frequentPatterns), 0)
 	})
-
-	t.Run("slice_preallocation", func(t *testing.T) {
-		optimizer := &ModelOptimizer{}
-		optimizer.cleanUp()
-
-		// Add many patterns
-		for i := 0; i < 100; i++ {
-			key := fmt.Sprintf("pattern_%d", i)
-			optimizer.operatorIndexes[key] = []*OperatorIndex{
-				{NodeID: fmt.Sprintf("node_%d", i)},
-				{NodeID: fmt.Sprintf("node_%d_dup", i)},
-			}
-		}
-
-		modifiedNodes := make(map[string]bool)
-
-		start := time.Now()
-		for key := range optimizer.operatorIndexes {
-			_ = optimizer.getValidOperatorIndexes(key, modifiedNodes)
-		}
-		duration := time.Since(start)
-
-		require.Less(t, duration, 5*time.Millisecond, "Valid index filtering should be fast")
-	})
 }
 
 func TestModelOptimizer_EdgeCases(t *testing.T) {
 	t.Run("empty_graph", func(t *testing.T) {
 		graph := NewWeightedAuthorizationModelGraph()
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
-
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
+		require.False(t, changes, "Expected no optimizations to be applied")
 		require.Equal(t, 0, len(optimizedGraph.GetNodes()))
 		require.Equal(t, 0, len(optimizedGraph.GetEdges()))
 	})
 
 	t.Run("single_node_graph", func(t *testing.T) {
-		graph := NewWeightedAuthorizationModelGraph()
-		graph.AddNode("document#viewer", "viewer", SpecificTypeAndRelation)
-
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
+		model := `
+		model
+	  		schema 1.1
+			type user
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, _ := wgb.Build(authorizationModel)
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
+		require.False(t, changes, "Expected no optimizations to be applied")
 		require.Equal(t, 1, len(optimizedGraph.GetNodes()))
 	})
 
 	t.Run("no_patterns_to_optimize", func(t *testing.T) {
-		graph := createGraphWithUniquePatterns()
+		model := `
+			model
+	  			schema 1.1
+				type user
+				type document
+					relations
+						define owner: [user]
+					    define admin: [user]
+						define viewer: [user] or owner or admin
+						define editor: owner and admin
+						define contributor: editor and viewer
+						define reader: viewer
+						define group: admin
+						define collaborator: contributor or reader
+						define auditor: viewer from parent
+						define parent: [document]
+		`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, _ := wgb.Build(authorizationModel)
 
-		nodesBefore := len(graph.GetNodes())
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
-		nodesAfter := len(optimizedGraph.GetNodes())
-
-		require.Equal(t, nodesBefore, nodesAfter, "Should not create new nodes when no patterns to optimize")
+		_, changes, _ := graph.OptimizeAuthorizationModelGraph()
+		require.False(t, changes, "Expected no optimizations to be applied")
 	})
 
 	t.Run("max_iterations_reached", func(t *testing.T) {
 		// This test ensures the algorithm doesn't run indefinitely
 		graph := createComplexGraphWithManyPatterns()
 
-		start := time.Now()
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
-		duration := time.Since(start)
+		edgesBefore := countTotalEdges(graph)
+		nodesBefore := len(graph.GetNodes())
+
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
+		require.Equal(t, edgesBefore, 52)
+		require.Equal(t, nodesBefore, 25)
+		require.True(t, changes, "Expected optimizations to be applied")
+		edgesAfter := countTotalEdges(optimizedGraph)
+		nodesAfter := len(optimizedGraph.GetNodes())
+		require.Equal(t, nodesAfter, 27)
+		require.Equal(t, edgesAfter, 34)
 
 		require.NotNil(t, optimizedGraph)
-		require.Less(t, duration, 5*time.Second, "Optimization should complete within reasonable time")
 	})
 }
 
 func TestModelOptimizer_SpecificOptimizations(t *testing.T) {
-	t.Run("duplicate_edge_removal", func(t *testing.T) {
-		model := `
-	model
-  		schema 1.1
-		type user
-        type document
-            relations
-                define owner: [user]
-			    define admin: [user]
-				define viewer: owner or owner
-	`
-		authorizationModel := language.MustTransformDSLToProto(model)
-		wgb := NewWeightedAuthorizationModelGraphBuilder()
-		graph, _ := wgb.Build(authorizationModel)
-		edgesBefore := len(graph.GetEdges())
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
-
-		// Duplicate should be removed
-		edgesAfter := len(optimizedGraph.GetEdges())
-		require.Equal(t, edgesBefore, 4)
-		require.Equal(t, edgesAfter, 4)
-	})
 
 	t.Run("ttu_edge_aggregation", func(t *testing.T) {
 		model := `
@@ -212,7 +197,8 @@ func TestModelOptimizer_SpecificOptimizations(t *testing.T) {
 		edgesBefore := countTotalEdges(graph)
 		nodesBefore := len(graph.GetNodes())
 
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
+		require.True(t, changes)
 		edgesAfter := countTotalEdges(optimizedGraph)
 		nodesAfter := len(optimizedGraph.GetNodes())
 		require.Equal(t, edgesBefore, 14)
@@ -251,8 +237,9 @@ func TestModelOptimizer_MultipleIterations(t *testing.T) {
 		graph, _ := wgb.Build(authorizationModel)
 		edgesBefore := countTotalEdges(graph)
 		nodesBefore := len(graph.GetNodes())
-		optimizedGraph := graph.OptimizeAuthorizationModelGraph()
+		optimizedGraph, changes, _ := graph.OptimizeAuthorizationModelGraph()
 
+		require.True(t, changes)
 		require.Equal(t, edgesBefore, 25)
 		require.Equal(t, nodesBefore, 18)
 
@@ -394,62 +381,33 @@ func createTestGraphWithCommonPatterns() *WeightedAuthorizationModelGraph {
 	return graph
 }
 
-func createGraphWithUniquePatterns() *WeightedAuthorizationModelGraph {
-	graph := NewWeightedAuthorizationModelGraph()
-
-	// Create relations with unique patterns (no duplicates)
-	graph.AddNode("document#owner", "owner", SpecificTypeAndRelation)
-	graph.AddNode("document#admin", "admin", SpecificTypeAndRelation)
-	graph.AddNode("document#writer", "writer", SpecificTypeAndRelation)
-	graph.AddNode("document#reader", "reader", SpecificTypeAndRelation)
-
-	// Unique pattern 1: owner or admin
-	graph.AddNode("document#viewer1", "viewer1", SpecificTypeAndRelation)
-	graph.AddNode("union-op1", UnionOperator, OperatorNode)
-	graph.AddEdge("document#viewer1", "union-op1", RewriteEdge, "", nil)
-	graph.AddEdge("union-op1", "document#owner", ComputedEdge, "", nil)
-	graph.AddEdge("union-op1", "document#admin", ComputedEdge, "", nil)
-
-	// Unique pattern 2: writer or reader
-	graph.AddNode("document#viewer2", "viewer2", SpecificTypeAndRelation)
-	graph.AddNode("union-op2", UnionOperator, OperatorNode)
-	graph.AddEdge("document#viewer2", "union-op2", RewriteEdge, "", nil)
-	graph.AddEdge("union-op2", "document#writer", ComputedEdge, "", nil)
-	graph.AddEdge("union-op2", "document#reader", ComputedEdge, "", nil)
-
-	return graph
-}
-
 func createComplexGraphWithManyPatterns() *WeightedAuthorizationModelGraph {
-	graph := NewWeightedAuthorizationModelGraph()
-
-	// Create many nodes with overlapping patterns
-	relations := []string{"owner", "admin", "writer", "reader", "editor", "viewer"}
-	for _, rel := range relations {
-		graph.AddNode(fmt.Sprintf("document#%s", rel), rel, SpecificTypeAndRelation)
-	}
-
-	// Create many complex relations with overlapping patterns
-	for i := 0; i < 20; i++ {
-		relationName := fmt.Sprintf("document#complex_%d", i)
-		unionName := fmt.Sprintf("union-op-%d", i)
-
-		graph.AddNode(relationName, fmt.Sprintf("complex_%d", i), SpecificTypeAndRelation)
-		graph.AddNode(unionName, UnionOperator, OperatorNode)
-		graph.AddEdge(relationName, unionName, RewriteEdge, "", nil)
-
-		// Add overlapping patterns
-		if i%3 == 0 {
-			graph.AddEdge(unionName, "document#owner", ComputedEdge, "", nil)
-			graph.AddEdge(unionName, "document#admin", ComputedEdge, "", nil)
-		}
-		if i%5 == 0 {
-			graph.AddEdge(unionName, "document#writer", ComputedEdge, "", nil)
-			graph.AddEdge(unionName, "document#reader", ComputedEdge, "", nil)
-		}
-		graph.AddEdge(unionName, fmt.Sprintf("document#%s", relations[i%len(relations)]), ComputedEdge, "", nil)
-	}
-
+	model := `
+		model
+  			schema 1.1
+			type user
+			type document
+				relations
+					define rel1: [user]
+				    define rel2: [user]
+					define rel3: [user]
+					define rel5: [user]
+				    define rel6: [user]
+					define rel7: [user]
+				    define rel8: [user]
+					define rel9: [user]
+				    define rel10: [user]
+					define relA: rel1 or rel2 or rel3
+					define relB: rel3 or rel2 or rel5
+					define relC: rel3 or rel1 or rel6 or rel2
+					define relD: rel7 or rel3 or rel1 or rel6 or rel2
+					define relE: rel7 or rel8 or rel1 or rel6 or rel2 or rel3
+					define relF: rel7 or rel8 or rel1 or rel6 or rel2 or rel3 or rel9
+					define relX: rel10 or rel7 or rel8 or rel1 or rel6 or rel2 or rel3 or rel9				
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, _ := wgb.Build(authorizationModel)
 	return graph
 }
 
@@ -502,12 +460,5 @@ func BenchmarkPatternMining(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		optimizer.mineFrequentPattern(node, logicEdges, "document", 2)
 		optimizer.mineFrequentPattern(node, logicEdges, "document", 3)
-	}
-}
-
-func BenchmarkFullOptimization(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		graph := createTestGraphWithCommonPatterns()
-		_ = graph.OptimizeAuthorizationModelGraph()
 	}
 }

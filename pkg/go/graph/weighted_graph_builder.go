@@ -122,6 +122,16 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		return fmt.Errorf("%w: Model cannot be parsed. No type and relation link exists for tupleset relation %s and computed relation %s", ErrInvalidModel, tuplesetRelation, computedRelation)
 	}
 
+	typeTuplesetRelation := typeDef.GetType() + "#" + tuplesetRelation
+	node := parentNode
+	if parentNode.nodeType != SpecificTypeAndRelation && len(directlyRelated) > 1 {
+		uniqueLabel := typeDef.GetType() + "#ttu:" + tuplesetRelation + "#" + computedRelation
+		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalTTU)
+		wg.AddEdge(parentNode.uniqueLabel, logicalNode.uniqueLabel, TTULogicalEdge, parentRelationName, typeTuplesetRelation, nil)
+		node = logicalNode
+	}
+	// add a logical ttu node for grouping of TTU that are part of the same tuplesetrelation and computed relation
+
 	for _, relatedType := range directlyRelated {
 		tuplesetType := relatedType.GetType()
 
@@ -131,9 +141,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 
 		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
 		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
-		typeTuplesetRelation := typeDef.GetType() + "#" + tuplesetRelation
 
-		if wg.HasEdge(parentNode, nodeSource, TTUEdge, typeTuplesetRelation) {
+		if wg.HasEdge(node, nodeSource, TTUEdge, typeTuplesetRelation) {
 			// we don't need to do any condition update, only de-dup the edge. In case of TTU
 			// the direct relation will have the conditions
 			// for example, in the case of
@@ -147,7 +156,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		}
 
 		// new edge from "xxx#admin" to "yyy#viewer" tuplesetRelation on "yyy#parent"
-		wg.UpsertEdge(parentNode, nodeSource, TTUEdge, parentRelationName, typeTuplesetRelation, relatedType.GetCondition())
+		wg.UpsertEdge(node, nodeSource, TTUEdge, parentRelationName, typeTuplesetRelation, relatedType.GetCondition())
 	}
 	return nil
 }
@@ -171,6 +180,14 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
 		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
 	}
+	node := parentNode
+	// add a logical userset node for grouping of direct usersets that are defined in the same relation
+	if parentNode.nodeType != SpecificTypeAndRelation && len(directlyRelated) > 1 {
+		uniqueLabel := typeDef.GetType() + "#direct:" + relation
+		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalUserset)
+		wg.AddEdge(parentNode.uniqueLabel, logicalNode.uniqueLabel, DirectLogicalEdge, parentRelationName, "", nil)
+		node = logicalNode
+	}
 
 	for _, directlyRelatedDef := range directlyRelated {
 		switch {
@@ -190,7 +207,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 		// we only draw one edge from user to x#viewer, but with two conditions: none and condX
-		err := wg.UpsertEdge(parentNode, curNode, DirectEdge, parentRelationName, "", directlyRelatedDef.GetCondition())
+		err := wg.UpsertEdge(node, curNode, DirectEdge, parentRelationName, "", directlyRelatedDef.GetCondition())
 		if err != nil {
 			return err
 		}

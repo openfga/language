@@ -8,10 +8,12 @@ import (
 type EdgeType int64
 
 const (
-	DirectEdge   EdgeType = 0
-	RewriteEdge  EdgeType = 1
-	TTUEdge      EdgeType = 2
-	ComputedEdge EdgeType = 3
+	DirectEdge        EdgeType = 0
+	RewriteEdge       EdgeType = 1
+	TTUEdge           EdgeType = 2
+	ComputedEdge      EdgeType = 3
+	DirectLogicalEdge EdgeType = 4
+	TTULogicalEdge    EdgeType = 5
 	// When an edge does not have cond in the model, it will have a condition with value none.
 	// This is required to differentiate when an edge need to support condition and no condition
 	// like define rel1: [user, user with condX], in this case the edge will have [none, condX]

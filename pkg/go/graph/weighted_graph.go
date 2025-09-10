@@ -129,8 +129,8 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	tupleCycleDependencies := make(map[string][]*WeightedAuthorizationModelEdge)
 
 	for nodeID, node := range wg.nodes {
-		if node.GetNodeType() == OperatorNode {
-			// Inititally defer weight assignment of operator nodes to later in `fixDependantNodesWeight()`.
+		if wg.isLogicalOperator(node) {
+			// Inititally defer weight assignment of operator nodes and the logical nodes to later in `fixDependantNodesWeight()`.
 			// This enables more deterministic behavior of intermediate functions.
 			continue
 		}
@@ -148,6 +148,22 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 		}
 	}
 	return nil
+}
+
+func (wg *WeightedAuthorizationModelGraph) isLogicalOperator(node *WeightedAuthorizationModelNode) bool {
+	// a logical ttu is when a ttu has more than one edges due to having multiple terminal types as usersets,
+	// and should always be treated as a union among all those ttu edges as they belong to the same logical ttu
+	// a logical userset is when we have multiple asignations to terminal types or usersets, we need to treat that
+	// as a union for all the direct edges
+	return node.GetNodeType() == OperatorNode || node.GetNodeType() == LogicalTTU || node.GetNodeType() == LogicalUserset
+}
+
+func (wg *WeightedAuthorizationModelGraph) isLogicalUnionOperator(node *WeightedAuthorizationModelNode) bool {
+	// a logical ttu is when a ttu has more than one edges due to having multiple terminal types as usersets,
+	// and should always be treated as a union among all those ttu edges as they belong to the same logical ttu
+	// a logical userset is when we have multiple asignations to terminal types or usersets, we need to treat that
+	// as a union for all the direct edges
+	return (node.GetNodeType() == OperatorNode && node.GetLabel() == UnionOperator) || node.GetNodeType() == LogicalTTU || node.GetNodeType() == LogicalUserset
 }
 
 func (wg *WeightedAuthorizationModelGraph) calculateEdgeWildcards(edge *WeightedAuthorizationModelEdge) {
@@ -437,8 +453,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
-	// there is a cycle but the node is not responsible for the cycle and it is not an operator node
-	if node.nodeType != OperatorNode {
+	// there is a cycle but the node is not responsible for the cycle and it is not a logical operator node
+	// a logical operator node is an operator node, a logical ttu and a logical userset node
+	if !wg.isLogicalOperator(node) {
 		// even when there is a cycle, if the relation is not recursive then we calculate the weight using the max strategy
 		err = wg.calculateNodeWeightWithMaxStrategy(nodeID)
 		if err != nil {
@@ -447,8 +464,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
-	// if the node is an union operator and there is a cycle
-	if node.nodeType == OperatorNode && node.label == UnionOperator {
+	// if the node is a logical union operator,
+	// a logical union operator is a union node, a logical userset or a logical ttu.
+	if wg.isLogicalUnionOperator(node) {
 		// if the node is the reference node of the cycle, recalculate the weight, solve the depencies and remove the node from the tuple cycle
 		if wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
 			err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
@@ -500,23 +518,21 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 // For all
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
-	weights := make(map[string]int)
 	edges := wg.edges[nodeID]
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	for idx, edge := range edges {
-		for key, value := range edge.weights {
-			if _, ok := weights[key]; !ok {
-				if idx != len(edges)-1 {
-					// This is the A edge.  We take the max weight of all key
-					weights[key] = value
-				} // otherwise, B edge requires weight to be present in A. Otherwise, we will ignore.
-			} else {
-				weights[key] = int(math.Max(float64(weights[key]), float64(value)))
-			}
+	// with the logical ttu and userset, an exclusion operation only has two edges
+	// the first edge is the one that defines the userset, the second edge is the one that excludes it
+	if len(edges) != 2 {
+		return fmt.Errorf("%w: invalid number of edges for exclusion node %s", ErrInvalidModel, nodeID)
+	}
+	weights := edges[0].weights
+	for key, value := range edges[1].weights {
+		if w, ok := weights[key]; ok {
+			weights[key] = int(math.Max(float64(w), float64(value)))
 		}
 	}
 
@@ -536,19 +552,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	// In intersection, directly-assignable types must be handled separately from rewritten types.
-	// All types flatten to edges, but directly-assignable weights are OR'd together, and that result
-	// is then AND'd with the combined weights of the rewritten edges for validity and weight assignment.
-	directlyAssignableWeights := make(map[string]int, len(edges))
 	rewriteWeights := make(map[string]int, len(edges))
-
 	for _, edge := range edges {
-		if edge.GetEdgeType() == DirectEdge {
-			for key, weight := range edge.weights {
-				directlyAssignableWeights[key] = weight
-			}
-			continue
-		}
+
 		if len(rewriteWeights) == 0 {
 			for key, weight := range edge.weights {
 				rewriteWeights[key] = weight
@@ -564,18 +570,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 		}
 	}
 
-	if len(directlyAssignableWeights) > 0 {
-		for key := range directlyAssignableWeights {
-			if _, existsInBoth := rewriteWeights[key]; existsInBoth {
-				if node.weights == nil {
-					node.weights = make(map[string]int, int(math.Min(float64(len(rewriteWeights)), float64(len(directlyAssignableWeights)))))
-				}
-				node.weights[key] = int(math.Max(float64(rewriteWeights[key]), float64(directlyAssignableWeights[key])))
-			}
-		}
-	} else {
-		node.weights = rewriteWeights
-	}
+	node.weights = rewriteWeights
 
 	if len(node.weights) == 0 {
 		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
@@ -605,8 +600,8 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	referenceNodeID := "R#" + nodeID
 	edges := wg.edges[nodeID]
 
-	if (node.nodeType == OperatorNode && node.label != UnionOperator) || (node.nodeType != SpecificTypeAndRelation && node.nodeType != OperatorNode) {
-		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation: %s", ErrTupleCycle, nodeID)
+	if node.nodeType != SpecificTypeAndRelation && !wg.isLogicalUnionOperator(node) {
+		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation or a logical userset or logical TTU: %s", ErrTupleCycle, nodeID)
 	}
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {

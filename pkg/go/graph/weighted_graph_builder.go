@@ -62,17 +62,18 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string) error {
 	var operator string
+	parentNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
 
 	var children []*openfgav1.Userset
 
 	switch rw := rewrite.GetUserset().(type) {
 	case *openfgav1.Userset_This:
-		return wgb.parseThis(wg, parentNode, typeDef, relation)
+		return wgb.parseThis(wg, parentNode, typeDef, relation, parentNodeName)
 	case *openfgav1.Userset_ComputedUserset:
-		wgb.parseComputed(wg, parentNode, typeDef, rw.ComputedUserset.GetRelation())
+		wgb.parseComputed(wg, parentNode, typeDef, rw.ComputedUserset.GetRelation(), parentNodeName)
 		return nil
 	case *openfgav1.Userset_TupleToUserset:
-		return wgb.parseTupleToUserset(wg, parentNode, model, typeDef, rw.TupleToUserset)
+		return wgb.parseTupleToUserset(wg, parentNode, model, typeDef, rw.TupleToUserset, parentNodeName)
 	case *openfgav1.Userset_Union:
 		operator = UnionOperator
 		children = rw.Union.GetChild()
@@ -94,7 +95,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 
 	// add one edge "relation" -> "operation that defined the operator"
 	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
-	wg.AddEdge(parentNode.GetUniqueLabel(), operatorNodeName, RewriteEdge, "", nil)
+	wg.AddEdge(parentNode.GetUniqueLabel(), operatorNodeName, RewriteEdge, parentNodeName, "", nil)
 	for _, child := range children {
 		err := wgb.parseRewrite(wg, operatorNode, model, child, typeDef, relation)
 		if err != nil {
@@ -104,7 +105,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 	return nil
 }
 
-func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset) error {
+func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, typeDef *openfgav1.TypeDefinition, rewrite *openfgav1.TupleToUserset, parentRelationName string) error {
 	// e.g. define viewer: admin from parent
 	// "parent" is the tupleset
 	tuplesetRelation := rewrite.GetTupleset().GetRelation()
@@ -146,12 +147,12 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		}
 
 		// new edge from "xxx#admin" to "yyy#viewer" tuplesetRelation on "yyy#parent"
-		wg.UpsertEdge(parentNode, nodeSource, TTUEdge, typeTuplesetRelation, relatedType.GetCondition())
+		wg.UpsertEdge(parentNode, nodeSource, TTUEdge, parentRelationName, typeTuplesetRelation, relatedType.GetCondition())
 	}
 	return nil
 }
 
-func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) {
+func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string, parentRelationName string) {
 	nodeType := RewriteEdge
 	// e.g. define x: y. Here y is the rewritten relation
 	rewrittenNodeName := typeDef.GetType() + "#" + relation
@@ -160,10 +161,10 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAut
 	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {
 		nodeType = ComputedEdge
 	}
-	wg.AddEdge(parentNode.uniqueLabel, newNode.uniqueLabel, nodeType, "", nil)
+	wg.AddEdge(parentNode.uniqueLabel, newNode.uniqueLabel, nodeType, parentRelationName, "", nil)
 }
 
-func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string) error {
+func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string, parentRelationName string) error {
 	var directlyRelated []*openfgav1.RelationReference
 	var curNode *WeightedAuthorizationModelNode
 
@@ -189,7 +190,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 		// we only draw one edge from user to x#viewer, but with two conditions: none and condX
-		err := wg.UpsertEdge(parentNode, curNode, DirectEdge, "", directlyRelatedDef.GetCondition())
+		err := wg.UpsertEdge(parentNode, curNode, DirectEdge, parentRelationName, "", directlyRelatedDef.GetCondition())
 		if err != nil {
 			return err
 		}

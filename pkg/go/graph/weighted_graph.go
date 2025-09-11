@@ -70,17 +70,17 @@ func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label strin
 	return wg.nodes[uniqueLabel]
 }
 
-func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, tuplesetRelation string, conditions []string) {
+func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, relationDefinition string, tuplesetRelation string, conditions []string) {
 	fromNode := wg.nodes[fromID]
 	toNode := wg.nodes[toID]
 	if len(conditions) == 0 {
 		conditions = []string{NoCond}
 	}
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 
-func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, tuplesetRelation string, condition string) error {
+func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, relationDefinition string, tuplesetRelation string, condition string) error {
 	if fromNode == nil || toNode == nil {
 		return fmt.Errorf("%w: Model cannot be parsed", ErrInvalidModel)
 	}
@@ -103,7 +103,7 @@ func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *Weighted
 	}
 
 	conditions := []string{condition}
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition}
 	wg.edges[fromNode.uniqueLabel] = append(wg.edges[fromNode.uniqueLabel], edge)
 	return nil
 }

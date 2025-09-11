@@ -483,6 +483,9 @@ func TestValidGraphModel(t *testing.T) {
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
+	butnotNode := graph.edges["job#cannot_read"][0].to
+	edges := graph.edges[butnotNode.uniqueLabel]
+	require.Equal(t, "job#cannot_read", edges[0].GetRelationDefinition())
 }
 
 func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
@@ -513,6 +516,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
 		require.Equal(t, 2, graph.nodes["role#allowed"].weights["other"])
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
+
+		butnotNode := graph.edges["group#allowed"][0].to
+		orNode := graph.edges[butnotNode.uniqueLabel][0].to
+		orEdges := graph.edges[orNode.uniqueLabel]
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
 	})
 	t.Run("B_appears_in_A_finite", func(t *testing.T) {
 		model := `
@@ -540,6 +553,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["user"])
 		require.Equal(t, 2, graph.nodes["role#allowed"].weights["other"])
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
+
+		butnotNode := graph.edges["group#allowed"][0].to
+		orNode := graph.edges[butnotNode.uniqueLabel][0].to
+		orEdges := graph.edges[orNode.uniqueLabel]
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
 	})
 	t.Run("B_not_appear_in_A", func(t *testing.T) {
 		model := `
@@ -568,6 +591,14 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, Infinite, graph.nodes["role#allowed"].weights["employee"])
 		_, found := graph.nodes["role#allowed"].weights["other"]
 		require.False(t, found)
+
+		butnotNode := graph.edges["group#allowed"][0].to
+		orNode := graph.edges[butnotNode.uniqueLabel][0].to
+		orEdges := graph.edges[orNode.uniqueLabel]
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
 	})
 }
 
@@ -685,6 +716,14 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Equal(t, Infinite, graph.nodes["permission#member"].weights["user"])
 	require.Equal(t, Infinite, graph.nodes["job#can_view"].weights["user"])
 	require.Equal(t, 1, graph.nodes["job#owner"].weights["job"])
+
+	assigneeEdges := graph.edges["permission#assignee"]
+	require.Len(t, assigneeEdges, 1)
+	require.Equal(t, "permission#assignee", assigneeEdges[0].GetRelationDefinition())
+	memberEdges := graph.edges["permission#member"]
+	require.Len(t, memberEdges, 2)
+	require.Equal(t, "permission#member", memberEdges[0].GetRelationDefinition())
+	require.Equal(t, "permission#member", memberEdges[1].GetRelationDefinition())
 }
 
 func TestGraphConstructionOrderedExclusion(t *testing.T) {
@@ -716,6 +755,19 @@ func TestGraphConstructionOrderedExclusion(t *testing.T) {
 	require.Len(t, graph.edges[exclusionNodeID], 5)
 	cannotreadID := graph.edges[exclusionNodeID][4].to.uniqueLabel
 	require.Equal(t, "job#cannot_read", cannotreadID)
+
+	butnotNode := graph.edges["job#can_read"][0].to
+	butnotEdges := graph.edges[butnotNode.uniqueLabel]
+	require.Len(t, butnotEdges, 5)
+
+	require.Equal(t, "job#can_read", butnotEdges[0].GetRelationDefinition())
+	require.Equal(t, DirectEdge, butnotEdges[0].GetEdgeType())
+	require.Equal(t, "job#can_read", butnotEdges[1].GetRelationDefinition())
+	require.Equal(t, DirectEdge, butnotEdges[1].GetEdgeType())
+	require.Equal(t, "job#can_read", butnotEdges[2].GetRelationDefinition())
+	require.Equal(t, DirectEdge, butnotEdges[2].GetEdgeType())
+	require.Equal(t, "job#can_read", butnotEdges[3].GetRelationDefinition())
+	require.Equal(t, DirectEdge, butnotEdges[3].GetEdgeType())
 }
 
 func TestGraphConstructionDirectAssignation(t *testing.T) {

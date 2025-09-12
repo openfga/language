@@ -1,15 +1,16 @@
 package graph
 
 type WeightedAuthorizationModelEdge struct {
-	weights           map[string]int
-	edgeType          EdgeType
-	tuplesetRelation  string // only present when the edgeType is a TTUEdge
-	from              *WeightedAuthorizationModelNode
-	to                *WeightedAuthorizationModelNode
-	wildcards         []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
-	recursiveRelation string
-	tupleCycle        bool
-	// conditions on the edge. This is a flattened graph with dedupx edges,
+	weights            map[string]int
+	edgeType           EdgeType
+	tuplesetRelation   string // only present when the edgeType is a TTUEdge
+	from               *WeightedAuthorizationModelNode
+	to                 *WeightedAuthorizationModelNode
+	wildcards          []string // e.g. "user". This means that in the direction of this edge there is a path to node user:*
+	recursiveRelation  string
+	tupleCycle         bool
+	relationDefinition string // the relation definition that generated this edge
+	// conditions on the edge. This is a flattened graph with deduplicated edges,
 	// if you have a node with multiple edges to another node will be deduplicate and instead
 	// only one edge but with multiple conditions,
 	// define rel1: [user, user with condX]
@@ -37,6 +38,11 @@ func (edge *WeightedAuthorizationModelEdge) GetEdgeType() EdgeType {
 // GetTuplesetRelation returns the tuplesetRelation field, e.g. "document#parent".
 func (edge *WeightedAuthorizationModelEdge) GetTuplesetRelation() string {
 	return edge.tuplesetRelation
+}
+
+// GetRelationDefinition returns the relationDefinition field, e.g. "document#parent".
+func (edge *WeightedAuthorizationModelEdge) GetRelationDefinition() string {
+	return edge.relationDefinition
 }
 
 // GetConditions returns the conditions field, e.g. "none, condX".

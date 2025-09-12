@@ -515,13 +515,16 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 // calculateNodeWeightWithMixedStrategy is a mixed weight strategy used for exclusion node (A but not B).
 // For all A edges, we take all the types for all the edges and get the max value
 // if more than one edge have the same type in their weights.
-// For all
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	edges := wg.edges[nodeID]
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	if node.nodeType != OperatorNode && node.label != ExclusionOperator {
+		return fmt.Errorf("%w: node %s cannot apply mixed strategy, only accepted exclusion nodes", ErrInvalidModel, nodeID)
 	}
 
 	// with the logical ttu and userset, an exclusion operation only has two edges

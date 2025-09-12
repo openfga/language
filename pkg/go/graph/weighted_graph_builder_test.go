@@ -521,11 +521,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[2].GetRelationDefinition())
 	})
 	t.Run("B_appears_in_A_finite", func(t *testing.T) {
 		model := `
@@ -558,11 +563,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[2].GetRelationDefinition())
 	})
 	t.Run("B_not_appear_in_A", func(t *testing.T) {
 		model := `
@@ -596,9 +606,14 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
 	})
 }
 

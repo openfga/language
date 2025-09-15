@@ -155,7 +155,8 @@ func (wg *WeightedAuthorizationModelGraph) isLogicalOperator(node *WeightedAutho
 	// and should always be treated as a union among all those ttu edges as they belong to the same logical ttu
 	// a logical userset is when we have multiple asignations to terminal types or usersets, we need to treat that
 	// as a union for all the direct edges
-	return node.GetNodeType() == OperatorNode || node.GetNodeType() == LogicalTTU || node.GetNodeType() == LogicalUserset
+	nodeType := node.GetNodeType()
+	return nodeType == OperatorNode || nodeType == LogicalTTUGrouping || nodeType == LogicalDirectGrouping
 }
 
 func (wg *WeightedAuthorizationModelGraph) isLogicalUnionOperator(node *WeightedAuthorizationModelNode) bool {
@@ -163,7 +164,8 @@ func (wg *WeightedAuthorizationModelGraph) isLogicalUnionOperator(node *Weighted
 	// and should always be treated as a union among all those ttu edges as they belong to the same logical ttu
 	// a logical userset is when we have multiple asignations to terminal types or usersets, we need to treat that
 	// as a union for all the direct edges
-	return (node.GetNodeType() == OperatorNode && node.GetLabel() == UnionOperator) || node.GetNodeType() == LogicalTTU || node.GetNodeType() == LogicalUserset
+	nodeType := node.GetNodeType()
+	return (nodeType == OperatorNode && node.GetLabel() == UnionOperator) || nodeType == LogicalTTUGrouping || nodeType == LogicalDirectGrouping
 }
 
 func (wg *WeightedAuthorizationModelGraph) calculateEdgeWildcards(edge *WeightedAuthorizationModelEdge) {
@@ -532,14 +534,18 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 	if len(edges) != 2 {
 		return fmt.Errorf("%w: invalid number of edges for exclusion node %s", ErrInvalidModel, nodeID)
 	}
-	weights := edges[0].weights
+	nodeWeights := make(map[string]int, len(edges))
+	for k, v := range edges[0].weights {
+		nodeWeights[k] = v
+	}
+
 	for key, value := range edges[1].weights {
-		if w, ok := weights[key]; ok {
-			weights[key] = int(math.Max(float64(w), float64(value)))
+		if w, ok := nodeWeights[key]; ok {
+			nodeWeights[key] = int(math.Max(float64(w), float64(value)))
 		}
 	}
 
-	node.weights = weights
+	node.weights = nodeWeights
 	return nil
 }
 

@@ -523,7 +523,7 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
 		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
 		logicalUsersetNode := orEdges[0].to
-		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
 		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
 		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
 		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
@@ -565,7 +565,7 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
 		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
 		logicalUsersetNode := orEdges[0].to
-		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
 		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
 		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
 		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
@@ -608,7 +608,7 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
 		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
 		logicalUsersetNode := orEdges[0].to
-		require.Equal(t, LogicalUserset, logicalUsersetNode.GetNodeType())
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
 		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
 		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
 		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
@@ -751,41 +751,65 @@ func TestGraphConstructionOrderedExclusion(t *testing.T) {
         type role
             relations
                 define assignee: [user]
+				define cannot_read: [user]
         type permission
             relations
                 define assignee: [employee]
+				define cannot_read: cannot_read from role
+				define role: [role]
         type job
             relations
                 define can_read: [user, employee, role#assignee, permission#assignee] but not cannot_read
-                define cannot_read: [user]
+                define cannot_read: cannot_read from permission
+				define permission: [permission]
 	`
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 11)
-	require.Len(t, graph.edges, 6)
+	require.Len(t, graph.nodes, 15)
+	require.Len(t, graph.edges, 10)
 	exclusionNodeID := graph.edges["job#can_read"][0].to.uniqueLabel
-	require.Len(t, graph.edges[exclusionNodeID], 2)
-	cannotreadID := graph.edges[exclusionNodeID][1].to.uniqueLabel
+	exclusionEdges := graph.edges[exclusionNodeID]
+	require.Len(t, exclusionEdges, 2)
+	cannotreadID := exclusionEdges[1].to.uniqueLabel
 	require.Equal(t, "job#cannot_read", cannotreadID)
+	exclusionNodeWeights := graph.nodes[exclusionNodeID].weights
+	jobcannotReadWeight := graph.nodes[cannotreadID].weights
+	require.Len(t, exclusionNodeWeights, 2)
+	require.Equal(t, 3, exclusionNodeWeights["user"])
+	require.Equal(t, 2, exclusionNodeWeights["employee"])
+	require.Len(t, jobcannotReadWeight, 1)
+	require.Equal(t, 3, jobcannotReadWeight["user"])
 
-	butnotNode := graph.edges["job#can_read"][0].to
-	butnotEdges := graph.edges[butnotNode.uniqueLabel]
-	require.Len(t, butnotEdges, 2)
-	logicalUsersetNode := butnotEdges[0].to
-	require.Equal(t, LogicalUserset, logicalUsersetNode.nodeType)
-	require.Len(t, graph.edges[logicalUsersetNode.uniqueLabel], 4)
-	directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+	logicalDirectGroupingNode := exclusionEdges[0].to
+	require.Equal(t, LogicalDirectGrouping, logicalDirectGroupingNode.nodeType)
+	directEdges := graph.edges[logicalDirectGroupingNode.uniqueLabel]
+	require.Len(t, directEdges, 4)
+	require.Len(t, logicalDirectGroupingNode.weights, 2)
+	require.Equal(t, 2, logicalDirectGroupingNode.weights["user"])
+	require.Equal(t, 2, logicalDirectGroupingNode.weights["employee"])
+
 	require.Equal(t, "job#can_read", directEdges[0].GetRelationDefinition())
 	require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+	require.Len(t, directEdges[0].weights, 1)
+	require.Equal(t, 1, directEdges[0].weights["user"])
+
 	require.Equal(t, "job#can_read", directEdges[1].GetRelationDefinition())
 	require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+	require.Len(t, directEdges[1].weights, 1)
+	require.Equal(t, 1, directEdges[1].weights["employee"])
+
 	require.Equal(t, "job#can_read", directEdges[2].GetRelationDefinition())
 	require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+	require.Len(t, directEdges[2].weights, 1)
+	require.Equal(t, 2, directEdges[2].weights["user"])
+
 	require.Equal(t, "job#can_read", directEdges[3].GetRelationDefinition())
 	require.Equal(t, DirectEdge, directEdges[3].GetEdgeType())
+	require.Len(t, directEdges[3].weights, 1)
+	require.Equal(t, 2, directEdges[3].weights["employee"])
 }
 
 func TestGraphConstructionDirectAssignation(t *testing.T) {

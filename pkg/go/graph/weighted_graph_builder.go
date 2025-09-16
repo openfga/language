@@ -126,11 +126,11 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 	node := parentNode
 	if parentNode.nodeType != SpecificTypeAndRelation && len(directlyRelated) > 1 {
 		uniqueLabel := typeDef.GetType() + "#ttu:" + tuplesetRelation + "#" + computedRelation
+		// add a logical ttu node for grouping of TTU that are part of the same tuplesetrelation and computed relation
 		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalTTUGrouping)
 		wg.AddEdge(parentNode.uniqueLabel, logicalNode.uniqueLabel, TTULogicalEdge, parentRelationName, typeTuplesetRelation, nil)
 		node = logicalNode
 	}
-	// add a logical ttu node for grouping of TTU that are part of the same tuplesetrelation and computed relation
 
 	for _, relatedType := range directlyRelated {
 		tuplesetType := relatedType.GetType()

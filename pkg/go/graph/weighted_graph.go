@@ -525,7 +525,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
 	}
 
-	if node.nodeType != OperatorNode && node.label != ExclusionOperator {
+	if node.nodeType != OperatorNode || node.label != ExclusionOperator {
 		return fmt.Errorf("%w: node %s cannot apply mixed strategy, only accepted exclusion nodes", ErrInvalidModel, nodeID)
 	}
 

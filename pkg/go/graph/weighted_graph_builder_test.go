@@ -812,6 +812,64 @@ func TestGraphConstructionOrderedExclusion(t *testing.T) {
 	require.Equal(t, 2, directEdges[3].weights["employee"])
 }
 
+func TestGraphConstructionOrderedExclusionWithLogicalTTU(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+        type role
+            relations
+				define cannot_read: [user]
+		type role_assignment
+            relations
+				define cannot_read: [user]
+        type permission
+            relations
+				define cannot_read: cannot_read from role or assignee
+				define role: [role, role_assignment]
+				define assignee: [user]
+        type job
+            relations
+                define can_read: [user] but not cannot_read
+                define cannot_read: cannot_read from permission
+				define permission: [permission]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 16)
+	require.Len(t, graph.edges, 11)
+	exclusionNodeID := graph.edges["job#can_read"][0].to.uniqueLabel
+	exclusionEdges := graph.edges[exclusionNodeID]
+	require.Len(t, exclusionEdges, 2)
+	require.Equal(t, DirectEdge, exclusionEdges[0].GetEdgeType())
+	cannotreadID := exclusionEdges[1].to.uniqueLabel
+	require.Equal(t, "job#cannot_read", cannotreadID)
+	exclusionNodeWeights := graph.nodes[exclusionNodeID].weights
+	jobcannotReadWeights := graph.nodes[cannotreadID].weights
+	require.Len(t, exclusionNodeWeights, 1)
+	require.Equal(t, 3, exclusionNodeWeights["user"])
+	require.Len(t, jobcannotReadWeights, 1)
+	require.Equal(t, 3, jobcannotReadWeights["user"])
+	require.Len(t, graph.edges[cannotreadID], 1)
+	require.Equal(t, TTUEdge, graph.edges[cannotreadID][0].GetEdgeType())
+	permissionCannotReadNode := graph.edges[cannotreadID][0].to.uniqueLabel
+	require.Len(t, graph.edges[permissionCannotReadNode], 1)
+	require.Equal(t, RewriteEdge, graph.edges[permissionCannotReadNode][0].GetEdgeType())
+	orNode := graph.edges[permissionCannotReadNode][0].to.uniqueLabel
+	require.Len(t, graph.edges[orNode], 2)
+	require.Equal(t, LogicalTTUGrouping, graph.edges[orNode][0].to.GetNodeType())
+	require.Equal(t, TTULogicalEdge, graph.edges[orNode][0].GetEdgeType())
+	require.Equal(t, RewriteEdge, graph.edges[orNode][1].GetEdgeType())
+	logicalTTUNode := graph.edges[orNode][0].to.uniqueLabel
+	require.Len(t, graph.edges[logicalTTUNode], 2)
+	require.Equal(t, TTUEdge, graph.edges[logicalTTUNode][0].GetEdgeType())
+	require.Equal(t, TTUEdge, graph.edges[logicalTTUNode][1].GetEdgeType())
+}
+
 func TestGraphConstructionDirectAssignation(t *testing.T) {
 	t.Parallel()
 	model := `

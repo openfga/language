@@ -793,6 +793,223 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
 }
 
+func TestGraphConstructionSuperNestedCycles(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+	schema 1.1
+
+	type user
+
+	type document
+		relations
+			define viewer: [team#member, org#employee]
+
+	type team
+		relations
+			define member: [user, document#viewer, org#employee]
+			
+	type org
+		relations
+			define employee: [user, document#viewer, team#member]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 7)
+	require.Len(t, graph.edges, 3)
+	require.Len(t, graph.edges["document#viewer"], 2)
+	weight, _ := graph.edges["document#viewer"][0].GetWeight("user")
+	require.True(t, graph.edges["document#viewer"][0].IsPartOfTupleCycle())
+	require.Equal(t, Infinite, weight)
+	weight, _ = graph.edges["document#viewer"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["document#viewer"][1].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["team#member"], 3)
+	weight, _ = graph.edges["team#member"][0].GetWeight("user")
+	require.Equal(t, 1, weight)
+	require.False(t, graph.edges["team#member"][0].IsPartOfTupleCycle())
+	weight, _ = graph.edges["team#member"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["team#member"][1].IsPartOfTupleCycle())
+	weight, _ = graph.edges["team#member"][2].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["team#member"][2].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["org#employee"], 3)
+	weight, _ = graph.edges["org#employee"][0].GetWeight("user")
+	require.False(t, graph.edges["org#employee"][0].IsPartOfTupleCycle())
+	require.Equal(t, 1, weight)
+	weight, _ = graph.edges["org#employee"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["org#employee"][1].IsPartOfTupleCycle())
+	weight, _ = graph.edges["org#employee"][2].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["org#employee"][2].IsPartOfTupleCycle())
+
+}
+
+func TestGraphConstructionAlgebraicWithNestedCycles(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+	schema 1.1
+
+	type user
+
+	type document
+		relations
+			define viewer: [team#member] or (employee from org or member)
+			define member: [user]
+			define org: [org]
+
+	type team
+		relations
+			define member: [user, org#employee]
+			
+	type org
+		relations
+			define employee: [user, document#viewer]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 11)
+	require.Len(t, graph.edges, 7)
+	require.Len(t, graph.edges["document#viewer"], 1)
+	weight, _ := graph.edges["document#viewer"][0].GetWeight("user")
+	require.True(t, graph.edges["document#viewer"][0].IsPartOfTupleCycle())
+	require.Equal(t, Infinite, weight)
+
+	outer_or := graph.edges["document#viewer"][0].GetTo()
+	outer_or_edges := graph.edges[outer_or.GetUniqueLabel()]
+	require.Len(t, outer_or_edges, 2)
+	require.True(t, outer_or.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, outer_or.weights["user"])
+	weight, _ = outer_or_edges[0].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, outer_or_edges[0].IsPartOfTupleCycle())
+	weight, _ = outer_or_edges[1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, outer_or_edges[1].IsPartOfTupleCycle())
+
+	inner_or := outer_or_edges[1].GetTo()
+	inner_or_edges := graph.edges[inner_or.GetUniqueLabel()]
+	require.True(t, inner_or.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, inner_or.weights["user"])
+	require.Len(t, inner_or_edges, 2)
+	weight, _ = inner_or_edges[0].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, inner_or_edges[0].IsPartOfTupleCycle())
+	weight, _ = inner_or_edges[1].GetWeight("user")
+	require.Equal(t, 1, weight)
+	require.False(t, inner_or_edges[1].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["team#member"], 2)
+	weight, _ = graph.edges["team#member"][0].GetWeight("user")
+	require.Equal(t, 1, weight)
+	require.False(t, graph.edges["team#member"][0].IsPartOfTupleCycle())
+	weight, _ = graph.edges["team#member"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["team#member"][1].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["org#employee"], 2)
+	weight, _ = graph.edges["org#employee"][0].GetWeight("user")
+	require.False(t, graph.edges["org#employee"][0].IsPartOfTupleCycle())
+	require.Equal(t, 1, weight)
+	weight, _ = graph.edges["org#employee"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["org#employee"][1].IsPartOfTupleCycle())
+
+}
+
+func TestGraphConstructionRecursioncWithNestedCycles(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+	schema 1.1
+
+	type user
+
+	type document
+		relations
+			define viewer: [document#viewer] or (employee from org or member)
+			define member: [user]
+			define org: [org]
+
+	type team
+		relations
+			define member: [user, document#viewer]
+			
+	type org
+		relations
+			define employee: [user, team#member]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 11)
+	require.Len(t, graph.edges, 7)
+	require.Len(t, graph.edges["document#viewer"], 1)
+	weight, _ := graph.nodes["document#viewer"].GetWeight("user")
+	require.True(t, graph.nodes["document#viewer"].IsPartOfTupleCycle())
+	require.Equal(t, Infinite, weight)
+	require.Equal(t, "document#viewer", graph.nodes["document#viewer"].recursiveRelation)
+
+	outer_or := graph.edges["document#viewer"][0].GetTo()
+	outer_or_edges := graph.edges[outer_or.GetUniqueLabel()]
+	require.Equal(t, "document#viewer", outer_or.recursiveRelation)
+	require.Len(t, outer_or_edges, 2)
+	require.True(t, outer_or.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, outer_or.weights["user"])
+	weight, _ = outer_or_edges[0].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, outer_or_edges[0].IsPartOfTupleCycle())
+	require.Equal(t, "document#viewer", outer_or_edges[0].recursiveRelation)
+	weight, _ = outer_or_edges[1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, outer_or_edges[1].IsPartOfTupleCycle())
+	require.Empty(t, outer_or_edges[1].recursiveRelation)
+
+	inner_or := outer_or_edges[1].GetTo()
+	inner_or_edges := graph.edges[inner_or.GetUniqueLabel()]
+	require.True(t, inner_or.IsPartOfTupleCycle())
+	require.Empty(t, inner_or.recursiveRelation)
+
+	require.Equal(t, Infinite, inner_or.weights["user"])
+	require.Len(t, inner_or_edges, 2)
+	weight, _ = inner_or_edges[0].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, inner_or_edges[0].IsPartOfTupleCycle())
+	weight, _ = inner_or_edges[1].GetWeight("user")
+	require.Equal(t, 1, weight)
+	require.False(t, inner_or_edges[1].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["team#member"], 2)
+	weight, _ = graph.edges["team#member"][0].GetWeight("user")
+	require.Equal(t, 1, weight)
+	require.False(t, graph.edges["team#member"][0].IsPartOfTupleCycle())
+	weight, _ = graph.edges["team#member"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["team#member"][1].IsPartOfTupleCycle())
+
+	require.Len(t, graph.edges["org#employee"], 2)
+	weight, _ = graph.edges["org#employee"][0].GetWeight("user")
+	require.False(t, graph.edges["org#employee"][0].IsPartOfTupleCycle())
+	require.Equal(t, 1, weight)
+	weight, _ = graph.edges["org#employee"][1].GetWeight("user")
+	require.Equal(t, Infinite, weight)
+	require.True(t, graph.edges["org#employee"][1].IsPartOfTupleCycle())
+
+}
+
 func TestGraphConstructionWildcardAssignation(t *testing.T) {
 	t.Parallel()
 	model := `

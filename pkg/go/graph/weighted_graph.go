@@ -656,6 +656,7 @@ func assignTupleCycleMetadata(edgesInCycle []*WeightedAuthorizationModelEdge) {
 // because AND or a BUT NOT are not allowed in a tuple cycle.
 func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle string, referenceNodeID string, references []string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
 	node := wg.nodes[nodeCycle]
+	tupleCycle := node.tupleCycle
 
 	// for each edge recorded to be dependent on the reference node, we need to update the weight
 	for _, edge := range tupleCycleDependencies[nodeCycle] {
@@ -689,6 +690,9 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle str
 		}
 		edge.weights = edgeWeights
 		wg.addReferentialWildcardsToEdge(edge, nodeCycle)
+		if tupleCycle {
+			edge.tupleCycle = true
+		}
 	}
 }
 
@@ -697,7 +701,7 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantEdgesWeight(nodeCycle str
 // because AND or a BUT NOT are not allowed in a tuple cycle.
 func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle string, referenceNodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
 	node := wg.nodes[nodeCycle]
-
+	tupleCycle := node.tupleCycle
 	for _, edge := range tupleCycleDependencies[nodeCycle] {
 		fromNode := wg.nodes[edge.from.uniqueLabel]
 		nodeWeights := make(map[string]int)
@@ -719,6 +723,9 @@ func (wg *WeightedAuthorizationModelGraph) fixDependantNodesWeight(nodeCycle str
 			}
 		}
 		fromNode.weights = nodeWeights
+		if tupleCycle {
+			fromNode.tupleCycle = true
+		}
 		wg.addReferentialWildcardsToNode(edge.from.uniqueLabel, nodeCycle)
 	}
 }

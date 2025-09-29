@@ -5,19 +5,6 @@ import (
 	"gonum.org/v1/gonum/graph/encoding"
 )
 
-type NodeType int64
-
-const (
-	SpecificType            NodeType = 0 // e.g. `group`
-	SpecificTypeAndRelation NodeType = 1 // e.g. `group#viewer`
-	OperatorNode            NodeType = 2 // e.g. union
-	SpecificTypeWildcard    NodeType = 3 // e.g. `group:*`
-
-	UnionOperator        = "union"
-	IntersectionOperator = "intersection"
-	ExclusionOperator    = "exclusion"
-)
-
 type AuthorizationModelNode struct {
 	graph.Node
 

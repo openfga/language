@@ -521,11 +521,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[2].GetRelationDefinition())
 	})
 	t.Run("B_appears_in_A_finite", func(t *testing.T) {
 		model := `
@@ -558,11 +563,16 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[2].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[2].GetRelationDefinition())
 	})
 	t.Run("B_not_appear_in_A", func(t *testing.T) {
 		model := `
@@ -596,9 +606,14 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 		orNode := graph.edges[butnotNode.uniqueLabel][0].to
 		orEdges := graph.edges[orNode.uniqueLabel]
 		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[0].GetEdgeType())
-		require.Equal(t, "group#allowed", orEdges[0].GetRelationDefinition())
-		require.Equal(t, DirectEdge, orEdges[1].GetEdgeType())
+		require.Equal(t, DirectLogicalEdge, orEdges[0].GetEdgeType())
+		logicalUsersetNode := orEdges[0].to
+		require.Equal(t, LogicalDirectGrouping, logicalUsersetNode.GetNodeType())
+		directEdges := graph.edges[logicalUsersetNode.uniqueLabel]
+		require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[0].GetRelationDefinition())
+		require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+		require.Equal(t, "group#allowed", directEdges[1].GetRelationDefinition())
 	})
 }
 
@@ -629,8 +644,8 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	require.Len(t, graph.nodes, 12)
-	require.Len(t, graph.edges, 8)
+	require.Len(t, graph.nodes, 13)
+	require.Len(t, graph.edges, 9)
 	edges, _ := graph.GetEdgesFromNode(graph.nodes["permission#assignee"])
 	require.Len(t, edges, 1)
 	conditions := edges[0].conditions
@@ -736,38 +751,123 @@ func TestGraphConstructionOrderedExclusion(t *testing.T) {
         type role
             relations
                 define assignee: [user]
+				define cannot_read: [user]
         type permission
             relations
                 define assignee: [employee]
+				define cannot_read: cannot_read from role
+				define role: [role]
         type job
             relations
                 define can_read: [user, employee, role#assignee, permission#assignee] but not cannot_read
-                define cannot_read: [user]
+                define cannot_read: cannot_read from permission
+				define permission: [permission]
 	`
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
 
-	require.Len(t, graph.nodes, 10)
-	require.Len(t, graph.edges, 5)
+	require.Len(t, graph.nodes, 15)
+	require.Len(t, graph.edges, 10)
 	exclusionNodeID := graph.edges["job#can_read"][0].to.uniqueLabel
-	require.Len(t, graph.edges[exclusionNodeID], 5)
-	cannotreadID := graph.edges[exclusionNodeID][4].to.uniqueLabel
+	exclusionEdges := graph.edges[exclusionNodeID]
+	require.Len(t, exclusionEdges, 2)
+	cannotreadID := exclusionEdges[1].to.uniqueLabel
 	require.Equal(t, "job#cannot_read", cannotreadID)
+	exclusionNodeWeights := graph.nodes[exclusionNodeID].weights
+	jobcannotReadWeight := graph.nodes[cannotreadID].weights
+	require.Len(t, exclusionNodeWeights, 2)
+	require.Equal(t, 3, exclusionNodeWeights["user"])
+	require.Equal(t, 2, exclusionNodeWeights["employee"])
+	require.Len(t, jobcannotReadWeight, 1)
+	require.Equal(t, 3, jobcannotReadWeight["user"])
 
-	butnotNode := graph.edges["job#can_read"][0].to
-	butnotEdges := graph.edges[butnotNode.uniqueLabel]
-	require.Len(t, butnotEdges, 5)
+	logicalDirectGroupingNode := exclusionEdges[0].to
+	require.Equal(t, LogicalDirectGrouping, logicalDirectGroupingNode.nodeType)
+	directEdges := graph.edges[logicalDirectGroupingNode.uniqueLabel]
+	require.Len(t, directEdges, 4)
+	require.Len(t, logicalDirectGroupingNode.weights, 2)
+	require.Equal(t, 2, logicalDirectGroupingNode.weights["user"])
+	require.Equal(t, 2, logicalDirectGroupingNode.weights["employee"])
 
-	require.Equal(t, "job#can_read", butnotEdges[0].GetRelationDefinition())
-	require.Equal(t, DirectEdge, butnotEdges[0].GetEdgeType())
-	require.Equal(t, "job#can_read", butnotEdges[1].GetRelationDefinition())
-	require.Equal(t, DirectEdge, butnotEdges[1].GetEdgeType())
-	require.Equal(t, "job#can_read", butnotEdges[2].GetRelationDefinition())
-	require.Equal(t, DirectEdge, butnotEdges[2].GetEdgeType())
-	require.Equal(t, "job#can_read", butnotEdges[3].GetRelationDefinition())
-	require.Equal(t, DirectEdge, butnotEdges[3].GetEdgeType())
+	require.Equal(t, "job#can_read", directEdges[0].GetRelationDefinition())
+	require.Equal(t, DirectEdge, directEdges[0].GetEdgeType())
+	require.Len(t, directEdges[0].weights, 1)
+	require.Equal(t, 1, directEdges[0].weights["user"])
+
+	require.Equal(t, "job#can_read", directEdges[1].GetRelationDefinition())
+	require.Equal(t, DirectEdge, directEdges[1].GetEdgeType())
+	require.Len(t, directEdges[1].weights, 1)
+	require.Equal(t, 1, directEdges[1].weights["employee"])
+
+	require.Equal(t, "job#can_read", directEdges[2].GetRelationDefinition())
+	require.Equal(t, DirectEdge, directEdges[2].GetEdgeType())
+	require.Len(t, directEdges[2].weights, 1)
+	require.Equal(t, 2, directEdges[2].weights["user"])
+
+	require.Equal(t, "job#can_read", directEdges[3].GetRelationDefinition())
+	require.Equal(t, DirectEdge, directEdges[3].GetEdgeType())
+	require.Len(t, directEdges[3].weights, 1)
+	require.Equal(t, 2, directEdges[3].weights["employee"])
+}
+
+func TestGraphConstructionOrderedExclusionWithLogicalTTU(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+  		schema 1.1
+		type user
+        type role
+            relations
+				define cannot_read: [user]
+		type role_assignment
+            relations
+				define cannot_read: [user]
+        type permission
+            relations
+				define cannot_read: cannot_read from role or assignee
+				define role: [role, role_assignment]
+				define assignee: [user]
+        type job
+            relations
+                define can_read: [user] but not cannot_read
+                define cannot_read: cannot_read from permission
+				define permission: [permission]
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 16)
+	require.Len(t, graph.edges, 11)
+	exclusionNodeID := graph.edges["job#can_read"][0].to.uniqueLabel
+	exclusionEdges := graph.edges[exclusionNodeID]
+	require.Len(t, exclusionEdges, 2)
+	require.Equal(t, DirectEdge, exclusionEdges[0].GetEdgeType())
+	cannotreadID := exclusionEdges[1].to.uniqueLabel
+	require.Equal(t, "job#cannot_read", cannotreadID)
+	exclusionNodeWeights := graph.nodes[exclusionNodeID].weights
+	jobcannotReadWeights := graph.nodes[cannotreadID].weights
+	require.Len(t, exclusionNodeWeights, 1)
+	require.Equal(t, 3, exclusionNodeWeights["user"])
+	require.Len(t, jobcannotReadWeights, 1)
+	require.Equal(t, 3, jobcannotReadWeights["user"])
+	require.Len(t, graph.edges[cannotreadID], 1)
+	require.Equal(t, TTUEdge, graph.edges[cannotreadID][0].GetEdgeType())
+	permissionCannotReadNode := graph.edges[cannotreadID][0].to.uniqueLabel
+	require.Len(t, graph.edges[permissionCannotReadNode], 1)
+	require.Equal(t, RewriteEdge, graph.edges[permissionCannotReadNode][0].GetEdgeType())
+	orNode := graph.edges[permissionCannotReadNode][0].to.uniqueLabel
+	require.Len(t, graph.edges[orNode], 2)
+	require.Equal(t, LogicalTTUGrouping, graph.edges[orNode][0].to.GetNodeType())
+	require.Equal(t, TTULogicalEdge, graph.edges[orNode][0].GetEdgeType())
+	require.Equal(t, RewriteEdge, graph.edges[orNode][1].GetEdgeType())
+	logicalTTUNode := graph.edges[orNode][0].to.uniqueLabel
+	require.Len(t, graph.edges[logicalTTUNode], 2)
+	require.Equal(t, TTUEdge, graph.edges[logicalTTUNode][0].GetEdgeType())
+	require.Equal(t, TTUEdge, graph.edges[logicalTTUNode][1].GetEdgeType())
 }
 
 func TestGraphConstructionDirectAssignation(t *testing.T) {
@@ -791,6 +891,82 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 	require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
 	require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
 	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
+}
+
+func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+        schema 1.1
+      type user
+      type directs
+          relations
+              define direct: [user]
+			  define mixed: [user]
+			  define da: [user]
+      type usersets-user
+          relations
+          define da: [user]
+          define mixed: [directs#direct, user] and da
+      type wrapper
+          relations
+          define parent: [usersets-user, directs]
+          define assigned: mixed from parent but not da from parent
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 16)
+	require.Len(t, graph.edges, 12)
+	require.Len(t, graph.edges["wrapper#assigned"], 1)
+	weight, _ := graph.nodes["wrapper#assigned"].GetWeight("user")
+	require.Equal(t, 3, weight)
+
+	butnot_node := graph.edges["wrapper#assigned"][0].to
+	require.Len(t, graph.edges[butnot_node.uniqueLabel], 2)
+	mixedLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][0].to
+	daLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][1].to
+
+	weight, _ = mixedLogicalTTU_node.GetWeight("user")
+	require.Equal(t, 3, weight)
+	weight, _ = daLogicalTTU_node.GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 3, weight)
+	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 2, weight)
+	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	require.Len(t, graph.edges["usersets-user#mixed"], 1)
+	weight, _ = graph.nodes["usersets-user#mixed"].GetWeight("user")
+	require.Equal(t, 2, weight)
+	and_node := graph.edges["usersets-user#mixed"][0].to
+	weight, _ = graph.nodes[and_node.uniqueLabel].GetWeight("user")
+	require.Equal(t, 2, weight)
+	edges := graph.edges[and_node.uniqueLabel]
+	ta_node := edges[1].to
+	logical_node := edges[0].to
+
+	require.Len(t, graph.edges[ta_node.uniqueLabel], 1)
+	weight, _ = ta_node.GetWeight("user")
+	require.Equal(t, 1, weight)
+
+	require.Len(t, graph.edges[logical_node.uniqueLabel], 2)
+	weight, _ = logical_node.GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[logical_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 2, weight)
+	weight, _ = graph.edges[logical_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 1, weight)
+
 }
 
 func TestGraphConstructionSuperNestedCycles(t *testing.T) {
@@ -1465,26 +1641,27 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			require.Equal(t, map[string]int{"user1": 1}, graph.edges["folder#c"][0].GetWeights()) // Because only [user1] on both sides of AND
 		})
 	})
+
 	t.Run("three_operands_balanced_direct", func(t *testing.T) {
 		t.Parallel()
 		model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: [user1,user2,user3] and can_view
-				define can_view: [user1,user2,user3]`
+			type document
+				relations
+					define viewer: [user1,user2,user3] and can_view
+					define can_view: [user1,user2,user3]`
 
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
 		graph, err := wgb.Build(authorizationModel)
 		require.NoError(t, err)
 
-		require.Len(t, graph.nodes, 7)
+		require.Len(t, graph.nodes, 8)
 		require.Len(t, graph.edges["document#viewer"], 1)
 		require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3] on both sides of AND
 	})
@@ -1493,46 +1670,46 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		t.Run("left_unbalanced", func(t *testing.T) {
 			t.Parallel()
 			model := `
-			model
-				schema 1.1
-			type user1
-			type user2
-			type user3
-	
-			type document
-				relations
-					define viewer: [user1,user3] and can_view
-					define can_view: [user1,user2,user3]`
+				model
+					schema 1.1
+				type user1
+				type user2
+				type user3
+
+				type document
+					relations
+						define viewer: [user1,user3] and can_view
+						define can_view: [user1,user2,user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			graph, err := wgb.Build(authorizationModel)
 			require.NoError(t, err)
 
-			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.nodes, 8)
 			require.Len(t, graph.edges["document#viewer"], 1)
 			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on left of AND
 		})
 		t.Run("right_unbalanced", func(t *testing.T) {
 			t.Parallel()
 			model := `
-			model
-				schema 1.1
-			type user1
-			type user2
-			type user3
-	
-			type document
-				relations
-					define viewer: [user1,user2,user3] and can_view
-					define can_view: [user1,user3]`
+				model
+					schema 1.1
+				type user1
+				type user2
+				type user3
+
+				type document
+					relations
+						define viewer: [user1,user2,user3] and can_view
+						define can_view: [user1,user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			graph, err := wgb.Build(authorizationModel)
 			require.NoError(t, err)
 
-			require.Len(t, graph.nodes, 7)
+			require.Len(t, graph.nodes, 8)
 			require.Len(t, graph.edges["document#viewer"], 1)
 			require.Equal(t, map[string]int{"user1": 1, "user3": 1}, graph.edges["document#viewer"][0].GetWeights()) // Because only [user1, user3] on right of AND
 		})
@@ -1542,17 +1719,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		t.Parallel()
 		t.Run("left_unbalanced", func(t *testing.T) {
 			model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: viewer1 and viewer2
-				define viewer1: [user1,user3]
-				define viewer2: [user1,user2,user3]`
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user3]
+					define viewer2: [user1,user2,user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1565,17 +1742,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		})
 		t.Run("right_unbalanced", func(t *testing.T) {
 			model := `
-			model
-				schema 1.1
-			type user1
-			type user2
-			type user3
-			
-			type document
-				relations
-					define viewer: viewer1 and viewer2
-					define viewer1: [user1,user3]
-					define viewer2: [user1,user3]`
+				model
+					schema 1.1
+				type user1
+				type user2
+				type user3
+
+				type document
+					relations
+						define viewer: viewer1 and viewer2
+						define viewer1: [user1,user3]
+						define viewer2: [user1,user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1591,17 +1768,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 	t.Run("three_operands_balanced_rewrite", func(t *testing.T) {
 		t.Parallel()
 		model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: viewer1 and viewer2
-				define viewer1: [user1,user2,user3]
-				define viewer2: [user1,user2,user3]`
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user2,user3]
+					define viewer2: [user1,user2,user3]`
 
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1616,17 +1793,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 	t.Run("three_operands_balanced_rewrite_userset_directly_assigned", func(t *testing.T) {
 		t.Parallel()
 		model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: [document#viewer1] and viewer2
-				define viewer1: [user1,user2,user3]
-				define viewer2: [user1,user2,user3]`
+			type document
+				relations
+					define viewer: [document#viewer1] and viewer2
+					define viewer1: [user1,user2,user3]
+					define viewer2: [user1,user2,user3]`
 
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1641,24 +1818,24 @@ func TestGraphConstructionIntersection(t *testing.T) {
 	t.Run("three_operands_balanced_rewrite_userset_directly_assigned_mixed", func(t *testing.T) {
 		t.Parallel()
 		model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: [user1,user2, user3, document#viewer1] and viewer2
-				define viewer1: [user1,user2,user3]
-				define viewer2: [user1,user2,user3]`
+			type document
+				relations
+					define viewer: [user1,user2, user3, document#viewer1] and viewer2
+					define viewer1: [user1,user2,user3]
+					define viewer2: [user1,user2,user3]`
 
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
 		graph, err := wgb.Build(authorizationModel)
 		require.NoError(t, err)
 
-		require.Len(t, graph.nodes, 8)
+		require.Len(t, graph.nodes, 9)
 		require.Len(t, graph.edges["document#viewer"], 1)
 		require.Equal(t, map[string]int{"user1": 2, "user2": 2, "user3": 2}, graph.edges["document#viewer"][0].GetWeights()) // Because all [user1, user2, user3, document#viewer1] on both sides of AND
 	})
@@ -1666,17 +1843,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 	t.Run("three_operands_balanced_rewrite_mixed_wildcards", func(t *testing.T) {
 		t.Parallel()
 		model := `
-		model
-			schema 1.1
-		type user1
-		type user2
-		type user3
+			model
+				schema 1.1
+			type user1
+			type user2
+			type user3
 
-		type document
-			relations
-				define viewer: viewer1 and viewer2
-				define viewer1: [user1,user2:*,user3]
-				define viewer2: [user1:*,user2,user3:*]`
+			type document
+				relations
+					define viewer: viewer1 and viewer2
+					define viewer1: [user1,user2:*,user3]
+					define viewer2: [user1:*,user2,user3:*]`
 
 		authorizationModel := language.MustTransformDSLToProto(model)
 		wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1693,16 +1870,16 @@ func TestGraphConstructionIntersection(t *testing.T) {
 
 			t.Parallel()
 			model := `
-			model
-				schema 1.1
-			type user1
-			type user2
-			type user3
-			
-			type document
-				relations
-					define viewer: [user1,user2] and owner
-					define owner: [user3]`
+				model
+					schema 1.1
+				type user1
+				type user2
+				type user3
+
+				type document
+					relations
+						define viewer: [user1,user2] and owner
+						define owner: [user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1712,17 +1889,17 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		t.Run("without_direct_types", func(t *testing.T) {
 			t.Parallel()
 			model := `
-			model
-				schema 1.1
-			type user1
-			type user2
-			type user3
-			
-			type document
-				relations
-					define viewer: viewer1 and viewer2
-					define viewer1: [user1,user2]
-					define viewer2: [user3]`
+				model
+					schema 1.1
+				type user1
+				type user2
+				type user3
+
+				type document
+					relations
+						define viewer: viewer1 and viewer2
+						define viewer1: [user1,user2]
+						define viewer2: [user3]`
 
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
@@ -1735,24 +1912,24 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		t.Run("balanced", func(t *testing.T) {
 			t.Parallel()
 			model := `
-	      model
-		  	schema 1.1
-		  type user1
-		  type user2
-		  type user3
-		  type document
-		  	  relations
-				define a: [user1,user2,user3] and b and c
-				define b: [user1,user2,user3]
-				define c: [user1,user2,user3]
-		  `
+		      model
+			  	schema 1.1
+			  type user1
+			  type user2
+			  type user3
+			  type document
+			  	  relations
+					define a: [user1,user2,user3] and b and c
+					define b: [user1,user2,user3]
+					define c: [user1,user2,user3]
+			  `
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			graph, err := wgb.Build(authorizationModel)
 			require.NoError(t, err)
 
-			require.Len(t, graph.nodes, 8)
-			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.nodes, 9)
+			require.Len(t, graph.edges, 5)
 			require.Len(t, graph.edges["document#a"], 1)
 			require.Equal(t, map[string]int{"user1": 1, "user2": 1, "user3": 1}, graph.edges["document#a"][0].GetWeights())
 		})
@@ -1760,28 +1937,29 @@ func TestGraphConstructionIntersection(t *testing.T) {
 		t.Run("unbalanced", func(t *testing.T) {
 			t.Parallel()
 			model := `
-	      model
-		  	schema 1.1
-		  type user1
-		  type user2
-		  type user3
-		  type document
-		  	  relations
-				define a: [user1,user2] and b and c
-				define b: [user1,user3]
-				define c: [user1,user2]
-		  `
+		      model
+			  	schema 1.1
+			  type user1
+			  type user2
+			  type user3
+			  type document
+			  	  relations
+					define a: [user1,user2] and b and c
+					define b: [user1,user3]
+					define c: [user1,user2]
+			  `
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			graph, err := wgb.Build(authorizationModel)
 			require.NoError(t, err)
 
-			require.Len(t, graph.nodes, 8)
-			require.Len(t, graph.edges, 4)
+			require.Len(t, graph.nodes, 9)
+			require.Len(t, graph.edges, 5)
 			require.Len(t, graph.edges["document#a"], 1)
 			require.Equal(t, map[string]int{"user1": 1}, graph.edges["document#a"][0].GetWeights())
 		})
 	})
+
 }
 
 func TestGraphConstructionIntersectionWithType(t *testing.T) {

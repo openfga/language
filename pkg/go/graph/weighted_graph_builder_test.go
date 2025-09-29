@@ -893,6 +893,82 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
 }
 
+func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
+	t.Parallel()
+	model := `
+	    model
+        schema 1.1
+      type user
+      type directs
+          relations
+              define direct: [user]
+			  define mixed: [user]
+			  define da: [user]
+      type usersets-user
+          relations
+          define da: [user]
+          define mixed: [directs#direct, user] and da
+      type wrapper
+          relations
+          define parent: [usersets-user, directs]
+          define assigned: mixed from parent but not da from parent
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Len(t, graph.nodes, 16)
+	require.Len(t, graph.edges, 12)
+	require.Len(t, graph.edges["wrapper#assigned"], 1)
+	weight, _ := graph.nodes["wrapper#assigned"].GetWeight("user")
+	require.Equal(t, 3, weight)
+
+	butnot_node := graph.edges["wrapper#assigned"][0].to
+	require.Len(t, graph.edges[butnot_node.uniqueLabel], 2)
+	mixedLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][0].to
+	daLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][1].to
+
+	weight, _ = mixedLogicalTTU_node.GetWeight("user")
+	require.Equal(t, 3, weight)
+	weight, _ = daLogicalTTU_node.GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 3, weight)
+	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 2, weight)
+	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	require.Len(t, graph.edges["usersets-user#mixed"], 1)
+	weight, _ = graph.nodes["usersets-user#mixed"].GetWeight("user")
+	require.Equal(t, 2, weight)
+	and_node := graph.edges["usersets-user#mixed"][0].to
+	weight, _ = graph.nodes[and_node.uniqueLabel].GetWeight("user")
+	require.Equal(t, 2, weight)
+	edges := graph.edges[and_node.uniqueLabel]
+	ta_node := edges[1].to
+	logical_node := edges[0].to
+
+	require.Len(t, graph.edges[ta_node.uniqueLabel], 1)
+	weight, _ = ta_node.GetWeight("user")
+	require.Equal(t, 1, weight)
+
+	require.Len(t, graph.edges[logical_node.uniqueLabel], 2)
+	weight, _ = logical_node.GetWeight("user")
+	require.Equal(t, 2, weight)
+
+	weight, _ = graph.edges[logical_node.uniqueLabel][0].GetWeight("user")
+	require.Equal(t, 2, weight)
+	weight, _ = graph.edges[logical_node.uniqueLabel][1].GetWeight("user")
+	require.Equal(t, 1, weight)
+
+}
+
 func TestGraphConstructionSuperNestedCycles(t *testing.T) {
 	t.Parallel()
 	model := `

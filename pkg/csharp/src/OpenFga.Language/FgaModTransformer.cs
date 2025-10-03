@@ -7,17 +7,40 @@ using System.Web;
 
 namespace OpenFga.Language;
 
+/// <summary>
+/// Transforms FGA module files (.fga.mod) into JSON format.
+/// This class parses module definition files that contain schema version and content references
+/// for FGA authorization models.
+/// </summary>
+/// <param name="modFileContents">The contents of the .fga.mod file to parse</param>
 public class FgaModTransformer(string modFileContents) {
     private readonly List<ModFileValidationSingleError> _errors = new();
 
+    /// <summary>
+    /// Transforms the provided module file contents into JSON format.
+    /// </summary>
+    /// <param name="modFileContents">The contents of the .fga.mod file</param>
+    /// <returns>A JSON string representation of the parsed module file</returns>
+    /// <exception cref="ModFileValidationError">Thrown when the module file contains validation errors</exception>
     public static string Transform(string modFileContents) {
         return Json.Stringify(Parse(modFileContents));
     }
 
+    /// <summary>
+    /// Parses the provided module file contents into a structured FgaModFile object.
+    /// </summary>
+    /// <param name="modFileContents">The contents of the .fga.mod file</param>
+    /// <returns>A parsed <see cref="FgaModFile"/> object</returns>
+    /// <exception cref="ModFileValidationError">Thrown when the module file contains validation errors</exception>
     public static FgaModFile Parse(string modFileContents) {
         return new FgaModTransformer(modFileContents).Parse();
     }
 
+    /// <summary>
+    /// Parses the module file contents into a structured FgaModFile object.
+    /// </summary>
+    /// <returns>A parsed <see cref="FgaModFile"/> object</returns>
+    /// <exception cref="ModFileValidationError">Thrown when the module file contains validation errors</exception>
     public FgaModFile Parse() {
         var parser = Parser.CreateParser(new StringReader(modFileContents));
         var modFile = new FgaModFile();

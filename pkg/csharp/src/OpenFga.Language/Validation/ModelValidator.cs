@@ -4,6 +4,11 @@ using Metadata = OpenFga.Sdk.Model.Metadata;
 
 namespace OpenFga.Language.Validation;
 
+/// <summary>
+/// Validates OpenFGA authorization models for semantic correctness and compliance with FGA rules.
+/// This class performs comprehensive validation of authorization models including type definitions,
+/// relation definitions, entry points, and module structure validation.
+/// </summary>
 public class ModelValidator {
     private readonly ValidationOptions _options;
     private readonly AuthorizationModel _authorizationModel;
@@ -13,6 +18,12 @@ public class ModelValidator {
     private ValidationRegex? _relationRegex;
     private readonly Dictionary<string, HashSet<string>> _fileToModules = new();
 
+    /// <summary>
+    /// Initializes a new instance of the ModelValidator class.
+    /// </summary>
+    /// <param name="options">Validation options including type and relation patterns</param>
+    /// <param name="authorizationModel">The authorization model to validate</param>
+    /// <param name="lines">Optional array of source lines for error reporting</param>
     public ModelValidator(ValidationOptions options, AuthorizationModel authorizationModel, string[]? lines) {
         _options = options;
         _authorizationModel = authorizationModel;
@@ -20,18 +31,42 @@ public class ModelValidator {
         _errors = new ValidationErrorsBuilder(lines);
     }
 
+    /// <summary>
+    /// Validates an authorization model from JSON using default validation options.
+    /// </summary>
+    /// <param name="authorizationModel">The authorization model to validate</param>
+    /// <exception cref="ValidationError">Thrown when validation errors are found</exception>
     public static void ValidateJson(AuthorizationModel authorizationModel) {
         ValidateJson(authorizationModel, new ValidationOptions());
     }
 
+    /// <summary>
+    /// Validates an authorization model from JSON using specified validation options.
+    /// </summary>
+    /// <param name="authorizationModel">The authorization model to validate</param>
+    /// <param name="options">Validation options including type and relation patterns</param>
+    /// <exception cref="ValidationError">Thrown when validation errors are found</exception>
     public static void ValidateJson(AuthorizationModel authorizationModel, ValidationOptions options) {
         new ModelValidator(options, authorizationModel, null).Validate();
     }
 
+    /// <summary>
+    /// Validates a DSL string using default validation options.
+    /// </summary>
+    /// <param name="dsl">The DSL string to validate</param>
+    /// <exception cref="DslErrorsException">Thrown when DSL parsing errors are found</exception>
+    /// <exception cref="ValidationError">Thrown when validation errors are found</exception>
     public static void ValidateDsl(string dsl) {
         ValidateDsl(dsl, new ValidationOptions());
     }
 
+    /// <summary>
+    /// Validates a DSL string using specified validation options.
+    /// </summary>
+    /// <param name="dsl">The DSL string to validate</param>
+    /// <param name="options">Validation options including type and relation patterns</param>
+    /// <exception cref="DslErrorsException">Thrown when DSL parsing errors are found</exception>
+    /// <exception cref="ValidationError">Thrown when validation errors are found</exception>
     public static void ValidateDsl(string dsl, ValidationOptions options) {
         var transformer = new DslToJsonTransformer();
         var result = transformer.ParseDsl(dsl);

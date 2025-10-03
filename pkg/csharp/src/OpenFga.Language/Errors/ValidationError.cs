@@ -5,6 +5,10 @@ using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Errors;
 
+/// <summary>
+/// Enumeration of validation error types that can occur during OpenFGA authorization model validation.
+/// Each error type corresponds to a specific validation rule violation.
+/// </summary>
 public enum ValidationError {
     [JsonPropertyName("allowed-type-not-valid-on-schema-1_0")]
     [YamlRemap("allowed-type-not-valid-on-schema-1_0")]

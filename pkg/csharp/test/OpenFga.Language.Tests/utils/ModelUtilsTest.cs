@@ -2,7 +2,7 @@ using OpenFga.Language.utils;
 using OpenFga.Sdk.Model;
 using Xunit;
 
-namespace OpenFga.Language.Tests.util;
+namespace OpenFga.Language.Tests.utils;
 
 public class ModelUtilsTest {
     private TypeDefinition GetTypeDefWithModules() {

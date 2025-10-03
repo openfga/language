@@ -4,9 +4,19 @@ using System.Text;
 
 namespace OpenFga.Language;
 
+/// <summary>
+/// Transforms JSON authorization model definitions into OpenFGA DSL (Domain Specific Language) format.
+/// This class provides functionality to convert structured JSON authorization models
+/// back to their textual DSL representation.
+/// </summary>
 public class JsonToDslTransformer {
     private static readonly string Eol = Environment.NewLine;
 
+    /// <summary>
+    /// Transforms the provided JSON string into DSL format.
+    /// </summary>
+    /// <param name="json">The JSON string to transform</param>
+    /// <returns>A DSL string representation of the authorization model</returns>
     public string Transform(string json) {
         AuthorizationModel? model = null;
         if (!string.IsNullOrEmpty(json) && json != "null") {

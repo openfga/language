@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using OpenFga.Sdk.Model;
 
 namespace OpenFga.Language.Validation;

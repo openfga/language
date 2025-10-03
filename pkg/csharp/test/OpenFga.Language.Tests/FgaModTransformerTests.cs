@@ -1,6 +1,5 @@
 using Xunit;
 using OpenFga.Language.Errors;
-using OpenFga.Language.ModFile;
 using OpenFga.Language.Transformers;
 
 namespace OpenFga.Language.Tests;

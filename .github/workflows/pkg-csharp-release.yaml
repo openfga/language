@@ -31,7 +31,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -60,7 +60,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 

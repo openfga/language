@@ -310,7 +310,7 @@ public class JsonToDslTransformer {
 
     private CharSequence formatConditions(AuthorizationModel model) {
 
-        if(model == null) {
+        if (model == null) {
             return "";
         }
 

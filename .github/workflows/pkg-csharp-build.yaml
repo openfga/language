@@ -19,7 +19,7 @@ jobs:
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
           cache: true
@@ -61,7 +61,7 @@ jobs:
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
           cache: true

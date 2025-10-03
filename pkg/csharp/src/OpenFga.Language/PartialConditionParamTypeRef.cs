@@ -8,10 +8,9 @@ public class PartialConditionParamTypeRef {
     public List<ConditionParamTypeRef>? GenericTypes { get; set; }
 
     public ConditionParamTypeRef AsConditionParamTypeRef() {
-        return new ConditionParamTypeRef()
-            {
-                TypeName = TypeName,
-                GenericTypes = GenericTypes
-            };
+        return new ConditionParamTypeRef() {
+            TypeName = TypeName,
+            GenericTypes = GenericTypes
+        };
     }
 }

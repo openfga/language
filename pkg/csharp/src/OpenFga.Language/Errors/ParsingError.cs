@@ -1,10 +1,9 @@
-using System.Text.Json.Serialization;
 using SharpYaml.Serialization;
+using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Errors;
 
-public abstract class ParsingError : SimpleError
-{
+public abstract class ParsingError : SimpleError {
     [JsonPropertyName("line")]
     [YamlMember("line")]
     public StartEnd? Line { get; set; }
@@ -19,33 +18,27 @@ public abstract class ParsingError : SimpleError
 
     protected ParsingError() { }
 
-    protected ParsingError(string type, ErrorProperties properties) : base(properties.Message)
-    {
+    protected ParsingError(string type, ErrorProperties properties) : base(properties.Message) {
         Line = properties.Line;
         Column = properties.Column;
         FullMessage = properties.GetFullMessage(type);
     }
 
-    public StartEnd? GetLine(int offset = 0)
-    {
-        if (Line == null)
-        {
+    public StartEnd? GetLine(int offset = 0) {
+        if (Line == null) {
             return null;
         }
         return Line.WithOffset(offset);
     }
 
-    public StartEnd? GetColumn(int offset = 0)
-    {
-        if (Column == null)
-        {
+    public StartEnd? GetColumn(int offset = 0) {
+        if (Column == null) {
             return null;
         }
         return Column.WithOffset(offset);
     }
 
-    public override string ToString()
-    {
+    public override string ToString() {
         return string.IsNullOrEmpty(FullMessage) ? Message : FullMessage;
     }
 }

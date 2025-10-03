@@ -5,14 +5,13 @@ public class ModFileValidationError(List<ModFileValidationSingleError> errors)
 
     public List<ModFileValidationSingleError> Errors { get; } = errors;
 
-    private static string MessagesFromErrors(IEnumerable<object> errors)
-    {
+    private static string MessagesFromErrors(IEnumerable<object> errors) {
         var delimiter = "\n\t* ";
         var errorsCount = errors.Count();
         var errorsPlural = errorsCount > 1 ? "s" : "";
         var prefix = $"{errorsCount} error{errorsPlural} occurred:{delimiter}";
         var suffix = "\n\n";
-        
+
         return prefix + string.Join("\n\t* ", errors.Select(e => e.ToString())) + suffix;
     }
 }

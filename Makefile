@@ -9,22 +9,54 @@ ANTLR_CMD=${docker_binary} run -t --rm -v ${PWD}:/app:Z ${ANTLR_DOCKER_IMAGE}
 all: build
 
 .PHONY: antlr-gen
-antlr-gen: antlr-gen-go antlr-gen-js antlr-gen-java
+antlr-gen: antlr-gen-go antlr-gen-js antlr-gen-java antlr-gen-csharp
 
 .PHONY: build
-build: build-go build-js build-java
+build: build-go build-js build-java build-csharp
 
 .PHONY: test
-test: test-go test-js test-java
+test: test-go test-js test-java test-csharp
 
 .PHONY: lint
-lint: lint-go lint-js lint-java lint-tests
+lint: lint-go lint-js lint-java lint-csharp lint-tests
 
 #### C# #####
 
 .PHONY: antlr-gen-csharp
 antlr-gen-csharp:
 	$(MAKE) antlr-gen-base language=CSharp packageName=csharp/src/OpenFga.Language
+
+.PHONY: build-csharp
+build-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp build	
+
+.PHONY: run-csharp
+run-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp run
+
+.PHONY: clean-csharp
+clean-csharp:
+	$(MAKE) -C pkg/csharp clean
+
+.PHONY: test-csharp
+test-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp test
+
+.PHONY: lint-csharp
+lint-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp lint
+
+.PHONY: audit-csharp
+audit-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp audit
+
+.PHONY: format-csharp
+format-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp format
+
+.PHONY: all-tests-csharp
+all-tests-csharp: antlr-gen-csharp
+	$(MAKE) -C pkg/csharp all-tests
 
 #### Go #####
 

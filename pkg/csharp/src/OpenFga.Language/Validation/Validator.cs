@@ -1,9 +1,7 @@
 namespace OpenFga.Language.Validation;
 
-public class Validator
-{
-    public static class Rules
-    {
+public class Validator {
+    public static class Rules {
         public const string Type = "[^:#@\\*\\s]{1,254}";
         public const string Relation = "[^:#@\\*\\s]{1,50}";
         public const string Condition = "[^\\*\\s]{1,50}";
@@ -11,12 +9,11 @@ public class Validator
         public const string Object = "[^\\s]{2,256}";
     }
 
-    public static class Regexes
-    {
+    public static class Regexes {
         public static readonly ValidationRegex Object =
             ValidationRegex.Build("object", $"^{Rules.Object}$");
 
-        public static readonly ValidationRegex ObjectId = 
+        public static readonly ValidationRegex ObjectId =
             ValidationRegex.Build("object", $"^{Rules.Id}$");
 
         public static readonly ValidationRegex TypeId =
@@ -41,48 +38,39 @@ public class Validator
             ValidationRegex.Build("condition", $"^{Rules.Type}$");
     }
 
-    public static bool ValidateObject(string objectValue)
-    {
+    public static bool ValidateObject(string objectValue) {
         return Regexes.TypeId.Matches(objectValue) && Regexes.Object.Matches(objectValue);
     }
 
-    public static bool ValidateObjectId(string objectId)
-    {
+    public static bool ValidateObjectId(string objectId) {
         return Regexes.ObjectId.Matches(objectId);
     }
 
-    public static bool ValidateRelation(string relation)
-    {
+    public static bool ValidateRelation(string relation) {
         return Regexes.Relation.Matches(relation);
     }
 
-    public static bool ValidateUserSet(string userset)
-    {
+    public static bool ValidateUserSet(string userset) {
         return Regexes.UserSet.Matches(userset);
     }
 
-    public static bool ValidateUserObject(string userObject)
-    {
+    public static bool ValidateUserObject(string userObject) {
         return Regexes.UserObject.Matches(userObject);
     }
 
-    public static bool ValidateUserWildcard(string userWildcard)
-    {
+    public static bool ValidateUserWildcard(string userWildcard) {
         return Regexes.UserWildcard.Matches(userWildcard);
     }
 
-    public static bool ValidateUser(string user)
-    {
+    public static bool ValidateUser(string user) {
         return Regexes.UserSet.Matches(user) || Regexes.UserObject.Matches(user) || Regexes.UserWildcard.Matches(user);
     }
 
-    public static bool ValidateConditionName(string condition)
-    {
+    public static bool ValidateConditionName(string condition) {
         return Regexes.Condition.Matches(condition);
     }
 
-    public static bool ValidateType(string type)
-    {
+    public static bool ValidateType(string type) {
         return Regexes.Type.Matches(type);
     }
 }

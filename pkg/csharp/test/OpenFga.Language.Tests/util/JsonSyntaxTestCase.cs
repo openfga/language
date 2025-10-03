@@ -1,10 +1,9 @@
-using System.Text.Json.Serialization;
 using SharpYaml.Serialization;
+using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
-public sealed class JsonSyntaxTestCase
-{
+public sealed class JsonSyntaxTestCase {
     [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 

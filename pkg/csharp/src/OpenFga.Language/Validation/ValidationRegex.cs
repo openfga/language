@@ -2,13 +2,11 @@ using System.Text.RegularExpressions;
 
 namespace OpenFga.Language.Validation;
 
-public class ValidationRegex
-{
+public class ValidationRegex {
     private readonly string _rule;
     private readonly Regex _regex;
 
-    private ValidationRegex(string rule, Regex regex)
-    {
+    private ValidationRegex(string rule, Regex regex) {
         _rule = rule;
         _regex = regex;
     }
@@ -16,23 +14,19 @@ public class ValidationRegex
     public string Rule => _rule;
     public Regex Regex => _regex;
 
-    public static ValidationRegex Build(string name, string rule)
-    {
+    public static ValidationRegex Build(string name, string rule) {
         Regex regex;
-        try
-        {
+        try {
             regex = new Regex(rule);
         }
-        catch (ArgumentException ex)
-        {
+        catch (ArgumentException ex) {
             var message = $"Incorrect {name} regex specification for {rule}";
             throw new ArgumentException(message, ex);
         }
         return new ValidationRegex(rule, regex);
     }
 
-    public bool Matches(string input)
-    {
+    public bool Matches(string input) {
         return _regex.IsMatch(input);
     }
 }

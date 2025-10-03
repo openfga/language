@@ -3,8 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace OpenFga.Language;
 
-public class ModFileStringProperty
-{
+public class ModFileStringProperty {
     [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;
 

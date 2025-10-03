@@ -6,8 +6,7 @@ namespace OpenFga.Language;
 /// Helper class to hold relation information during parsing
 /// This bridges the gap between the ANTLR parsing and the OpenFGA SDK model classes
 /// </summary>
-public class Relation(string? name, List<Userset> rewrites, string? @operator, RelationMetadata typeInfo)
-{
+public class Relation(string? name, List<Userset> rewrites, string? @operator, RelationMetadata typeInfo) {
     public string? Name { get; set; } = name;
     public List<Userset> Rewrites { get; set; } = rewrites;
     public string? Operator { get; set; } = @operator;

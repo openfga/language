@@ -1,15 +1,13 @@
 namespace OpenFga.Language.Validation;
 
-internal class InvalidChildRelationMetadata
-{
+internal class InvalidChildRelationMetadata {
     public int LineIndex { get; }
     public string Symbol { get; }
     public string TypeName { get; }
     public string RelationName { get; }
     public string Parent { get; }
 
-    public InvalidChildRelationMetadata(int lineIndex, string symbol, string typeName, string relationName, string parent)
-    {
+    public InvalidChildRelationMetadata(int lineIndex, string symbol, string typeName, string relationName, string parent) {
         LineIndex = lineIndex;
         Symbol = symbol;
         TypeName = typeName;

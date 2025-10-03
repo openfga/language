@@ -4,12 +4,9 @@ using Xunit;
 
 namespace OpenFga.Language.Tests.util;
 
-public class ModelUtilsTest
-{
-    private TypeDefinition GetTypeDefWithModules()
-    {
-        return new TypeDefinition
-        {
+public class ModelUtilsTest {
+    private TypeDefinition GetTypeDefWithModules() {
+        return new TypeDefinition {
             Type = "type1",
             Relations = new Dictionary<string, Userset>
             {
@@ -18,8 +15,7 @@ public class ModelUtilsTest
                 { "relation3", new Userset() },
                 { "relation4", new Userset() }
             },
-            Metadata = new Metadata
-            {
+            Metadata = new Metadata {
                 Module = "type_module1",
                 Relations = new Dictionary<string, RelationMetadata>
                 {
@@ -32,10 +28,8 @@ public class ModelUtilsTest
         };
     }
 
-    private TypeDefinition GetTypeDefWithoutModules()
-    {
-        return new TypeDefinition
-        {
+    private TypeDefinition GetTypeDefWithoutModules() {
+        return new TypeDefinition {
             Type = "type2",
             Relations = new Dictionary<string, Userset>
             {
@@ -45,38 +39,32 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationExistsAndHasModule()
-    {
+    public void TestGetModuleForObjectTypeRelation_RelationExistsAndHasModule() {
         var result = ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation1");
         Assert.Equal("module1", result);
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationExistsButHasEmptyModule_TypeHasModule()
-    {
+    public void TestGetModuleForObjectTypeRelation_RelationExistsButHasEmptyModule_TypeHasModule() {
         var result = ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation2");
         Assert.Equal("type_module1", result);
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoModule_TypeHasModule()
-    {
+    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoModule_TypeHasModule() {
         var result = ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation3");
         Assert.Equal("type_module1", result);
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoMetadata_TypeHasModule()
-    {
+    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoMetadata_TypeHasModule() {
         var result = ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation4");
         Assert.Equal("type_module1", result);
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationDoesNotExist()
-    {
-        var exception = Assert.Throws<Exception>(() =>
-        {
+    public void TestGetModuleForObjectTypeRelation_RelationDoesNotExist() {
+        var exception = Assert.Throws<Exception>(() => {
             ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation5");
         });
 
@@ -84,10 +72,8 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationDoesNotExist2()
-    {
-        var exception = Assert.Throws<Exception>(() =>
-        {
+    public void TestGetModuleForObjectTypeRelation_RelationDoesNotExist2() {
+        var exception = Assert.Throws<Exception>(() => {
             ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithModules(), "relation6");
         });
 
@@ -95,17 +81,14 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoModule_TypeNoModule()
-    {
+    public void TestGetModuleForObjectTypeRelation_RelationExistsButNoModule_TypeNoModule() {
         var result = ModelUtils.GetModuleForObjectTypeRelation(GetTypeDefWithoutModules(), "relation7");
         Assert.Null(result);
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasThis()
-    {
-        var relDef = new Userset
-        {
+    public void TestIsRelationAssignable_RelationHasThis() {
+        var relDef = new Userset {
             This = new object()
         };
 
@@ -114,12 +97,9 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasUnionWithThis()
-    {
-        var relDef = new Userset
-        {
-            Union = new Usersets
-            {
+    public void TestIsRelationAssignable_RelationHasUnionWithThis() {
+        var relDef = new Userset {
+            Union = new Usersets {
                 Child = new List<Userset>
                 {
                     new Userset
@@ -135,12 +115,9 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasIntersectionWithThis()
-    {
-        var relDef = new Userset
-        {
-            Intersection = new Usersets
-            {
+    public void TestIsRelationAssignable_RelationHasIntersectionWithThis() {
+        var relDef = new Userset {
+            Intersection = new Usersets {
                 Child = new List<Userset>
                 {
                     new Userset
@@ -156,14 +133,10 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasDifferenceWithBaseThis()
-    {
-        var relDef = new Userset
-        {
-            Difference = new Difference
-            {
-                Base = new Userset
-                {
+    public void TestIsRelationAssignable_RelationHasDifferenceWithBaseThis() {
+        var relDef = new Userset {
+            Difference = new Difference {
+                Base = new Userset {
                     This = new object()
                 }
             }
@@ -174,14 +147,10 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasDifferenceWithSubtractThis()
-    {
-        var relDef = new Userset
-        {
-            Difference = new Difference
-            {
-                Subtract = new Userset
-                {
+    public void TestIsRelationAssignable_RelationHasDifferenceWithSubtractThis() {
+        var relDef = new Userset {
+            Difference = new Difference {
+                Subtract = new Userset {
                     This = new object()
                 }
             }
@@ -192,12 +161,9 @@ public class ModelUtilsTest
     }
 
     [Fact]
-    public void TestIsRelationAssignable_RelationHasNoAssignableKeys()
-    {
-        var relDef = new Userset
-        {
-            Union = new Usersets
-            {
+    public void TestIsRelationAssignable_RelationHasNoAssignableKeys() {
+        var relDef = new Userset {
+            Union = new Usersets {
                 Child = new List<Userset>
                 {
                     new Userset

@@ -1,12 +1,11 @@
-using OpenFga.Language.Validation;
-using System.Text.Json.Serialization;
 using OpenFga.Language.Errors;
+using OpenFga.Language.Validation;
 using SharpYaml.Serialization;
+using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
-public class DslSyntaxTestCase
-{
+public class DslSyntaxTestCase {
     [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 

@@ -1,11 +1,10 @@
-using System.Text.Json.Serialization;
-using SharpYaml.Serialization;
 using OpenFga.Language.Errors;
+using SharpYaml.Serialization;
+using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
-public class FgaModTestCase
-{
+public class FgaModTestCase {
     [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 

@@ -5,14 +5,11 @@ using Xunit;
 
 namespace OpenFga.Language.Tests;
 
-public class JsonToDslShould
-{
+public class JsonToDslShould {
     [Theory]
     [MemberData(nameof(TransformerTestCases))]
-    public void TransformJson(string name, string dsl, string json, bool skip)
-    {
-        if (skip)
-        {
+    public void TransformJson(string name, string dsl, string json, bool skip) {
+        if (skip) {
             return;
         }
 
@@ -24,29 +21,24 @@ public class JsonToDslShould
     [Theory]
     [MemberData(nameof(InvalidJsonSyntaxTestCases))]
     public void ThrowAnExceptionWhenTransformingInvalidJsonToDsl(
-        string name, string json, string? errorMessage, bool skip)
-    {
-        if (skip)
-        {
+        string name, string json, string? errorMessage, bool skip) {
+        if (skip) {
             return;
         }
 
-        if (errorMessage == null)
-        {
+        if (errorMessage == null) {
             // If no error message expected, the transformation should succeed
             var result = new JsonToDslTransformer().Transform(json);
             Assert.NotNull(result);
         }
-        else
-        {
+        else {
             // If error message expected, the transformation should throw an exception
             var exception = Assert.ThrowsAny<Exception>(() => new JsonToDslTransformer().Transform(json));
             Assert.Equal(errorMessage, exception.Message);
         }
     }
 
-    public static IEnumerable<object[]> TransformerTestCases()
-    {
+    public static IEnumerable<object[]> TransformerTestCases() {
         return TestsData.ValidTransformerTestCases
             .Select(testCase => new object[]
             {
@@ -57,8 +49,7 @@ public class JsonToDslShould
             });
     }
 
-    public static IEnumerable<object[]> InvalidJsonSyntaxTestCases()
-    {
+    public static IEnumerable<object[]> InvalidJsonSyntaxTestCases() {
         return TestsData.JsonSyntaxTestCases
             .Select(testCase => new object[]
             {

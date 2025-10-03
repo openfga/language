@@ -1,23 +1,20 @@
-using System.Text.Json.Serialization;
 using SharpYaml.Serialization;
+using System.Text.Json.Serialization;
 
 namespace OpenFga.Language.Errors;
 
-public abstract class SimpleError
-{
+public abstract class SimpleError {
     [JsonPropertyName("msg")]
     [YamlMember("msg")]
     public string Message { get; set; } = string.Empty;
 
     protected SimpleError() { }
 
-    protected SimpleError(string message)
-    {
+    protected SimpleError(string message) {
         Message = message;
     }
 
-    public override string ToString()
-    {
+    public override string ToString() {
         return Message;
     }
 }

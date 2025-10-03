@@ -6,42 +6,35 @@ using System.Text.RegularExpressions;
 
 namespace OpenFga.Language;
 
-public class DslToJsonTransformer
-{
+public class DslToJsonTransformer {
     private static readonly Regex SpacesLinePattern = new(@"^\s*$");
     private static readonly Regex CommentedLinePattern = new(@"^\s*#.*$");
 
-    public string Transform(string dsl)
-    {
+    public string Transform(string dsl) {
         return Json.Stringify(ParseAuthorisationModel(dsl));
     }
 
-    private AuthorizationModel ParseAuthorisationModel(string dsl)
-    {
+    private AuthorizationModel ParseAuthorisationModel(string dsl) {
         var result = ParseDsl(dsl);
-        if (result.IsFailure())
-        {
+        if (result.IsFailure()) {
             throw new DslErrorsException(result.Errors);
         }
 
         return result.AuthorizationModel;
     }
 
-    private string CleanLine(string line)
-    {
-        if (SpacesLinePattern.IsMatch(line) || CommentedLinePattern.IsMatch(line))
-        {
+    private string CleanLine(string line) {
+        if (SpacesLinePattern.IsMatch(line) || CommentedLinePattern.IsMatch(line)) {
             return string.Empty;
         }
-        
+
         var cleanedLine = line.Split(" #")[0];
         return cleanedLine.TrimEnd();
     }
 
-    public Result ParseDsl(string dsl)
-    {
+    public Result ParseDsl(string dsl) {
         var cleanedDsl = string.Join("\n", dsl.Split('\n').Select(CleanLine));
-        
+
         var inputStream = new AntlrInputStream(cleanedDsl);
         var errorListener = new OpenFgaDslErrorListener();
 
@@ -65,13 +58,11 @@ public class DslToJsonTransformer
         public AuthorizationModel AuthorizationModel { get; } = authorizationModel;
         public List<SyntaxError> Errors { get; } = errors;
 
-        public bool IsSuccess()
-        {
+        public bool IsSuccess() {
             return Errors.Count == 0;
         }
 
-        public bool IsFailure()
-        {
+        public bool IsFailure() {
             return !IsSuccess();
         }
     }

@@ -6,33 +6,28 @@ using Xunit;
 
 namespace OpenFga.Language.Tests;
 
-public class FgaModToJsonShould
-{
+public class FgaModToJsonShould {
     [Theory]
     [MemberData(nameof(FgaModTestCases))]
     public void TransformFgaMod(
-        string name, 
-        string fgaMod, 
-        string? json, 
-        bool skip, 
-        List<ModFileValidationSingleError> expectedErrors)
-    {
+        string name,
+        string fgaMod,
+        string? json,
+        bool skip,
+        List<ModFileValidationSingleError> expectedErrors) {
         // Skip test if marked as skip
-        if (skip)
-        {
+        if (skip) {
             return;
         }
 
-        if (json != null)
-        {
+        if (json != null) {
             var generatedJson = FgaModTransformer.Transform(fgaMod);
             var expected = Json.Stringify(Json.Parse<FgaModFile>(json));
 
             var different = expected != generatedJson;
             Assert.Equal(expected, generatedJson);
         }
-        else
-        {
+        else {
             var exception = Assert.Throws<ModFileValidationError>(() => FgaModTransformer.Transform(fgaMod));
 
             var errorsCount = expectedErrors.Count;
@@ -47,8 +42,7 @@ public class FgaModToJsonShould
         }
     }
 
-    public static IEnumerable<object[]> FgaModTestCases()
-    {
+    public static IEnumerable<object[]> FgaModTestCases() {
         return TestsData.FgaModTransformTestCases
             .Select(testCase => new object[]
             {

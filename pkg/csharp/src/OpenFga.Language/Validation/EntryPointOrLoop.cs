@@ -52,13 +52,13 @@ internal class EntryPointOrLoop
             return BothFalse;
         }
 
-        var relationsMetadata = Utils.GetNullSafe(typeMap[typeName].Metadata, m => m.Relations);
+        var relationsMetadata = typeMap[typeName].Metadata?.Relations;
         if (rewrite.This != null)
         {
             if (relationsMetadata != null)
             {
                 var relationMetadata = relationsMetadata.GetValueOrDefault(relationName);
-                var relatedTypes = Utils.GetNullSafeList(relationMetadata, rm => rm.DirectlyRelatedUserTypes);
+                var relatedTypes = relationMetadata?.DirectlyRelatedUserTypes;
                 foreach (var assignableType in Dsl.GetTypeRestrictions(relatedTypes))
                 {
                     var destructuredType = DestructuredTupleToUserset.From(assignableType);
@@ -75,7 +75,7 @@ internal class EntryPointOrLoop
                         return BothFalse;
                     }
 
-                    if (Utils.GetNullSafe(visited.GetValueOrDefault(decodedType), m => m.GetValueOrDefault(decodedRelation)) != null)
+                    if (visited.GetValueOrDefault(decodedType)?.GetValueOrDefault(decodedRelation) != null)
                     {
                         continue;
                     }
@@ -127,7 +127,7 @@ internal class EntryPointOrLoop
             if (relationsMetadata != null)
             {
                 var relationMetadata = relationsMetadata.GetValueOrDefault(tuplesetRelationName);
-                var relatedTypes = Utils.GetNullSafeList(relationMetadata, rm => rm.DirectlyRelatedUserTypes);
+                var relatedTypes = relationMetadata?.DirectlyRelatedUserTypes;
                 foreach (var assignableType in Dsl.GetTypeRestrictions(relatedTypes))
                 {
                     var assignableRelation = typeMap[assignableType].Relations?.GetValueOrDefault(computedRelationName);

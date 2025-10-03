@@ -27,7 +27,7 @@ class ValidationErrorsBuilder {
 
         if (lines != null) {
             var rawLine = lines[lineIndex];
-            var regex = Pattern.compile("\\b" + symbol + "\\b");
+            var regex = Pattern.compile("\\b" + Pattern.quote(symbol) + "((?=[\\b\\s,\\]])|$)");
             var wordIdx = 0;
             var matcher = regex.matcher(rawLine);
             if (matcher.find()) {

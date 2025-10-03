@@ -25,10 +25,10 @@ internal class ValidationErrorsBuilder
         if (_lines != null && lineIndex < _lines.Length)
         {
             var rawLine = _lines[lineIndex];
-            var regex = new Regex($@"\b{Regex.Escape(symbol)}\b");
+            var regex = new Regex($@"\b{Regex.Escape(symbol)}((?=\W)|$)");
             var wordIdx = 0;
             var match = regex.Match(rawLine);
-            if (match.Success)
+            if (!string.IsNullOrEmpty(symbol) && match.Success)
             {
                 wordIdx = match.Index;
             }
@@ -197,6 +197,14 @@ internal class ValidationErrorsBuilder
         var message = $"the partial relation definition `{symbol}` is a duplicate in the relation `{relationName}`.";
         var errorProperties = BuildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.DuplicatedError, symbol, null, null);
+        _errors.Add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
+    public void RaiseThisNotInFirstPlace(int lineIndex, string relationName)
+    {
+        var message = $"this must be the first element in relation definition `{relationName}`.";
+        var errorProperties = BuildErrorProperties(message, lineIndex, relationName);
+        var metadata = new ValidationMetadata(relationName, ValidationError.ThisNotInFirstPlace, null, null, null);
         _errors.Add(new ModelValidationSingleError(errorProperties, metadata));
     }
 

@@ -55,12 +55,12 @@ internal class Dsl
 
     public int GetTypeLineNumber(string typeName, int skipIndex)
     {
-        return FindLine(line => System.Text.RegularExpressions.Regex.IsMatch(line.Trim(), $"type {typeName}"), skipIndex);
+        return FindLine(line => System.Text.RegularExpressions.Regex.IsMatch(line.Trim(), @$"type {typeName}(\s|$)"), skipIndex);
     }
 
     public static string? GetRelationDefName(Userset userset)
     {
-        var relationDefName = Utils.GetNullSafe(userset.ComputedUserset, cu => cu.Relation);
+        var relationDefName = userset.ComputedUserset?.Relation;
         var parserResult = GetRelationalParserResult(userset);
         if (parserResult.Rewrite == RewriteType.ComputedUserset)
         {

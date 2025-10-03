@@ -96,5 +96,9 @@ public enum ValidationError
     
     [JsonPropertyName("multiple-modules-in-file")]
     [YamlRemap("multiple-modules-in-file")]
-    MultipleModulesInFile
+    MultipleModulesInFile,
+
+    [JsonPropertyName("this-not-in-first-place")]
+    [YamlRemap("this-not-in-first-place")]
+    ThisNotInFirstPlace
 }

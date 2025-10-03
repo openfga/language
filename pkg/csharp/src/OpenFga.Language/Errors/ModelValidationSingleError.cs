@@ -1,12 +1,12 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Errors;
 
 public class ModelValidationSingleError : ParsingError
 {
     [JsonPropertyName("metadata")]
-    [YamlMember(Alias = "metadata")]
+    [YamlMember("metadata")]
     public ValidationMetadata Metadata { get; set; } = new();
 
     public ModelValidationSingleError() { }

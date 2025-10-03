@@ -1,22 +1,22 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
 public sealed class JsonSyntaxTestCase
 {
-    [YamlMember(Alias = "name")]
+    [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "json")]
+    [YamlMember("json")]
     public string Json { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "error_message")]
+    [YamlMember("error_message")]
     public string? ErrorMessage { get; set; }
 
-    [YamlMember(Alias = "skip")]
+    [YamlMember("skip")]
     public bool Skip { get; set; }
 
-    [YamlMember(Alias = "valid")]
+    [YamlMember("valid")]
     public bool Valid { get; set; }
 }

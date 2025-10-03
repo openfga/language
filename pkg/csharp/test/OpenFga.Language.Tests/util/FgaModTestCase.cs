@@ -1,24 +1,23 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 using OpenFga.Language.Errors;
 
 namespace OpenFga.Language.Tests.util;
 
 public class FgaModTestCase
 {
-    [YamlMember(Alias = "name")]
+    [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "modFile")]
-    [SharpYaml.Serialization.YamlMember("modFile")]
+    [YamlMember("modFile")]
     public string ModFile { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "json")]
+    [YamlMember("json")]
     public string? Json { get; set; }
 
-    [YamlMember(Alias = "skip")]
+    [YamlMember("skip")]
     public bool Skip { get; set; }
 
-    [YamlMember(Alias = "expected_errors")]
+    [YamlMember("expected_errors")]
     public List<ModFileValidationSingleError> ExpectedErrors { get; set; } = new();
 }

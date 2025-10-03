@@ -1,29 +1,28 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Errors;
 
 public class ValidationMetadata
 {
     [JsonPropertyName("symbol")]
-    [YamlMember(Alias = "symbol")]
+    [YamlMember("symbol")]
     public string Symbol { get; set; } = string.Empty;
 
     [JsonPropertyName("errorType")]
-    [YamlMember(Alias = "errorType")]
-    [SharpYaml.Serialization.YamlMember("errorType")]
+    [YamlMember("errorType")]
     public ValidationError ErrorType { get; set; }
 
     [JsonPropertyName("relation")]
-    [YamlMember(Alias = "relation")]
+    [YamlMember("relation")]
     public string? Relation { get; set; }
 
     [JsonPropertyName("typeName")]
-    [YamlMember(Alias = "typeName")]
+    [YamlMember("typeName")]
     public string? TypeName { get; set; }
 
     [JsonPropertyName("condition")]
-    [YamlMember(Alias = "condition")]
+    [YamlMember("condition")]
     public string? Condition { get; set; }
 
     public ValidationMetadata() { }

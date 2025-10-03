@@ -1,20 +1,20 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Errors;
 
 public abstract class ParsingError : SimpleError
 {
     [JsonPropertyName("line")]
-    [YamlMember(Alias = "line")]
+    [YamlMember("line")]
     public StartEnd? Line { get; set; }
 
     [JsonPropertyName("column")]
-    [YamlMember(Alias = "column")]
+    [YamlMember("column")]
     public StartEnd? Column { get; set; }
 
     [JsonPropertyName("fullMessage")]
-    [YamlMember(Alias = "fullMessage")]
+    [YamlMember("fullMessage")]
     public string FullMessage { get; set; } = string.Empty;
 
     protected ParsingError() { }

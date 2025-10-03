@@ -2,13 +2,11 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using System.Web;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 using OpenFga.Language.Errors;
 using OpenFga.Language.ModFile;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Core.Tokens;
-using Scalar = YamlDotNet.Core.Events.Scalar;
+using SharpYaml;
+using SharpYaml.Events;
 
 namespace OpenFga.Language.Transformers;
 
@@ -34,14 +32,7 @@ public class FgaModTransformer
 
     public FgaModFile Parse()
     {
-        var s = new Scanner(new StringReader(_modFileContents));
-        List<Token> l = [];
-        while (s.MoveNext())
-        {
-            l.Add(s.Current);
-        }
-
-        var parser = new Parser(new Scanner(new StringReader(_modFileContents)));
+        var parser = Parser.CreateParser(new StringReader(_modFileContents));
         var modFile = new FgaModFile();
         var seenFields = new HashSet<string>();
 
@@ -90,7 +81,7 @@ public class FgaModTransformer
         return modFile;
     }
 
-    private void HandleSchema(Parser parser, FgaModFile modFile, ParsingEvent currentToken, Mark location)
+    private void HandleSchema(IParser parser, FgaModFile modFile, ParsingEvent currentToken, Mark location)
     {
         if (currentToken is not Scalar scalar)
         {
@@ -126,7 +117,7 @@ public class FgaModTransformer
         }
     }
 
-    private void HandleContents(Parser parser, FgaModFile modFile, ParsingEvent currentToken, Mark startLocation)
+    private void HandleContents(IParser parser, FgaModFile modFile, ParsingEvent currentToken, Mark startLocation)
     {
         if (currentToken is not SequenceStart)
         {
@@ -137,13 +128,13 @@ public class FgaModTransformer
             }
 
             var value = scalar.Value;
-            StartEnd line = GetLine(startLocation);
-            StartEnd column = GetColumn(startLocation, value);
+            var line = GetLine(startLocation);
+            var column = GetColumn(startLocation, value);
             AddError("unexpected contents type, expected list of strings got value " + value, line, column);
             return;
         }
 
-        List<ModFileStringProperty> contents = new List<ModFileStringProperty>();
+        var contents = new List<ModFileStringProperty>();
         while (parser.MoveNext())
         {
             currentToken = parser.Current;
@@ -161,8 +152,8 @@ public class FgaModTransformer
             var currentLoc = currentToken.End;
             var rawValue = scalar.Value;
 
-            StartEnd line = GetLine(currentLoc);
-            StartEnd column = GetColumn(currentLoc, rawValue);
+            var line = GetLine(currentLoc);
+            var column = GetColumn(currentLoc, rawValue);
 
             var value = rawValue.Replace(@"\\", @"\"); // The double backslash is not handled by YamlDotNet
 
@@ -201,15 +192,15 @@ public class FgaModTransformer
 
         modFile.Contents = new ModFileArrayProperty
         {
-            Line = new StartEnd(startLocation.Line - 1, endLoc.Line - 1),
-            Column = new StartEnd(startLocation.Column - 1, endLoc.Column - 1),
+            Line = new StartEnd(startLocation.Line, endLoc.Line),
+            Column = new StartEnd(startLocation.Column, endLoc.Column),
             Value = contents
         };
     }
 
     private StartEnd GetLine(Mark loc)
     {
-        var line = loc.Line - 1;
+        var line = loc.Line;
         return new StartEnd(line, line);
     }
 
@@ -223,8 +214,8 @@ public class FgaModTransformer
             quotesOffset = 2;
         }
 
-        int columnEnd = loc.Column - 1;
-        int columnStart = columnEnd - (text.Length + quotesOffset);
+        var columnEnd = loc.Column;
+        var columnStart = columnEnd - (text.Length + quotesOffset);
         return new StartEnd(columnStart, columnEnd);
     }
     private void AddError(string message, StartEnd line, StartEnd column)

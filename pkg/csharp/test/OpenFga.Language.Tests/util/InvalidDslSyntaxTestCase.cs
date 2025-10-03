@@ -1,19 +1,19 @@
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
 public class InvalidDslSyntaxTestCase
 {
-    [YamlMember(Alias = "name")]
+    [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "dsl")]
+    [YamlMember("dsl")]
     public string Dsl { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "skip")]
+    [YamlMember("skip")]
     public bool Skip { get; set; }
 
-    [YamlMember(Alias = "error_message")]
+    [YamlMember("error_message")]
     public string? ErrorMessage { get; set; }
 }

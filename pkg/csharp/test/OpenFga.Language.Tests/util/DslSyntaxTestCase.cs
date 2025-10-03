@@ -1,24 +1,24 @@
 using OpenFga.Language.Validation;
 using System.Text.Json.Serialization;
 using OpenFga.Language.Errors;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
 public class DslSyntaxTestCase
 {
-    [YamlMember(Alias = "name")]
+    [YamlMember("name")]
     public string Name { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "dsl")]
+    [YamlMember("dsl")]
     public string Dsl { get; set; } = string.Empty;
 
-    [YamlMember(Alias = "valid")]
+    [YamlMember("valid")]
     public bool Valid { get; set; }
 
-    [YamlMember(Alias = "skip")]
+    [YamlMember("skip")]
     public bool Skip { get; set; }
 
-    [YamlMember(Alias = "expected_errors")]
+    [YamlMember("expected_errors")]
     public List<ModelValidationSingleError> ExpectedErrors { get; set; } = new();
 }

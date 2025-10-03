@@ -1,0 +1,24 @@
+name: PR (C#)
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "pkg/csharp/**"
+      - "OpenFGAParser.g4"
+      - "OpenFGALexer.g4"
+      - "tests/**"
+      - ".github/workflows/pkg-csharp-pr.yaml"
+      - ".github/workflows/pkg-csharp-build.yaml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/pkg-csharp-build.yaml
+    secrets: inherit

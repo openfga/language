@@ -2,14 +2,14 @@
 
 C# implementation of ANTLR Grammar for the OpenFGA DSL and parser from and to the OpenFGA JSON Syntax
 
-[![<TODO> on NuGet](https://img.shields.io/nuget/v/<TODO>?style=flat-square&label=<TODO>)](https://www.nuget.org/packages/<TODO>)
+[![OpenFga.Language on NuGet](https://img.shields.io/nuget/v/OpenFga.Language?style=flat-square&label=OpenFga.Language)](https://www.nuget.org/packages/OpenFga.Language)
 
 ## Installation
 
-From [<TODO> on NuGet](https://www.nuget.org/packages/<TODO>)
+From [OpenFga.Language on NuGet](https://www.nuget.org/packages/OpenFga.Language)
 
 ```bash
-dotnet add package <TODO>
+dotnet add package OpenFga.Language
 ```
 
 ## Usage

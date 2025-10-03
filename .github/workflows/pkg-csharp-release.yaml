@@ -1,0 +1,92 @@
+name: Release (C#)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "pkg/csharp/v*"
+
+jobs:
+  test:
+    permissions: {}
+    uses: ./.github/workflows/pkg-csharp-build.yaml
+    secrets: inherit
+
+  publish-nuget:
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: "pkg/csharp"
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          path: "."
+          sparse-checkout: "pkg/csharp"
+          sparse-checkout-cone-mode: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to NuGet
+        run: dotnet nuget push src/OpenFga.Language/bin/Debug/OpenFga.Language.*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: "pkg/csharp"
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+          path: "."
+          sparse-checkout: "pkg/csharp"
+          sparse-checkout-cone-mode: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@4d0c5c54d5a61d294e916d2895f3c20c02a288a3 # v4.0.0
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to GitHub Packages
+        run: dotnet nuget push src/OpenFga.Language/bin/Debug/OpenFga.Language.*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/openfga/index.json
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [publish-nuget, publish-github-packages]
+    permissions:
+      contents: write
+      packages: write # publish a new github release
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Create Release
+        uses: Roang-zero1/github-create-release-action@57eb9bdce7a964e48788b9e78b5ac766cb684803 # v3.0.1
+        with:
+          version_regex: ^pkg/csharp/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
+          prerelease_regex: ^pkg/csharp/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta)\.[[:digit:]]+$
+          changelog_file: pkg/csharp/CHANGELOG.md
+          create_draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

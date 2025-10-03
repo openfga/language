@@ -1,5 +1,6 @@
 using OpenFga.Language.Errors;
 using OpenFga.Sdk.Model;
+using Metadata = OpenFga.Sdk.Model.Metadata;
 
 namespace OpenFga.Language.Validation;
 
@@ -470,7 +471,7 @@ public class ModelValidator {
                && currentRelation.Difference == null;
     }
 
-    private void TrackModulesInFile(Sdk.Model.Metadata? metadata) {
+    private void TrackModulesInFile(Metadata? metadata) {
         if (metadata == null) {
             return;
         }
@@ -480,7 +481,7 @@ public class ModelValidator {
         TrackModulesInFile(module, sourceInfo);
     }
 
-    private void TrackModulesInFile(Sdk.Model.Metadata? metadata, RelationMetadata? relationMetadata) {
+    private void TrackModulesInFile(Metadata? metadata, RelationMetadata? relationMetadata) {
         string? module = null;
         SourceInfo? sourceInfo = null;
         if (relationMetadata != null) {

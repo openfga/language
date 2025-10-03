@@ -1,3 +1,4 @@
+.PHONY: all build clean test lint audit format all-tests
 all: build
 
 build:

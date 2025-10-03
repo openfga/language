@@ -20,6 +20,12 @@ test: test-go test-js test-java
 .PHONY: lint
 lint: lint-go lint-js lint-java lint-tests
 
+#### C# #####
+
+.PHONY: antlr-gen-csharp
+antlr-gen-csharp:
+	$(MAKE) antlr-gen-base language=CSharp packageName=csharp
+
 #### Go #####
 
 .PHONY: antlr-gen-go

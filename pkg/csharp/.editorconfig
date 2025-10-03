@@ -1,0 +1,4 @@
+[*.{cs,vb}]
+
+# Antlr classes are generated with the CLSCompliant attribute
+dotnet_diagnostic.CS3021.severity = none

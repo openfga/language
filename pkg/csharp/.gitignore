@@ -1,0 +1,9 @@
+# C#
+bin/
+obj/
+
+# Visual Studio
+.vs/
+
+# Auto-generated files
+gen/

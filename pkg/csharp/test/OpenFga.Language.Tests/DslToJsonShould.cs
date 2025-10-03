@@ -3,7 +3,6 @@
 
 using OpenFga.Language.Errors;
 using OpenFga.Language.Tests.util;
-using OpenFga.Language.Transformers;
 using OpenFga.Sdk.Model;
 using Xunit;
 

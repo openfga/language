@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace OpenFga.Language.ModFile;
+namespace OpenFga.Language;
 
 public class FgaModFile
 {

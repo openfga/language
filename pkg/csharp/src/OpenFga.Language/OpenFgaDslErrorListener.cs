@@ -1,7 +1,7 @@
 using Antlr4.Runtime;
 using OpenFga.Language.Errors;
 
-namespace OpenFga.Language.Listeners;
+namespace OpenFga.Language;
 
 public class OpenFgaDslErrorListener : IAntlrErrorListener<int>, IAntlrErrorListener<IToken>
 {

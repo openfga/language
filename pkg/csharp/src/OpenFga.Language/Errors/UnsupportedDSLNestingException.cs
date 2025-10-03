@@ -1,9 +1,4 @@
 namespace OpenFga.Language.Errors;
 
-public class UnsupportedDSLNestingException : Exception
-{
-    public UnsupportedDSLNestingException(string typeName, string relationName) 
-        : base($"the '{relationName}' relation definition under the '{typeName}' type is not supported by the OpenFGA DSL syntax yet")
-    {
-    }
-}
+public class UnsupportedDslNestingException(string typeName, string relationName) 
+    : Exception($"the '{relationName}' relation definition under the '{typeName}' type is not supported by the OpenFGA DSL syntax yet");

@@ -1,14 +1,9 @@
 namespace OpenFga.Language.Errors;
 
-public class ModFileValidationError : Exception
-{
-    public List<ModFileValidationSingleError> Errors { get; }
+public class ModFileValidationError(List<ModFileValidationSingleError> errors)
+    : Exception(MessagesFromErrors(errors)) {
 
-    public ModFileValidationError(List<ModFileValidationSingleError> errors) 
-        : base(MessagesFromErrors(errors))
-    {
-        Errors = errors;
-    }
+    public List<ModFileValidationSingleError> Errors { get; } = errors;
 
     private static string MessagesFromErrors(IEnumerable<object> errors)
     {

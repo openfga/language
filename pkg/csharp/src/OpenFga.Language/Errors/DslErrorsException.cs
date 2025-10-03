@@ -1,14 +1,9 @@
 namespace OpenFga.Language.Errors;
 
-public class DslErrorsException : Exception
-{
-    public IReadOnlyList<ParsingError> Errors { get; }
+public class DslErrorsException(IEnumerable<ParsingError> errors) 
+    : Exception(MessagesFromErrors(errors)) {
 
-    public DslErrorsException(IEnumerable<ParsingError> errors) 
-        : base(MessagesFromErrors(errors))
-    {
-        Errors = errors.ToList().AsReadOnly();
-    }
+    public IReadOnlyList<ParsingError> Errors { get; } = errors.ToList().AsReadOnly();
 
     private static string MessagesFromErrors(IEnumerable<ParsingError> errors)
     {

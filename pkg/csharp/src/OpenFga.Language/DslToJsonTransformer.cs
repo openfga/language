@@ -1,11 +1,10 @@
-using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using OpenFga.Sdk.Model;
 using OpenFga.Language.Errors;
-using OpenFga.Language.Listeners;
+using OpenFga.Sdk.Model;
+using System.Text.RegularExpressions;
 
-namespace OpenFga.Language.Transformers;
+namespace OpenFga.Language;
 
 public class DslToJsonTransformer
 {
@@ -61,16 +60,10 @@ public class DslToJsonTransformer
         return new Result(listener.GetAuthorizationModel(), errorListener.Errors.ToList());
     }
 
-    public class Result
-    {
-        public AuthorizationModel AuthorizationModel { get; }
-        public List<SyntaxError> Errors { get; }
+    public class Result(AuthorizationModel authorizationModel, List<SyntaxError> errors) {
 
-        public Result(AuthorizationModel authorizationModel, List<SyntaxError> errors)
-        {
-            AuthorizationModel = authorizationModel;
-            Errors = errors;
-        }
+        public AuthorizationModel AuthorizationModel { get; } = authorizationModel;
+        public List<SyntaxError> Errors { get; } = errors;
 
         public bool IsSuccess()
         {

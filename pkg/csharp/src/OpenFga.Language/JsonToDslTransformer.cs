@@ -1,12 +1,12 @@
-using System.Text;
-using OpenFga.Sdk.Model;
 using OpenFga.Language.Errors;
+using OpenFga.Sdk.Model;
+using System.Text;
 
-namespace OpenFga.Language.Transformers;
+namespace OpenFga.Language;
 
 public class JsonToDslTransformer
 {
-    private static readonly string EOL = Environment.NewLine;
+    private static readonly string Eol = Environment.NewLine;
 
     public string Transform(string json)
     {
@@ -32,19 +32,19 @@ public class JsonToDslTransformer
         {
             foreach (var typeDefinition in model.TypeDefinitions)
             {
-                formattedTypeDefinitions.Append(FormatType(typeDefinition)).Append(EOL);
+                formattedTypeDefinitions.Append(FormatType(typeDefinition)).Append(Eol);
             }
         }
 
         var formattedConditions = FormatConditions(model);
 
-        return $"model{EOL}  schema {schemaVersion}{EOL}{formattedTypeDefinitions}{formattedConditions}";
+        return $"model{Eol}  schema {schemaVersion}{Eol}{formattedTypeDefinitions}{formattedConditions}";
     }
 
     private string FormatType(TypeDefinition typeDef)
     {
         var typeName = typeDef.Type;
-        var formattedTypeBuilder = new StringBuilder(EOL).Append("type ").Append(typeName);
+        var formattedTypeBuilder = new StringBuilder(Eol).Append("type ").Append(typeName);
 
         var relations = typeDef.Relations ?? new Dictionary<string, Userset>();
         var metadata = typeDef.Metadata;
@@ -53,14 +53,14 @@ public class JsonToDslTransformer
 
         if (relations.Count > 0)
         {
-            formattedTypeBuilder.Append(EOL).Append("  relations");
+            formattedTypeBuilder.Append(Eol).Append("  relations");
             foreach (var relationEntry in relations)
             {
                 var relationName = relationEntry.Key;
                 var relationDefinition = relationEntry.Value;
                 var formattedRelationString = FormatRelation(typeName, relationName, relationDefinition,
                     metadataRelations.GetValueOrDefault(relationName));
-                formattedTypeBuilder.Append(EOL).Append(formattedRelationString);
+                formattedTypeBuilder.Append(Eol).Append(formattedRelationString);
             }
         }
 
@@ -95,7 +95,7 @@ public class JsonToDslTransformer
             return $"    define {relationName}: {formattedRelation}";
         }
 
-        throw new UnsupportedDSLNestingException(typeName, relationName);
+        throw new UnsupportedDslNestingException(typeName, relationName);
     }
 
     private StringBuilder FormatDifference(string typeName, string relationName, Userset relationDefinition,
@@ -109,19 +109,18 @@ public class JsonToDslTransformer
     private StringBuilder FormatUnion(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
-        return JoinChildren(relationDefinition.Union?.Child, "or", typeName, relationName, relationDefinition, typeRestrictions, validator);
+        return JoinChildren(relationDefinition.Union?.Child, "or", typeName, relationName, typeRestrictions, validator);
     }
 
     private StringBuilder FormatIntersection(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
-        return JoinChildren(relationDefinition.Intersection?.Child, "and", typeName, relationName, relationDefinition, typeRestrictions, validator);
+        return JoinChildren(relationDefinition.Intersection?.Child, "and", typeName, relationName, typeRestrictions, validator);
     }
 
-    private StringBuilder JoinChildren(List<Userset>? children, string op, string typeName, string relationName,
-        Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
+    private StringBuilder JoinChildren(List<Userset>? children, string op, string typeName, string relationName, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
-        children = PrioritizeDirectAssignment(children ?? new List<Userset>());
+        children = PrioritizeDirectAssignment(children ?? []);
 
         var formattedUnion = new StringBuilder();
         var notFirst = false;
@@ -255,7 +254,7 @@ public class JsonToDslTransformer
                 .Append(')');
         }
 
-        throw new UnsupportedDSLNestingException(typeName, relationName);
+        throw new UnsupportedDslNestingException(typeName, relationName);
     }
 
     private string FormatThis(List<RelationReference> typeRestrictions)
@@ -333,7 +332,7 @@ public class JsonToDslTransformer
             var conditionDef = conditionEntry.Value;
 
             var formattedCondition = FormatCondition(conditionName, conditionDef);
-            formattedConditions.Append(EOL).Append(formattedCondition);
+            formattedConditions.Append(Eol).Append(formattedCondition);
         }
 
         return formattedConditions.ToString();
@@ -352,12 +351,12 @@ public class JsonToDslTransformer
             .Append('(')
             .Append(formattedParameters)
             .Append(") {")
-            .Append(EOL)
+            .Append(Eol)
             .Append("  ")
             .Append(conditionDef.Expression)
-            .Append(EOL)
+            .Append(Eol)
             .Append('}')
-            .Append(EOL)
+            .Append(Eol)
             .ToString();
     }
 
@@ -374,16 +373,16 @@ public class JsonToDslTransformer
             var parameterName = entry.Key;
             var parameterType = entry.Value;
             var formattedParameterType = parameterType.TypeName.ToString()
-                .Replace("TYPE_NAME_", "")
+                .Replace("TYPENAME", "")
                 .ToLowerInvariant();
 
             if (formattedParameterType == "list" || formattedParameterType == "map")
             {
                 var genericTypeString = string.Empty;
-                if (parameterType.GenericTypes != null && parameterType.GenericTypes.Count > 0)
+                if (parameterType.GenericTypes is { Count: > 0 })
                 {
                     genericTypeString = parameterType.GenericTypes[0].TypeName.ToString()
-                        .Replace("TYPE_NAME_", "")
+                        .Replace("TYPENAME", "")
                         .ToLowerInvariant();
                 }
                 formattedParameterType = $"{formattedParameterType}<{genericTypeString}>";

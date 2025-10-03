@@ -1,24 +1,14 @@
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.RegularExpressions;
-using System.Web;
-using SharpYaml.Serialization;
 using OpenFga.Language.Errors;
-using OpenFga.Language.ModFile;
 using SharpYaml;
 using SharpYaml.Events;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 
-namespace OpenFga.Language.Transformers;
+namespace OpenFga.Language;
 
-public class FgaModTransformer
-{
+public class FgaModTransformer(string modFileContents) {
     private readonly List<ModFileValidationSingleError> _errors = new();
-    private readonly string _modFileContents;
-
-    public FgaModTransformer(string modFileContents)
-    {
-        _modFileContents = modFileContents;
-    }
 
     public static string Transform(string modFileContents)
     {
@@ -32,7 +22,7 @@ public class FgaModTransformer
 
     public FgaModFile Parse()
     {
-        var parser = Parser.CreateParser(new StringReader(_modFileContents));
+        var parser = Parser.CreateParser(new StringReader(modFileContents));
         var modFile = new FgaModFile();
         var seenFields = new HashSet<string>();
 
@@ -210,7 +200,7 @@ public class FgaModTransformer
         // As the yaml parser does not expose an easy way of checking if the value is wrapped in
         // quotes, scan the modFile string to see if it is and add an offset to the string length.
         var quotesOffset = 0;
-        if (_modFileContents.Contains("'" + text + "'") || _modFileContents.Contains("\"" + text + "\""))
+        if (modFileContents.Contains("'" + text + "'") || modFileContents.Contains("\"" + text + "\""))
         {
             quotesOffset = 2;
         }
@@ -219,6 +209,7 @@ public class FgaModTransformer
         var columnStart = columnEnd - (text.Length + quotesOffset);
         return new StartEnd(columnStart, columnEnd);
     }
+
     private void AddError(string message, StartEnd line, StartEnd column)
     {
         _errors.Add(new ModFileValidationSingleError(new ErrorProperties(line, column, message)));

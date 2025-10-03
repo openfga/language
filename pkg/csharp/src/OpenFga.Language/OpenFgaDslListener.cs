@@ -6,30 +6,25 @@ namespace OpenFga.Language;
 /// OpenFGA DSL Listener that uses OpenFGA SDK model classes
 /// This is the main version that works with the actual SDK
 /// </summary>
-public class OpenFgaDslListener : OpenFGAParserBaseListener
-{
-    private const string RELATION_DEFINITION_OPERATOR_OR = "or";
-    private const string RELATION_DEFINITION_OPERATOR_AND = "and";
-    private const string RELATION_DEFINITION_OPERATOR_BUT_NOT = "but not";
+public class OpenFgaDslListener(OpenFGAParser parser) 
+    : OpenFGAParserBaseListener {
 
-    private readonly AuthorizationModel authorizationModel = new AuthorizationModel();
-    private readonly OpenFGAParser parser;
-    private TypeDefinition? currentTypeDef = null;
-    private Relation? currentRelation = null;
-    private Condition? currentCondition = null;
-    private bool isModularModel = false;
-    private Dictionary<string, TypeDefinition> typeDefExtensions = new Dictionary<string, TypeDefinition>();
+    private const string RelationDefinitionOperatorOr = "or";
+    private const string RelationDefinitionOperatorAnd = "and";
+    private const string RelationDefinitionOperatorButNot = "but not";
 
-    private Stack<StackRelation>? rewriteStack = null;
+    private readonly AuthorizationModel _authorizationModel = new();
+    private TypeDefinition? _currentTypeDef;
+    private Relation? _currentRelation;
+    private Condition? _currentCondition;
+    private bool _isModularModel;
+    private readonly Dictionary<string, TypeDefinition> _typeDefExtensions = new();
 
-    public OpenFgaDslListener(OpenFGAParser parser)
-    {
-        this.parser = parser;
-    }
+    private Stack<StackRelation>? _rewriteStack;
 
     public AuthorizationModel GetAuthorizationModel()
     {
-        return authorizationModel;
+        return _authorizationModel;
     }
 
     private Userset? ParseExpression(List<Userset> rewrites, string? @operator)
@@ -47,7 +42,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         Userset? relationDef = null;
         switch (@operator)
         {
-            case RELATION_DEFINITION_OPERATOR_OR:
+            case RelationDefinitionOperatorOr:
                 relationDef = new Userset
                 {
                     Union = new Usersets
@@ -56,7 +51,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
                     }
                 };
                 break;
-            case RELATION_DEFINITION_OPERATOR_AND:
+            case RelationDefinitionOperatorAnd:
                 relationDef = new Userset
                 {
                     Intersection = new Usersets
@@ -65,7 +60,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
                     }
                 };
                 break;
-            case RELATION_DEFINITION_OPERATOR_BUT_NOT:
+            case RelationDefinitionOperatorButNot:
                 relationDef = new Userset
                 {
                     Difference = new Difference
@@ -82,16 +77,16 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void EnterMain(OpenFGAParser.MainContext context)
     {
-        authorizationModel.Conditions = new Dictionary<string, Condition>();
+        _authorizationModel.Conditions = new Dictionary<string, Condition>();
         base.EnterMain(context);
     }
 
     public override void ExitMain(OpenFGAParser.MainContext context)
     {
         // TO MAKE TEST PASS: If there are no conditions, set the Conditions to null
-        if ((authorizationModel.Conditions?.Count ?? 0) == 0)
+        if ((_authorizationModel.Conditions?.Count ?? 0) == 0)
         {
-            authorizationModel.Conditions = null;
+            _authorizationModel.Conditions = null;
         }
         base.ExitMain(context);
     }
@@ -100,7 +95,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
     {
         if (context.SCHEMA_VERSION() != null)
         {
-            authorizationModel.SchemaVersion = context.SCHEMA_VERSION().GetText();
+            _authorizationModel.SchemaVersion = context.SCHEMA_VERSION().GetText();
         }
 
         base.ExitModelHeader(context);
@@ -108,22 +103,22 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitModuleHeader(OpenFGAParser.ModuleHeaderContext context)
     {
-        this.isModularModel = true;
+        this._isModularModel = true;
         base.ExitModuleHeader(context);
     }
 
     public override void EnterTypeDefs(OpenFGAParser.TypeDefsContext context)
     {
-        this.authorizationModel.TypeDefinitions = new List<TypeDefinition>();
+        this._authorizationModel.TypeDefinitions = new List<TypeDefinition>();
         base.EnterTypeDefs(context);
     }
 
     public override void ExitTypeDefs(OpenFGAParser.TypeDefsContext context)
     {
         // TO MAKE TEST PASS: If there are no type definitions, set the TypeDefinitions to null
-        if (this.authorizationModel.TypeDefinitions.Count == 0)
+        if (this._authorizationModel.TypeDefinitions.Count == 0)
         {
-            this.authorizationModel.TypeDefinitions = null!;
+            this._authorizationModel.TypeDefinitions = null!;
         }
         base.ExitTypeDefs(context);
     }
@@ -135,12 +130,12 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             return;
         }
 
-        if (context.EXTEND() != null && !this.isModularModel)
+        if (context.EXTEND() != null && !this._isModularModel)
         {
             parser.NotifyErrorListeners(context.typeName.Start, "extend can only be used in a modular model", null);
         }
 
-        currentTypeDef = new TypeDefinition
+        _currentTypeDef = new TypeDefinition
         {
             Type = context.typeName.GetText(),
             Relations = new Dictionary<string, Userset>(),
@@ -155,7 +150,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void EnterConditions(OpenFGAParser.ConditionsContext context)
     {
-        authorizationModel.Conditions = new Dictionary<string, Condition>();
+        _authorizationModel.Conditions = new Dictionary<string, Condition>();
         base.EnterConditions(context);
     }
 
@@ -167,13 +162,13 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         }
 
         var conditionName = context.conditionName().GetText();
-        if (authorizationModel.Conditions?.ContainsKey(conditionName) ?? false)
+        if (_authorizationModel.Conditions?.ContainsKey(conditionName) ?? false)
         {
             var message = $"condition '{conditionName}' is already defined in the model";
             parser.NotifyErrorListeners(context.conditionName().Start, message, null);
         }
 
-        currentCondition = new Condition
+        _currentCondition = new Condition
         {
             Name = conditionName,
             Expression = "",
@@ -191,11 +186,11 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         }
 
         var parameterName = context.parameterName().GetText();
-        if (currentCondition!.Parameters!.ContainsKey(parameterName))
+        if (_currentCondition!.Parameters!.ContainsKey(parameterName))
         {
             var message = string.Format(
                 "parameter '{0}' is already defined in the condition '{1}'",
-                parameterName, currentCondition.Name);
+                parameterName, _currentCondition.Name);
             parser.NotifyErrorListeners(context.parameterName().Start, message, null);
         }
 
@@ -225,21 +220,21 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
         conditionParamTypeRef.TypeName = ParseTypeName(typeName);
 
-        currentCondition.Parameters[parameterName] = conditionParamTypeRef.AsConditionParamTypeRef();
+        _currentCondition.Parameters[parameterName] = conditionParamTypeRef.AsConditionParamTypeRef();
 
         base.ExitConditionParameter(context);
     }
 
     private TypeName ParseTypeName(string typeName)
     {
-        return Enum.Parse<TypeName>(typeName, true);
+        return Enum.Parse<TypeName>("TYPENAME" + typeName.ToUpper(), true);
     }
 
     public override void ExitConditionExpression(OpenFGAParser.ConditionExpressionContext context)
     {
-        if (currentCondition != null)
+        if (_currentCondition != null)
         {
-            currentCondition.Expression = context.GetText().Trim();
+            _currentCondition.Expression = context.GetText().Trim();
         }
 
         base.ExitConditionExpression(context);
@@ -247,10 +242,10 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitCondition(OpenFGAParser.ConditionContext context)
     {
-        if (currentCondition != null)
+        if (_currentCondition != null)
         {
-            authorizationModel.Conditions![currentCondition.Name] = currentCondition;
-            currentCondition = null;
+            _authorizationModel.Conditions![_currentCondition.Name] = _currentCondition;
+            _currentCondition = null;
         }
 
         base.ExitCondition(context);
@@ -258,46 +253,45 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitTypeDef(OpenFGAParser.TypeDefContext context)
     {
-        if (currentTypeDef == null)
+        if (_currentTypeDef == null)
         {
             return;
         }
 
-        if (currentTypeDef.Metadata != null
-            && currentTypeDef.Metadata.Relations != null
-            && !currentTypeDef.Metadata.Relations.Any())
+        if (_currentTypeDef.Metadata is { Relations: not null }
+            && !_currentTypeDef.Metadata.Relations.Any())
         {
-            currentTypeDef.Metadata = null;
+            _currentTypeDef.Metadata = null;
         }
 
-        var typeDefinitions = authorizationModel.TypeDefinitions;
+        var typeDefinitions = _authorizationModel.TypeDefinitions;
         if (typeDefinitions != null)
         {
-            typeDefinitions.Add(currentTypeDef);
+            typeDefinitions.Add(_currentTypeDef);
         }
 
-        if (context.EXTEND() != null && this.isModularModel)
+        if (context.EXTEND() != null && this._isModularModel)
         {
-            if (typeDefExtensions.ContainsKey(currentTypeDef.Type))
+            if (_typeDefExtensions.ContainsKey(_currentTypeDef.Type))
             {
                 parser.NotifyErrorListeners(
                     context.typeName.Start,
-                    string.Format("'{0}' is already extended in file.", currentTypeDef.Type),
+                    string.Format("'{0}' is already extended in file.", _currentTypeDef.Type),
                     null);
             }
             else
             {
-                typeDefExtensions[currentTypeDef.Type] = currentTypeDef;
+                _typeDefExtensions[_currentTypeDef.Type] = _currentTypeDef;
             }
         }
 
-        currentTypeDef = null;
+        _currentTypeDef = null;
         base.ExitTypeDef(context);
     }
 
     public override void EnterRelationDeclaration(OpenFGAParser.RelationDeclarationContext context)
     {
-        currentRelation = new Relation(
+        _currentRelation = new Relation(
             null,
             new List<Userset>(),
             null,
@@ -305,49 +299,49 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             {
                 DirectlyRelatedUserTypes = new List<RelationReference>()
             });
-        rewriteStack = new Stack<StackRelation>();
+        _rewriteStack = new Stack<StackRelation>();
 
         base.EnterRelationDeclaration(context);
     }
 
     public override void ExitRelationDeclaration(OpenFGAParser.RelationDeclarationContext context)
     {
-        if (context.relationName() == null || currentRelation == null || currentTypeDef == null)
+        if (context.relationName() == null || _currentRelation == null || _currentTypeDef == null)
         {
             return;
         }
 
         var relationName = context.relationName().GetText();
 
-        var relationDef = ParseExpression(currentRelation.Rewrites, currentRelation.Operator);
+        var relationDef = ParseExpression(_currentRelation.Rewrites, _currentRelation.Operator);
         if (relationDef != null)
         {
-            if (currentTypeDef.Relations!.ContainsKey(relationName))
+            if (_currentTypeDef.Relations!.ContainsKey(relationName))
             {
-                var message = $"'{relationName}' is already defined in '{currentTypeDef.Type}'";
+                var message = $"'{relationName}' is already defined in '{_currentTypeDef.Type}'";
                 parser.NotifyErrorListeners(context.relationName().Start, message, null);
             }
 
-            currentTypeDef.Relations[relationName] = relationDef;
-            var directlyRelatedUserTypes = currentRelation.TypeInfo.DirectlyRelatedUserTypes;
-            if (currentTypeDef.Metadata?.Relations != null)
+            _currentTypeDef.Relations[relationName] = relationDef;
+            var directlyRelatedUserTypes = _currentRelation.TypeInfo.DirectlyRelatedUserTypes;
+            if (_currentTypeDef.Metadata?.Relations != null)
             {
-                currentTypeDef.Metadata.Relations[relationName] = new RelationMetadata
+                _currentTypeDef.Metadata.Relations[relationName] = new RelationMetadata
                 {
                     DirectlyRelatedUserTypes = directlyRelatedUserTypes
                 };
             }
         }
 
-        currentRelation = null;
+        _currentRelation = null;
         base.ExitRelationDeclaration(context);
     }
 
     public override void EnterRelationDefDirectAssignment(OpenFGAParser.RelationDefDirectAssignmentContext context)
     {
-        if (currentRelation != null)
+        if (_currentRelation != null)
         {
-            currentRelation.TypeInfo = new RelationMetadata
+            _currentRelation.TypeInfo = new RelationMetadata
             {
                 DirectlyRelatedUserTypes = new List<RelationReference>()
             };
@@ -358,13 +352,13 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitRelationDefDirectAssignment(OpenFGAParser.RelationDefDirectAssignmentContext context)
     {
-        if (currentRelation != null)
+        if (_currentRelation != null)
         {
             var partialRewrite = new Userset
             {
                 This = new Dictionary<string, object>()
             };
-            currentRelation.Rewrites.Add(partialRewrite);
+            _currentRelation.Rewrites.Add(partialRewrite);
         }
 
         base.ExitRelationDefDirectAssignment(context);
@@ -372,7 +366,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitRelationDefTypeRestriction(OpenFGAParser.RelationDefTypeRestrictionContext context)
     {
-        if (currentRelation == null)
+        if (_currentRelation == null)
         {
             return;
         }
@@ -409,13 +403,13 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             relationRef.Wildcard = new Dictionary<string, object>();
         }
 
-        currentRelation.TypeInfo.DirectlyRelatedUserTypes!.Add(relationRef.AsRelationReference());
+        _currentRelation.TypeInfo.DirectlyRelatedUserTypes!.Add(relationRef.AsRelationReference());
         base.ExitRelationDefTypeRestriction(context);
     }
 
     public override void ExitRelationDefRewrite(OpenFGAParser.RelationDefRewriteContext context)
     {
-        if (currentRelation == null)
+        if (_currentRelation == null)
         {
             return;
         }
@@ -448,22 +442,22 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             };
         }
 
-        currentRelation.Rewrites.Add(partialRewrite);
+        _currentRelation.Rewrites.Add(partialRewrite);
         base.ExitRelationDefRewrite(context);
     }
 
     public override void ExitRelationRecurse(OpenFGAParser.RelationRecurseContext context)
     {
-        if (currentRelation == null)
+        if (_currentRelation == null)
         {
             return;
         }
 
-        var relationDef = ParseExpression(currentRelation.Rewrites, currentRelation.Operator);
+        var relationDef = ParseExpression(_currentRelation.Rewrites, _currentRelation.Operator);
 
         if (relationDef != null)
         {
-            currentRelation.Rewrites = new List<Userset> { relationDef };
+            _currentRelation.Rewrites = new List<Userset> { relationDef };
         }
 
         base.ExitRelationRecurse(context);
@@ -471,14 +465,14 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void EnterRelationRecurseNoDirect(OpenFGAParser.RelationRecurseNoDirectContext context)
     {
-        if (rewriteStack != null && currentRelation != null)
+        if (_rewriteStack != null && _currentRelation != null)
         {
-            rewriteStack.Push(new StackRelation(currentRelation.Rewrites, currentRelation.Operator));
+            _rewriteStack.Push(new StackRelation(_currentRelation.Rewrites, _currentRelation.Operator));
         }
 
-        if (currentRelation != null)
+        if (_currentRelation != null)
         {
-            currentRelation.Rewrites = new List<Userset>();
+            _currentRelation.Rewrites = new List<Userset>();
         }
 
         base.EnterRelationRecurseNoDirect(context);
@@ -486,18 +480,18 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void ExitRelationRecurseNoDirect(OpenFGAParser.RelationRecurseNoDirectContext context)
     {
-        if (currentRelation == null || rewriteStack == null)
+        if (_currentRelation == null || _rewriteStack == null)
         {
             return;
         }
 
-        var popped = rewriteStack.Pop();
+        var popped = _rewriteStack.Pop();
 
-        var relationDef = ParseExpression(currentRelation.Rewrites, currentRelation.Operator);
+        var relationDef = ParseExpression(_currentRelation.Rewrites, _currentRelation.Operator);
         if (relationDef != null)
         {
-            currentRelation.Operator = popped.Operator;
-            currentRelation.Rewrites = new List<Userset>(popped.Rewrites) { relationDef };
+            _currentRelation.Operator = popped.Operator;
+            _currentRelation.Rewrites = new List<Userset>(popped.Rewrites) { relationDef };
         }
 
         base.ExitRelationRecurseNoDirect(context);
@@ -505,19 +499,19 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
 
     public override void EnterRelationDefPartials(OpenFGAParser.RelationDefPartialsContext context)
     {
-        if (currentRelation != null)
+        if (_currentRelation != null)
         {
             if (context.OR() != null && context.OR().Length > 0)
             {
-                currentRelation.Operator = RELATION_DEFINITION_OPERATOR_OR;
+                _currentRelation.Operator = RelationDefinitionOperatorOr;
             }
             else if (context.AND() != null && context.AND().Length > 0)
             {
-                currentRelation.Operator = RELATION_DEFINITION_OPERATOR_AND;
+                _currentRelation.Operator = RelationDefinitionOperatorAnd;
             }
             else if (context.BUT_NOT() != null)
             {
-                currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT;
+                _currentRelation.Operator = RelationDefinitionOperatorButNot;
             }
         }
 

@@ -1,7 +1,5 @@
 using OpenFga.Language.Errors;
-using OpenFga.Language.ModFile;
 using OpenFga.Language.Tests.util;
-using OpenFga.Language.Transformers;
 using Xunit;
 #pragma warning disable xUnit1026
 #pragma warning disable IDE0060

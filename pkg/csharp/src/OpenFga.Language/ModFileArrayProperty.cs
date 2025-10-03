@@ -1,7 +1,7 @@
-using System.Text.Json.Serialization;
 using OpenFga.Language.Errors;
+using System.Text.Json.Serialization;
 
-namespace OpenFga.Language.ModFile;
+namespace OpenFga.Language;
 
 public class ModFileArrayProperty
 {

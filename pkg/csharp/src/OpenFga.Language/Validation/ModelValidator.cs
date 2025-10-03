@@ -1,5 +1,4 @@
 using OpenFga.Sdk.Model;
-using OpenFga.Language.Transformers;
 using OpenFga.Language.Errors;
 
 namespace OpenFga.Language.Validation;

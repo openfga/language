@@ -2,20 +2,11 @@ using OpenFga.Sdk.Model;
 
 namespace OpenFga.Language.Validation;
 
-internal class EntryPointOrLoop
-{
+internal class EntryPointOrLoop(bool hasEntry, bool isLoop) {
+
     public static readonly EntryPointOrLoop BothFalse = new(false, false);
     public static readonly EntryPointOrLoop HasEntryButNoLoop = new(true, false);
     public static readonly EntryPointOrLoop NoEntryWithLoop = new(false, true);
-
-    private readonly bool _entry;
-    private readonly bool _loop;
-
-    public EntryPointOrLoop(bool hasEntry, bool isLoop)
-    {
-        _entry = hasEntry;
-        _loop = isLoop;
-    }
 
     // for the type/relation, whether there are any unique entry points, and if a loop is found
     // if there are unique entry points (i.e., direct relations) then it will return true
@@ -192,6 +183,6 @@ internal class EntryPointOrLoop
         return BothFalse;
     }
 
-    public bool HasEntry() => _entry;
-    public bool IsLoop() => _loop;
+    public bool HasEntry() => hasEntry;
+    public bool IsLoop() => isLoop;
 }

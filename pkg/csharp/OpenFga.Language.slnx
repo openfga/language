@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/OpenFga.Language/OpenFga.Language.csproj" />
+  <Project Path="test/OpenFga.Language.Tests/OpenFga.Language.Tests.csproj" />
+</Solution>

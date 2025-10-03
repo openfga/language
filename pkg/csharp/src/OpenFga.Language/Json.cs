@@ -9,7 +9,7 @@ internal static class Json
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         PropertyNameCaseInsensitive = true
     };
 

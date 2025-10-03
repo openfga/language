@@ -5,22 +5,12 @@ using OpenFga.Language.Tests.util;
 using OpenFga.Language.Transformers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Xunit;
 
 namespace OpenFga.Language.Tests;
 
 public class FgaModToJsonShould
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-        PropertyNameCaseInsensitive = true
-    };
-
     [Theory]
     [MemberData(nameof(FgaModTestCases))]
     public void TransformFgaMod(
@@ -39,7 +29,7 @@ public class FgaModToJsonShould
         if (json != null)
         {
             var generatedJson = FgaModTransformer.Transform(fgaMod);
-            var expected = JsonSerializer.Serialize(JsonSerializer.Deserialize<FgaModFile>(json, JsonOptions), JsonOptions);
+            var expected = Json.Stringify(Json.Parse<FgaModFile>(json));
 
             var different = expected != generatedJson;
             Assert.Equal(expected, generatedJson);

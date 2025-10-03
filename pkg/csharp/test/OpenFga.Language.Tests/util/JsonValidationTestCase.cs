@@ -1,16 +1,18 @@
-using System.Text.Json.Serialization;
 using OpenFga.Language.Validation;
+using System.Text.Json.Serialization;
+using OpenFga.Language.Errors;
+using YamlDotNet.Serialization;
 
 namespace OpenFga.Language.Tests.util;
 
 public class JsonValidationTestCase
 {
-    [JsonPropertyName("name")]
+    [YamlMember(Alias = "name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("json")]
+    [YamlMember(Alias ="json")]
     public string Json { get; set; } = string.Empty;
 
-    [JsonPropertyName("expected_errors")]
-    public List<ModelValidationSingleError> ExpectedErrors { get; set; } = new();
+    [YamlMember(Alias ="expected_errors")]
+    public List<ModelValidationSingleError>? ExpectedErrors { get; set; } = new();
 }

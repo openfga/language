@@ -4,26 +4,9 @@ namespace OpenFga.Language.ModFile;
 
 public class FgaModFile
 {
-    public const string JsonPropertySchema = "schema";
-    public const string JsonPropertyContents = "contents";
-
-    [JsonPropertyName(JsonPropertySchema)]
+    [JsonPropertyName("schema")]
     public ModFileStringProperty? Schema { get; set; }
 
-    [JsonPropertyName(JsonPropertyContents)]
+    [JsonPropertyName("contents")]
     public ModFileArrayProperty? Contents { get; set; }
-
-    public FgaModFile() { }
-
-    public FgaModFile SetSchema(ModFileStringProperty? schema)
-    {
-        Schema = schema;
-        return this;
-    }
-
-    public FgaModFile SetContents(ModFileArrayProperty? contents)
-    {
-        Contents = contents;
-        return this;
-    }
 }

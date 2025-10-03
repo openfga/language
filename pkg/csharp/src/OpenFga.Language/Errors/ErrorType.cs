@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace OpenFga.Language.Validation;
+namespace OpenFga.Language.Errors;
 
 public enum ErrorType
 {

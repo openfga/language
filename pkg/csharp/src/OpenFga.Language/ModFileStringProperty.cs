@@ -5,36 +5,12 @@ namespace OpenFga.Language.ModFile;
 
 public class ModFileStringProperty
 {
-    public const string JsonPropertyValue = "value";
-    public const string JsonPropertyLine = "line";
-    public const string JsonPropertyColumn = "column";
-
-    [JsonPropertyName(JsonPropertyValue)]
+    [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;
 
-    [JsonPropertyName(JsonPropertyLine)]
+    [JsonPropertyName("line")]
     public StartEnd? Line { get; set; }
 
-    [JsonPropertyName(JsonPropertyColumn)]
+    [JsonPropertyName("column")]
     public StartEnd? Column { get; set; }
-
-    public ModFileStringProperty() { }
-
-    public ModFileStringProperty SetValue(string value)
-    {
-        Value = value;
-        return this;
-    }
-
-    public ModFileStringProperty SetLine(StartEnd? line)
-    {
-        Line = line;
-        return this;
-    }
-
-    public ModFileStringProperty SetColumn(StartEnd? column)
-    {
-        Column = column;
-        return this;
-    }
 }

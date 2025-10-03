@@ -1,13 +1,16 @@
 using System.Text.Json.Serialization;
+using YamlDotNet.Serialization;
 
 namespace OpenFga.Language.Errors;
 
 public sealed class StartEnd
 {
     [JsonPropertyName("start")]
+    [YamlMember(Alias = "start")]
     public int Start { get; set; }
 
     [JsonPropertyName("end")]
+    [YamlMember(Alias = "end")]
     public int End { get; set; }
 
     // Needed for JSON deserialization

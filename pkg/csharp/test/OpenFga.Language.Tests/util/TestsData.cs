@@ -23,7 +23,8 @@ public static class TestsData
 
     private static List<ValidTransformerTestCase> LoadValidTransformerTestCases()
     {
-        var transformerCasesFolder = new DirectoryInfo(TransformerCasesFolder);
+        var transformerCasesFolderPath = PathsGet(TransformerCasesFolder);
+        var transformerCasesFolder = new DirectoryInfo(transformerCasesFolderPath);
         var cases = new List<ValidTransformerTestCase>();
 
         if (!transformerCasesFolder.Exists)
@@ -53,61 +54,48 @@ public static class TestsData
 
     private static List<DslSyntaxTestCase> LoadDslSyntaxTestCases()
     {
-        var dslSyntaxCasesFile = new FileInfo(DslSyntaxCasesFile);
-        if (!dslSyntaxCasesFile.Exists)
-        {
-            return new List<DslSyntaxTestCase>();
-        }
+        var dslSyntaxCasesFile = PathsGet(DslSyntaxCasesFile);
+        var yaml = File.ReadAllText(dslSyntaxCasesFile);
 
-        var yaml = File.ReadAllText(dslSyntaxCasesFile.FullName);
+
         return YamlHelper.ParseList<DslSyntaxTestCase>(yaml);
     }
 
     private static List<MultipleInvalidDslSyntaxTestCase> LoadDslValidationTestCases()
     {
-        var dslSyntaxCasesFile = new FileInfo(DslSemanticCasesFile);
-        if (!dslSyntaxCasesFile.Exists)
-        {
-            return new List<MultipleInvalidDslSyntaxTestCase>();
-        }
-
-        var yaml = File.ReadAllText(dslSyntaxCasesFile.FullName);
+        var dslSemanticCasesFile = PathsGet(DslSemanticCasesFile);
+        var yaml = File.ReadAllText(dslSemanticCasesFile);
         return YamlHelper.ParseList<MultipleInvalidDslSyntaxTestCase>(yaml);
     }
 
     private static List<JsonValidationTestCase> LoadJsonValidationTestCases()
     {
-        var jsonValidationCasesFile = new FileInfo(JsonValidationCasesFile);
-        if (!jsonValidationCasesFile.Exists)
-        {
-            return new List<JsonValidationTestCase>();
-        }
-
-        var yaml = File.ReadAllText(jsonValidationCasesFile.FullName);
+        var jsonValidationCasesFile = PathsGet(JsonValidationCasesFile);
+        var yaml = File.ReadAllText(jsonValidationCasesFile);
         return YamlHelper.ParseList<JsonValidationTestCase>(yaml);
     }
 
     private static List<JsonSyntaxTestCase> LoadJsonSyntaxTestCases()
     {
-        var dslSyntaxCasesFile = new FileInfo(JsonSyntaxTransformerCasesFile);
-        if (!dslSyntaxCasesFile.Exists)
-        {
-            return new List<JsonSyntaxTestCase>();
-        }
-
-        var yaml = File.ReadAllText(dslSyntaxCasesFile.FullName);
+        var jsonSyntaxTransformerCasesFile = PathsGet(JsonSyntaxTransformerCasesFile);
+        var yaml = File.ReadAllText(jsonSyntaxTransformerCasesFile);
         return YamlHelper.ParseList<JsonSyntaxTestCase>(yaml);
     }
 
     private static List<FgaModTestCase> LoadFgaModTransformTestCases()
     {
-        var fgaModCasesFile = new FileInfo(FgaModCasesFile);
-        if (!fgaModCasesFile.Exists)
-        {
-            return new List<FgaModTestCase>();
-        }
-
-        var yaml = File.ReadAllText(fgaModCasesFile.FullName);
+        var fgaModCasesFile = PathsGet(FgaModCasesFile);
+        var yaml = File.ReadAllText(fgaModCasesFile);
         return YamlHelper.ParseList<FgaModTestCase>(yaml);
+    }
+
+    private static string PathsGet(string relativePath)
+    {
+        // Get the directory where the test assembly is located
+        var testAssemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var testDirectory = Path.GetDirectoryName(testAssemblyLocation);
+        var languageRoot = Path.GetFullPath(Path.Combine(testDirectory, "../../../../.."));
+        var fullPath = Path.Combine(languageRoot, relativePath);
+        return fullPath;
     }
 }

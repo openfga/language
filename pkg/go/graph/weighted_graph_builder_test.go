@@ -893,6 +893,35 @@ func TestGraphConstructionDirectAssignation(t *testing.T) {
 	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
 }
 
+func TestMixingTerminalTypesInIntersection(t *testing.T) {
+	t.Parallel()
+	model := `
+	   model
+			schema 1.1
+		type user
+		type user2
+		type subteam
+			relations
+				define member: [user]
+		type adhoc
+			relations
+				define member: [user]
+		type team
+			relations
+				define member: [subteam#member]
+		type group
+			relations
+				define team: [team]
+				define subteam: [subteam]
+				define adhoc_member: [adhoc#member]
+				define member: [user2] and member from team and adhoc_member and member from subteam
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	_, err := wgb.Build(authorizationModel)
+	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+}
+
 func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
 	t.Parallel()
 	model := `

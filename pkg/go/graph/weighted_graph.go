@@ -562,9 +562,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 	}
 
 	rewriteWeights := make(map[string]int, len(edges))
-	for _, edge := range edges {
+	for index, edge := range edges {
 
-		if len(rewriteWeights) == 0 {
+		if index == 0 {
 			for key, weight := range edge.weights {
 				rewriteWeights[key] = weight
 			}

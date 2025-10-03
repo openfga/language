@@ -24,7 +24,7 @@ lint: lint-go lint-js lint-java lint-tests
 
 .PHONY: antlr-gen-csharp
 antlr-gen-csharp:
-	$(MAKE) antlr-gen-base language=CSharp packageName=csharp
+	$(MAKE) antlr-gen-base language=CSharp packageName=csharp/src/OpenFga.Language
 
 #### Go #####
 

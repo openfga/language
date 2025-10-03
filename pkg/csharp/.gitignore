@@ -6,4 +6,6 @@ obj/
 .vs/
 
 # Auto-generated files
-gen/
+src/OpenFga.Language/gen/
+
+*.user

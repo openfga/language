@@ -42,11 +42,12 @@ namespace OpenFga.Language
             {
                 return null;
             }
+
             if (rewrites.Count == 1)
             {
                 return rewrites[0];
             }
-            
+
             Userset? relationDef = null;
             switch (@operator)
             {
@@ -79,6 +80,7 @@ namespace OpenFga.Language
                     };
                     break;
             }
+
             return relationDef;
         }
 
@@ -94,6 +96,7 @@ namespace OpenFga.Language
             {
                 authorizationModel.SchemaVersion = context.SCHEMA_VERSION().GetText();
             }
+
             base.ExitModelHeader(context);
         }
 
@@ -164,12 +167,65 @@ namespace OpenFga.Language
             base.EnterCondition(context);
         }
 
+        public override void ExitConditionParameter(OpenFGAParser.ConditionParameterContext context)
+        {
+            if (context.parameterName() == null || context.parameterType() == null)
+            {
+                return;
+            }
+
+            var parameterName = context.parameterName().GetText();
+            if (currentCondition.Parameters.ContainsKey(parameterName))
+            {
+                var message = string.Format(
+                    "parameter '{0}' is already defined in the condition '{1}'",
+                    parameterName, currentCondition.Name);
+                parser.NotifyErrorListeners(context.parameterName().Start, message, null);
+            }
+
+            var paramContainer = context.parameterType().CONDITION_PARAM_CONTAINER();
+            var conditionParamTypeRef = new PartialConditionParamTypeRef();
+            var typeName = context.parameterType().GetText();
+            if (paramContainer != null)
+            {
+                typeName = paramContainer.GetText();
+                conditionParamTypeRef.TypeName = ParseTypeName(paramContainer.GetText());
+                if (context.parameterType().CONDITION_PARAM_TYPE() != null)
+                {
+                    var genericTypeName =
+                        ParseTypeName(context.parameterType().CONDITION_PARAM_TYPE().GetText());
+                    if (genericTypeName != (TypeName)13)
+                    {
+                        conditionParamTypeRef.GenericTypes =
+                            [
+                                new ConditionParamTypeRef()
+                                {
+                                    TypeName = genericTypeName
+                                }
+                            ];
+                    }
+                }
+            }
+
+            conditionParamTypeRef.TypeName = ParseTypeName(typeName);
+
+            currentCondition.Parameters.Add(parameterName, conditionParamTypeRef.AsConditionParamTypeRef());
+
+            base.ExitConditionParameter(context);
+        }
+
+        private TypeName ParseTypeName(string typeName)
+        {
+            return Enum.Parse<TypeName>(typeName);
+        }
+
         public override void ExitConditionExpression(OpenFGAParser.ConditionExpressionContext context)
         {
             if (currentCondition != null)
             {
                 currentCondition.Expression = context.GetText().Trim();
             }
+
             base.ExitConditionExpression(context);
         }
 
@@ -180,6 +236,7 @@ namespace OpenFga.Language
                 authorizationModel.Conditions[currentCondition.Name] = currentCondition;
                 currentCondition = null;
             }
+
             base.ExitCondition(context);
         }
 
@@ -191,8 +248,8 @@ namespace OpenFga.Language
             }
 
             if (currentTypeDef.Metadata != null
-                    && currentTypeDef.Metadata.Relations != null
-                    && !currentTypeDef.Metadata.Relations.Any())
+                && currentTypeDef.Metadata.Relations != null
+                && !currentTypeDef.Metadata.Relations.Any())
             {
                 currentTypeDef.Metadata = null;
             }
@@ -208,9 +265,9 @@ namespace OpenFga.Language
                 if (typeDefExtensions.ContainsKey(currentTypeDef.Type))
                 {
                     parser.NotifyErrorListeners(
-                            context.typeName.Start,
-                            string.Format("'{0}' is already extended in file.", currentTypeDef.Type),
-                            null);
+                        context.typeName.Start,
+                        string.Format("'{0}' is already extended in file.", currentTypeDef.Type),
+                        null);
                 }
                 else
                 {
@@ -225,13 +282,13 @@ namespace OpenFga.Language
         public override void EnterRelationDeclaration(OpenFGAParser.RelationDeclarationContext context)
         {
             currentRelation = new Relation(
-                    null, 
-                    new List<Userset>(), 
-                    null, 
-                    new RelationMetadata 
-                    { 
-                        DirectlyRelatedUserTypes = new List<RelationReference>() 
-                    });
+                null,
+                new List<Userset>(),
+                null,
+                new RelationMetadata
+                {
+                    DirectlyRelatedUserTypes = new List<RelationReference>()
+                });
             rewriteStack = new Stack<StackRelation>();
 
             base.EnterRelationDeclaration(context);
@@ -259,9 +316,9 @@ namespace OpenFga.Language
                 var directlyRelatedUserTypes = currentRelation.TypeInfo.DirectlyRelatedUserTypes;
                 if (currentTypeDef.Metadata?.Relations != null)
                 {
-                    currentTypeDef.Metadata.Relations[relationName] = new RelationMetadata 
-                    { 
-                        DirectlyRelatedUserTypes = directlyRelatedUserTypes 
+                    currentTypeDef.Metadata.Relations[relationName] = new RelationMetadata
+                    {
+                        DirectlyRelatedUserTypes = directlyRelatedUserTypes
                     };
                 }
             }
@@ -274,11 +331,12 @@ namespace OpenFga.Language
         {
             if (currentRelation != null)
             {
-                currentRelation.TypeInfo = new RelationMetadata 
-                { 
-                    DirectlyRelatedUserTypes = new List<RelationReference>() 
+                currentRelation.TypeInfo = new RelationMetadata
+                {
+                    DirectlyRelatedUserTypes = new List<RelationReference>()
                 };
             }
+
             base.EnterRelationDefDirectAssignment(context);
         }
 
@@ -292,6 +350,7 @@ namespace OpenFga.Language
                 };
                 currentRelation.Rewrites.Add(partialRewrite);
             }
+
             base.ExitRelationDefDirectAssignment(context);
         }
 
@@ -313,7 +372,7 @@ namespace OpenFga.Language
             var wildcardRestriction = baseRestriction.relationDefTypeRestrictionWildcard;
             var conditionName = context.conditionName();
 
-            var relationRef = new RelationReference();
+            var relationRef = new PartialRelationReference();
             if (_type != null)
             {
                 relationRef.Type = _type.GetText();
@@ -334,7 +393,7 @@ namespace OpenFga.Language
                 relationRef.Wildcard = new Dictionary<string, object>();
             }
 
-            currentRelation.TypeInfo.DirectlyRelatedUserTypes.Add(relationRef);
+            currentRelation.TypeInfo.DirectlyRelatedUserTypes.Add(relationRef.AsRelationReference());
             base.ExitRelationDefTypeRestriction(context);
         }
 
@@ -390,6 +449,7 @@ namespace OpenFga.Language
             {
                 currentRelation.Rewrites = new List<Userset> { relationDef };
             }
+
             base.ExitRelationRecurse(context);
         }
 
@@ -404,6 +464,7 @@ namespace OpenFga.Language
             {
                 currentRelation.Rewrites = new List<Userset>();
             }
+
             base.EnterRelationRecurseNoDirect(context);
         }
 
@@ -422,6 +483,7 @@ namespace OpenFga.Language
                 currentRelation.Operator = popped.Operator;
                 currentRelation.Rewrites = new List<Userset>(popped.Rewrites) { relationDef };
             }
+
             base.ExitRelationRecurseNoDirect(context);
         }
 
@@ -442,6 +504,7 @@ namespace OpenFga.Language
                     currentRelation.Operator = RELATION_DEFINITION_OPERATOR_BUT_NOT;
                 }
             }
+
             base.EnterRelationDefPartials(context);
         }
     }

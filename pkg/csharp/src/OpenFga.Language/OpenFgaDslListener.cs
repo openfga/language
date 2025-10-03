@@ -32,7 +32,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         return authorizationModel;
     }
 
-    private Userset? ParseExpression(List<Userset> rewrites, string @operator)
+    private Userset? ParseExpression(List<Userset> rewrites, string? @operator)
     {
         if (rewrites == null || !rewrites.Any())
         {
@@ -89,7 +89,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
     public override void ExitMain(OpenFGAParser.MainContext context)
     {
         // TO MAKE TEST PASS: If there are no conditions, set the Conditions to null
-        if (authorizationModel.Conditions.Count == 0)
+        if ((authorizationModel.Conditions?.Count ?? 0) == 0)
         {
             authorizationModel.Conditions = null;
         }
@@ -123,7 +123,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         // TO MAKE TEST PASS: If there are no type definitions, set the TypeDefinitions to null
         if (this.authorizationModel.TypeDefinitions.Count == 0)
         {
-            this.authorizationModel.TypeDefinitions = null;
+            this.authorizationModel.TypeDefinitions = null!;
         }
         base.ExitTypeDefs(context);
     }
@@ -167,9 +167,9 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         }
 
         var conditionName = context.conditionName().GetText();
-        if (authorizationModel.Conditions.ContainsKey(conditionName))
+        if (authorizationModel.Conditions?.ContainsKey(conditionName) ?? false)
         {
-            var message = string.Format("condition '{0}' is already defined in the model", conditionName);
+            var message = $"condition '{conditionName}' is already defined in the model";
             parser.NotifyErrorListeners(context.conditionName().Start, message, null);
         }
 
@@ -191,7 +191,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         }
 
         var parameterName = context.parameterName().GetText();
-        if (currentCondition.Parameters.ContainsKey(parameterName))
+        if (currentCondition!.Parameters!.ContainsKey(parameterName))
         {
             var message = string.Format(
                 "parameter '{0}' is already defined in the condition '{1}'",
@@ -249,7 +249,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
     {
         if (currentCondition != null)
         {
-            authorizationModel.Conditions[currentCondition.Name] = currentCondition;
+            authorizationModel.Conditions![currentCondition.Name] = currentCondition;
             currentCondition = null;
         }
 
@@ -322,9 +322,9 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
         var relationDef = ParseExpression(currentRelation.Rewrites, currentRelation.Operator);
         if (relationDef != null)
         {
-            if (this.currentTypeDef.Relations.ContainsKey(relationName))
+            if (currentTypeDef.Relations!.ContainsKey(relationName))
             {
-                var message = string.Format("'{0}' is already defined in '{1}'", relationName, currentTypeDef.Type);
+                var message = $"'{relationName}' is already defined in '{currentTypeDef.Type}'";
                 parser.NotifyErrorListeners(context.relationName().Start, message, null);
             }
 
@@ -383,15 +383,15 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             return;
         }
 
-        var _type = baseRestriction.relationDefTypeRestrictionType;
+        var t = baseRestriction.relationDefTypeRestrictionType;
         var usersetRestriction = baseRestriction.relationDefTypeRestrictionRelation;
         var wildcardRestriction = baseRestriction.relationDefTypeRestrictionWildcard;
         var conditionName = context.conditionName();
 
         var relationRef = new PartialRelationReference();
-        if (_type != null)
+        if (t != null)
         {
-            relationRef.Type = _type.GetText();
+            relationRef.Type = t.GetText();
         }
 
         if (conditionName != null)
@@ -409,7 +409,7 @@ public class OpenFgaDslListener : OpenFGAParserBaseListener
             relationRef.Wildcard = new Dictionary<string, object>();
         }
 
-        currentRelation.TypeInfo.DirectlyRelatedUserTypes.Add(relationRef.AsRelationReference());
+        currentRelation.TypeInfo.DirectlyRelatedUserTypes!.Add(relationRef.AsRelationReference());
         base.ExitRelationDefTypeRestriction(context);
     }
 

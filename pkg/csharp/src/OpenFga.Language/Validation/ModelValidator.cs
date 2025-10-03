@@ -109,7 +109,7 @@ public class ModelValidator
 
             var encounteredRelationsInType = new HashSet<string> { Keyword.Self };
 
-            foreach (var kvp in typeDef.Relations)
+            foreach (var kvp in typeDef.Relations ?? [])
             {
                 var relationName = kvp.Key;
                 var relation = kvp.Value;
@@ -158,7 +158,7 @@ public class ModelValidator
                 foreach (var kvp in typeDef.Metadata.Relations ?? [])
                 {
                     var relationMetadata = kvp.Value;
-                    foreach (var typeRestriction in relationMetadata.DirectlyRelatedUserTypes)
+                    foreach (var typeRestriction in relationMetadata.DirectlyRelatedUserTypes ?? [])
                     {
                         if (typeRestriction.Condition != null)
                         {
@@ -173,7 +173,7 @@ public class ModelValidator
         foreach (var typeDef in _authorizationModel.TypeDefinitions ?? [])
         {
             var typeName = typeDef.Type;
-            foreach (var kvp in typeDef.Relations)
+            foreach (var kvp in typeDef.Relations ?? [])
             {
                 var relationName = kvp.Key;
                 RelationDefined(typeMap, typeName, relationName);
@@ -197,7 +197,7 @@ public class ModelValidator
                 {
                     foreach (var relationDefKey in (ICollection<string>?)typeDef.Metadata.Relations?.Keys ?? [])
                     {
-                        CheckForDuplicatesTypeNamesInRelation(typeDef.Metadata.Relations[relationDefKey], relationDefKey);
+                        CheckForDuplicatesTypeNamesInRelation(typeDef.Metadata.Relations![relationDefKey], relationDefKey);
                         CheckForDuplicatesInRelation(typeDef, relationDefKey);
                         CheckForInvalidOrderInRelation(typeDef, relationDefKey);
                     }
@@ -213,11 +213,11 @@ public class ModelValidator
             foreach (var typeDef in _authorizationModel.TypeDefinitions ?? [])
             {
                 var typeName = typeDef.Type;
-                var currentRelations = typeMap[typeName].Relations;
+                var currentRelations = typeMap[typeName].Relations!;
                 var typeDefMetadata = typeDef.Metadata;
                 var typeDefRelationsMetadata = typeMap[typeName].Metadata?.Relations;
 
-                foreach (var relationName in typeDef.Relations.Keys)
+                foreach (var relationName in typeDef.Relations!.Keys)
                 {
                     var result = EntryPointOrLoop.Compute(
                         typeMap, typeName, relationName, currentRelations[relationName], new Dictionary<string, Dictionary<string, bool>>());
@@ -263,10 +263,10 @@ public class ModelValidator
 
     private void CheckForInvalidOrderInRelation(TypeDefinition typeDef, string relationName)
     {
-        var relationDef = typeDef.Relations[relationName];
-        var metadataRelation = typeDef.Metadata.Relations[relationName];
+        var relationDef = typeDef.Relations![relationName];
+        var metadataRelation = typeDef.Metadata!.Relations![relationName];
 
-        if (metadataRelation.DirectlyRelatedUserTypes.Count == 0)
+        if (metadataRelation.DirectlyRelatedUserTypes!.Count == 0)
             return;
 
         // Union
@@ -282,7 +282,7 @@ public class ModelValidator
 
     private void CheckForDuplicatesInRelation(TypeDefinition typeDef, string relationName)
     {
-        var relationDef = typeDef.Relations[relationName];
+        var relationDef = typeDef.Relations![relationName];
 
         // Union
         var relationUnionNameSet = new HashSet<string>();
@@ -295,7 +295,7 @@ public class ModelValidator
                 var lineIndex = _dsl.GetRelationLineNumber(relationName, typeIndex);
                 _errors.RaiseDuplicateType(lineIndex, relationDefName, relationName);
             }
-            relationUnionNameSet.Add(relationDefName);
+            relationUnionNameSet.Add(relationDefName!);
         }
 
         // Intersection
@@ -309,7 +309,7 @@ public class ModelValidator
                 var lineIndex = _dsl.GetRelationLineNumber(relationName, typeIndex);
                 _errors.RaiseDuplicateType(lineIndex, relationDefName, relationName);
             }
-            relationIntersectionNameSet.Add(relationDefName);
+            relationIntersectionNameSet.Add(relationDefName!);
         }
 
         // Difference
@@ -329,7 +329,7 @@ public class ModelValidator
     private void CheckForDuplicatesTypeNamesInRelation(RelationMetadata relationDef, string relationName)
     {
         var typeNameSet = new HashSet<string>();
-        foreach (var typeDef in relationDef.DirectlyRelatedUserTypes)
+        foreach (var typeDef in relationDef.DirectlyRelatedUserTypes ?? [])
         {
             var typeDefName = Dsl.GetTypeRestrictionString(typeDef);
             if (typeNameSet.Contains(typeDefName))
@@ -393,7 +393,7 @@ public class ModelValidator
         RelationMetadata? currentRelationMetadata = null;
         if (typeMap[typeName].Metadata != null)
         {
-            currentRelationMetadata = typeMap[typeName].Metadata.Relations?.GetValueOrDefault(relationName);
+            currentRelationMetadata = typeMap[typeName].Metadata!.Relations?.GetValueOrDefault(relationName);
         }
 
         switch (childDef.Rewrite)
@@ -437,7 +437,7 @@ public class ModelValidator
                         }
                         else if (decodedRelation != null)
                         {
-                            if (typeMap[decodedType] == null || !typeMap[decodedType].Relations.ContainsKey(decodedRelation))
+                            if (typeMap[decodedType] == null || !typeMap[decodedType].Relations!.ContainsKey(decodedRelation))
                             {
                                 var typeIndex = _dsl.GetTypeLineNumber(typeName);
                                 var lineIndex = _dsl.GetRelationLineNumber(relationName, typeIndex);
@@ -494,7 +494,7 @@ public class ModelValidator
                                     }
                                     else
                                     {
-                                        if (typeMap[decodedType] != null && !typeMap[decodedType].Relations.ContainsKey(childDef.Target))
+                                        if (!typeMap[decodedType].Relations!.ContainsKey(childDef.Target))
                                         {
                                             var typeIndex = _dsl.GetTypeLineNumber(typeName);
                                             var lineIndex = _dsl.GetRelationLineNumber(relationName, typeIndex);
@@ -541,7 +541,7 @@ public class ModelValidator
     {
         var allowedTypes = new List<string>();
         var typeDefinition = typeMap[typeName];
-        var currentRelation = typeDefinition.Relations[relation];
+        var currentRelation = typeDefinition.Relations![relation];
         var metadata = typeDefinition.Metadata;
         var relatedTypes = metadata?.Relations?.GetValueOrDefault(relation)?.DirectlyRelatedUserTypes ?? new List<RelationReference>();
         var currentRelationMetadata = Dsl.GetTypeRestrictions(relatedTypes);
@@ -614,10 +614,10 @@ public class ModelValidator
             return;
         }
 
-        if (!_fileToModules.ContainsKey(sourceInfo.File))
+        if (!_fileToModules.ContainsKey(sourceInfo.File!))
         {
-            _fileToModules[sourceInfo.File] = new HashSet<string>();
+            _fileToModules[sourceInfo.File!] = new HashSet<string>();
         }
-        _fileToModules[sourceInfo.File].Add(module);
+        _fileToModules[sourceInfo.File!].Add(module);
     }
 }

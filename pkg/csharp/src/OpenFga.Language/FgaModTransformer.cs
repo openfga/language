@@ -47,9 +47,10 @@ public class FgaModTransformer
             var name = key.Value;
 
             // move to value
-            parser.MoveNext();
+            if (!parser.MoveNext())
+                break;
             currentToken = parser.Current;
-            var location = currentToken.End;
+            var location = currentToken!.End;
 
             if (name == "schema")
             {
@@ -135,9 +136,11 @@ public class FgaModTransformer
         }
 
         var contents = new List<ModFileStringProperty>();
+        Mark currentLoc = currentToken.End;
         while (parser.MoveNext())
         {
-            currentToken = parser.Current;
+            currentToken = parser.Current!;
+            currentLoc = currentToken.End;
             if (currentToken is SequenceEnd)
             {
                 break;
@@ -149,7 +152,6 @@ public class FgaModTransformer
                 continue;
             }
 
-            var currentLoc = currentToken.End;
             var rawValue = scalar.Value;
 
             var line = GetLine(currentLoc);
@@ -188,12 +190,11 @@ public class FgaModTransformer
                 Column = column
             });
         }
-        var endLoc = parser.Current.Start;
 
         modFile.Contents = new ModFileArrayProperty
         {
-            Line = new StartEnd(startLocation.Line, endLoc.Line),
-            Column = new StartEnd(startLocation.Column, endLoc.Column),
+            Line = new StartEnd(startLocation.Line, currentLoc.Line),
+            Column = new StartEnd(startLocation.Column, currentLoc.Column),
             Value = contents
         };
     }

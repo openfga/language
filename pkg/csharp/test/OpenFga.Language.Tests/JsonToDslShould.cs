@@ -1,6 +1,8 @@
 using OpenFga.Language.Tests.util;
 using OpenFga.Language.Transformers;
 using Xunit;
+#pragma warning disable xUnit1026
+#pragma warning disable IDE0060
 
 namespace OpenFga.Language.Tests;
 
@@ -63,7 +65,7 @@ public class JsonToDslShould
             {
                 testCase.Name,
                 testCase.Json,
-                testCase.ErrorMessage,
+                testCase.ErrorMessage!,
                 testCase.Skip
             });
     }

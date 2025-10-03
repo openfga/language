@@ -1,11 +1,10 @@
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using OpenFga.Language.Errors;
 using OpenFga.Language.ModFile;
 using OpenFga.Language.Tests.util;
 using OpenFga.Language.Transformers;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
+#pragma warning disable xUnit1026
+#pragma warning disable IDE0060
 
 namespace OpenFga.Language.Tests;
 
@@ -40,7 +39,7 @@ public class FgaModToJsonShould
 
             var errorsCount = expectedErrors.Count;
             var formattedErrors = expectedErrors
-                .Select(error => $"validation error at line={error.Line.Start}, column={error.Column.Start}: {error.Message}")
+                .Select(error => $"validation error at line={error.Line!.Start}, column={error.Column!.Start}: {error.Message}")
                 .ToList();
 
             var expectedMessage = $"{errorsCount} error{(errorsCount > 1 ? "s" : "")} occurred:\n\t* {string.Join("\n\t* ", formattedErrors)}\n\n";
@@ -57,7 +56,7 @@ public class FgaModToJsonShould
             {
                 testCase.Name,
                 testCase.ModFile,
-                testCase.Json,
+                testCase.Json!,
                 testCase.Skip,
                 testCase.ExpectedErrors
             });

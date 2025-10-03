@@ -94,7 +94,7 @@ public static class TestsData
         // Get the directory where the test assembly is located
         var testAssemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var testDirectory = Path.GetDirectoryName(testAssemblyLocation);
-        var languageRoot = Path.GetFullPath(Path.Combine(testDirectory, "../../../../.."));
+        var languageRoot = Path.GetFullPath(Path.Combine(testDirectory!, "../../../../.."));
         var fullPath = Path.Combine(languageRoot, relativePath);
         return fullPath;
     }

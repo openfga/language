@@ -1,3 +1,6 @@
+#pragma warning disable xUnit1026
+#pragma warning disable IDE0060
+
 using OpenFga.Language.Errors;
 using OpenFga.Language.Tests.util;
 using OpenFga.Language.Transformers;

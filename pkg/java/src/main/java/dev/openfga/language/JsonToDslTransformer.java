@@ -309,6 +309,11 @@ public class JsonToDslTransformer {
     }
 
     private CharSequence formatConditions(AuthorizationModel model) {
+
+        if(model == null) {
+            return "";
+        }
+
         var conditions = model.getConditions();
         if (conditions == null || conditions.isEmpty()) {
             return "";

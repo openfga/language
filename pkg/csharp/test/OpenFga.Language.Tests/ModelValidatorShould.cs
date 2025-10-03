@@ -1,3 +1,6 @@
+#pragma warning disable IDE0060
+#pragma warning disable xUnit1026
+
 using System.Text.Json;
 using OpenFga.Language.Errors;
 using OpenFga.Language.Tests.util;
@@ -187,7 +190,7 @@ public class ModelValidatorShould
             {
                 testCase.Name,
                 testCase.Json,
-                testCase.ExpectedErrors
+                testCase.ExpectedErrors!
             });
     }
 }

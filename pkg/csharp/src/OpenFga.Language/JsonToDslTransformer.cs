@@ -13,8 +13,9 @@ public class JsonToDslTransformer
         AuthorizationModel? model = null;
         if (!string.IsNullOrEmpty(json) && json != "null")
         {
-            model = Json.Parse<AuthorizationModel>(json);
+            model = AuthorizationModel.FromJson(json);
         }
+
         return TransformJsonToDsl(model);
     }
 
@@ -57,7 +58,7 @@ public class JsonToDslTransformer
             {
                 var relationName = relationEntry.Key;
                 var relationDefinition = relationEntry.Value;
-                var formattedRelationString = FormatRelation(typeName, relationName, relationDefinition, 
+                var formattedRelationString = FormatRelation(typeName, relationName, relationDefinition,
                     metadataRelations.GetValueOrDefault(relationName));
                 formattedTypeBuilder.Append(EOL).Append(formattedRelationString);
             }
@@ -88,7 +89,7 @@ public class JsonToDslTransformer
         }
 
         var formattedRelation = formatter(typeName, relationName, relationDefinition, typeRestrictions, validator);
-        
+
         if (validator.Occurrences() == 0 || (validator.Occurrences() == 1 && validator.IsFirstPosition(relationDefinition)))
         {
             return $"    define {relationName}: {formattedRelation}";
@@ -97,27 +98,27 @@ public class JsonToDslTransformer
         throw new UnsupportedDSLNestingException(typeName, relationName);
     }
 
-    private StringBuilder FormatDifference(string typeName, string relationName, Userset relationDefinition, 
+    private StringBuilder FormatDifference(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
-        var baseRelation = FormatSubRelation(typeName, relationName, relationDefinition.Difference.Base, typeRestrictions, validator);
+        var baseRelation = FormatSubRelation(typeName, relationName, relationDefinition.Difference!.Base, typeRestrictions, validator);
         var difference = FormatSubRelation(typeName, relationName, relationDefinition.Difference.Subtract, typeRestrictions, validator);
         return new StringBuilder(baseRelation.ToString()).Append(" but not ").Append(difference);
     }
 
-    private StringBuilder FormatUnion(string typeName, string relationName, Userset relationDefinition, 
+    private StringBuilder FormatUnion(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
         return JoinChildren(relationDefinition.Union?.Child, "or", typeName, relationName, relationDefinition, typeRestrictions, validator);
     }
 
-    private StringBuilder FormatIntersection(string typeName, string relationName, Userset relationDefinition, 
+    private StringBuilder FormatIntersection(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
         return JoinChildren(relationDefinition.Intersection?.Child, "and", typeName, relationName, relationDefinition, typeRestrictions, validator);
     }
 
-    private StringBuilder JoinChildren(List<Userset>? children, string op, string typeName, string relationName, 
+    private StringBuilder JoinChildren(List<Userset>? children, string op, string typeName, string relationName,
         Userset relationDefinition, List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
         children = PrioritizeDirectAssignment(children ?? new List<Userset>());
@@ -214,7 +215,7 @@ public class JsonToDslTransformer
         }
     }
 
-    private StringBuilder FormatSubRelation(string typeName, string relationName, Userset relationDefinition, 
+    private StringBuilder FormatSubRelation(string typeName, string relationName, Userset relationDefinition,
         List<RelationReference> typeRestrictions, DirectAssignmentValidator validator)
     {
         if (relationDefinition.This != null)
@@ -286,7 +287,7 @@ public class JsonToDslTransformer
         {
             formattedTypeRestriction.Append(" with ").Append(condition);
         }
-        
+
         return formattedTypeRestriction.ToString();
     }
 
@@ -299,7 +300,7 @@ public class JsonToDslTransformer
     {
         var computedUserset = string.Empty;
         var tupleset = string.Empty;
-        
+
         if (relationDefinition?.TupleToUserset != null)
         {
             if (relationDefinition.TupleToUserset.ComputedUserset != null)
@@ -311,11 +312,11 @@ public class JsonToDslTransformer
                 tupleset = relationDefinition.TupleToUserset.Tupleset.Relation ?? string.Empty;
             }
         }
-        
+
         return new StringBuilder(computedUserset).Append(" from ").Append(tupleset).ToString();
     }
 
-    private string FormatConditions(AuthorizationModel model)
+    private string FormatConditions(AuthorizationModel? model)
     {
         var conditions = model?.Conditions;
         if (conditions == null || conditions.Count == 0)
@@ -375,7 +376,7 @@ public class JsonToDslTransformer
             var formattedParameterType = parameterType.TypeName.ToString()
                 .Replace("TYPE_NAME_", "")
                 .ToLowerInvariant();
-            
+
             if (formattedParameterType == "list" || formattedParameterType == "map")
             {
                 var genericTypeString = string.Empty;
@@ -387,7 +388,7 @@ public class JsonToDslTransformer
                 }
                 formattedParameterType = $"{formattedParameterType}<{genericTypeString}>";
             }
-            
+
             return $"{parameterName}: {formattedParameterType}";
         }));
     }

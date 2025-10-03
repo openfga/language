@@ -1,19 +1,37 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Authors>OpenFGA; Florian Dohrendorf</Authors>
+    <Company>OpenFGA</Company>
+    <AssemblyTitle>OpenFGA Language SDK for .NET</AssemblyTitle>
+    <Description>.NET SDK for OpenFGA Language</Description>
+    <Copyright>OpenFGA</Copyright>
+    <Version>0.1.0-preview.1</Version>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/openfga/language.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>openfga;authorization;fga;fine-grained-authorization;rebac;zanzibar</PackageTags>
+    <PackageIcon>FGAIcon.png</PackageIcon>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-    <PackageReference Include="OpenFga.Sdk" Version="0.5.1" />
+    <PackageReference Include="OpenFga.Sdk" Version="0.7.0" />
     <PackageReference Include="SharpYaml" Version="2.1.3" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="OpenFga.Language.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../assets/FGAIcon.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../../README.md" Pack="true" PackagePath=""/>
   </ItemGroup>
 
 </Project>

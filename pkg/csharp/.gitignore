@@ -1,0 +1,11 @@
+# C#
+bin/
+obj/
+
+# Visual Studio
+.vs/
+
+# Auto-generated files
+src/OpenFga.Language/gen/
+
+*.user

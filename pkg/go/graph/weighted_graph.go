@@ -1,23 +1,20 @@
 package graph
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"slices"
 	"strings"
+
+	"github.com/openfga/language/pkg/go/errors"
 )
 
 const Infinite = math.MaxInt32
 
-var ErrModelCycle = errors.New("model cycle")
-var ErrInvalidModel = errors.New("invalid model")
-var ErrTupleCycle = errors.New("tuple cycle")
-var ErrContrainstTupleCycle = fmt.Errorf("%w: operands AND or BUT NOT cannot be involved in a cycle", ErrTupleCycle)
-
 type WeightedAuthorizationModelGraph struct {
-	edges map[string][]*WeightedAuthorizationModelEdge
-	nodes map[string]*WeightedAuthorizationModelNode
+	edges      map[string][]*WeightedAuthorizationModelEdge
+	nodes      map[string]*WeightedAuthorizationModelNode
+	Conditions []string // Slice of condition names from the model
 }
 
 // GetEdges returns the edges map.
@@ -43,22 +40,30 @@ func (wg *WeightedAuthorizationModelGraph) GetNodeByID(uniqueLabel string) (*Wei
 // NewWeightedAuthorizationModelGraph creates a new WeightedAuthorizationModelGraph.
 func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	return &WeightedAuthorizationModelGraph{
-		nodes: make(map[string]*WeightedAuthorizationModelNode),
-		edges: make(map[string][]*WeightedAuthorizationModelEdge),
+		nodes:      make(map[string]*WeightedAuthorizationModelNode),
+		edges:      make(map[string][]*WeightedAuthorizationModelEdge),
+		Conditions: make([]string, 0),
 	}
 }
 
 // AddNode adds a node to the graph with optional nodeType and weight.
-func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType) {
+// Returns an error if a node with the same unique label already exists.
+func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) (*WeightedAuthorizationModelNode, error) {
+	if existingNode := wg.nodes[uniqueLabel]; existingNode != nil {
+		return nil, errors.InvalidAuthorizationModelError(fmt.Errorf("node with unique label %s already exists", uniqueLabel))
+	}
+
 	var wildcards []string
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
+
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, relationDefinition: relationDefinition}
+	return wg.nodes[uniqueLabel], nil
 }
 
-// AddNode adds a node to the graph with optional nodeType and weight.
-func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *WeightedAuthorizationModelNode {
+// GetOrAddNode adds a node to the graph with optional nodeType and weight, or returns an existing node if it already exists.
+func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) *WeightedAuthorizationModelNode {
 	if existingNode := wg.nodes[uniqueLabel]; existingNode != nil {
 		return existingNode
 	}
@@ -66,7 +71,7 @@ func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label strin
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, relationDefinition: relationDefinition}
 	return wg.nodes[uniqueLabel]
 }
 
@@ -82,7 +87,7 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 
 func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, relationDefinition string, tuplesetRelation string, condition string) error {
 	if fromNode == nil || toNode == nil {
-		return fmt.Errorf("%w: Model cannot be parsed", ErrInvalidModel)
+		return errors.InvalidAuthorizationModelError(fmt.Errorf("model cannot be parsed"))
 	}
 
 	if condition == "" {
@@ -144,7 +149,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 			return err
 		}
 		if len(tupleCyles) > 0 {
-			return fmt.Errorf("%w: %d tuple cycles found without resolution", ErrTupleCycle, len(tupleCyles))
+			return errors.InvalidAuthorizationModelError(fmt.Errorf("%w: %d tuple cycles found without resolution", errors.ErrNoEntryPointsLoop, len(tupleCyles)))
 		}
 	}
 	return nil
@@ -326,7 +331,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 			tupleCycle = append(tupleCycle, edge.to.uniqueLabel)
 			return tupleCycle, nil
 		}
-		return tupleCycle, ErrModelCycle
+		return tupleCycle, errors.InvalidAuthorizationModelError(errors.ErrCycle)
 	}
 
 	isTupleCycle := len(tupleCycle) > 0
@@ -486,8 +491,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 		return tupleCycles, nil
 	}
 
+	objecttype, relationname := getRelationAndObject(node.relationDefinition)
 	// In the case of interception or exclussion involved in a cycle, is not allowed, so we return an error
-	return tupleCycles, ErrContrainstTupleCycle
+	return tupleCycles, errors.RelationObjectTypeError(relationname, objecttype, errors.ErrConstraintTupleCycle) // we need to add relationNode into the node it self, so we can know what relation belongs to any operation or logical node
 }
 
 // The max weight strategy is to take all the types for all the edges and get the max value
@@ -496,9 +502,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
 	edges := wg.edges[nodeID]
+	objecttype, relationname := getRelationAndObject(node.relationDefinition)
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
-		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+		return errors.RelationObjectTypeError(relationname, objecttype, errors.ErrNoEntrypoints)
 	}
 
 	for _, edge := range edges {
@@ -520,19 +527,20 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMaxStrategy(no
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	edges := wg.edges[nodeID]
+	objecttype, relationname := getRelationAndObject(node.relationDefinition)
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
-		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+		return errors.RelationObjectTypeError(relationname, objecttype, errors.ErrNoEntryPointsLoop)
 	}
 
 	if node.nodeType != OperatorNode || node.label != ExclusionOperator {
-		return fmt.Errorf("%w: node %s cannot apply mixed strategy, only accepted exclusion nodes", ErrInvalidModel, nodeID)
+		return errors.InvalidAuthorizationModelError(fmt.Errorf("node %s cannot apply mixed strategy, only accepted exclusion nodes", node.relationDefinition))
 	}
 
 	// with the logical ttu and userset, an exclusion operation only has two edges
 	// the first edge is the one that defines the userset, the second edge is the one that excludes it
 	if len(edges) != 2 {
-		return fmt.Errorf("%w: invalid number of edges for exclusion node %s", ErrInvalidModel, nodeID)
+		return errors.InvalidAuthorizationModelError(fmt.Errorf("invalid number of edges for exclusion node %s", node.relationDefinition))
 	}
 	nodeWeights := make(map[string]int, len(edges))
 	for k, v := range edges[0].weights {
@@ -556,9 +564,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithMixedStrategy(
 func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStrategy(nodeID string) error {
 	node := wg.nodes[nodeID]
 	edges := wg.edges[nodeID]
+	objecttype, relationname := getRelationAndObject(node.relationDefinition)
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
-		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+		return errors.RelationObjectTypeError(relationname, objecttype, fmt.Errorf("%w: not all paths return the same type", errors.ErrNoEntrypoints))
 	}
 
 	rewriteWeights := make(map[string]int, len(edges))
@@ -582,7 +591,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 	node.weights = rewriteWeights
 
 	if len(node.weights) == 0 {
-		return fmt.Errorf("%w: not all paths return the same type for the node %s", ErrInvalidModel, nodeID)
+		return errors.RelationObjectTypeError(relationname, objecttype, fmt.Errorf("%w: not all paths return the same type", errors.ErrNoEntrypoints))
 	}
 
 	return nil
@@ -609,12 +618,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 	referenceNodeID := "R#" + nodeID
 	edges := wg.edges[nodeID]
 
+	objecttype, relationname := getRelationAndObject(node.relationDefinition)
 	if node.nodeType != SpecificTypeAndRelation && !wg.isLogicalUnionOperator(node) {
-		return fmt.Errorf("%w: invalid node, reference node is not a union operator or a relation or a logical userset or logical TTU: %s", ErrTupleCycle, nodeID)
+		return errors.RelationObjectTypeError(relationname, objecttype, fmt.Errorf("%w: ireference node is not a union operator or a relation or a logical userset or logical TTU", errors.ErrConstraintTupleCycle))
 	}
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
-		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+		return errors.RelationObjectTypeError(relationname, objecttype, errors.ErrNoEntrypoints)
 	}
 
 	references := make([]string, 0)
@@ -630,6 +640,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 		}
 	}
 	node.weights = weights
+
+	if len(weights) == 0 {
+		return errors.RelationObjectTypeError(relationname, objecttype, errors.ErrNoEntrypoints)
+	}
 
 	wg.fixDependantEdgesWeight(nodeID, referenceNodeID, references, tupleCycleDependencies)
 	wg.fixDependantNodesWeight(nodeID, referenceNodeID, tupleCycleDependencies)
@@ -743,4 +757,12 @@ func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID stri
 		}
 	}
 	return result
+}
+
+func getRelationAndObject(relationDefinition string) (string, string) {
+	parts := strings.Split(relationDefinition, "#")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/openfga/language/pkg/go/errors"
 	language "github.com/openfga/language/pkg/go/transformer"
 )
 
@@ -404,7 +405,7 @@ func TestInvalidGraphNoRelationDefined(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrInvalidModel)
+	require.ErrorIs(t, err, errors.ErrNoEntrypoints)
 }
 
 func TestInvalidGraphTupleCycleWithExclusion(t *testing.T) {
@@ -421,7 +422,7 @@ func TestInvalidGraphTupleCycleWithExclusion(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrContrainstTupleCycle)
+	require.ErrorIs(t, err, errors.ErrConstraintTupleCycle)
 }
 
 func TestInvalidGraphTupleCycleWithExclusionCase2(t *testing.T) {
@@ -440,7 +441,7 @@ func TestInvalidGraphTupleCycleWithExclusionCase2(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrContrainstTupleCycle)
+	require.ErrorIs(t, err, errors.ErrConstraintTupleCycle)
 }
 
 func TestInvalidGraphModelCycle(t *testing.T) {
@@ -457,7 +458,7 @@ func TestInvalidGraphModelCycle(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrModelCycle)
+	require.ErrorIs(t, err, errors.ErrCycle)
 }
 
 func TestValidGraphModel(t *testing.T) {
@@ -919,7 +920,7 @@ func TestMixingTerminalTypesInIntersection(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+	require.ErrorContains(t, err, "no entrypoints defined: not all paths return the same type")
 }
 
 func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
@@ -1394,7 +1395,7 @@ func TestGraphConstructioComputedWithCycle(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrModelCycle)
+	require.ErrorIs(t, err, errors.ErrCycle)
 }
 
 func TestGraphConstructionTTU(t *testing.T) {
@@ -1602,7 +1603,7 @@ func TestGraphConstructionInvalidTTU(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrInvalidModel)
+	require.ErrorIs(t, err, errors.ErrRelationUndefined)
 }
 
 func TestGraphConstructionIntersection(t *testing.T) {
@@ -1913,7 +1914,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "no entrypoints defined: not all paths return the same type")
 		})
 		t.Run("without_direct_types", func(t *testing.T) {
 			t.Parallel()
@@ -1933,7 +1934,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "no entrypoints defined: not all paths return the same type")
 		})
 	})
 
@@ -2371,7 +2372,7 @@ func TestGraphConstructionInvalidModelCycle(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrModelCycle)
+	require.ErrorIs(t, err, errors.ErrCycle)
 
 }
 
@@ -2391,7 +2392,7 @@ func TestGraphConstructionInvalidModelCycle2(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrModelCycle)
+	require.ErrorIs(t, err, errors.ErrCycle)
 
 }
 
@@ -2412,7 +2413,7 @@ func TestGraphConstructionInvalidModelCycle3(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorIs(t, err, ErrModelCycle)
+	require.ErrorIs(t, err, errors.ErrCycle)
 
 }
 

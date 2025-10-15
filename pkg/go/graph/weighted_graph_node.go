@@ -16,18 +16,24 @@ const (
 )
 
 type WeightedAuthorizationModelNode struct {
-	weights           map[string]int
-	nodeType          NodeType
-	label             string   // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
-	uniqueLabel       string   // e.g. "group#member", or "union:01JH0MR4H1MBFGVN37E4PRMPM3"
-	wildcards         []string // e.g. "user". This means that from this node there is a path to node user:*
-	recursiveRelation string
-	tupleCycle        bool
+	weights            map[string]int
+	nodeType           NodeType
+	label              string   // e.g. "group#member", UnionOperator, IntersectionOperator, ExclusionOperator
+	uniqueLabel        string   // e.g. "group#member", or "union:01JH0MR4H1MBFGVN37E4PRMPM3"
+	wildcards          []string // e.g. "user". This means that from this node there is a path to node user:*
+	recursiveRelation  string
+	tupleCycle         bool
+	relationDefinition string // the relation definition that defines this node, if the node is a relation will have the same unique label, if it is a type then will be empty, otherwise will have the relation definition of the relation node that defines it
 }
 
 // GetWeights returns the entire weights map.
 func (node *WeightedAuthorizationModelNode) GetWeights() map[string]int {
 	return node.weights
+}
+
+// GetRelationDefinition returns the relationDefinition field, e.g. "document#parent".
+func (node *WeightedAuthorizationModelNode) GetRelationDefinition() string {
+	return node.relationDefinition
 }
 
 // GetWeight returns the weight for a specific type. It can return Infinite to indicate recursion.

@@ -71,7 +71,8 @@ type WeightedAuthorizationModelEdge struct {
 	// define rel1: [user, user with condX]
 	// then the node rel1 will have an edge pointing to the node user and with two conditions
 	// one that will be none and another one that will be condX
-	conditions []string
+	conditions     []string
+	usersetWeights map[string]int
 }
 
 // GetWeights returns the entire weights map.

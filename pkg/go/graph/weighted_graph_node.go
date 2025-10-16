@@ -23,6 +23,7 @@ type WeightedAuthorizationModelNode struct {
 	wildcards         []string // e.g. "user". This means that from this node there is a path to node user:*
 	recursiveRelation string
 	tupleCycle        bool
+	usersetWeights    map[string]int
 }
 
 // GetWeights returns the entire weights map.

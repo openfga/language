@@ -181,7 +181,7 @@ func TestUsersetWeightTupleCyclePath(t *testing.T) {
 	require.Equal(t, Infinite, weight)
 }
 
-func TestUsersetWeightDdependsOnRecursive(t *testing.T) {
+func TestUsersetWeightDependsOnRecursive(t *testing.T) {
 	t.Parallel()
 	model := `
 	model

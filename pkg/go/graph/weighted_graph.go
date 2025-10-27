@@ -30,6 +30,11 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNode(node *WeightedAuthor
 	return v, ok
 }
 
+func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeId(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
+	v, ok := wg.edges[nodeID]
+	return v, ok
+}
+
 // GetNodes returns the nodes map.
 func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthorizationModelNode {
 	return wg.nodes

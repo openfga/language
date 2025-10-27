@@ -39,3 +39,12 @@ updates:
           - "*"
         exclude-patterns:
           - "eslint"
+
+  - package-ecosystem: "nuget"
+    directory: "/pkg/csharp/src/OpenFga.Language"
+    schedule:
+      interval: "weekly"
+    groups:
+      dependencies:
+        patterns:
+          - "*"

@@ -52,7 +52,7 @@ const (
 	// like define rel1: [user, user with condX], in this case the edge will have [none, condX]
 	// or an edge needs to support only condition like define rel1: [user with condX], the edge will have [condX]
 	// in the case the edge does not have any condition like define rel1: [user], the edge will have [none].
-	NoCond string = "none"
+	NoCond string = ""
 )
 
 type WeightedAuthorizationModelEdge struct {

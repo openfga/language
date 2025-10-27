@@ -494,7 +494,6 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 					return tupleCycles, err
 				}
 			}
-
 		}
 		return tupleCycles, nil
 	}

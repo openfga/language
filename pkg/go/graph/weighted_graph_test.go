@@ -1214,3 +1214,140 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
 
 }
+func TestGetEdgesFromNodeId(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns_edges_for_existing_node", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("state-member", "member", SpecificTypeAndRelation)
+		graph.AddNode("state-owner", "owner", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add edges from state-member
+		graph.AddEdge("state-member", "user", DirectEdge, "state-member", "", nil)
+		graph.AddEdge("state-member", "state-owner", ComputedEdge, "state-member", "", nil)
+
+		// Get edges
+		edges, found := graph.GetEdgesFromNodeId("state-member")
+
+		require.True(t, found)
+		require.Len(t, edges, 2)
+
+		// Verify edge properties
+		require.Equal(t, "user", edges[0].to.uniqueLabel)
+		require.Equal(t, DirectEdge, edges[0].edgeType)
+		require.Equal(t, "state-owner", edges[1].to.uniqueLabel)
+		require.Equal(t, ComputedEdge, edges[1].edgeType)
+	})
+
+	t.Run("returns_empty_for_node_with_no_edges", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add node without edges
+		graph.AddNode("state-member", "member", SpecificTypeAndRelation)
+
+		edges, found := graph.GetEdgesFromNodeId("state-member")
+
+		require.False(t, found)
+		require.Nil(t, edges)
+	})
+
+	t.Run("returns_empty_for_non_existent_node", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		edges, found := graph.GetEdgesFromNodeId("non-existent")
+
+		require.False(t, found)
+		require.Nil(t, edges)
+	})
+
+	t.Run("returns_multiple_edges_with_different_types", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("transition-can_apply", "can_apply", SpecificTypeAndRelation)
+		graph.AddNode("transition-can_apply-and", IntersectionOperator, OperatorNode)
+		graph.AddNode("state-can_view", "can_view", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add different types of edges
+		graph.AddEdge("transition-can_apply", "transition-can_apply-and", RewriteEdge, "transition-can_apply", "", nil)
+		graph.AddEdge("transition-can_apply-and", "user", DirectEdge, "transition-can_apply", "", nil)
+		graph.AddEdge("transition-can_apply-and", "state-can_view", TTUEdge, "transition-can_apply", "transition-start", nil)
+		graph.AddEdge("transition-can_apply-and", "state-can_view", TTUEdge, "transition-can_apply", "transition-end", nil)
+
+		// Get edges from transition-can_apply-and
+		edges, found := graph.GetEdgesFromNodeId("transition-can_apply-and")
+
+		require.True(t, found)
+		require.Len(t, edges, 3)
+
+		// Verify different edge types
+		edgeTypes := make(map[EdgeType]int)
+		for _, edge := range edges {
+			edgeTypes[edge.edgeType]++
+		}
+		require.Equal(t, 1, edgeTypes[DirectEdge])
+		require.Equal(t, 2, edgeTypes[TTUEdge])
+	})
+
+	t.Run("returns_edges_with_conditions", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("license-owner", "owner", SpecificTypeAndRelation)
+		graph.AddNode("group", "group", SpecificType)
+
+		// Add edges with conditions
+		graph.AddEdge("license-owner", "group", DirectEdge, "license-owner", "", []string{"condition1", "condition2"})
+
+		edges, found := graph.GetEdgesFromNodeId("license-owner")
+
+		require.True(t, found)
+		require.Len(t, edges, 1)
+		require.Equal(t, []string{"condition1", "condition2"}, edges[0].conditions)
+	})
+
+	t.Run("handles_operator_nodes", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add operator nodes
+		graph.AddNode("state-owner-and", IntersectionOperator, OperatorNode)
+		graph.AddNode("state-approved_member", "approved_member", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add edges from operator node
+		graph.AddEdge("state-owner-and", "state-approved_member", ComputedEdge, "state-owner", "", nil)
+		graph.AddEdge("state-owner-and", "user", DirectEdge, "state-owner", "", nil)
+
+		edges, found := graph.GetEdgesFromNodeId("state-owner-and")
+
+		require.True(t, found)
+		require.Len(t, edges, 2)
+	})
+
+	t.Run("preserves_edge_order", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("parent", "parent", SpecificTypeAndRelation)
+		graph.AddNode("child1", "child1", SpecificType)
+		graph.AddNode("child2", "child2", SpecificType)
+		graph.AddNode("child3", "child3", SpecificType)
+
+		// Add edges in specific order
+		graph.AddEdge("parent", "child1", DirectEdge, "parent", "", nil)
+		graph.AddEdge("parent", "child2", DirectEdge, "parent", "", nil)
+		graph.AddEdge("parent", "child3", DirectEdge, "parent", "", nil)
+
+		edges, found := graph.GetEdgesFromNodeId("parent")
+
+		require.True(t, found)
+		require.Len(t, edges, 3)
+		require.Equal(t, "child1", edges[0].to.uniqueLabel)
+		require.Equal(t, "child2", edges[1].to.uniqueLabel)
+		require.Equal(t, "child3", edges[2].to.uniqueLabel)
+	})
+}

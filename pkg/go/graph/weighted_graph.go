@@ -30,6 +30,11 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNode(node *WeightedAuthor
 	return v, ok
 }
 
+func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeId(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
+	v, ok := wg.edges[nodeID]
+	return v, ok
+}
+
 // GetNodes returns the nodes map.
 func (wg *WeightedAuthorizationModelGraph) GetNodes() map[string]*WeightedAuthorizationModelNode {
 	return wg.nodes
@@ -83,10 +88,6 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *WeightedAuthorizationModelNode, edgeType EdgeType, relationDefinition string, tuplesetRelation string, condition string) error {
 	if fromNode == nil || toNode == nil {
 		return fmt.Errorf("%w: Model cannot be parsed", ErrInvalidModel)
-	}
-
-	if condition == "" {
-		condition = NoCond
 	}
 
 	edges := wg.edges[fromNode.uniqueLabel]
@@ -826,7 +827,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *Weighte
 	visited[node.uniqueLabel] = true
 
 	// // Get edges from the node, if there is no edges from the node, then weight is 0 and return
-	edges, _ := wg.edges[node.uniqueLabel]
+	edges := wg.edges[node.uniqueLabel]
 	if len(edges) == 0 {
 		wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, 0)
 		return 0

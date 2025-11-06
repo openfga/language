@@ -152,7 +152,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 }
 
 // GetWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key
-func (wg *WeightedAuthorizationModelGraph) GetWeight(node *WeightedAuthorizationModelNode, key string) (int, bool) {
+func (wg *WeightedAuthorizationModelGraph) GetNodeWeight(node *WeightedAuthorizationModelNode, key string) (int, bool) {
 	if node == nil {
 		return 0, false
 	}
@@ -164,6 +164,30 @@ func (wg *WeightedAuthorizationModelGraph) GetWeight(node *WeightedAuthorization
 	}
 
 	return node.GetWeight(key)
+}
+
+// GetWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key
+func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthorizationModelEdge, key string) (int, bool) {
+	if edge == nil {
+		return 0, false
+	}
+
+	if strings.Contains(key, "#") {
+		// If the key contains a "#", it is a SpecificTypeAndRelation
+		// We need to find the base type (the part before the "#")
+		weight, exists := edge.usersetWeights[key]
+		if exists {
+			return weight, weight > 0
+		}
+		// if does not exists then we need to calculate the weight from the to node
+		usersetWeight, ok := wg.getWeightForUserset(edge.to, key)
+		if ok {
+			return wg.calculateUsersetWeightInEdge(edge, key, usersetWeight)
+		}
+		return 0, false
+	}
+
+	return edge.GetWeight(key)
 }
 
 func (wg *WeightedAuthorizationModelGraph) isLogicalOperator(node *WeightedAuthorizationModelNode) bool {
@@ -862,18 +886,10 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *Weighte
 
 		// Calculate userset weight recursively
 		usersetWeight := wg.calculateUsersetWeights(edge.to, usersetNode, visited)
-		if usersetWeight == 0 {
-			wg.setUsersetWeightToEdge(edge, usersetNode.uniqueLabel, 0)
-			continue
+		wg.calculateUsersetWeightInEdge(edge, usersetNode.uniqueLabel, usersetWeight)
+		if usersetWeight != 0 {
+			usersetPresence = true
 		}
-
-		usersetPresence = true
-		if usersetWeight != Infinite && (edge.edgeType == DirectEdge || edge.edgeType == TTUEdge) {
-			wg.setUsersetWeightToEdge(edge, usersetNode.uniqueLabel, usersetWeight+1)
-			continue
-		}
-
-		wg.setUsersetWeightToEdge(edge, usersetNode.uniqueLabel, usersetWeight)
 	}
 
 	// Return calculated node weight based on edges
@@ -899,11 +915,26 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *Weighte
 	return weight
 }
 
-// in the case of tuple cycles or recursion calculate the userset weight of the non cycle path
-// if found set the userset cycle to infinite for evey node in the cycle.
-// if not found verify if the userset is part of the tuple cycle itself, if found set the weight to infinite,
-//
-//	otherwise to 0
+func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightInEdge(edge *WeightedAuthorizationModelEdge, key string, usersetWeight int) (int, bool) {
+	if edge == nil {
+		return 0, false
+	}
+
+	if usersetWeight == 0 {
+		wg.setUsersetWeightToEdge(edge, key, 0)
+		return 0, false
+	}
+
+	if usersetWeight != Infinite && (edge.edgeType == DirectEdge || edge.edgeType == TTUEdge) {
+		wg.setUsersetWeightToEdge(edge, key, usersetWeight+1)
+		return usersetWeight + 1, true
+	}
+
+	wg.setUsersetWeightToEdge(edge, key, usersetWeight)
+	return usersetWeight, true
+}
+
+// otherwise to 0
 func (wg *WeightedAuthorizationModelGraph) calculateUsersetNodeWeightWhenCycle(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode, visited map[string]bool) int {
 	usersetWeight := wg.findUsersetWeightInCycle(node, usersetNode, visited)
 	if usersetWeight > 0 {

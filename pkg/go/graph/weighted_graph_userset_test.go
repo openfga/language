@@ -17,9 +17,12 @@ func TestUsersetWeightDirect(t *testing.T) {
             relations
                 define assignee: [user]
 				define member: [user]
+				define permission: [permission]
+				define creator: member from permission
         type permission
             relations
                 define assignee: [role#assignee, role#member]
+				define member: [permission#assignee]
         type job
             relations
                 define can_read: [user] or can_write
@@ -36,33 +39,40 @@ func TestUsersetWeightDirect(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	weight, ok := graph.GetWeight(graph.nodes["job#can_read"], "role#assignee")
+	weight, ok := graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 2, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_read"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["permission#assignee"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["permission#assignee"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 1, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_write"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_write"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 2, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_execute"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 2, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 3, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 3, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 4, weight)
+
+	weight, ok = graph.GetEdgeWeight(graph.edges["permission#member"][0], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, 2, weight)
+	weight, ok = graph.GetEdgeWeight(graph.edges["role#creator"][0], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, 3, weight)
 }
 
 func TestUsersetWeightRecursivePath(t *testing.T) {
@@ -74,10 +84,11 @@ func TestUsersetWeightRecursivePath(t *testing.T) {
         type role
             relations
                 define assignee: [user, role#assignee]
-				define member: [user]
+				define member: [user, role#assignee]
         type permission
             relations
                 define assignee: [role#assignee, role#member] 
+				define member: [role#member]
         type job
             relations
                 define can_read: [user] or can_write
@@ -94,33 +105,42 @@ func TestUsersetWeightRecursivePath(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	weight, ok := graph.GetWeight(graph.nodes["job#can_read"], "role#assignee")
+	weight, ok := graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_read"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["permission#assignee"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["permission#assignee"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_write"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_write"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_execute"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
+
+	weight, ok = graph.GetEdgeWeight(graph.edges["permission#member"][0], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, Infinite, weight)
+	weight, ok = graph.GetEdgeWeight(graph.edges["role#member"][1], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, Infinite, weight)
+	_, ok = graph.GetEdgeWeight(graph.edges["role#member"][0], "role#assignee")
+	require.False(t, ok)
 }
 
 func TestUsersetWeightTupleCyclePath(t *testing.T) {
@@ -136,6 +156,7 @@ func TestUsersetWeightTupleCyclePath(t *testing.T) {
         type permission
             relations
                 define assignee: [role#assignee, role#member] 
+				define member: [user, permission#assignee]
         type job
             relations
                 define can_read: [user] or can_write
@@ -152,33 +173,39 @@ func TestUsersetWeightTupleCyclePath(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	weight, ok := graph.GetWeight(graph.nodes["job#can_read"], "role#assignee")
+	weight, ok := graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_read"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["permission#assignee"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["permission#assignee"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_write"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_write"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_execute"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
+
+	weight, ok = graph.GetEdgeWeight(graph.edges["permission#member"][1], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, Infinite, weight)
+	_, ok = graph.GetEdgeWeight(graph.edges["permission#member"][0], "role#assignee")
+	require.False(t, ok)
 }
 
 func TestUsersetWeightDependsOnRecursive(t *testing.T) {
@@ -210,31 +237,31 @@ func TestUsersetWeightDependsOnRecursive(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	weight, ok := graph.GetWeight(graph.nodes["job#can_read"], "role#assignee")
+	weight, ok := graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_read"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["permission#assignee"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["permission#assignee"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_write"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_write"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_execute"], "role#assignee")
 	require.False(t, ok)
 	require.Equal(t, 0, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#cannot_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_read_upgraded"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_read"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
-	weight, ok = graph.GetWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#exceptional_execute"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, Infinite, weight)
 }

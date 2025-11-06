@@ -172,22 +172,33 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthoriza
 		return 0, false
 	}
 
-	if strings.Contains(key, "#") {
-		// If the key contains a "#", it is a SpecificTypeAndRelation
-		// We need to find the base type (the part before the "#")
-		weight, exists := edge.usersetWeights[key]
-		if exists {
-			return weight, weight > 0
-		}
-		// if does not exists then we need to calculate the weight from the to node
-		usersetWeight, ok := wg.getWeightForUserset(edge.to, key)
-		if ok {
-			return wg.calculateUsersetWeightInEdge(edge, key, usersetWeight)
-		}
-		return 0, false
+	if !strings.Contains(key, "#") {
+		return edge.GetWeight(key)
 	}
 
-	return edge.GetWeight(key)
+	if (edge.edgeType == DirectEdge || edge.edgeType == TTUEdge) && edge.to.uniqueLabel == key {
+		weight := 1
+		if edge.to.tupleCycle || edge.to.recursiveRelation != "" {
+			weight = Infinite
+		}
+		wg.setUsersetWeightToEdge(edge, key, weight)
+		return weight, true
+	}
+
+	// If the key contains a "#", it is a SpecificTypeAndRelation
+	// We need to find the base type (the part before the "#")
+	weight, exists := edge.usersetWeights[key]
+	if exists {
+		return weight, weight > 0
+	}
+
+	// if does not exists then we need to calculate the weight from the to node
+	usersetWeight, ok := wg.getWeightForUserset(edge.to, key)
+	if ok {
+		return wg.calculateUsersetWeightInEdge(edge, key, usersetWeight)
+	}
+	return 0, false
+
 }
 
 func (wg *WeightedAuthorizationModelGraph) isLogicalOperator(node *WeightedAuthorizationModelNode) bool {

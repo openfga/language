@@ -16,7 +16,7 @@ func TestUsersetWeightDirect(t *testing.T) {
         type role
             relations
                 define assignee: [user]
-				define member: [user]
+				define member: [user] or assignee
 				define permission: [permission]
 				define creator: member from permission
         type permission
@@ -39,7 +39,10 @@ func TestUsersetWeightDirect(t *testing.T) {
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
 	require.NoError(t, err)
-	weight, ok := graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
+	weight, ok := graph.GetEdgeWeight(graph.edges["permission#assignee"][0], "role#assignee")
+	require.True(t, ok)
+	require.Equal(t, 1, weight)
+	weight, ok = graph.GetNodeWeight(graph.nodes["job#can_read"], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 2, weight)
 	weight, ok = graph.GetNodeWeight(graph.nodes["job#cannot_read"], "role#assignee")
@@ -73,6 +76,8 @@ func TestUsersetWeightDirect(t *testing.T) {
 	weight, ok = graph.GetEdgeWeight(graph.edges["role#creator"][0], "role#assignee")
 	require.True(t, ok)
 	require.Equal(t, 3, weight)
+	_, ok = graph.GetEdgeWeight(graph.edges["role#member"][0], "role#assignee")
+	require.False(t, ok)
 }
 
 func TestUsersetWeightRecursivePath(t *testing.T) {

@@ -966,6 +966,7 @@ func (wg *WeightedAuthorizationModelGraph) updateUsersetCycleWeight(node *Weight
 	edges, _ := wg.GetEdgesFromNode(node)
 	for _, edge := range edges {
 		if edge.tupleCycle || edge.recursiveRelation != "" {
+			wg.setUsersetWeightToEdge(edge, usersetNodeLabel, usersetWeight)
 			wg.updateUsersetCycleWeight(edge.to, usersetNodeLabel, usersetWeight, cycleVisitedPath)
 		}
 		// skip the other edges that are not part of the cycle those were already updated.

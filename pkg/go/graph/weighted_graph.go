@@ -1136,26 +1136,14 @@ func (wg *WeightedAuthorizationModelGraph) canPruneEdge(edge *WeightedAuthorizat
 
 // getUsersetNodeMutex returns a mutex for a specific node
 func getUsersetNodeMutex(node *WeightedAuthorizationModelNode) *sync.RWMutex {
-	if mutex, ok := nodeUsersetMutexes.Load(node); ok {
-		return mutex.(*sync.RWMutex)
-	}
-
-	// Create new mutex if doesn't exist
-	mutex := &sync.RWMutex{}
-	nodeUsersetMutexes.Store(node, mutex)
-	return mutex
+	mutex, _ := nodeUsersetMutexes.LoadOrStore(node, &sync.RWMutex{})
+	return mutex.(*sync.RWMutex)
 }
 
 // getUsersetEdgeMutex returns a mutex for a specific edge
 func getUsersetEdgeMutex(edge *WeightedAuthorizationModelEdge) *sync.RWMutex {
-	if mutex, ok := edgeUsersetMutexes.Load(edge); ok {
-		return mutex.(*sync.RWMutex)
-	}
-
-	// Create new mutex if doesn't exist
-	mutex := &sync.RWMutex{}
-	edgeUsersetMutexes.Store(edge, mutex)
-	return mutex
+	mutex, _ := edgeUsersetMutexes.LoadOrStore(edge, &sync.RWMutex{})
+	return mutex.(*sync.RWMutex)
 }
 
 func (wg *WeightedAuthorizationModelGraph) setUsersetWeightToNode(node *WeightedAuthorizationModelNode, userset string, weight int) {

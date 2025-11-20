@@ -6,6 +6,7 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"sync"
 )
 
 const Infinite = math.MaxInt32
@@ -14,6 +15,12 @@ var ErrModelCycle = errors.New("model cycle")
 var ErrInvalidModel = errors.New("invalid model")
 var ErrTupleCycle = errors.New("tuple cycle")
 var ErrContrainstTupleCycle = fmt.Errorf("%w: operands AND or BUT NOT cannot be involved in a cycle", ErrTupleCycle)
+
+// Mutex maps to protect concurrent access to usersetWeights in nodes and edges
+var (
+	nodeUsersetMutexes sync.Map // Maps node pointer to its mutex
+	edgeUsersetMutexes sync.Map // Maps edge pointer to its mutex
+)
 
 type WeightedAuthorizationModelGraph struct {
 	edges map[string][]*WeightedAuthorizationModelEdge
@@ -1127,10 +1134,40 @@ func (wg *WeightedAuthorizationModelGraph) canPruneEdge(edge *WeightedAuthorizat
 	return false
 }
 
+// getUsersetNodeMutex returns a mutex for a specific node
+func getUsersetNodeMutex(node *WeightedAuthorizationModelNode) *sync.RWMutex {
+	if mutex, ok := nodeUsersetMutexes.Load(node); ok {
+		return mutex.(*sync.RWMutex)
+	}
+
+	// Create new mutex if doesn't exist
+	mutex := &sync.RWMutex{}
+	nodeUsersetMutexes.Store(node, mutex)
+	return mutex
+}
+
+// getUsersetEdgeMutex returns a mutex for a specific edge
+func getUsersetEdgeMutex(edge *WeightedAuthorizationModelEdge) *sync.RWMutex {
+	if mutex, ok := edgeUsersetMutexes.Load(edge); ok {
+		return mutex.(*sync.RWMutex)
+	}
+
+	// Create new mutex if doesn't exist
+	mutex := &sync.RWMutex{}
+	edgeUsersetMutexes.Store(edge, mutex)
+	return mutex
+}
+
 func (wg *WeightedAuthorizationModelGraph) setUsersetWeightToNode(node *WeightedAuthorizationModelNode, userset string, weight int) {
+	mutex := getUsersetNodeMutex(node)
+	mutex.Lock()
+	defer mutex.Unlock()
 	node.usersetWeights[userset] = weight
 }
 
 func (wg *WeightedAuthorizationModelGraph) setUsersetWeightToEdge(edge *WeightedAuthorizationModelEdge, userset string, weight int) {
+	mutex := getUsersetEdgeMutex(edge)
+	mutex.Lock()
+	defer mutex.Unlock()
 	edge.usersetWeights[userset] = weight
 }

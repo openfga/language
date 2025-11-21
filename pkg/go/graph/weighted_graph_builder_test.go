@@ -617,6 +617,67 @@ func TestCompleteWeightedGraphWithExclusion(t *testing.T) {
 	})
 }
 
+func TestDirectAssignsGraph(t *testing.T) {
+	t.Parallel()
+	t.Run("valid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user]
+				define locator: [user] but not viewer
+				define role: [role]
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		parentNode, _ := graph.GetNodeByID("group#parent")
+		require.NotNil(t, parentNode)
+		require.Len(t, parentNode.directAssigns, 1)
+		require.Contains(t, parentNode.directAssigns, "group")
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		require.Len(t, adminNode.directAssigns, 3)
+		require.Contains(t, adminNode.directAssigns, "user")
+		require.Contains(t, adminNode.directAssigns, "employee")
+		require.Contains(t, adminNode.directAssigns, "group#principal")
+		bannedNode, _ := graph.GetNodeByID("group#banned")
+		require.NotNil(t, bannedNode)
+		require.Len(t, bannedNode.directAssigns, 1)
+		require.Contains(t, bannedNode.directAssigns, "user")
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		require.Len(t, viewerNode.directAssigns, 2)
+		require.Contains(t, viewerNode.directAssigns, "user")
+		require.Contains(t, viewerNode.directAssigns, "employee")
+		principalNode, _ := graph.GetNodeByID("group#principal")
+		require.NotNil(t, principalNode)
+		require.Len(t, principalNode.directAssigns, 1)
+		require.Contains(t, principalNode.directAssigns, "user")
+		roleNode, _ := graph.GetNodeByID("group#role")
+		require.NotNil(t, roleNode)
+		require.Len(t, roleNode.directAssigns, 1)
+		require.Contains(t, roleNode.directAssigns, "role")
+		allowedNode, _ := graph.GetNodeByID("role#allowed")
+		require.NotNil(t, allowedNode)
+		require.Len(t, allowedNode.directAssigns, 2)
+		require.Contains(t, allowedNode.directAssigns, "user")
+		require.Contains(t, allowedNode.directAssigns, "role#allowed")
+	})
+}
+
 func TestValidConditionalGraphModel(t *testing.T) {
 	t.Parallel()
 	model := `

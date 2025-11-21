@@ -189,6 +189,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 		node = logicalNode
 	}
 
+	parentRelationNode, _ := wg.GetNodeByID(parentRelationName)
 	for _, directlyRelatedDef := range directlyRelated {
 		switch {
 		case directlyRelatedDef.GetRelationOrWildcard() == nil:
@@ -205,6 +206,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
 		}
 
+		parentRelationNode.directAssigns = append(parentRelationNode.directAssigns, curNode.uniqueLabel)
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 		// we only draw one edge from user to x#viewer, but with two conditions: none and condX
 		err := wg.UpsertEdge(node, curNode, DirectEdge, parentRelationName, "", directlyRelatedDef.GetCondition())

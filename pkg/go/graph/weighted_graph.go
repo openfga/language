@@ -59,7 +59,7 @@ func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, no
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, directAssigns: make([]string, 0)}
 }
 
 // AddNode adds a node to the graph with optional nodeType and weight.
@@ -71,7 +71,7 @@ func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label strin
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, directAssigns: make([]string, 0)}
 	return wg.nodes[uniqueLabel]
 }
 

@@ -1,5 +1,7 @@
 package graph
 
+import "sync"
+
 type NodeType int64
 
 const (
@@ -23,7 +25,7 @@ type WeightedAuthorizationModelNode struct {
 	wildcards         []string // e.g. "user". This means that from this node there is a path to node user:*
 	recursiveRelation string
 	tupleCycle        bool
-	usersetWeights    map[string]int
+	usersetWeights    sync.Map
 }
 
 // GetWeights returns the entire weights map.

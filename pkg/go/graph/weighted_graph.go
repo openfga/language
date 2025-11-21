@@ -59,7 +59,7 @@ func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, no
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, usersetWeights: make(map[string]int)}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
 }
 
 // AddNode adds a node to the graph with optional nodeType and weight.
@@ -71,7 +71,7 @@ func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label strin
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, usersetWeights: make(map[string]int)}
+	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards}
 	return wg.nodes[uniqueLabel]
 }
 
@@ -81,7 +81,7 @@ func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType
 	if len(conditions) == 0 {
 		conditions = []string{NoCond}
 	}
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition, usersetWeights: make(map[string]int)}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition}
 	wg.edges[fromID] = append(wg.edges[fromID], edge)
 }
 
@@ -104,7 +104,7 @@ func (wg *WeightedAuthorizationModelGraph) UpsertEdge(fromNode, toNode *Weighted
 	}
 
 	conditions := []string{condition}
-	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition, usersetWeights: make(map[string]int)}
+	edge := &WeightedAuthorizationModelEdge{from: fromNode, to: toNode, edgeType: edgeType, tuplesetRelation: tuplesetRelation, wildcards: nil, conditions: conditions, relationDefinition: relationDefinition}
 	wg.edges[fromNode.uniqueLabel] = append(wg.edges[fromNode.uniqueLabel], edge)
 	return nil
 }
@@ -187,7 +187,7 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthoriza
 
 	// If the key contains a "#", it is a SpecificTypeAndRelation
 	// We need to find the base type (the part before the "#")
-	weight, exists := edge.usersetWeights[key]
+	weight, exists := wg.getUsersetWeightFromEdge(edge, key)
 	if exists {
 		return weight, weight > 0
 	}
@@ -222,11 +222,10 @@ func (wg *WeightedAuthorizationModelGraph) isLogicalUnionOperator(node *Weighted
 // GetWeightForUserset returns the weight for the given userset node.
 func (wg *WeightedAuthorizationModelGraph) getWeightForUserset(node *WeightedAuthorizationModelNode, userset string) (int, bool) {
 	// Check for cached result first
-	if len(node.usersetWeights) != 0 {
-		weight, exists := node.usersetWeights[userset]
-		if exists {
-			return weight, weight > 0
-		}
+	// The Load operation on sync.Map is atomic and non-blocking, making this the fastest path for frequent reads.
+	weight, exists := wg.getUsersetWeightFromNode(node, userset)
+	if exists {
+		return weight, weight > 0
 	}
 
 	// Get the userset node
@@ -840,7 +839,7 @@ func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID stri
 // this involves traversing the subgraph and calculating the weight for each edge and node
 func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode, visited map[string]bool) int {
 	// Check memoized results first
-	weight, ok := node.usersetWeights[usersetNode.uniqueLabel]
+	weight, ok := wg.getUsersetWeightFromNode(node, usersetNode.uniqueLabel)
 	if ok {
 		return weight
 	}
@@ -882,7 +881,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *Weighte
 			continue
 		}
 
-		weight, exists := edge.usersetWeights[usersetNode.uniqueLabel]
+		weight, exists := wg.getUsersetWeightFromEdge(edge, usersetNode.uniqueLabel)
 		if exists && weight == 0 {
 			continue
 		}
@@ -974,8 +973,9 @@ func (wg *WeightedAuthorizationModelGraph) updateUsersetCycleWeight(node *Weight
 }
 
 func (wg *WeightedAuthorizationModelGraph) findUsersetWeightInCycle(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode, visited map[string]bool) int {
-	if node.usersetWeights[usersetNode.uniqueLabel] != 0 {
-		return node.usersetWeights[usersetNode.uniqueLabel]
+	weight, exists := wg.getUsersetWeightFromNode(node, usersetNode.uniqueLabel)
+	if exists && weight != 0 {
+		return weight
 	}
 
 	if visited[node.uniqueLabel] {
@@ -1032,7 +1032,7 @@ func (wg *WeightedAuthorizationModelGraph) findUsersetWeightInCycle(node *Weight
 		}
 	}
 
-	weight := 0
+	weight = 0
 	if foundWeight {
 		weight = Infinite
 	}
@@ -1050,8 +1050,9 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightMaxStrategy(nod
 
 	maxWeight := 0
 	for _, edge := range edges {
-		if edge.usersetWeights[usersetNode.uniqueLabel] > 0 && edge.usersetWeights[usersetNode.uniqueLabel] > maxWeight {
-			maxWeight = edge.usersetWeights[usersetNode.uniqueLabel]
+		weight, exists := wg.getUsersetWeightFromEdge(edge, usersetNode.uniqueLabel)
+		if exists && weight > 0 && weight > maxWeight {
+			maxWeight = weight
 		}
 	}
 	wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, maxWeight)
@@ -1067,12 +1068,13 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightMaxStrategyWith
 
 	maxWeight := 0
 	for _, edge := range edges {
-		if edge.usersetWeights[usersetNode.uniqueLabel] == 0 {
+		weight, exists := wg.getUsersetWeightFromEdge(edge, usersetNode.uniqueLabel)
+		if !exists || weight == 0 {
 			wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, 0)
 			return 0
 		}
-		if edge.usersetWeights[usersetNode.uniqueLabel] > maxWeight {
-			maxWeight = edge.usersetWeights[usersetNode.uniqueLabel]
+		if weight > maxWeight {
+			maxWeight = weight
 		}
 	}
 	wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, maxWeight)
@@ -1081,20 +1083,24 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightMaxStrategyWith
 
 func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightHybridMaxstrategy(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode) int {
 	edges, ok := wg.GetEdgesFromNode(node)
-	if !ok || len(edges) != 2 || edges[0].usersetWeights[usersetNode.uniqueLabel] == 0 {
+	if !ok || len(edges) != 2 {
+		wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, 0)
+		return 0
+	}
+	weight1, exists1 := wg.getUsersetWeightFromEdge(edges[0], usersetNode.uniqueLabel)
+	if !exists1 || weight1 == 0 {
 		wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, 0)
 		return 0
 	}
 
-	weight1 := edges[0].usersetWeights[usersetNode.uniqueLabel]
-	weight2 := edges[1].usersetWeights[usersetNode.uniqueLabel]
-	if weight2 == 0 || weight1 > weight2 {
-		wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, weight1)
-		return weight1
+	weight2, exists2 := wg.getUsersetWeightFromEdge(edges[1], usersetNode.uniqueLabel)
+	weight := weight1
+	if exists2 && weight2 > weight1 {
+		weight = weight2
 	}
 
-	wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, weight2)
-	return weight2
+	wg.setUsersetWeightToNode(node, usersetNode.uniqueLabel, weight)
+	return weight
 }
 
 // What edges we can prune when we don't know what edges will lead to the userset if any
@@ -1127,10 +1133,28 @@ func (wg *WeightedAuthorizationModelGraph) canPruneEdge(edge *WeightedAuthorizat
 	return false
 }
 
+func (wg *WeightedAuthorizationModelGraph) getUsersetWeightFromNode(node *WeightedAuthorizationModelNode, userset string) (int, bool) {
+	val, exists := node.usersetWeights.Load(userset)
+	if !exists {
+		return 0, false
+	}
+	// Note: the stored value is an int.
+	return val.(int), true
+}
+
+func (wg *WeightedAuthorizationModelGraph) getUsersetWeightFromEdge(edge *WeightedAuthorizationModelEdge, userset string) (int, bool) {
+	val, exists := edge.usersetWeights.Load(userset)
+	if !exists {
+		return 0, false
+	}
+	// Note: We assume the stored value is an int.
+	return val.(int), true
+}
+
 func (wg *WeightedAuthorizationModelGraph) setUsersetWeightToNode(node *WeightedAuthorizationModelNode, userset string, weight int) {
-	node.usersetWeights[userset] = weight
+	node.usersetWeights.Store(userset, weight)
 }
 
 func (wg *WeightedAuthorizationModelGraph) setUsersetWeightToEdge(edge *WeightedAuthorizationModelEdge, userset string, weight int) {
-	edge.usersetWeights[userset] = weight
+	edge.usersetWeights.Store(userset, weight)
 }

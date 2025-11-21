@@ -1,5 +1,7 @@
 package graph
 
+import "sync"
+
 type EdgeType int64
 
 const (
@@ -72,7 +74,7 @@ type WeightedAuthorizationModelEdge struct {
 	// then the node rel1 will have an edge pointing to the node user and with two conditions
 	// one that will be none and another one that will be condX
 	conditions     []string
-	usersetWeights map[string]int
+	usersetWeights sync.Map
 }
 
 // GetWeights returns the entire weights map.

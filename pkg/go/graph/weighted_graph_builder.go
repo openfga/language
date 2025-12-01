@@ -189,7 +189,10 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 		node = logicalNode
 	}
 
-	parentRelationNode, _ := wg.GetNodeByID(parentRelationName)
+	parentRelationNode, ok := wg.GetNodeByID(parentRelationName)
+	if !ok {
+		return fmt.Errorf("%w: parent relation node %s not found", ErrInvalidModel, parentRelationName)
+	}
 	for _, directlyRelatedDef := range directlyRelated {
 		switch {
 		case directlyRelatedDef.GetRelationOrWildcard() == nil:

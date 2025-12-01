@@ -151,7 +151,8 @@ func (wg *WeightedAuthorizationModelGraph) GetDirectEdgesAssignation(node *Weigh
 		return wg.edges[sb.String()], true
 	}
 
-	// in the case is only one direct edge but it is not directly assigned to the relation, then we need to traverse the relation subgraph definition
+	// in the case is only one direct edge but it is not directly assigned to the relation,
+	// then we need to traverse the relation subgraph definition
 	for len(traverseEdges) > 0 {
 		innerEdges := make([]*WeightedAuthorizationModelEdge, 0)
 		for _, edge := range traverseEdges {

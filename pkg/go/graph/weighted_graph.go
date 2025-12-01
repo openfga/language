@@ -123,6 +123,52 @@ func (wg *WeightedAuthorizationModelGraph) HasEdge(fromNode, toNode *WeightedAut
 	return false
 }
 
+// when a relation is defined as a combination of algebraic operations, direct edges are then linked to the operation nodes and not the relation,
+// However to validate the direct assignments, we need to traverse the graph and collect all direct edges for the relation node.
+func (wg *WeightedAuthorizationModelGraph) GetDirectEdgesAssignation(node *WeightedAuthorizationModelNode) []*WeightedAuthorizationModelEdge {
+	if node == nil || node.nodeType != SpecificTypeAndRelation || len(node.directAssigns) == 0 {
+		return nil
+	}
+
+	traverseEdges := wg.edges[node.uniqueLabel]
+	// if the relation is defined as rel1: [user, type#rel2] then all the edges will be direct edge,
+	// otherwise the first edge will have been an operational node
+	if traverseEdges[0].edgeType == DirectEdge {
+		return traverseEdges
+	}
+
+	// if there are more than 1 direct edge, and are not directly assigned to the relation,
+	// then the direct edges are grouped in a LogicalDirectGrouping node
+	if len(node.directAssigns) > 1 {
+		parts := strings.Split(node.uniqueLabel, "#")
+		if len(parts) != 2 {
+			return nil
+		}
+		var sb strings.Builder
+		sb.WriteString(parts[0])
+		sb.WriteString("#direct:")
+		sb.WriteString(parts[1])
+		return wg.edges[sb.String()]
+	}
+
+	// in the case is only one direct edge but it is not directly assigned to the relation, then we need to traverse the relation subgraph definition
+	for len(traverseEdges) > 0 {
+		innerEdges := make([]*WeightedAuthorizationModelEdge, 0)
+		for _, edge := range traverseEdges {
+			if edge.edgeType == DirectEdge {
+				return []*WeightedAuthorizationModelEdge{edge}
+			}
+			if edge.to.nodeType == OperatorNode {
+				innerEdges = append(innerEdges, wg.edges[edge.to.uniqueLabel]...)
+			}
+		}
+		traverseEdges = innerEdges
+	}
+
+	// it will never get here
+	return nil
+}
+
 // AssignWeights assigns weights to all the edges and nodes of the graph.
 func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	visited := make(map[string]bool)

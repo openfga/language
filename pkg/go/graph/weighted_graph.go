@@ -170,6 +170,44 @@ func (wg *WeightedAuthorizationModelGraph) GetDirectEdgesAssignation(node *Weigh
 	return nil, false
 }
 
+// when a relation is defined as a combination of algebraic operations, direct edges are then linked to the operation nodes and not the relation,
+// However to validate a specific direct assignment, we need to traverse the graph and find the direct edge for the relation node that is linked to the usertype node.
+func (wg *WeightedAuthorizationModelGraph) GetDirectEdgeForUserType(node *WeightedAuthorizationModelNode, userType string) (*WeightedAuthorizationModelEdge, bool) {
+	if node == nil || node.nodeType != SpecificTypeAndRelation || len(node.directAssigns) == 0 {
+		return nil, false
+	}
+
+	directAssigns := node.GetDirectAssigns()
+	// if there is no direct assignments returns false
+	if len(directAssigns) == 0 {
+		return nil, false
+	}
+
+	// if the directAssigns does not contain the userType then the tuple is invalid, usertype could be the object,
+	// it could be the wildcard definition of the object or it could be the userset (object#relation)
+	if !slices.Contains(directAssigns, userType) {
+		return nil, false
+	}
+
+	traverseEdges := wg.edges[node.uniqueLabel]
+	// in the case is only one direct edge but it is not directly assigned to the relation,
+	// then we need to traverse the relation subgraph definition
+	for len(traverseEdges) > 0 {
+		innerEdges := make([]*WeightedAuthorizationModelEdge, 0)
+		for _, edge := range traverseEdges {
+			if edge.edgeType == DirectEdge && edge.to.uniqueLabel == userType {
+				return edge, true
+			}
+			if edge.to.nodeType == OperatorNode || edge.to.nodeType == LogicalDirectGrouping {
+				innerEdges = append(innerEdges, wg.edges[edge.to.uniqueLabel]...)
+			}
+		}
+		traverseEdges = innerEdges
+	}
+
+	return nil, false
+}
+
 // AssignWeights assigns weights to all the edges and nodes of the graph.
 func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	visited := make(map[string]bool)

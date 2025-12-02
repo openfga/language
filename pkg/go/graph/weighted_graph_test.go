@@ -1486,3 +1486,139 @@ func TestGetDirectEdgesAssignation(t *testing.T) {
 		require.Contains(t, dEdges, graph.edges[graph.edges["group#locator"][0].to.uniqueLabel][0])
 	})
 }
+
+func TestGetDirectEdgeForUserType(t *testing.T) {
+	t.Parallel()
+	t.Run("valid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user:*, user]
+				define locator: [user] but not viewer
+				define role: [role]
+				define verifier: banned from parent or locator
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		parentNode, _ := graph.GetNodeByID("group#parent")
+		require.NotNil(t, parentNode)
+		dEdge, ok := graph.GetDirectEdgeForUserType(parentNode, "group")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#parent"][0])
+
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "user")
+		require.True(t, ok)
+		directLogicalEdge := graph.edges["group#direct:admin"]
+		require.NotNil(t, directLogicalEdge)
+		require.Equal(t, dEdge, directLogicalEdge[0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "employee")
+		require.True(t, ok)
+		require.Equal(t, dEdge, directLogicalEdge[1])
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "group#principal")
+		require.True(t, ok)
+		require.Equal(t, dEdge, directLogicalEdge[2])
+
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#viewer"][0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "employee")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#viewer"][1])
+
+		bannedNode, _ := graph.GetNodeByID("group#banned")
+		require.NotNil(t, bannedNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(bannedNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges[graph.edges["group#banned"][0].to.uniqueLabel][0])
+
+		allowedNode, _ := graph.GetNodeByID("role#allowed")
+		require.NotNil(t, allowedNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(allowedNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["role#allowed"][0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(allowedNode, "role#allowed")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["role#allowed"][1])
+
+		locatorNode, _ := graph.GetNodeByID("group#locator")
+		require.NotNil(t, locatorNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(locatorNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges[graph.edges["group#locator"][0].to.uniqueLabel][0])
+
+		principalNode, _ := graph.GetNodeByID("group#principal")
+		require.NotNil(t, principalNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(principalNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#principal"][1])
+		dEdge, ok = graph.GetDirectEdgeForUserType(principalNode, "user:*")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#principal"][0])
+	})
+
+	t.Run("invalid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user:*, user]
+				define locator: [user] but not viewer
+				define role: [role]
+				define verifier: banned from parent or locator
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		dEdge, ok := graph.GetDirectEdgeForUserType(nil, "group")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		verifierNode, _ := graph.GetNodeByID("group#verifier")
+		require.NotNil(t, verifierNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(verifierNode, "user")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "user:*")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "group#viewer")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+	})
+}

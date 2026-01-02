@@ -69,7 +69,11 @@
       ]
     }
   expected_errors:
-
+    - msg: "this must be the first element in relation definition `rel2`."
+      metadata:
+        symbol: "rel2"
+        errorType: this-not-in-first-place
+        
 - name: condition key and name property differ
   json: |
     {

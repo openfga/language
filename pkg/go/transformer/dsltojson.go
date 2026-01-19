@@ -1,6 +1,7 @@
 package transformer
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -46,10 +47,19 @@ type OpenFgaDslListener struct {
 	isModularModel     bool
 	moduleName         string
 	typeDefExtensions  map[string]*openfgav1.TypeDefinition
+
+	// Comment tracking
+	commentTracker   *CommentTracker
+	modelComments    *ModelComments
+	typeComments     map[string]*CommentsMetadata
+	conditionComments map[string]*CommentInfo
 }
 
 func newOpenFgaDslListener() *OpenFgaDslListener {
-	return new(OpenFgaDslListener)
+	return &OpenFgaDslListener{
+		typeComments:      make(map[string]*CommentsMetadata),
+		conditionComments: make(map[string]*CommentInfo),
+	}
 }
 
 func ParseExpression(rewrites []*openfgav1.Userset, operator RelationDefinitionOperator) *openfgav1.Userset {
@@ -127,8 +137,9 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 		)
 	}
 
+	typeName := ctx.GetTypeName().GetText()
 	l.currentTypeDef = &openfgav1.TypeDefinition{
-		Type:      ctx.GetTypeName().GetText(),
+		Type:      typeName,
 		Relations: map[string]*openfgav1.Userset{},
 		Metadata: &openfgav1.Metadata{
 			Relations: map[string]*openfgav1.RelationMetadata{},
@@ -137,6 +148,19 @@ func (l *OpenFgaDslListener) EnterTypeDef(ctx *parser.TypeDefContext) {
 
 	if l.isModularModel {
 		l.currentTypeDef.Metadata.Module = l.moduleName
+	}
+
+	// Track type comments (line is 1-based from ANTLR, convert to 0-based)
+	// Use TYPE token's line number instead of GetStart() which may include preceding newlines
+	if l.commentTracker != nil && ctx.TYPE() != nil {
+		lineNum := ctx.TYPE().GetSymbol().GetLine() - 1
+		commentInfo := l.commentTracker.GetCommentInfoForLine(lineNum)
+		if commentInfo != nil {
+			if l.typeComments[typeName] == nil {
+				l.typeComments[typeName] = &CommentsMetadata{}
+			}
+			l.typeComments[typeName].Comments = commentInfo
+		}
 	}
 }
 
@@ -166,6 +190,16 @@ func (l *OpenFgaDslListener) EnterCondition(ctx *parser.ConditionContext) {
 	if l.isModularModel {
 		l.currentCondition.Metadata = &openfgav1.ConditionMetadata{
 			Module: l.moduleName,
+		}
+	}
+
+	// Track condition comments (line is 1-based from ANTLR, convert to 0-based)
+	// Use CONDITION token's line number instead of GetStart() which may include preceding newlines
+	if l.commentTracker != nil && ctx.CONDITION() != nil {
+		lineNum := ctx.CONDITION().GetSymbol().GetLine() - 1
+		commentInfo := l.commentTracker.GetCommentInfoForLine(lineNum)
+		if commentInfo != nil {
+			l.conditionComments[conditionName] = commentInfo
 		}
 	}
 }
@@ -297,6 +331,23 @@ func (l *OpenFgaDslListener) ExitRelationDeclaration(ctx *parser.RelationDeclara
 
 		if l.isModularModel && isExtension {
 			l.currentTypeDef.Metadata.Relations[relationName].Module = l.moduleName
+		}
+
+		// Track relation comments (line is 1-based from ANTLR, convert to 0-based)
+		// Use DEFINE token's line number instead of GetStart() which may include preceding newlines
+		if l.commentTracker != nil && l.currentTypeDef != nil && ctx.DEFINE() != nil {
+			typeName := l.currentTypeDef.GetType()
+			lineNum := ctx.DEFINE().GetSymbol().GetLine() - 1
+			commentInfo := l.commentTracker.GetCommentInfoForLine(lineNum)
+			if commentInfo != nil {
+				if l.typeComments[typeName] == nil {
+					l.typeComments[typeName] = &CommentsMetadata{}
+				}
+				if l.typeComments[typeName].RelationComments == nil {
+					l.typeComments[typeName].RelationComments = make(map[string]*CommentInfo)
+				}
+				l.typeComments[typeName].RelationComments[relationName] = commentInfo
+			}
 		}
 	}
 
@@ -500,9 +551,19 @@ func (c *OpenFgaDslErrorListener) SyntaxError(
 ///
 
 func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
+	return ParseDSLWithOptions(data, true)
+}
+
+// ParseDSLWithOptions parses DSL with optional comment preservation.
+func ParseDSLWithOptions(data string, preserveComments bool) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
+	originalLines := strings.Split(data, "\n")
 	cleanedLines := []string{}
 
-	for _, line := range strings.Split(data, "\n") {
+	// Build a mapping from cleaned line numbers to original line numbers
+	// (both 0-based indices)
+	cleanedToOriginal := make(map[int]int)
+
+	for originalIdx, line := range originalLines {
 		cleanedLine := ""
 
 		switch {
@@ -514,7 +575,15 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 			cleanedLine = strings.TrimRight(strings.Split(line, " #")[0], " ")
 		}
 
+		cleanedIdx := len(cleanedLines)
 		cleanedLines = append(cleanedLines, cleanedLine)
+		cleanedToOriginal[cleanedIdx] = originalIdx
+	}
+
+	// Create comment tracker with original data and line mapping
+	var commentTracker *CommentTracker
+	if preserveComments {
+		commentTracker = NewCommentTrackerWithMapping(data, cleanedToOriginal)
 	}
 
 	cleanedData := strings.TrimRight(strings.Join(cleanedLines, "\n"), "\n")
@@ -533,7 +602,14 @@ func ParseDSL(data string) (*OpenFgaDslListener, *OpenFgaDslErrorListener) {
 	fgaParser.AddErrorListener(errorListener)
 
 	listener := newOpenFgaDslListener()
+	listener.commentTracker = commentTracker
+
 	antlr.ParseTreeWalkerDefault.Walk(listener, fgaParser.Main())
+
+	// Extract model comments after parsing
+	if preserveComments && commentTracker != nil {
+		listener.modelComments = commentTracker.GetModelComments()
+	}
 
 	return listener, errorListener
 }
@@ -594,4 +670,179 @@ func TransformModularDSLToProto(data string) (*openfgav1.AuthorizationModel, map
 	}
 
 	return &listener.authorizationModel, listener.typeDefExtensions, nil
+}
+
+// TransformResult contains the result of parsing DSL with comments preserved.
+type TransformResult struct {
+	// AuthorizationModel is the parsed authorization model
+	AuthorizationModel *openfgav1.AuthorizationModel
+	// ModelComments contains comments at the model level
+	ModelComments *ModelComments
+	// TypeComments maps type names to their comments metadata
+	TypeComments map[string]*CommentsMetadata
+	// ConditionComments maps condition names to their comments
+	ConditionComments map[string]*CommentInfo
+}
+
+// TransformDSLToProtoWithComments - Converts models authored in FGA DSL syntax to the OpenFGA Authorization Model
+// Protobuf format while preserving comments metadata.
+func TransformDSLToProtoWithComments(data string) (*TransformResult, error) {
+	listener, errorListener := ParseDSL(data)
+
+	if errorListener.Errors != nil {
+		return nil, errorListener.Errors
+	}
+
+	return &TransformResult{
+		AuthorizationModel: &listener.authorizationModel,
+		ModelComments:      listener.modelComments,
+		TypeComments:       listener.typeComments,
+		ConditionComments:  listener.conditionComments,
+	}, nil
+}
+
+// TransformDSLToJSONWithComments - Converts models authored in FGA DSL syntax to the JSON syntax with comments
+// preserved in the metadata.
+func TransformDSLToJSONWithComments(data string) (string, error) {
+	result, err := TransformDSLToProtoWithComments(data)
+	if err != nil {
+		return "", err
+	}
+
+	// First, marshal the proto to JSON
+	bytes, err := protojson.Marshal(result.AuthorizationModel)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal due to %w", err)
+	}
+
+	// Parse into a generic map to inject comments
+	var jsonMap map[string]interface{}
+	if err := json.Unmarshal(bytes, &jsonMap); err != nil {
+		return "", fmt.Errorf("failed to unmarshal for comment injection: %w", err)
+	}
+
+	// Inject model comments into top-level metadata
+	if result.ModelComments != nil && len(result.ModelComments.PrecedingLines) > 0 {
+		if jsonMap["metadata"] == nil {
+			jsonMap["metadata"] = make(map[string]interface{})
+		}
+		metadata, ok := jsonMap["metadata"].(map[string]interface{})
+		if ok {
+			metadata["model_comments"] = map[string]interface{}{
+				"preceding_lines": result.ModelComments.PrecedingLines,
+			}
+		}
+	}
+
+	// Inject type and relation comments
+	if typeDefinitions, ok := jsonMap["type_definitions"].([]interface{}); ok {
+		for _, td := range typeDefinitions {
+			typeDef, ok := td.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			typeName, ok := typeDef["type"].(string)
+			if !ok {
+				continue
+			}
+
+			typeComments := result.TypeComments[typeName]
+			if typeComments == nil {
+				continue
+			}
+
+			// Ensure metadata exists
+			if typeDef["metadata"] == nil {
+				typeDef["metadata"] = make(map[string]interface{})
+			}
+			metadata, ok := typeDef["metadata"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			// Add type-level comments
+			if typeComments.Comments != nil {
+				commentObj := make(map[string]interface{})
+				if len(typeComments.Comments.PrecedingLines) > 0 {
+					commentObj["preceding_lines"] = typeComments.Comments.PrecedingLines
+				}
+				if typeComments.Comments.Inline != "" {
+					commentObj["inline"] = typeComments.Comments.Inline
+				}
+				if len(commentObj) > 0 {
+					metadata["comments"] = commentObj
+				}
+			}
+
+			// Add relation comments
+			if len(typeComments.RelationComments) > 0 {
+				if metadata["relations"] == nil {
+					metadata["relations"] = make(map[string]interface{})
+				}
+				relationsMetadata, ok := metadata["relations"].(map[string]interface{})
+				if ok {
+					for relationName, relationComments := range typeComments.RelationComments {
+						// Ensure relation metadata exists
+						if relationsMetadata[relationName] == nil {
+							relationsMetadata[relationName] = make(map[string]interface{})
+						}
+						relationMeta, ok := relationsMetadata[relationName].(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						commentObj := make(map[string]interface{})
+						if len(relationComments.PrecedingLines) > 0 {
+							commentObj["preceding_lines"] = relationComments.PrecedingLines
+						}
+						if relationComments.Inline != "" {
+							commentObj["inline"] = relationComments.Inline
+						}
+						if len(commentObj) > 0 {
+							relationMeta["comments"] = commentObj
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Inject condition comments
+	if conditions, ok := jsonMap["conditions"].(map[string]interface{}); ok {
+		for conditionName, condComments := range result.ConditionComments {
+			conditionData, ok := conditions[conditionName].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			// Ensure metadata exists
+			if conditionData["metadata"] == nil {
+				conditionData["metadata"] = make(map[string]interface{})
+			}
+			metadata, ok := conditionData["metadata"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			commentObj := make(map[string]interface{})
+			if len(condComments.PrecedingLines) > 0 {
+				commentObj["preceding_lines"] = condComments.PrecedingLines
+			}
+			if condComments.Inline != "" {
+				commentObj["inline"] = condComments.Inline
+			}
+			if len(commentObj) > 0 {
+				metadata["comments"] = commentObj
+			}
+		}
+	}
+
+	// Marshal back to JSON
+	finalBytes, err := json.Marshal(jsonMap)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal with comments: %w", err)
+	}
+
+	return string(finalBytes), nil
 }

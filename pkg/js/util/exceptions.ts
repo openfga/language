@@ -153,7 +153,9 @@ const createInvalidRelationOnTuplesetError = (
   const { errors, lines, lineIndex, symbol, file, module } = props;
   errors.push(
     constructValidationError({
-      message: `the \`${offendingRelation}\` relation definition on type \`${typeDef}\` is not valid: \`${offendingRelation}\` does not exist on \`${parent}\`, which is of type \`${typeName}\`.`,
+      message:
+        `the \`${offendingRelation}\` relation definition on type \`${typeDef}\` is not valid: ` +
+        `\`${offendingRelation}\` does not exist on \`${parent}\`, which is of type \`${typeName}\`.`,
       lines,
       lineIndex,
       metadata: {
@@ -414,7 +416,9 @@ function createMultipleModuleInSingleFileError(props: BaseProps, file: string, m
   const { errors } = props;
   errors.push(
     constructValidationError({
-      message: `file ${file} would contain multiple module definitions (${modules.join(", ")}) when transforming to DSL. Only one module can be defined per file.`,
+      message:
+        `file ${file} would contain multiple module definitions (${modules.join(", ")}) ` +
+        "when transforming to DSL. Only one module can be defined per file.",
       metadata: { symbol: file, errorType: ValidationError.MultipleModulesInFile },
     }),
   );

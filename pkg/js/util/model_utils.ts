@@ -23,7 +23,8 @@ export function getModuleForObjectTypeRelation(typeDef: TypeDefinition, relation
 }
 
 /**
- * isRelationAssignable - returns true if the relation is assignable, as in the relation definition has a key "this" or any of its children have a key "this".
+ * isRelationAssignable - returns true if the relation is assignable, as in the relation
+ * definition has a key "this" or any of its children have a key "this".
  * @param relDef - A Userset object representing a relation definition.
  * @return boolean - A boolean representing whether the relation definition has a key "this".
  */

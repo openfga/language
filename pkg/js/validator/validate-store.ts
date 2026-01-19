@@ -138,7 +138,8 @@ const unidentifiedTestParam = (testParam: string, instancePath: string) => {
 const undefinedTypeTuple = (user: string, instancePath: string) => {
   return {
     keyword: "valid_store_warning",
-    message: `${user} does not match any existing tuples; the check is still valid ` +
+    message:
+      `${user} does not match any existing tuples; the check is still valid ` +
       "- but double check to ensure this is intended.",
     instancePath,
   };

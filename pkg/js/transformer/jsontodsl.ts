@@ -612,8 +612,10 @@ const parseConditionWithComments = (
   const paramsString = parseConditionParams(conditionDef.parameters || {});
   const sourceString = constructSourceComment(conditionDef.metadata, "", includeSourceInformation);
 
-  return `${conditionCommentsStr}condition ${conditionName}(${paramsString}) ` +
-    `{\n  ${conditionDef.expression}\n}${sourceString}\n`;
+  return (
+    `${conditionCommentsStr}condition ${conditionName}(${paramsString}) ` +
+    `{\n  ${conditionDef.expression}\n}${sourceString}\n`
+  );
 };
 
 // Parse conditions with comments

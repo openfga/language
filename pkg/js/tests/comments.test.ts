@@ -1,12 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
-import {
-  transformDSLToJSONWithComments,
-  transformDSLToJSONObjectWithComments,
-} from "../transformer/dsltojson";
-import {
-  transformJSONStringToDSLWithComments,
-  transformJSONToDSLWithComments,
-} from "../transformer/jsontodsl";
+import { transformDSLToJSONWithComments, transformDSLToJSONObjectWithComments } from "../transformer/dsltojson";
+import { transformJSONStringToDSLWithComments, transformJSONToDSLWithComments } from "../transformer/jsontodsl";
 
 describe("Comment Preservation", () => {
   describe("DSL to JSON with Comments", () => {
@@ -21,10 +15,7 @@ type user`;
       const result = transformDSLToJSONObjectWithComments(dsl);
 
       expect(result.modelComments).toBeDefined();
-      expect(result.modelComments?.preceding_lines).toEqual([
-        "# OpenFGA Model",
-        "# Version 1.0",
-      ]);
+      expect(result.modelComments?.preceding_lines).toEqual(["# OpenFGA Model", "# Version 1.0"]);
     });
 
     it("should preserve type comments", () => {
@@ -37,9 +28,7 @@ type user`;
       const result = transformDSLToJSONObjectWithComments(dsl);
 
       expect(result.typeComments["user"]).toBeDefined();
-      expect(result.typeComments["user"].comments?.preceding_lines).toEqual([
-        "# User type comment",
-      ]);
+      expect(result.typeComments["user"].comments?.preceding_lines).toEqual(["# User type comment"]);
     });
 
     it("should preserve relation comments", () => {
@@ -54,13 +43,8 @@ type document
       const result = transformDSLToJSONObjectWithComments(dsl);
 
       expect(result.typeComments["document"]).toBeDefined();
-      expect(
-        result.typeComments["document"].relation_comments?.["owner"]
-      ).toBeDefined();
-      expect(
-        result.typeComments["document"].relation_comments?.["owner"]
-          .preceding_lines
-      ).toEqual(["# Owner comment"]);
+      expect(result.typeComments["document"].relation_comments?.["owner"]).toBeDefined();
+      expect(result.typeComments["document"].relation_comments?.["owner"].preceding_lines).toEqual(["# Owner comment"]);
     });
 
     it("should preserve condition comments", () => {
@@ -77,9 +61,7 @@ condition ip_check(ip: string) {
       const result = transformDSLToJSONObjectWithComments(dsl);
 
       expect(result.conditionComments["ip_check"]).toBeDefined();
-      expect(result.conditionComments["ip_check"].preceding_lines).toEqual([
-        "# IP-based access control",
-      ]);
+      expect(result.conditionComments["ip_check"].preceding_lines).toEqual(["# IP-based access control"]);
     });
 
     it("should embed comments in JSON output", () => {
@@ -93,12 +75,8 @@ type user`;
       const jsonStr = transformDSLToJSONWithComments(dsl);
       const json = JSON.parse(jsonStr);
 
-      expect(json.metadata?.model_comments?.preceding_lines).toEqual([
-        "# Model comment",
-      ]);
-      expect(json.type_definitions?.[0].metadata?.comments?.preceding_lines).toEqual([
-        "# User type",
-      ]);
+      expect(json.metadata?.model_comments?.preceding_lines).toEqual(["# Model comment"]);
+      expect(json.type_definitions?.[0].metadata?.comments?.preceding_lines).toEqual(["# User type"]);
     });
   });
 
@@ -174,7 +152,8 @@ type user`;
         conditions: {
           ip_check: {
             name: "ip_check",
-            expression: "ip == \"127.0.0.1\"",
+            // eslint-disable-next-line quotes
+            expression: 'ip == "127.0.0.1"',
             parameters: {
               ip: { type_name: "TYPE_NAME_STRING" as const },
             },

@@ -174,7 +174,7 @@ type user`;
         conditions: {
           ip_check: {
             name: "ip_check",
-            expression: 'ip == "127.0.0.1"',
+            expression: "ip == \"127.0.0.1\"",
             parameters: {
               ip: { type_name: "TYPE_NAME_STRING" as const },
             },

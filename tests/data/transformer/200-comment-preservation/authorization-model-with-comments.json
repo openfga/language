@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.1",
+  "metadata": {
+    "model_comments": {
+      "preceding_lines": ["# OpenFGA Authorization Model", "# Version 2.0"]
+    }
+  },
+  "type_definitions": [
+    {
+      "type": "user",
+      "metadata": {
+        "comments": {
+          "preceding_lines": ["# User type for representing users"]
+        }
+      }
+    },
+    {
+      "type": "document",
+      "relations": {
+        "owner": {
+          "this": {}
+        },
+        "viewer": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "computedUserset": {
+                  "relation": "owner"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "metadata": {
+        "comments": {
+          "preceding_lines": ["# Document type for file storage"]
+        },
+        "relations": {
+          "owner": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "comments": {
+              "preceding_lines": ["# Owner of the document"]
+            }
+          },
+          "viewer": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ],
+            "comments": {
+              "preceding_lines": ["# Who can view this document"]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

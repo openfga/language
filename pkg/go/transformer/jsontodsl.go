@@ -2,6 +2,7 @@ package transformer
 
 import (
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"sort"
@@ -13,6 +14,60 @@ import (
 
 	"github.com/openfga/language/pkg/go/errors"
 )
+
+// JSONModelWithComments represents the JSON structure with comments embedded.
+type JSONModelWithComments struct {
+	SchemaVersion   string                              `json:"schema_version"`
+	Metadata        *JSONModelMetadata                  `json:"metadata,omitempty"`
+	TypeDefinitions []JSONTypeDefinitionWithComments    `json:"type_definitions,omitempty"`
+	Conditions      map[string]JSONConditionWithComments `json:"conditions,omitempty"`
+}
+
+// JSONModelMetadata represents top-level model metadata including model comments.
+type JSONModelMetadata struct {
+	ModelComments *JSONCommentBlock `json:"model_comments,omitempty"`
+}
+
+// JSONCommentBlock represents a block of comments.
+type JSONCommentBlock struct {
+	PrecedingLines []string `json:"preceding_lines,omitempty"`
+	Inline         string   `json:"inline,omitempty"`
+}
+
+// JSONTypeDefinitionWithComments represents a type definition with comments.
+type JSONTypeDefinitionWithComments struct {
+	Type      string                                  `json:"type"`
+	Relations map[string]json.RawMessage              `json:"relations,omitempty"`
+	Metadata  *JSONTypeMetadataWithComments           `json:"metadata,omitempty"`
+}
+
+// JSONTypeMetadataWithComments represents type metadata with comments.
+type JSONTypeMetadataWithComments struct {
+	Module    string                                    `json:"module,omitempty"`
+	Comments  *JSONCommentBlock                         `json:"comments,omitempty"`
+	Relations map[string]*JSONRelationMetadataWithComments `json:"relations,omitempty"`
+}
+
+// JSONRelationMetadataWithComments represents relation metadata with comments.
+type JSONRelationMetadataWithComments struct {
+	DirectlyRelatedUserTypes []json.RawMessage `json:"directly_related_user_types,omitempty"`
+	Module                   string            `json:"module,omitempty"`
+	Comments                 *JSONCommentBlock `json:"comments,omitempty"`
+}
+
+// JSONConditionWithComments represents a condition with comments.
+type JSONConditionWithComments struct {
+	Name       string                           `json:"name"`
+	Expression string                           `json:"expression"`
+	Parameters map[string]json.RawMessage       `json:"parameters,omitempty"`
+	Metadata   *JSONConditionMetadataWithComments `json:"metadata,omitempty"`
+}
+
+// JSONConditionMetadataWithComments represents condition metadata with comments.
+type JSONConditionMetadataWithComments struct {
+	Module   string            `json:"module,omitempty"`
+	Comments *JSONCommentBlock `json:"comments,omitempty"`
+}
 
 type DirectAssignmentValidator struct {
 	occurred int
@@ -596,4 +651,324 @@ func sortByModule(aName, bName, aModule, bModule, aFile, bFile string) int {
 	}
 
 	return cmp.Compare(aName, bName)
+}
+
+// formatCommentLines formats comment lines for DSL output.
+func formatCommentLines(comments []string) string {
+	if len(comments) == 0 {
+		return ""
+	}
+	result := ""
+	for _, comment := range comments {
+		result += comment + "\n"
+	}
+	return result
+}
+
+// formatInlineComment formats an inline comment for DSL output.
+func formatInlineComment(comment string) string {
+	if comment == "" {
+		return ""
+	}
+	// Ensure the comment starts with # if it doesn't already
+	if !strings.HasPrefix(comment, "#") {
+		return " #" + comment
+	}
+	return " " + comment
+}
+
+// TransformJSONStringToDSLWithComments - Converts models authored in OpenFGA JSON syntax to the DSL syntax,
+// preserving any comments stored in the JSON metadata.
+func TransformJSONStringToDSLWithComments(modelString string) (*string, error) {
+	// First try to parse as JSON with comments to extract comment metadata
+	var modelWithComments JSONModelWithComments
+	if err := json.Unmarshal([]byte(modelString), &modelWithComments); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	// Also load via proto for the actual model transformation
+	model, err := LoadJSONStringToProto(modelString)
+	if err != nil {
+		return nil, err
+	}
+
+	dsl, err := transformJSONProtoToDSLWithComments(model, &modelWithComments)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dsl, nil
+}
+
+// transformJSONProtoToDSLWithComments converts the proto model to DSL while injecting comments.
+func transformJSONProtoToDSLWithComments(model *openfgav1.AuthorizationModel, commentsModel *JSONModelWithComments) (string, error) {
+	schemaVersion := model.GetSchemaVersion()
+
+	// Build model comments prefix
+	modelCommentsStr := ""
+	if commentsModel.Metadata != nil && commentsModel.Metadata.ModelComments != nil {
+		modelCommentsStr = formatCommentLines(commentsModel.Metadata.ModelComments.PrecedingLines)
+	}
+
+	// Build type comments map
+	typeCommentsMap := make(map[string]*JSONTypeMetadataWithComments)
+	for _, typeDef := range commentsModel.TypeDefinitions {
+		if typeDef.Metadata != nil {
+			typeCommentsMap[typeDef.Type] = typeDef.Metadata
+		}
+	}
+
+	typeDefinitions := []string{}
+	typeDefs := model.GetTypeDefinitions()
+	isModularModel := false
+
+	for index := 0; index < len(typeDefs); index++ {
+		typeDef := typeDefs[index]
+
+		if typeDef.GetMetadata().GetModule() != "" {
+			isModularModel = true
+
+			break
+		}
+	}
+
+	if isModularModel {
+		slices.SortStableFunc(typeDefs, func(a, b *openfgav1.TypeDefinition) int {
+			return sortByModule(
+				a.GetType(), b.GetType(),
+				a.GetMetadata().GetModule(), b.GetMetadata().GetModule(),
+				a.GetMetadata().GetSourceInfo().GetFile(), b.GetMetadata().GetSourceInfo().GetFile(),
+			)
+		})
+	}
+
+	for index := 0; index < len(typeDefs); index++ {
+		typeDef := typeDefs[index]
+
+		typeComments := typeCommentsMap[typeDef.GetType()]
+		parsedType, err := parseTypeWithComments(typeDef, isModularModel, false, typeComments)
+		if err != nil {
+			return "", err
+		}
+
+		typeDefinitions = append(typeDefinitions, fmt.Sprintf("\n%v", parsedType))
+	}
+
+	typeDefsString := strings.Join(typeDefinitions, "\n")
+	if len(typeDefinitions) > 0 {
+		typeDefsString += "\n"
+	}
+
+	parsedConditionsString, err := parseConditionsWithComments(model, false, commentsModel.Conditions)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf(`%vmodel
+  schema %v
+%v%v`, modelCommentsStr, schemaVersion, typeDefsString, parsedConditionsString), nil
+}
+
+// parseTypeWithComments parses a type definition including comments.
+func parseTypeWithComments(typeDefinition *openfgav1.TypeDefinition, isModularModel, includeSourceInformation bool, typeComments *JSONTypeMetadataWithComments) (string, error) {
+	typeName := typeDefinition.GetType()
+
+	// Build type comment prefix
+	typeCommentsStr := ""
+	typeInlineComment := ""
+	if typeComments != nil && typeComments.Comments != nil {
+		typeCommentsStr = formatCommentLines(typeComments.Comments.PrecedingLines)
+		typeInlineComment = formatInlineComment(typeComments.Comments.Inline)
+	}
+
+	sourceString := constructSourceComment(
+		typeDefinition.GetMetadata().GetModule(),
+		typeDefinition.GetMetadata().GetSourceInfo().GetFile(),
+		"",
+		includeSourceInformation,
+	)
+
+	parsedTypeString := fmt.Sprintf(`%vtype %v%s%s`, typeCommentsStr, typeName, typeInlineComment, sourceString)
+	relations := typeDefinition.GetRelations()
+	metadata := typeDefinition.GetMetadata()
+
+	if len(relations) > 0 {
+		parsedTypeString += "\n  relations"
+
+		relationsList := []string{}
+		for relation := range relations {
+			relationsList = append(relationsList, relation)
+		}
+
+		// We are doing this in two loops (and sorting in between)
+		// to make sure we have a deterministic behaviour that matches the API
+		if isModularModel {
+			slices.SortStableFunc(relationsList, func(aName, bName string) int {
+				aMeta := metadata.GetRelations()[aName]
+				bMeta := metadata.GetRelations()[bName]
+
+				return sortByModule(
+					aName, bName,
+					aMeta.GetModule(), bMeta.GetModule(),
+					aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+				)
+			})
+		} else {
+			sort.Strings(relationsList)
+		}
+
+		for index := 0; index < len(relationsList); index++ {
+			relationName := relationsList[index]
+			userset := relations[relationName]
+			meta := metadata.GetRelations()[relationName]
+
+			// Get relation comments
+			var relationComments *JSONCommentBlock
+			if typeComments != nil && typeComments.Relations != nil {
+				if relMeta := typeComments.Relations[relationName]; relMeta != nil {
+					relationComments = relMeta.Comments
+				}
+			}
+
+			parsedRelationString, err := parseRelationWithComments(typeName, relationName, userset, meta, includeSourceInformation, relationComments)
+			if err != nil {
+				return "", err
+			}
+
+			parsedTypeString += fmt.Sprintf("\n%v", parsedRelationString)
+		}
+	}
+
+	return parsedTypeString, nil
+}
+
+// parseRelationWithComments parses a relation including comments.
+func parseRelationWithComments(
+	typeName string,
+	relationName string,
+	relationDefinition *openfgav1.Userset,
+	relationMetadata *openfgav1.RelationMetadata,
+	includeSourceInformation bool,
+	comments *JSONCommentBlock,
+) (string, error) {
+	validator := DirectAssignmentValidator{
+		occurred: 0,
+	}
+
+	// Build relation comment prefix
+	relationCommentsStr := ""
+	relationInlineComment := ""
+	if comments != nil {
+		for _, line := range comments.PrecedingLines {
+			relationCommentsStr += "    " + line + "\n"
+		}
+		relationInlineComment = formatInlineComment(comments.Inline)
+	}
+
+	sourceString := constructSourceComment(
+		relationMetadata.GetModule(),
+		relationMetadata.GetSourceInfo().GetFile(),
+		" extended by:",
+		includeSourceInformation,
+	)
+
+	typeRestrictions := relationMetadata.GetDirectlyRelatedUserTypes()
+
+	parseFn := parseSubRelation
+
+	switch {
+	case relationDefinition.GetDifference() != nil:
+		parseFn = parseDifference
+	case relationDefinition.GetUnion() != nil:
+		parseFn = parseUnion
+	case relationDefinition.GetIntersection() != nil:
+		parseFn = parseIntersection
+	}
+
+	parsedRelationString, err := parseFn(typeName, relationName, relationDefinition, typeRestrictions, &validator)
+	if err != nil {
+		return "", err
+	}
+
+	// Check if we have either no direct assignment, or we had exactly 1 direct assignment in the first position
+	if validator.occurrences() == 0 || (validator.occurrences() == 1 && validator.isFirstPosition(relationDefinition)) {
+		return fmt.Sprintf(`%s    define %v: %v%s%s`, relationCommentsStr, relationName, parsedRelationString, relationInlineComment, sourceString), nil
+	}
+
+	return "", errors.UnsupportedDSLNestingError(typeName, relationName)
+}
+
+// parseConditionsWithComments parses conditions with comments.
+func parseConditionsWithComments(model *openfgav1.AuthorizationModel, includeSourceInformation bool, conditionsWithComments map[string]JSONConditionWithComments) (string, error) {
+	conditionsMap := model.GetConditions()
+	if len(conditionsMap) == 0 {
+		return "", nil
+	}
+
+	parsedConditionsString := ""
+
+	conditionNames := []string{}
+	for conditionName := range conditionsMap {
+		conditionNames = append(conditionNames, conditionName)
+	}
+
+	slices.SortStableFunc(conditionNames, func(aName, bName string) int {
+		aMeta := conditionsMap[aName].GetMetadata()
+		bMeta := conditionsMap[bName].GetMetadata()
+
+		return sortByModule(
+			aName, bName,
+			aMeta.GetModule(), bMeta.GetModule(),
+			aMeta.GetSourceInfo().GetFile(), bMeta.GetSourceInfo().GetFile(),
+		)
+	})
+
+	for index := 0; index < len(conditionNames); index++ {
+		conditionName := conditionNames[index]
+		condition := conditionsMap[conditionName]
+
+		// Get condition comments
+		var comments *JSONCommentBlock
+		if condWithComments, ok := conditionsWithComments[conditionName]; ok && condWithComments.Metadata != nil {
+			comments = condWithComments.Metadata.Comments
+		}
+
+		parsedConditionString, err := parseConditionWithComments(conditionName, condition, includeSourceInformation, comments)
+		if err != nil {
+			return "", err
+		}
+
+		parsedConditionsString += fmt.Sprintf("\n%v", parsedConditionString)
+	}
+
+	return parsedConditionsString, nil
+}
+
+// parseConditionWithComments parses a condition with comments.
+func parseConditionWithComments(conditionName string, conditionDef *openfgav1.Condition, includeSourceInformation bool, comments *JSONCommentBlock) (string, error) {
+	if conditionName != conditionDef.GetName() {
+		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
+	}
+
+	// Build condition comment prefix
+	conditionCommentsStr := ""
+	if comments != nil {
+		conditionCommentsStr = formatCommentLines(comments.PrecedingLines)
+	}
+
+	paramsString := parseConditionParams(conditionDef.GetParameters())
+	sourceString := constructSourceComment(
+		conditionDef.GetMetadata().GetModule(),
+		conditionDef.GetMetadata().GetSourceInfo().GetFile(),
+		"", includeSourceInformation,
+	)
+
+	return fmt.Sprintf(
+		"%scondition %s(%s) {\n  %s\n}%s\n",
+		conditionCommentsStr,
+		conditionDef.GetName(),
+		paramsString,
+		conditionDef.GetExpression(),
+		sourceString,
+	), nil
 }

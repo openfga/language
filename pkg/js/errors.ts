@@ -168,7 +168,8 @@ export class UnsupportedDSLNestingError extends Error {
     public relationName: string,
   ) {
     super(
-      `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
+      `the '${relationName}' relation definition under the '${typeName}' type ` +
+        "is not supported by the OpenFGA DSL syntax yet",
     );
   }
 }

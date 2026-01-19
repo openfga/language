@@ -214,7 +214,8 @@ function parseRelation(
   }
 
   throw new Error(
-    `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
+    `the '${relationName}' relation definition under the '${typeName}' type ` +
+      "is not supported by the OpenFGA DSL syntax yet",
   );
 }
 
@@ -587,7 +588,8 @@ function parseRelationWithComments(
   }
 
   throw new Error(
-    `the '${relationName}' relation definition under the '${typeName}' type is not supported by the OpenFGA DSL syntax yet`,
+    `the '${relationName}' relation definition under the '${typeName}' type ` +
+      "is not supported by the OpenFGA DSL syntax yet",
   );
 }
 
@@ -610,7 +612,8 @@ const parseConditionWithComments = (
   const paramsString = parseConditionParams(conditionDef.parameters || {});
   const sourceString = constructSourceComment(conditionDef.metadata, "", includeSourceInformation);
 
-  return `${conditionCommentsStr}condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}${sourceString}\n`;
+  return `${conditionCommentsStr}condition ${conditionName}(${paramsString}) ` +
+    `{\n  ${conditionDef.expression}\n}${sourceString}\n`;
 };
 
 // Parse conditions with comments

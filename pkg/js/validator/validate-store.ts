@@ -116,7 +116,8 @@ const invalidRelationUser = (relation: string, relations: string[], instancePath
 const nonMatchingRelationType = (relation: string, user: string, values: string[], instancePath: string) => {
   if (values.length) {
     return invalidStore(
-      `\`${relation}\` is not a relation on \`${user}\`, and does not exist in model - valid relations are [${values}].`,
+      `\`${relation}\` is not a relation on \`${user}\`, and does not exist in model ` +
+        `- valid relations are [${values}].`,
       instancePath,
     );
   }
@@ -137,7 +138,8 @@ const unidentifiedTestParam = (testParam: string, instancePath: string) => {
 const undefinedTypeTuple = (user: string, instancePath: string) => {
   return {
     keyword: "valid_store_warning",
-    message: `${user} does not match any existing tuples; the check is still valid - but double check to ensure this is intended.`,
+    message: `${user} does not match any existing tuples; the check is still valid ` +
+      "- but double check to ensure this is intended.",
     instancePath,
   };
 };

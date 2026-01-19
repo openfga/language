@@ -2,7 +2,9 @@
   "schema_version": "1.1",
   "type_definitions": [
     {
-      "type": "user"
+      "type": "user",
+      "relations": {},
+      "metadata": null
     },
     {
       "type": "document",

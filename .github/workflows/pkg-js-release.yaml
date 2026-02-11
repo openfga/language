@@ -52,6 +52,7 @@ jobs:
         id: npm-tag
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
+          TAG="${TAG#pkg/js/}"
 
           # Validate tag format
           if [[ ! "$TAG" =~ ^v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+(-(alpha|beta|rc)\.[[:digit:]]+)?$ ]]; then
@@ -93,7 +94,7 @@ jobs:
       - uses: Roang-zero1/github-create-release-action@57eb9bdce7a964e48788b9e78b5ac766cb684803 # v3.0.1
         with:
           version_regex: ^pkg/js/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
-          prerelease_regex: ^pkg/js/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta)\.[[:digit:]]+$
+          prerelease_regex: ^pkg/js/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta|rc)\.[[:digit:]]+$
           changelog_file: pkg/js/CHANGELOG.md
           create_draft: true
         env:

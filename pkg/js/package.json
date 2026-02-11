@@ -64,6 +64,9 @@
     "url": "https://github.com/openfga/language/issues"
   },
   "homepage": "https://github.com/openfga/language#readme",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true

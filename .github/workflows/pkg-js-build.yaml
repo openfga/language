@@ -5,7 +5,7 @@ on:
 
 permissions:
   contents: read
-    
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [20.x, 22.x, 24.x]
+        node-version: [20.x, 22.x, 24.x, 25.x]
     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -58,7 +58,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://registry.npmjs.org'
           scope: '@openfga'
-          always-auth: false
           cache: 'npm'
           cache-dependency-path: ./pkg/js/package-lock.json  
     

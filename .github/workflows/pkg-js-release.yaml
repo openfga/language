@@ -6,6 +6,9 @@ on:
     tags:
       - "pkg/js/v*"
 
+env:
+  TARGET_NODE_VERSION: '24.x'
+
 jobs:
   test:
     permissions:
@@ -36,11 +39,10 @@ jobs:
       - name: Set up node
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: 24.x
+          node-version: ${{ env.TARGET_NODE_VERSION }}
+          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           scope: "@openfga"
-          always-auth: false
-          cache: "npm"
           cache-dependency-path: ./pkg/js/package-lock.json 
 
       - name: Install dependencies

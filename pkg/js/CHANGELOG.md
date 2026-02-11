@@ -1,8 +1,17 @@
 # Changelog
 
-## [Unreleased](https://github.com/openfga/language/compare/pkg/js/v0.2.0...HEAD)
+## Unreleased
 
-- chore!: drop support for Node.js v16 & 18. We recommend updating to a node-runtime that is [supported upstream](https://nodejs.org/en/about/previous-releases) - currently 20 (maintenance), 22 (maintenance), 24 (LTS) and 25 (current).
+Added:
+
+- Add helper methods for validating schema versions & checking if a particular model is modular (#534)
+  - Add `SchemaVersion` enum to represent valid schema versions
+  - Add `isSchemaVersionSupported`, `checkSchemaVersionSupportsModules`, and `getSchemaVersionFromString` utility methods
+  - Add `isModelModular` utility method to check if a model is modular based on its schema version and definition
+
+Changed:
+
+- [BREAKING] Drop support for Node.js v16 & 18. We recommend updating to a node-runtime that is [supported upstream](https://nodejs.org/en/about/previous-releases) - currently 20 (maintenance), 22 (maintenance), 24 (LTS) and 25 (current).
   The minimum supported version of Node.js is now v20.19.0. This is in line with our [stated supported environments]((https://github.com/openfga/language/blob/main/pkg/js/SUPPORTED_RUNTIMES.md).
 
 ## pkg/js/v0.2.0

@@ -1,4 +1,5 @@
-import { Difference, TypeDefinition, Userset, Usersets } from "@openfga/sdk";
+import { AuthorizationModel, Difference, TypeDefinition, Userset, Usersets } from "@openfga/sdk";
+import { getSchemaVersionFromString, checkSchemaVersionSupportsModules } from "./schema_version";
 
 /**
  * getModuleForObjectTypeRelation - returns the module for the given object type and relation in that type.
@@ -15,7 +16,7 @@ export function getModuleForObjectTypeRelation(typeDef: TypeDefinition, relation
   const relationsMetadata = typeDef?.metadata?.relations || {};
   const relationMetadata = relationsMetadata[relation];
 
-  if (!relationMetadata || !relationMetadata.module) {
+  if (!relationMetadata?.module) {
     return typeDef?.metadata?.module || undefined;
   }
 
@@ -50,5 +51,37 @@ export function isRelationAssignable(relDef: Userset): boolean {
   }
 
   // ComputedUserset and TupleToUserset are not assignable
+  return false;
+}
+
+/**
+ * isModelModular - returns true if the model is modular.
+ * A model is modular if it has schema version 1.2 and has at least one relation or object that has a module defined in its metadata.
+ * @param model - An AuthorizationModel object.
+ * @return boolean - A boolean representing whether the model is modular.
+ * @throws error - An error if the model's schema version is not recognized.
+ */
+export function isModelModular(model: AuthorizationModel): boolean {
+  const schemaVersion = getSchemaVersionFromString(model.schema_version);
+  if (!checkSchemaVersionSupportsModules(schemaVersion)) {
+    return false;
+  }
+
+  // Check if any type definition has a module defined
+  for (const typeDef of model.type_definitions || []) {
+    // Check if the type itself has a module
+    if (typeDef.metadata?.module) {
+      return true;
+    }
+
+    // Check if any relation has a module defined
+    const relationsMetadata = typeDef.metadata?.relations || {};
+    for (const relationMetadata of Object.values(relationsMetadata)) {
+      if (relationMetadata.module) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }

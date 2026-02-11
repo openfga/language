@@ -134,7 +134,6 @@ class OpenFgaDslListener extends OpenFGAListener {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enterTypeDef = (ctx: TypeDefContext) => {
     if (!ctx._typeName) {
       return;

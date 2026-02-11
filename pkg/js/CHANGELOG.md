@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### [Unreleased](https://github.com/openfga/language/compare/pkg/js/v0.2.1...HEAD)
+
+## pkg/js/v0.2.1
+
+### [v0.2.1](https://github.com/openfga/language/compare/pkg/js/v0.2.0...pkg/js/v0.2.1) (2026-02-11)
+
 Added:
 
 - Add helper methods for validating schema versions & checking if a particular model is modular (#534)

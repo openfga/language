@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Added:
+
+- Add helper methods for validating schema versions & checking if a particular model is modular (#534)
+  - Add `SchemaVersion` enum to represent valid schema versions
+  - Add `isSchemaVersionSupported`, `checkSchemaVersionSupportsModules`, and `getSchemaVersionFromString` utility methods
+  - Add `isModelModular` utility method to check if a model is modular based on its schema version and definition
+
 ## pkg/js/v0.2.0
 
 ### [v0.2.0](https://github.com/openfga/language/compare/pkg/js/v0.2.0-beta.22...pkg/js/v0.2.0) (2025-07-22)

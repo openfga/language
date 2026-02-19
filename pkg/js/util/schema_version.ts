@@ -1,4 +1,7 @@
-import { assertNever } from "@openfga/sdk/dist/utils";
+// Instead of importing from @openfga/sdk and creating a runtime dependency, define locally.
+function assertNever(x: never): never {
+  throw new Error(`Unexpected value: ${x}`);
+}
 
 /**
  * SchemaVersion represents the version of the schema used in the authorization model.

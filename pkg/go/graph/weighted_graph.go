@@ -30,9 +30,18 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNode(node *WeightedAuthor
 	return v, ok
 }
 
-func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeId(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
+// GetEdgesFromNodeID returns the edges for the given node ID.
+// This is the preferred, idiomatic alias for GetEdgesFromNodeId.
+func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeID(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
 	v, ok := wg.edges[nodeID]
 	return v, ok
+}
+
+// Deprecated: Use GetEdgesFromNodeID instead.
+//
+//nolint:revive,stylecheck
+func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeId(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
+	return wg.GetEdgesFromNodeID(nodeID)
 }
 
 // GetNodes returns the nodes map.
@@ -236,7 +245,7 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	return nil
 }
 
-// GetWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key
+// GetNodeWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key.
 func (wg *WeightedAuthorizationModelGraph) GetNodeWeight(node *WeightedAuthorizationModelNode, key string) (int, bool) {
 	if node == nil {
 		return 0, false
@@ -251,7 +260,7 @@ func (wg *WeightedAuthorizationModelGraph) GetNodeWeight(node *WeightedAuthoriza
 	return node.GetWeight(key)
 }
 
-// GetWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key
+// GetEdgeWeight returns the weight for the given key in the edge, it could be a userset key or a terminal type key.
 func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthorizationModelEdge, key string) (int, bool) {
 	if edge == nil {
 		return 0, false
@@ -283,7 +292,6 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthoriza
 		return wg.calculateUsersetWeightInEdge(edge, key, usersetWeight)
 	}
 	return 0, false
-
 }
 
 func (wg *WeightedAuthorizationModelGraph) isLogicalOperator(node *WeightedAuthorizationModelNode) bool {
@@ -613,7 +621,6 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 					return tupleCycles, err
 				}
 			}
-
 		}
 		return tupleCycles, nil
 	}
@@ -737,7 +744,6 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightWithEnforceTypeStr
 
 	rewriteWeights := make(map[string]int, len(edges))
 	for index, edge := range edges {
-
 		if index == 0 {
 			for key, weight := range edge.weights {
 				rewriteWeights[key] = weight
@@ -921,7 +927,7 @@ func (wg *WeightedAuthorizationModelGraph) removeNodeFromTupleCycles(nodeID stri
 
 // calculateUsersetWeights calculates the weight for a userset by traversing the graph
 // smart traversal of the graph to calculate the weight for the userset for each node and edge in the subgraph for the node
-// this involves traversing the subgraph and calculating the weight for each edge and node
+// this involves traversing the subgraph and calculating the weight for each edge and node.
 func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeights(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode, visited map[string]bool) int {
 	// Check memoized results first
 	weight, ok := wg.getUsersetWeightFromNode(node, usersetNode.uniqueLabel)
@@ -1029,7 +1035,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightInEdge(edge *We
 	return usersetWeight, true
 }
 
-// otherwise to 0
+// calculateUsersetNodeWeightWhenCycle calculates the userset weight when the node is part of a cycle; otherwise, returns 0.
 func (wg *WeightedAuthorizationModelGraph) calculateUsersetNodeWeightWhenCycle(node *WeightedAuthorizationModelNode, usersetNode *WeightedAuthorizationModelNode, visited map[string]bool) int {
 	usersetWeight := wg.findUsersetWeightInCycle(node, usersetNode, visited)
 	if usersetWeight > 0 {
@@ -1191,7 +1197,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateUsersetWeightHybridMaxstrate
 // What edges we can prune when we don't know what edges will lead to the userset if any
 // 1- If the edge does not have a weight to any of the userset node's weights, we can prune it
 // 2- If the edge weight to at least one terminal type is lower than the weight to the userset terminal types, we can prune it
-// 3- If the edge weight to at least one terminal type is equal than the weight to the userset terminal types, and the value is not infinite, then we can prune it
+// 3- If the edge weight to at least one terminal type is equal to the weight to the userset terminal types, and the value is not infinite, then we can prune it.
 func (wg *WeightedAuthorizationModelGraph) canPruneEdge(edge *WeightedAuthorizationModelEdge, usersetWeights map[string]int) bool {
 	if len(edge.weights) == 0 {
 		return true

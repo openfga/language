@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	language "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
+
+	language "github.com/openfga/language/pkg/go/transformer"
 )
 
 /*
@@ -1213,7 +1214,6 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.True(t, graph.nodes["state-member-or-or"].tupleCycle)
 	require.False(t, graph.nodes["state-parent"].tupleCycle)
 	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
-
 }
 func TestGetEdgesFromNodeId(t *testing.T) {
 	t.Parallel()

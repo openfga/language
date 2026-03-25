@@ -1,6 +1,4 @@
 name: Test (Go)
-permissions:
-  contents: read
 
 permissions:
   contents: read

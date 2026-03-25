@@ -1215,7 +1215,7 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.False(t, graph.nodes["state-parent"].tupleCycle)
 	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
 }
-func TestGetEdgesFromNodeId(t *testing.T) {
+func TestGetEdgesFromNodeID(t *testing.T) {
 	t.Parallel()
 
 	t.Run("returns_edges_for_existing_node", func(t *testing.T) {
@@ -1231,7 +1231,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		graph.AddEdge("state-member", "state-owner", ComputedEdge, "state-member", "", nil)
 
 		// Get edges
-		edges, found := graph.GetEdgesFromNodeId("state-member")
+		edges, found := graph.GetEdgesFromNodeID("state-member")
 
 		require.True(t, found)
 		require.Len(t, edges, 2)
@@ -1249,7 +1249,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		// Add node without edges
 		graph.AddNode("state-member", "member", SpecificTypeAndRelation)
 
-		edges, found := graph.GetEdgesFromNodeId("state-member")
+		edges, found := graph.GetEdgesFromNodeID("state-member")
 
 		require.False(t, found)
 		require.Nil(t, edges)
@@ -1258,7 +1258,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 	t.Run("returns_empty_for_non_existent_node", func(t *testing.T) {
 		graph := NewWeightedAuthorizationModelGraph()
 
-		edges, found := graph.GetEdgesFromNodeId("non-existent")
+		edges, found := graph.GetEdgesFromNodeID("non-existent")
 
 		require.False(t, found)
 		require.Nil(t, edges)
@@ -1280,7 +1280,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		graph.AddEdge("transition-can_apply-and", "state-can_view", TTUEdge, "transition-can_apply", "transition-end", nil)
 
 		// Get edges from transition-can_apply-and
-		edges, found := graph.GetEdgesFromNodeId("transition-can_apply-and")
+		edges, found := graph.GetEdgesFromNodeID("transition-can_apply-and")
 
 		require.True(t, found)
 		require.Len(t, edges, 3)
@@ -1304,7 +1304,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		// Add edges with conditions
 		graph.AddEdge("license-owner", "group", DirectEdge, "license-owner", "", []string{"condition1", "condition2"})
 
-		edges, found := graph.GetEdgesFromNodeId("license-owner")
+		edges, found := graph.GetEdgesFromNodeID("license-owner")
 
 		require.True(t, found)
 		require.Len(t, edges, 1)
@@ -1323,7 +1323,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		graph.AddEdge("state-owner-and", "state-approved_member", ComputedEdge, "state-owner", "", nil)
 		graph.AddEdge("state-owner-and", "user", DirectEdge, "state-owner", "", nil)
 
-		edges, found := graph.GetEdgesFromNodeId("state-owner-and")
+		edges, found := graph.GetEdgesFromNodeID("state-owner-and")
 
 		require.True(t, found)
 		require.Len(t, edges, 2)
@@ -1343,7 +1343,7 @@ func TestGetEdgesFromNodeId(t *testing.T) {
 		graph.AddEdge("parent", "child2", DirectEdge, "parent", "", nil)
 		graph.AddEdge("parent", "child3", DirectEdge, "parent", "", nil)
 
-		edges, found := graph.GetEdgesFromNodeId("parent")
+		edges, found := graph.GetEdgesFromNodeID("parent")
 
 		require.True(t, found)
 		require.Len(t, edges, 3)

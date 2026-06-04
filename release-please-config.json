@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "packages": {
+    "pkg/go": {
+      "component": "pkg/go",
+      "changelog-path": "pkg/go/CHANGELOG.md"
+    },
+    "pkg/js": {
+      "component": "pkg/js",
+      "changelog-path": "pkg/js/CHANGELOG.md"
+    },
+    "pkg/java": {
+      "component": "pkg/java",
+      "changelog-path": "pkg/java/CHANGELOG.md"
+    }
+  },
+  "separate-pull-requests": true,
+  "include-component-in-tag": true,
+  "tag-separator": "/",
+  "bootstrap-sha": ""
+}
+

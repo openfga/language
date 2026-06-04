@@ -35,10 +35,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: release
-  cancel-in-progress: false
-
 jobs:
   ###########################################################################
   # Phase 1: create / retarget the release-please PR(s).
@@ -163,7 +159,9 @@ jobs:
           fi
 
       - name: Run release-please
-        id: release
+        # We intentionally do not consume this action's outputs: skip-github-release
+        # is set in the config, so release/tag outputs are not produced. The
+        # post-release job derives everything from the manifest diff instead.
         uses: googleapis/release-please-action@a02a34c4d625f9be7cb89156071d8567266a2445 # v4.2.0
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -250,14 +248,15 @@ jobs:
             || echo '{}' > /tmp/prev-manifest.json
           cp .release-please-manifest.json /tmp/cur-manifest.json
 
-          releases="$("${PARSE}" manifest-diff /tmp/cur-manifest.json /tmp/prev-manifest.json)"
-          echo "Releases to publish: ${releases}"
-
-          count="$(jq 'length' <<<"${releases}")"
-          if [[ "${count}" -eq 0 ]]; then
+          # manifest-diff exits non-zero when nothing changed; treat that as a
+          # no-op rather than a failure.
+          if ! releases="$("${PARSE}" manifest-diff /tmp/cur-manifest.json /tmp/prev-manifest.json 2>/dev/null)"; then
             echo "No changed components; nothing to release."
             exit 0
           fi
+          echo "Releases to publish: ${releases}"
+
+          count="$(jq 'length' <<<"${releases}")"
 
           for i in $(seq 0 $((count - 1))); do
             component="$(jq -r ".[$i].component" <<<"${releases}")"
@@ -310,5 +309,8 @@ jobs:
 
           # Keep the `release` branch in sync with main for the next dispatch run.
           git push -f origin "HEAD:refs/heads/release"
+
+
+
 
 

@@ -1,0 +1,25 @@
+name: Test release parsing scripts
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/scripts/parse-release.sh
+      - .github/workflows/scripts/parse-release.test.sh
+      - .github/workflows/test-release-scripts.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/scripts/parse-release.sh
+      - .github/workflows/scripts/parse-release.test.sh
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run parse-release tests
+        run: bash .github/workflows/scripts/parse-release.test.sh
+

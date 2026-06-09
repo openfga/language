@@ -13,22 +13,30 @@ jobs:
     uses: ./.github/workflows/pkg-go-build.yaml
     secrets: inherit
 
-  release:
+  # The release-please post-release job already created a draft GitHub release
+  # (CHANGELOG notes + auto-generated notes) when it pushed this tag. Go has no
+  # registry publish step, so once tests pass on the tag we publish (undraft) it.
+  finalize-release:
     runs-on: ubuntu-latest
     needs: [test]
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
-      contents: write
-      packages: write # publish a new github release
+      contents: write # publish (undraft) the github release
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-
-      - uses: Roang-zero1/github-create-release-action@57eb9bdce7a964e48788b9e78b5ac766cb684803 # v3.0.1
-        with:
-          version_regex: ^pkg/go/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
-          prerelease_regex: ^pkg/go/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta)\.[[:digit:]]+$
-          changelog_file: pkg/go/CHANGELOG.md
-          create_draft: true
+      - name: Publish the draft GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # The draft is created right after the tag is pushed; wait briefly in
+          # case this job gets there first.
+          for _ in $(seq 1 10); do
+            if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for draft release $TAG ..."
+            sleep 6
+          done
+          gh release edit "$TAG" --repo "$REPO" --draft=false

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [0.2.2](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.2.2) (2026-06-09)
+
+
+### Fixed
+
+* go linting issues ([#562](https://github.com/openfga/language/issues/562)) ([8a47c84](https://github.com/openfga/language/commit/8a47c844085b2c27d98e339df293f107cb83efd1))
+
 ### [Unreleased](https://github.com/openfga/language/compare/pkg/go/v0.2.1...HEAD)
 
 ## pkg/go/v0.2.1

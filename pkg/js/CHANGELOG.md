@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [0.2.2](https://github.com/openfga/language/compare/pkg/js/v0.2.1...pkg/js/v0.2.2) (2026-06-09)
+
+
+### Fixed
+
+* don't use openfga/sdk for assertNever ([#539](https://github.com/openfga/language/issues/539)) ([efc2679](https://github.com/openfga/language/commit/efc2679964f754bbb5747ce8fe71372ddbcd472c))
+* pkg/js/package.json & pkg/js/package-lock.json to reduce vulnerabilities ([e70c0e2](https://github.com/openfga/language/commit/e70c0e2447b579a126b2f1090ecdcb9e9af587ec))
+
 ### [Unreleased](https://github.com/openfga/language/compare/pkg/js/v0.2.1...HEAD)
 
 ## pkg/js/v0.2.1

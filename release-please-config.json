@@ -36,6 +36,7 @@
       "release-type": "java",
       "component": "pkg/java",
       "package-name": "openfga-language",
+      "skip-snapshot": true,
       "extra-files": ["build.gradle"]
     }
   }

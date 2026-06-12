@@ -58,10 +58,20 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Import GPG key and enable signed commits
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
       - name: Configure git identity
         run: |
-          git config user.name "openfga-releaser[bot]"
-          git config user.email "openfga-releaser[bot]@users.noreply.github.com"
+          git config user.name "openfga-releaser-bot"
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config commit.gpgSign true
 
       - name: Prepare dispatch run
         if: inputs.trigger-event == 'workflow_dispatch'
@@ -239,12 +249,19 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Import GPG key and enable signed tags
+        id: import-gpg
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           git_user_signingkey: true
           git_tag_gpgsign: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name "openfga-releaser-bot"
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config tag.gpgSign true
 
       - name: Create signed tags and draft releases
         env:

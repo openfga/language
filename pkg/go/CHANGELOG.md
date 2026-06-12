@@ -5,25 +5,14 @@
 ## [0.3.0](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.3.0) (2026-06-12)
 
 
-### ⚠ BREAKING CHANGES
-
-* **pkg/go/transformer:** TransformDSLToProto and TransformModularDSLToProto now return *OpenFgaDslSyntaxMultipleError instead of *multierror.Error.
-
-### Fixed
-
-* go linting issues ([#562](https://github.com/openfga/language/issues/562)) ([8a47c84](https://github.com/openfga/language/commit/8a47c844085b2c27d98e339df293f107cb83efd1))
-
+> [!CAUTION]
+> **BREAKING CHANGE**
+> 
+>  **pkg/go/transformer:** TransformDSLToProto and TransformModularDSLToProto now return *OpenFgaDslSyntaxMultipleError instead of *multierror.Error.
 
 ### Changed
 
 * **pkg/go/transformer:** replace go-multierror with stdlib ([#601](https://github.com/openfga/language/issues/601)) ([7fd286c](https://github.com/openfga/language/commit/7fd286c295788871e8333f42bb5e0ee2e27074e4))
-
-
-### Miscellaneous
-
-* **pkg/go:** release 0.3.0 ([87a5646](https://github.com/openfga/language/commit/87a5646fca3f268d88bc3f2f6d9b5b0ab32c240c))
-
-### [Unreleased](https://github.com/openfga/language/compare/pkg/go/v0.2.1...HEAD)
 
 ## pkg/go/v0.2.1
 

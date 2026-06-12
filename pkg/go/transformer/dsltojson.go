@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/hashicorp/go-multierror"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -441,7 +440,13 @@ func (err *OpenFgaDslSyntaxError) Error() string {
 	return fmt.Sprintf("syntax error at line=%d, column=%d: %s", err.line, err.column, err.msg)
 }
 
-type OpenFgaDslSyntaxMultipleError multierror.Error
+type OpenFgaDslSyntaxMultipleError struct {
+	Errors []error
+}
+
+func (err *OpenFgaDslSyntaxMultipleError) Unwrap() []error {
+	return err.Errors
+}
 
 func (err *OpenFgaDslSyntaxMultipleError) Error() string {
 	errors := err.Errors
@@ -461,7 +466,7 @@ func (err *OpenFgaDslSyntaxMultipleError) Error() string {
 
 type OpenFgaDslErrorListener struct {
 	*antlr.DefaultErrorListener // Embed default which ensures we fit the interface
-	Errors                      *multierror.Error
+	Errors                      *OpenFgaDslSyntaxMultipleError
 }
 
 func newOpenFgaDslErrorListener() *OpenFgaDslErrorListener {
@@ -489,7 +494,11 @@ func (c *OpenFgaDslErrorListener) SyntaxError(
 		}
 	}
 
-	c.Errors = multierror.Append(c.Errors, &OpenFgaDslSyntaxError{
+	if c.Errors == nil {
+		c.Errors = &OpenFgaDslSyntaxMultipleError{}
+	}
+
+	c.Errors.Errors = append(c.Errors.Errors, &OpenFgaDslSyntaxError{
 		line:     line - 1,
 		column:   column,
 		msg:      msg,

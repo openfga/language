@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,7 +43,13 @@ func (e *ModFileValidationError) Error() string {
 	return fmt.Sprintf("validation error at line=%d, column=%d: %s", e.Line, e.Column, e.Msg)
 }
 
-type ModFileValidationMultipleError multierror.Error
+type ModFileValidationMultipleError struct {
+	Errors []error
+}
+
+func (e *ModFileValidationMultipleError) Unwrap() []error {
+	return e.Errors
+}
 
 func (e *ModFileValidationMultipleError) Error() string {
 	errors := e.Errors
@@ -77,23 +82,23 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 	}
 
 	modFile := &ModFile{}
-	errors := &multierror.Error{}
+	errors := &ModFileValidationMultipleError{}
 
 	switch {
 	case yamlModFile.Schema.IsZero():
-		errors = multierror.Append(errors, &ModFileValidationError{
+		errors.Errors = append(errors.Errors, &ModFileValidationError{
 			Msg:    "missing schema field",
 			Line:   0,
 			Column: 0,
 		})
 	case yamlModFile.Schema.Tag != stringNode:
-		errors = multierror.Append(errors, &ModFileValidationError{
+		errors.Errors = append(errors.Errors, &ModFileValidationError{
 			Msg:    "unexpected schema type, expected string got value " + yamlModFile.Schema.Value,
 			Line:   yamlModFile.Schema.Line - 1,
 			Column: yamlModFile.Schema.Column - 1,
 		})
 	case yamlModFile.Schema.Value != "1.2":
-		errors = multierror.Append(errors, &ModFileValidationError{
+		errors.Errors = append(errors.Errors, &ModFileValidationError{
 			Msg:    "unsupported schema version, fga.mod only supported in version `1.2`",
 			Line:   yamlModFile.Schema.Line - 1,
 			Column: yamlModFile.Schema.Column - 1,
@@ -108,13 +113,13 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 
 	switch {
 	case yamlModFile.Contents.IsZero():
-		errors = multierror.Append(errors, &ModFileValidationError{
+		errors.Errors = append(errors.Errors, &ModFileValidationError{
 			Msg:    "missing contents field",
 			Line:   0,
 			Column: 0,
 		})
 	case yamlModFile.Contents.Tag != seqNode:
-		errors = multierror.Append(errors, &ModFileValidationError{
+		errors.Errors = append(errors.Errors, &ModFileValidationError{
 			Msg:    "unexpected contents type, expected list of strings got value " + yamlModFile.Contents.Value,
 			Line:   yamlModFile.Contents.Line - 1,
 			Column: yamlModFile.Contents.Column - 1,
@@ -124,7 +129,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 
 		for _, file := range yamlModFile.Contents.Content {
 			if file.Tag != stringNode {
-				errors = multierror.Append(errors, &ModFileValidationError{
+				errors.Errors = append(errors.Errors, &ModFileValidationError{
 					Msg:    "unexpected contents item type, expected string got value " + file.Value,
 					Line:   file.Line - 1,
 					Column: file.Column - 1,
@@ -135,7 +140,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			// Decode URI components
 			decodedValue, err := url.QueryUnescape(file.Value)
 			if err != nil {
-				errors = multierror.Append(errors, &ModFileValidationError{
+				errors.Errors = append(errors.Errors, &ModFileValidationError{
 					Msg:    "failed to decode path: " + file.Value,
 					Line:   file.Line - 1,
 					Column: file.Column - 1,
@@ -149,7 +154,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 
 			// Check for directory traversal patterns or absolute paths
 			if strings.Contains(normalizedPath, "../") || strings.HasPrefix(normalizedPath, "/") {
-				errors = multierror.Append(errors, &ModFileValidationError{
+				errors.Errors = append(errors.Errors, &ModFileValidationError{
 					Msg:    "invalid contents item " + file.Value,
 					Line:   file.Line - 1,
 					Column: file.Column - 1,
@@ -159,7 +164,7 @@ func TransformModFile(data string) (*ModFile, error) { //nolint:cyclop
 			}
 
 			if !strings.HasSuffix(normalizedPath, ".fga") {
-				errors = multierror.Append(errors, &ModFileValidationError{
+				errors.Errors = append(errors.Errors, &ModFileValidationError{
 					Msg:    "contents items should use fga file extension, got " + file.Value,
 					Line:   file.Line - 1,
 					Column: file.Column - 1,

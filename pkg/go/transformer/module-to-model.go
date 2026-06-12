@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 
 	"github.com/openfga/language/pkg/go/utils"
@@ -38,7 +37,13 @@ func (e *ModuleTransformationSingleError) Error() string {
 	return fmt.Sprintf("transformation error at line=%d, column=%d: %s", e.Line.Start, e.Column.Start, e.Msg)
 }
 
-type ModuleValidationMultipleError multierror.Error
+type ModuleValidationMultipleError struct {
+	Errors []error
+}
+
+func (e *ModuleValidationMultipleError) Unwrap() []error {
+	return e.Errors
+}
 
 func (e *ModuleValidationMultipleError) Error() string {
 	errors := e.Errors
@@ -73,7 +78,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 	conditions := map[string]*openfgav1.Condition{}
 	moduleFiles := map[string][]string{}
 
-	transformErrors := &multierror.Error{}
+	transformErrors := &ModuleValidationMultipleError{}
 
 	for _, module := range modules {
 		lines := strings.Split(module.Contents, "\n")
@@ -81,9 +86,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 
 		mdl, typeDefExtensions, err := TransformModularDSLToProto(module.Contents)
 		if err != nil {
-			var syntaxError *multierror.Error
+			var syntaxError *OpenFgaDslSyntaxMultipleError
 			if errors.As(err, &syntaxError) {
-				transformErrors = multierror.Append(transformErrors, syntaxError.Errors...)
+				transformErrors.Errors = append(transformErrors.Errors, syntaxError.Errors...)
 			}
 
 			continue
@@ -95,7 +100,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				lineIndex := utils.GetTypeLineNumber(typeDef.GetType(), lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, typeDef.GetType())
 
-				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 					Msg:    "duplicate type definition " + typeDef.GetType(),
 					File:   module.Name,
 					Line:   line,
@@ -121,7 +126,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 					File: module.Name,
 				}
 			} else {
-				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 					Msg: "file is not a module",
 				})
 				continue
@@ -133,7 +138,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			if _, ok := conditions[name]; ok {
 				lineIndex := utils.GetConditionLineNumber(name, lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)
-				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 					Msg:    "duplicate condition " + name,
 					File:   module.Name,
 					Line:   line,
@@ -161,7 +166,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			if originalIndex == -1 {
 				lineIndex := utils.GetExtendedTypeLineNumber(typeDef.GetType(), lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, typeDef.GetType())
-				transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 					Msg:    fmt.Sprintf("extended type %s does not exist", typeDef.GetType()),
 					File:   filename,
 					Line:   line,
@@ -204,7 +209,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				if slices.Contains(existingRelationNames, name) {
 					lineIndex := utils.GetRelationLineNumber(name, lines)
 					line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)
-					transformErrors = multierror.Append(transformErrors, &ModuleTransformationSingleError{
+					transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 						Msg:    fmt.Sprintf("relation %s already exists on type %s", name, typeDef.GetType()),
 						File:   filename,
 						Line:   line,

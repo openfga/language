@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## [0.3.0](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.3.0) (2026-06-16)
 
-### [Unreleased](https://github.com/openfga/language/compare/pkg/go/v0.2.1...HEAD)
+> [!WARNING]  
+> **BREAKING CHANGES**:
+> 
+> **pkg/go/transformer:** TransformDSLToProto and TransformModularDSLToProto now return *OpenFgaDslSyntaxMultipleError instead of *multierror.Error.
+
+### Changed
+
+* **pkg/go/transformer:** replace go-multierror with stdlib ([#601](https://github.com/openfga/language/issues/601)) ([7fd286c](https://github.com/openfga/language/commit/7fd286c295788871e8333f42bb5e0ee2e27074e4))
+
 
 ## pkg/go/v0.2.1
 

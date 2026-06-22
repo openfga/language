@@ -1,5 +1,7 @@
 package dev.openfga.language.errors;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public abstract class ParsingError extends SimpleError {
@@ -9,6 +11,10 @@ public abstract class ParsingError extends SimpleError {
     private StartEnd column;
 
     private String fullMessage;
+
+    @JsonProperty("file")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String file;
 
     public ParsingError() {}
 
@@ -55,6 +61,14 @@ public abstract class ParsingError extends SimpleError {
 
     public void setFullMessage(String fullMessage) {
         this.fullMessage = fullMessage;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
     }
 
     public String toString() {

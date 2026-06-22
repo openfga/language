@@ -1,5 +1,6 @@
 package dev.openfga.language.utils;
 
+import dev.openfga.sdk.api.model.AuthorizationModel;
 import dev.openfga.sdk.api.model.Metadata;
 import dev.openfga.sdk.api.model.RelationMetadata;
 import dev.openfga.sdk.api.model.TypeDefinition;
@@ -71,5 +72,51 @@ public class ModelUtils {
 
         // ComputedUserset and TupleToUserset are not assignable
         return false;
+    }
+
+    /**
+     * isModelModular returns true if the model is modular: schema version 1.2 with at least one type or relation
+     * that declares a module in its metadata.
+     *
+     * @param model An AuthorizationModel object.
+     * @return Whether the model is modular.
+     * @throws IllegalArgumentException If the model's schema version is not recognized.
+     */
+    public static boolean isModelModular(AuthorizationModel model) {
+        var schemaVersion = model != null && model.getSchemaVersion() != null ? model.getSchemaVersion() : "1.1";
+        switch (schemaVersion) {
+            case "1.0":
+            case "1.1":
+                return false;
+            case "1.2":
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported schema version: " + schemaVersion);
+        }
+
+        if (model.getTypeDefinitions() == null) {
+            return false;
+        }
+
+        for (var typeDef : model.getTypeDefinitions()) {
+            var metadata = typeDef.getMetadata();
+            if (metadata == null) {
+                continue;
+            }
+            if (isNotBlank(metadata.getModule())) {
+                return true;
+            }
+            if (metadata.getRelations() != null
+                    && metadata.getRelations().values().stream()
+                            .anyMatch(relation -> isNotBlank(relation.getModule()))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isNotBlank(String value) {
+        return value != null && !value.isEmpty();
     }
 }

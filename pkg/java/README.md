@@ -61,7 +61,32 @@ var jsonMod = new FgaModTransformer(modFileContents).transform();
 
 ### Transform set of Modules To Model
 
-Not yet implemented, but the [enchancement is in our issue backlog](https://github.com/openfga/language/issues/279).
+```java
+import dev.openfga.language.ModuleFile;
+import dev.openfga.language.ModulesToModelTransformer;
+
+...
+
+var modules = List.of(
+    new ModuleFile("core.fga", """
+module core
+
+type user
+"""),
+    new ModuleFile("wiki.fga", """
+module wiki
+
+type page
+  relations
+    define owner: [user]
+"""));
+
+// Merge the modules into a single AuthorizationModel
+var model = ModulesToModelTransformer.transformToModel(modules, "1.2");
+
+// Or get the merged model as a JSON string
+var json = ModulesToModelTransformer.transform(modules, "1.2");
+```
 
 ### Validation
 

@@ -10,6 +10,7 @@ import dev.openfga.sdk.api.model.AuthorizationModel;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -42,6 +43,17 @@ public class DslToJsonTransformer {
     }
 
     public Result parseDsl(String dsl) {
+        var listener = walk(dsl);
+        return new Result(listener.getAuthorizationModel(), listener.errorListener.getErrors());
+    }
+
+    public ModularResult parseModularDsl(String dsl) {
+        var listener = walk(dsl);
+        return new ModularResult(
+                listener.getAuthorizationModel(), listener.errorListener.getErrors(), listener.getTypeDefExtensions());
+    }
+
+    private OpenFgaDslListener walk(String dsl) {
         var cleanedDsl = Arrays.stream(dsl.split("\n")).map(this::cleanLine).collect(joining("\n"));
 
         var antlrStream = CharStreams.fromString(cleanedDsl);
@@ -57,9 +69,10 @@ public class DslToJsonTransformer {
         parser.addErrorListener(errorListener);
 
         var listener = new OpenFgaDslListener(parser);
+        listener.errorListener = errorListener;
         new ParseTreeWalker().walk(listener, parser.main());
 
-        return new Result(listener.getAuthorizationModel(), errorListener.getErrors());
+        return listener;
     }
 
     public static final class Result {
@@ -85,6 +98,35 @@ public class DslToJsonTransformer {
 
         public boolean IsFailure() {
             return !IsSuccess();
+        }
+    }
+
+    public static final class ModularResult {
+        private final AuthorizationModel authorizationModel;
+        private final List<SyntaxError> errors;
+        private final Set<String> typeDefExtensions;
+
+        public ModularResult(
+                AuthorizationModel authorizationModel, List<SyntaxError> errors, Set<String> typeDefExtensions) {
+            this.authorizationModel = authorizationModel;
+            this.errors = errors;
+            this.typeDefExtensions = typeDefExtensions;
+        }
+
+        public AuthorizationModel getAuthorizationModel() {
+            return authorizationModel;
+        }
+
+        public List<SyntaxError> getErrors() {
+            return errors;
+        }
+
+        public Set<String> getTypeDefExtensions() {
+            return typeDefExtensions;
+        }
+
+        public boolean isFailure() {
+            return !errors.isEmpty();
         }
     }
 }

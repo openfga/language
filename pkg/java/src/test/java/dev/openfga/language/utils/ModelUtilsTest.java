@@ -157,4 +157,47 @@ public class ModelUtilsTest {
         boolean result = ModelUtils.isRelationAssignable(relDef);
         assertFalse(result);
     }
+
+    private AuthorizationModel model(String schemaVersion, TypeDefinition... typeDefs) {
+        return new AuthorizationModel().schemaVersion(schemaVersion).typeDefinitions(List.of(typeDefs));
+    }
+
+    @Test
+    public void testIsModelModular_Schema12WithTypeModule() {
+        var typeDef = new TypeDefinition().type("user").metadata(new Metadata().module("user_module"));
+        assertTrue(ModelUtils.isModelModular(model("1.2", typeDef)));
+    }
+
+    @Test
+    public void testIsModelModular_Schema12WithRelationModule() {
+        var typeDef = new TypeDefinition()
+                .type("document")
+                .relations(Map.of("viewer", new Userset()))
+                .metadata(new Metadata().relations(Map.of("viewer", new RelationMetadata().module("viewer_module"))));
+        assertTrue(ModelUtils.isModelModular(model("1.2", typeDef)));
+    }
+
+    @Test
+    public void testIsModelModular_Schema11WithTypeModuleIsNotModular() {
+        var typeDef = new TypeDefinition().type("user").metadata(new Metadata().module("user_module"));
+        assertFalse(ModelUtils.isModelModular(model("1.1", typeDef)));
+    }
+
+    @Test
+    public void testIsModelModular_Schema12WithoutModulesIsNotModular() {
+        var typeDef = new TypeDefinition().type("user").relations(Map.of("viewer", new Userset()));
+        assertFalse(ModelUtils.isModelModular(model("1.2", typeDef)));
+    }
+
+    @Test
+    public void testIsModelModular_Schema12WithEmptyModuleIsNotModular() {
+        var typeDef = new TypeDefinition().type("user").metadata(new Metadata().module(""));
+        assertFalse(ModelUtils.isModelModular(model("1.2", typeDef)));
+    }
+
+    @Test
+    public void testIsModelModular_UnsupportedSchemaThrows() {
+        var typeDef = new TypeDefinition().type("user");
+        assertThrows(IllegalArgumentException.class, () -> ModelUtils.isModelModular(model("9.9", typeDef)));
+    }
 }

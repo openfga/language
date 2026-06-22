@@ -12,10 +12,12 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
     private final AuthorizationModel authorizationModel = new AuthorizationModel();
     private final OpenFGAParser parser;
+    OpenFgaDslErrorListener errorListener;
     private TypeDefinition currentTypeDef = null;
     private Relation currentRelation = null;
     private Condition currentCondition = null;
     private boolean isModularModel = false;
+    private String moduleName = null;
     private HashMap<String, TypeDefinition> typeDefExtensions = new HashMap<String, TypeDefinition>();
 
     private Deque<StackRelation> rewriteStack = null;
@@ -26,6 +28,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
     public AuthorizationModel getAuthorizationModel() {
         return authorizationModel;
+    }
+
+    public Set<String> getTypeDefExtensions() {
+        return typeDefExtensions.keySet();
     }
 
     private Userset parseExpression(List<Userset> rewrites, String operator) {
@@ -67,6 +73,9 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
     @Override
     public void exitModuleHeader(OpenFGAParser.ModuleHeaderContext ctx) {
         this.isModularModel = true;
+        if (ctx.moduleName != null) {
+            this.moduleName = ctx.moduleName.getText();
+        }
     }
 
     @Override
@@ -88,6 +97,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
                 .type(ctx.typeName.getText())
                 .relations(new HashMap<>())
                 .metadata(new Metadata().relations(new HashMap<>()));
+
+        if (isModularModel) {
+            currentTypeDef.getMetadata().setModule(moduleName);
+        }
     }
 
     @Override
@@ -108,6 +121,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         }
 
         currentCondition = new Condition().name(conditionName).expression("").parameters(new HashMap<>());
+
+        if (isModularModel) {
+            currentCondition.setMetadata(new ConditionMetadata().module(moduleName));
+        }
     }
 
     @Override
@@ -170,7 +187,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
             return;
         }
 
-        if (currentTypeDef.getMetadata() != null
+        // In a non-modular model a type without relations carries no metadata; in a modular model the metadata is
+        // retained because it holds the module and source information, with an empty relations map.
+        if (!isModularModel
+                && currentTypeDef.getMetadata() != null
                 && currentTypeDef.getMetadata().getRelations() != null
                 && currentTypeDef.getMetadata().getRelations().isEmpty()) {
             currentTypeDef.setMetadata(null);
@@ -219,10 +239,16 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
             currentTypeDef.getRelations().put(relationName, relationDef);
             var directlyRelatedUserTypes = currentRelation.getTypeInfo().getDirectlyRelatedUserTypes();
-            currentTypeDef
-                    .getMetadata()
-                    .getRelations()
-                    .put(relationName, new RelationMetadata().directlyRelatedUserTypes(directlyRelatedUserTypes));
+            var relationMetadata = new RelationMetadata().directlyRelatedUserTypes(directlyRelatedUserTypes);
+
+            var parent = ctx.getParent();
+            var isExtension = parent instanceof OpenFGAParser.TypeDefContext
+                    && ((OpenFGAParser.TypeDefContext) parent).EXTEND() != null;
+            if (isModularModel && isExtension) {
+                relationMetadata.setModule(moduleName);
+            }
+
+            currentTypeDef.getMetadata().getRelations().put(relationName, relationMetadata);
         }
 
         currentRelation = null;

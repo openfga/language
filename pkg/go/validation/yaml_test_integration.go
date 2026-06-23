@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+	"github.com/openfga/language/pkg/go/transformer"
 )
 
 // YAMLTestCase represents a single test case from the YAML validation test files
@@ -123,7 +124,6 @@ func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) (*YAMLTestResul
 	}
 	
 	// Parse DSL to create authorization model
-	// Note: This would typically use a DSL parser, but for now we'll create a basic model
 	model, err := runner.parseDSLToModel(testCase.DSL)
 	if err != nil {
 		return &YAMLTestResult{
@@ -253,42 +253,14 @@ func (runner *YAMLTestRunner) errorsMatch(expected YAMLExpectedError, actual *Va
 }
 
 // parseDSLToModel converts DSL content to an AuthorizationModel
-// This is a simplified implementation - in practice, this would use a proper DSL parser
-func (runner *YAMLTestRunner) parseDSLToModel(dsl string) (*fgaSdk.AuthorizationModel, error) {
-	// For now, create a basic model that can be used for testing
-	// This would be replaced with actual DSL parsing logic
-	
-	lines := strings.Split(dsl, "\n")
-	model := &fgaSdk.AuthorizationModel{
-		SchemaVersion:   "1.1", // Default version
-		TypeDefinitions: []fgaSdk.TypeDefinition{},
+func (runner *YAMLTestRunner) parseDSLToModel(dsl string) (*openfgav1.AuthorizationModel, error) {
+	model, err := transformer.TransformDSLToProto(dsl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse DSL: %w", err)
 	}
-	
-	// Extract schema version if present
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "schema ") {
-			version := strings.TrimSpace(strings.TrimPrefix(line, "schema "))
-			model.SchemaVersion = version
-			break
-		}
+	if model == nil {
+		return nil, fmt.Errorf("failed to parse DSL")
 	}
-	
-	// Basic type extraction (simplified)
-	currentType := ""
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "type ") {
-			currentType = strings.TrimSpace(strings.TrimPrefix(line, "type "))
-			if currentType != "" {
-				typeDef := fgaSdk.TypeDefinition{
-					Type: currentType,
-				}
-				model.TypeDefinitions = append(model.TypeDefinitions, typeDef)
-			}
-		}
-	}
-	
 	return model, nil
 }
 
@@ -361,10 +333,10 @@ type YAMLTestReport struct {
 
 // PrintReport prints a formatted test report
 func (report *YAMLTestReport) PrintReport() {
-	fmt.Printf("📊 YAML Test Integration Report\n")
+	fmt.Printf("YAML Test Integration Report\n")
 	fmt.Printf("================================\n\n")
 	
-	fmt.Printf("📈 Summary:\n")
+	fmt.Printf("Summary:\n")
 	fmt.Printf("  Total Tests: %d\n", report.Summary["TOTAL"])
 	fmt.Printf("  Passed: %d\n", report.Summary["PASS"])
 	fmt.Printf("  Failed: %d\n", report.Summary["FAIL"])
@@ -374,7 +346,7 @@ func (report *YAMLTestReport) PrintReport() {
 	
 	// Print detailed results for each suite
 	for suiteName, results := range report.SuiteResults {
-		fmt.Printf("📋 Test Suite: %s\n", suiteName)
+		fmt.Printf("Test Suite: %s\n", suiteName)
 		fmt.Printf("  Tests: %d\n", len(results))
 		
 		passed := 0
@@ -399,7 +371,7 @@ func (report *YAMLTestReport) PrintReport() {
 		
 		// Show failed tests
 		if failed > 0 || errors > 0 {
-			fmt.Printf("  ❌ Failed/Error Tests:\n")
+			fmt.Printf("  Failed/Error Tests:\n")
 			for _, result := range results {
 				if result.Status == "FAIL" || result.Status == "ERROR" {
 					fmt.Printf("    - %s: %s\n", result.TestCase.Name, result.Message)

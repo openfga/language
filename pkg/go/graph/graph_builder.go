@@ -273,9 +273,6 @@ func (g *AuthorizationModelGraphBuilder) upsertEdge(from, to graph.Node, edgeTyp
 		}
 	}
 
-	if condition == "" {
-		condition = NoCond
-	}
 	g.AddEdge(from, to, edgeType, tuplesetRelation, []string{condition})
 }
 

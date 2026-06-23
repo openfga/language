@@ -1,5 +1,7 @@
 package graph
 
+import "sync"
+
 type NodeType int64
 
 const (
@@ -23,11 +25,17 @@ type WeightedAuthorizationModelNode struct {
 	wildcards         []string // e.g. "user". This means that from this node there is a path to node user:*
 	recursiveRelation string
 	tupleCycle        bool
+	usersetWeights    sync.Map
+	directAssigns     []string // refers to the direct assignments that a node relation can have, this maps will allow to in o(1) know if a write is correct or a contextual tuple is correct
 }
 
 // GetWeights returns the entire weights map.
 func (node *WeightedAuthorizationModelNode) GetWeights() map[string]int {
 	return node.weights
+}
+
+func (node *WeightedAuthorizationModelNode) GetDirectAssigns() []string {
+	return node.directAssigns
 }
 
 // GetWeight returns the weight for a specific type. It can return Infinite to indicate recursion.

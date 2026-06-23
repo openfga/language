@@ -3,9 +3,10 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
+
 
 func TestIsValidSchemaVersion(t *testing.T) {
 	tests := []struct {
@@ -68,7 +69,7 @@ func TestGetSchemaLineNumber(t *testing.T) {
 				"  schema 1.1",
 				"type document",
 			},
-			expected: fgaSdk.PtrInt(1),
+			expected: ptrInt(1),
 		},
 		{
 			name:          "finds schema version with extra whitespace",
@@ -78,7 +79,7 @@ func TestGetSchemaLineNumber(t *testing.T) {
 				"   schema   1.2   ",
 				"type document",
 			},
-			expected: fgaSdk.PtrInt(1),
+			expected: ptrInt(1),
 		},
 		{
 			name:          "schema version not found",
@@ -110,7 +111,7 @@ func TestGetSchemaLineNumber(t *testing.T) {
 				"# comment about schema 1.1",
 				"type document",
 			},
-			expected: fgaSdk.PtrInt(1),
+			expected: ptrInt(1),
 		},
 	}
 
@@ -130,7 +131,7 @@ func TestGetSchemaLineNumber(t *testing.T) {
 func TestValidateSchemaVersion(t *testing.T) {
 	tests := []struct {
 		name                string
-		model               *fgaSdk.AuthorizationModel
+		model               *openfgav1.AuthorizationModel
 		lines               []string
 		expectedErrorCount  int
 		expectedErrorType   ValidationErrorType
@@ -143,14 +144,14 @@ func TestValidateSchemaVersion(t *testing.T) {
 		},
 		{
 			name:                "missing schema version",
-			model:               &fgaSdk.AuthorizationModel{},
+			model:               &openfgav1.AuthorizationModel{},
 			expectedErrorCount:  1,
 			expectedErrorType:   SchemaVersionRequired,
 			expectedErrorSymbol: "",
 		},
 		{
 			name: "empty schema version",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "",
 			},
 			expectedErrorCount:  1,
@@ -159,21 +160,21 @@ func TestValidateSchemaVersion(t *testing.T) {
 		},
 		{
 			name: "valid schema version 1.1",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.1",
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name: "valid schema version 1.2",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.2",
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name: "invalid schema version",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "2.0",
 			},
 			lines: []string{
@@ -279,14 +280,14 @@ func TestValidateMultipleModulesInFile(t *testing.T) {
 func TestValidateBasicModelStructure(t *testing.T) {
 	tests := []struct {
 		name               string
-		model              *fgaSdk.AuthorizationModel
+		model              *openfgav1.AuthorizationModel
 		fileToModuleMap    map[string]map[string]bool
 		lines              []string
 		expectedErrorCount int
 	}{
 		{
 			name: "valid model structure",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.1",
 			},
 			fileToModuleMap: map[string]map[string]bool{
@@ -296,13 +297,13 @@ func TestValidateBasicModelStructure(t *testing.T) {
 		},
 		{
 			name:               "missing schema version",
-			model:              &fgaSdk.AuthorizationModel{},
+			model:              &openfgav1.AuthorizationModel{},
 			fileToModuleMap:    map[string]map[string]bool{},
 			expectedErrorCount: 1,
 		},
 		{
 			name: "invalid schema version",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "2.0",
 			},
 			fileToModuleMap:    map[string]map[string]bool{},
@@ -310,7 +311,7 @@ func TestValidateBasicModelStructure(t *testing.T) {
 		},
 		{
 			name: "multiple modules in file",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.1",
 			},
 			fileToModuleMap: map[string]map[string]bool{
@@ -323,7 +324,7 @@ func TestValidateBasicModelStructure(t *testing.T) {
 		},
 		{
 			name:  "multiple errors",
-			model: &fgaSdk.AuthorizationModel{},
+			model: &openfgav1.AuthorizationModel{},
 			fileToModuleMap: map[string]map[string]bool{
 				"file1.fga": {
 					"module1": true,
@@ -365,7 +366,7 @@ func TestSchemaVersionValidation(t *testing.T) {
 	collector := NewErrorCollector(nil)
 
 	// Test valid schema version
-	validModel := &fgaSdk.AuthorizationModel{
+	validModel := &openfgav1.AuthorizationModel{
 		SchemaVersion: "1.1",
 	}
 	ValidateSchemaVersion(collector, validModel, nil)
@@ -373,7 +374,7 @@ func TestSchemaVersionValidation(t *testing.T) {
 
 	// Test invalid schema version
 	collector = NewErrorCollector(nil)
-	invalidModel := &fgaSdk.AuthorizationModel{
+	invalidModel := &openfgav1.AuthorizationModel{
 		SchemaVersion: "2.0",
 	}
 	ValidateSchemaVersion(collector, invalidModel, nil)

@@ -3,14 +3,14 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCycleDetector(t *testing.T) {
 	t.Run("NewCycleDetector", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{Type: "document"},
 			},
 		}
@@ -27,19 +27,23 @@ func TestCycleDetector(t *testing.T) {
 
 	t.Run("Simple cycle detection", func(t *testing.T) {
 		// Create a model with a simple cycle: viewer -> editor -> viewer
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("editor"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "editor",
+								},
 							},
 						},
 						"editor": {
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("viewer"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "viewer",
+								},
 							},
 						},
 					},
@@ -65,41 +69,49 @@ func TestCycleDetector(t *testing.T) {
 	})
 
 	t.Run("No cycle with valid relations", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 								},
 							},
 							"editor": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 								},
 							},
 						},
 					},
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							Union: &fgaSdk.Usersets{
-								Child: []fgaSdk.Userset{
-									{
-										This: &map[string]interface{}{},
-									},
-									{
-										ComputedUserset: &fgaSdk.ObjectRelation{
-											Relation: fgaSdk.PtrString("editor"),
+							Userset: &openfgav1.Userset_Union{
+								Union: &openfgav1.Usersets{
+									Child: []*openfgav1.Userset{
+										{
+											Userset: &openfgav1.Userset_This{
+												This: &openfgav1.DirectUserset{},
+											},
+										},
+										{
+											Userset: &openfgav1.Userset_ComputedUserset{
+												ComputedUserset: &openfgav1.ObjectRelation{
+													Relation: "editor",
+												},
+											},
 										},
 									},
 								},
 							},
 						},
 						"editor": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -126,22 +138,24 @@ func TestCycleDetector(t *testing.T) {
 	})
 
 	t.Run("Entry point detection - direct assignment", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 								},
 							},
 						},
 					},
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -168,29 +182,37 @@ func TestCycleDetector(t *testing.T) {
 	})
 
 	t.Run("Missing entry point", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("editor"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "editor",
+								},
 							},
 						},
 						"editor": {
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("admin"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "admin",
+								},
 							},
 						},
 						"admin": {
 							// No direct assignment or type restrictions - missing entry point
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("owner"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "owner",
+								},
 							},
 						},
 						"owner": {
-							This: &map[string]interface{}{}, // This has entry point
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -218,13 +240,15 @@ func TestCycleDetector(t *testing.T) {
 
 func TestHasEntryPoint(t *testing.T) {
 	t.Run("Direct this assignment", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -239,20 +263,20 @@ func TestHasEntryPoint(t *testing.T) {
 	})
 
 	t.Run("Type restrictions as entry point", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 								},
 							},
 						},
 					},
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
 							// No direct 'this', but has type restrictions
 						},
@@ -272,20 +296,26 @@ func TestHasEntryPoint(t *testing.T) {
 	})
 
 	t.Run("Union with entry point", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							Union: &fgaSdk.Usersets{
-								Child: []fgaSdk.Userset{
-									{
-										This: &map[string]interface{}{},
-									},
-									{
-										ComputedUserset: &fgaSdk.ObjectRelation{
-											Relation: fgaSdk.PtrString("editor"),
+							Userset: &openfgav1.Userset_Union{
+								Union: &openfgav1.Usersets{
+									Child: []*openfgav1.Userset{
+										{
+											Userset: &openfgav1.Userset_This{
+												This: &openfgav1.DirectUserset{},
+											},
+										},
+										{
+											Userset: &openfgav1.Userset_ComputedUserset{
+												ComputedUserset: &openfgav1.ObjectRelation{
+													Relation: "editor",
+												},
+											},
 										},
 									},
 								},

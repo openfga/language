@@ -3,9 +3,9 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
 	"github.com/stretchr/testify/assert"
 )
+
 
 func TestValidationRegexRules(t *testing.T) {
 	// Test that regex rules match the JS implementation
@@ -308,7 +308,7 @@ func TestGetTypeLineNumber(t *testing.T) {
 				"  relations",
 				"    define viewer: [user]",
 			},
-			expected: fgaSdk.PtrInt(0),
+			expected: ptrInt(0),
 		},
 		{
 			name:     "finds type on line 2",
@@ -319,7 +319,7 @@ func TestGetTypeLineNumber(t *testing.T) {
 				"type user",
 				"type document",
 			},
-			expected: fgaSdk.PtrInt(2),
+			expected: ptrInt(2),
 		},
 		{
 			name:     "type not found",
@@ -338,8 +338,8 @@ func TestGetTypeLineNumber(t *testing.T) {
 				"  relations",
 				"type document",
 			},
-			skipIndex: fgaSdk.PtrInt(0),
-			expected:  fgaSdk.PtrInt(2),
+			skipIndex: ptrInt(0),
+			expected:  ptrInt(2),
 		},
 		{
 			name:     "empty lines",
@@ -385,7 +385,7 @@ func TestGetRelationLineNumber(t *testing.T) {
 				"    define viewer: [user]",
 				"    define admin: [user]",
 			},
-			expected: fgaSdk.PtrInt(2),
+			expected: ptrInt(2),
 		},
 		{
 			name:         "finds relation with complex definition",
@@ -396,7 +396,7 @@ func TestGetRelationLineNumber(t *testing.T) {
 				"    define viewer: [user]",
 				"    define can_view: viewer or admin",
 			},
-			expected: fgaSdk.PtrInt(3),
+			expected: ptrInt(3),
 		},
 		{
 			name:         "relation not found",
@@ -416,8 +416,8 @@ func TestGetRelationLineNumber(t *testing.T) {
 				"  relations",
 				"    define viewer: [group]",
 			},
-			skipIndex: fgaSdk.PtrInt(0),
-			expected:  fgaSdk.PtrInt(2),
+			skipIndex: ptrInt(0),
+			expected:  ptrInt(2),
 		},
 		{
 			name:         "empty lines",
@@ -462,7 +462,7 @@ func TestGetConditionLineNumber(t *testing.T) {
 				"  relations",
 				"    define viewer: [user with is_owner]",
 			},
-			expected: fgaSdk.PtrInt(2),
+			expected: ptrInt(2),
 		},
 		{
 			name:          "condition not found",
@@ -482,8 +482,8 @@ func TestGetConditionLineNumber(t *testing.T) {
 				"  relations",
 				"    condition is_owner: some_condition",
 			},
-			skipIndex: fgaSdk.PtrInt(0),
-			expected:  fgaSdk.PtrInt(2),
+			skipIndex: ptrInt(0),
+			expected:  ptrInt(2),
 		},
 		{
 			name:          "empty lines",
@@ -595,7 +595,7 @@ func TestValidateNameRules(t *testing.T) {
 	}
 }
 
-// TestNameValidationIntegration tests name validation with SDK types.
+// TestNameValidationIntegration tests name validation with proto types.
 func TestNameValidationIntegration(t *testing.T) {
 	t.Run("Valid Names", func(t *testing.T) {
 		validNames := []string{"document", "user", "group", "viewer", "editor", "admin"}

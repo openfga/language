@@ -3,19 +3,21 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSemanticValidator(t *testing.T) {
 	t.Run("NewSemanticValidator", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -34,8 +36,8 @@ func TestSemanticValidator(t *testing.T) {
 	})
 
 	t.Run("TypeDefined", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{Type: "document"},
 				{Type: "user"},
 			},
@@ -50,16 +52,20 @@ func TestSemanticValidator(t *testing.T) {
 	})
 
 	t.Run("RelationDefined", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 						"editor": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -79,8 +85,8 @@ func TestSemanticValidator(t *testing.T) {
 	})
 
 	t.Run("GetTypeDefinition", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{Type: "document"},
 				{Type: "user"},
 			},
@@ -103,22 +109,24 @@ func TestSemanticValidator(t *testing.T) {
 
 func TestValidateRelationReferences(t *testing.T) {
 	t.Run("Valid references", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 								},
 							},
 						},
 					},
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},
@@ -136,14 +144,14 @@ func TestValidateRelationReferences(t *testing.T) {
 	})
 
 	t.Run("Undefined type in restriction", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "undefined_type"},
 								},
 							},
@@ -163,15 +171,15 @@ func TestValidateRelationReferences(t *testing.T) {
 	})
 
 	t.Run("Undefined relation in restriction", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
-									{Type: "user", Relation: fgaSdk.PtrString("undefined_relation")},
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+									{Type: "user", RelationOrWildcard: &openfgav1.RelationReference_Relation{Relation: "undefined_relation"}},
 								},
 							},
 						},
@@ -193,14 +201,16 @@ func TestValidateRelationReferences(t *testing.T) {
 	})
 
 	t.Run("Undefined relation in computed userset", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							ComputedUserset: &fgaSdk.ObjectRelation{
-								Relation: fgaSdk.PtrString("undefined_relation"),
+							Userset: &openfgav1.Userset_ComputedUserset{
+								ComputedUserset: &openfgav1.ObjectRelation{
+									Relation: "undefined_relation",
+								},
 							},
 						},
 					},
@@ -218,29 +228,37 @@ func TestValidateRelationReferences(t *testing.T) {
 	})
 
 	t.Run("Complex userset validation", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
-							Union: &fgaSdk.Usersets{
-								Child: []fgaSdk.Userset{
-									{
-										ComputedUserset: &fgaSdk.ObjectRelation{
-											Relation: fgaSdk.PtrString("editor"),
+							Userset: &openfgav1.Userset_Union{
+								Union: &openfgav1.Usersets{
+									Child: []*openfgav1.Userset{
+										{
+											Userset: &openfgav1.Userset_ComputedUserset{
+												ComputedUserset: &openfgav1.ObjectRelation{
+													Relation: "editor",
+												},
+											},
 										},
-									},
-									{
-										ComputedUserset: &fgaSdk.ObjectRelation{
-											Relation: fgaSdk.PtrString("undefined_relation"),
+										{
+											Userset: &openfgav1.Userset_ComputedUserset{
+												ComputedUserset: &openfgav1.ObjectRelation{
+													Relation: "undefined_relation",
+												},
+											},
 										},
 									},
 								},
 							},
 						},
 						"editor": {
-							This: &map[string]interface{}{},
+							Userset: &openfgav1.Userset_This{
+								This: &openfgav1.DirectUserset{},
+							},
 						},
 					},
 				},

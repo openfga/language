@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +30,7 @@ func TestNewValidationContext(t *testing.T) {
 func TestValidationContext_AddType(t *testing.T) {
 	ctx := NewValidationContext(nil)
 
-	typeDef := &fgaSdk.TypeDefinition{
+	typeDef := &openfgav1.TypeDefinition{
 		Type: "document",
 	}
 
@@ -49,7 +49,7 @@ func TestValidationContext_GetType(t *testing.T) {
 	assert.False(t, exists)
 
 	// Add type and test getting it
-	expectedTypeDef := &fgaSdk.TypeDefinition{
+	expectedTypeDef := &openfgav1.TypeDefinition{
 		Type: "document",
 	}
 	ctx.AddType("document", expectedTypeDef)
@@ -300,8 +300,8 @@ func TestValidationContext_Integration(t *testing.T) {
 	ctx := NewValidationContext(lines)
 
 	// Add types
-	docType := &fgaSdk.TypeDefinition{Type: "document"}
-	userType := &fgaSdk.TypeDefinition{Type: "user"}
+	docType := &openfgav1.TypeDefinition{Type: "document"}
+	userType := &openfgav1.TypeDefinition{Type: "user"}
 
 	ctx.AddType("document", docType)
 	ctx.AddType("user", userType)

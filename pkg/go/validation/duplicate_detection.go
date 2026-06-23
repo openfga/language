@@ -1,7 +1,7 @@
 package validation
 
 import (
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
 // DuplicateTypeTracker tracks type names to detect duplicates.
@@ -9,140 +9,99 @@ type DuplicateTypeTracker struct {
 	typeNames map[string]bool
 }
 
-// NewDuplicateTypeTracker creates a new duplicate type tracker.
 func NewDuplicateTypeTracker() *DuplicateTypeTracker {
-	return &DuplicateTypeTracker{
-		typeNames: make(map[string]bool),
-	}
+	return &DuplicateTypeTracker{typeNames: make(map[string]bool)}
 }
 
-// CheckAndAddType checks if a type name is duplicate and adds it to the tracker.
 func (dt *DuplicateTypeTracker) CheckAndAddType(typeName string, collector *ErrorCollector,
 	meta *Meta, lines []string) bool {
 	if dt.typeNames[typeName] {
-		// Type name is duplicate
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 		collector.RaiseDuplicateTypeName(typeName, meta, typeLineIndex)
 		return false
 	}
-
-	// Add type name to tracker
 	dt.typeNames[typeName] = true
 	return true
 }
 
-// CheckForDuplicateTypeNamesInRelation checks for duplicate type names in relation definitions
-// This is equivalent to the checkForDuplicatesTypeNamesInRelation function in JS
-func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMetadata *fgaSdk.RelationMetadata, 
+// CheckForDuplicateTypeNamesInRelation checks for duplicate type restrictions within a relation.
+func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMetadata *openfgav1.RelationMetadata,
 	relationName, typeName string, meta *Meta, lines []string) {
-	if relationMetadata == nil || relationMetadata.DirectlyRelatedUserTypes == nil {
+	if relationMetadata == nil {
 		return
 	}
-
-	// Track type restrictions to detect duplicates
 	typeRestrictions := make(map[string]bool)
-
-	for _, typeRestriction := range *relationMetadata.DirectlyRelatedUserTypes {
-		if typeRestriction.Type == "" {
+	for _, typeRestriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
+		if typeRestriction.GetType() == "" {
 			continue
 		}
-
-		// Build type restriction string (type:* or type#relation or type with condition)
-		typeRestrictionString := typeRestriction.Type
-
-		// Check for wildcard
-		if typeRestriction.Wildcard != nil {
+		typeRestrictionString := typeRestriction.GetType()
+		if typeRestriction.GetWildcard() != nil {
 			typeRestrictionString += ":*"
-		} else if typeRestriction.Relation != nil && *typeRestriction.Relation != "" {
-			typeRestrictionString += "#" + *typeRestriction.Relation
+		} else if rel := typeRestriction.GetRelation(); rel != "" {
+			typeRestrictionString += "#" + rel
 		}
-
-		if typeRestriction.Condition != nil && *typeRestriction.Condition != "" {
-			typeRestrictionString += " with " + *typeRestriction.Condition
+		if cond := typeRestriction.GetCondition(); cond != "" {
+			typeRestrictionString += " with " + cond
 		}
-
-		// Check for duplicate
 		if typeRestrictions[typeRestrictionString] {
-			relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-			collector.RaiseDuplicateTypeRestriction(typeRestrictionString, relationName, typeName, meta, relationLineIndex)
+			lineIndex := GetRelationLineNumber(relationName, lines, nil)
+			collector.RaiseDuplicateTypeRestriction(typeRestrictionString, relationName, typeName, meta, lineIndex)
 		} else {
 			typeRestrictions[typeRestrictionString] = true
 		}
 	}
 }
 
-// CheckForDuplicatesInRelation checks for duplicate relations in type definitions
-// This is equivalent to the checkForDuplicatesInRelation function in JS
-func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *fgaSdk.TypeDefinition, 
+// CheckForDuplicatesInRelation checks for duplicate relations in type definitions.
+func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.TypeDefinition,
 	relationName string, lines []string) {
-	if typeDef == nil || !typeDef.HasRelations() {
+	if typeDef == nil {
 		return
 	}
-
 	relations := typeDef.GetRelations()
 	relation, exists := relations[relationName]
 	if !exists {
 		return
 	}
 
-	// Get file and module metadata
 	var file, module string
-	if typeDef.Metadata != nil && typeDef.Metadata.HasRelations() {
-		relationMetadata := typeDef.Metadata.GetRelations()
-		if relationMeta, exists := relationMetadata[relationName]; exists {
-			if relationMeta.HasSourceInfo() {
-				sourceInfo := relationMeta.GetSourceInfo()
-				file = sourceInfo.GetFile()
-			}
-			if relationMeta.HasModule() {
-				module = relationMeta.GetModule()
-			}
+	if meta := typeDef.GetMetadata(); meta != nil {
+		if rm, ok := meta.GetRelations()[relationName]; ok {
+			file = rm.GetSourceInfo().GetFile()
+			module = rm.GetModule()
+		}
+		if file == "" {
+			file = meta.GetSourceInfo().GetFile()
+		}
+		if module == "" {
+			module = meta.GetModule()
 		}
 	}
-
-	// If no file from relation metadata, try type metadata
-	if file == "" && typeDef.Metadata != nil && typeDef.Metadata.HasSourceInfo() {
-		sourceInfo := typeDef.Metadata.GetSourceInfo()
-		file = sourceInfo.GetFile()
-	}
-
-	// If no module from relation metadata, try type metadata
-	if module == "" && typeDef.Metadata != nil && typeDef.Metadata.HasModule() {
-		module = typeDef.Metadata.GetModule()
-	}
-
 	meta := &Meta{File: file, Module: module}
 
-	// Check for duplicate operations in complex usersets
-	if relation.Union != nil {
-		checkDuplicatesInUnion(collector, relation.Union, relationName, typeDef.Type, meta, lines)
+	if union := relation.GetUnion(); union != nil {
+		checkDuplicatesInUnion(collector, union, relationName, typeDef.GetType(), meta, lines)
 	}
-
-	if relation.Intersection != nil {
-		checkDuplicatesInIntersection(collector, relation.Intersection, relationName, typeDef.Type, meta, lines)
+	if intersection := relation.GetIntersection(); intersection != nil {
+		checkDuplicatesInIntersection(collector, intersection, relationName, typeDef.GetType(), meta, lines)
 	}
-
-	if relation.Difference != nil {
-		checkDuplicatesInDifference(collector, relation.Difference, relationName, typeDef.Type, meta, lines)
+	if diff := relation.GetDifference(); diff != nil {
+		checkDuplicatesInDifference(collector, diff, relationName, typeDef.GetType(), meta, lines)
 	}
 }
 
-// checkDuplicatesInUnion checks for duplicates in union operations.
-func checkDuplicatesInUnion(collector *ErrorCollector, union *fgaSdk.Usersets,
+func checkDuplicatesInUnion(collector *ErrorCollector, union *openfgav1.Usersets,
 	relationName, typeName string, meta *Meta, lines []string) {
 	if union == nil {
 		return
 	}
-
-	// Track relation definitions to detect duplicates
 	relationDefs := make(map[string]bool)
-
-	for _, child := range union.Child {
-		relationDef := getRelationDefName(child)
-		if relationDef != "" {
+	for _, child := range union.GetChild() {
+		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
-				relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, relationLineIndex)
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
 			} else {
 				relationDefs[relationDef] = true
 			}
@@ -150,22 +109,17 @@ func checkDuplicatesInUnion(collector *ErrorCollector, union *fgaSdk.Usersets,
 	}
 }
 
-// checkDuplicatesInIntersection checks for duplicates in intersection operations.
-func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *fgaSdk.Usersets,
+func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *openfgav1.Usersets,
 	relationName, typeName string, meta *Meta, lines []string) {
 	if intersection == nil {
 		return
 	}
-
-	// Track relation definitions to detect duplicates
 	relationDefs := make(map[string]bool)
-
-	for _, child := range intersection.Child {
-		relationDef := getRelationDefName(child)
-		if relationDef != "" {
+	for _, child := range intersection.GetChild() {
+		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
-				relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, relationLineIndex)
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
 			} else {
 				relationDefs[relationDef] = true
 			}
@@ -173,101 +127,61 @@ func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *fgaS
 	}
 }
 
-// checkDuplicatesInDifference checks for duplicates in difference operations
-func checkDuplicatesInDifference(collector *ErrorCollector, difference *fgaSdk.Difference, 
+func checkDuplicatesInDifference(collector *ErrorCollector, difference *openfgav1.Difference,
 	relationName, typeName string, meta *Meta, lines []string) {
 	if difference == nil {
 		return
 	}
-
-	// Check base for duplicates
-	baseName := getRelationDefName(difference.Base)
-	if baseName != "" {
-		// For difference operations, we need to check if base appears multiple times
-		// This is a simplified check - more complex logic may be needed
-		relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-
-		// Check if subtract also has the same relation (which would be a duplicate)
-		subtractName := getRelationDefName(difference.Subtract)
-		if subtractName == baseName {
-			collector.RaiseDuplicateType(baseName, relationName, typeName, meta, relationLineIndex)
-		}
+	baseName := getRelationDefName(difference.GetBase())
+	subtractName := getRelationDefName(difference.GetSubtract())
+	if baseName != "" && baseName == subtractName {
+		lineIndex := GetRelationLineNumber(relationName, lines, nil)
+		collector.RaiseDuplicateType(baseName, relationName, typeName, meta, lineIndex)
 	}
 }
 
-// getRelationDefName extracts the relation definition name from a userset
-// This is equivalent to the getRelationDefName function in JS
-func getRelationDefName(userset fgaSdk.Userset) string {
-	if userset.ComputedUserset != nil && userset.ComputedUserset.HasRelation() {
-		return userset.ComputedUserset.GetRelation()
+func getRelationDefName(userset *openfgav1.Userset) string {
+	if userset == nil {
+		return ""
 	}
-
-	if userset.TupleToUserset != nil {
-		var target, from string
-
-		if userset.TupleToUserset.ComputedUserset.HasRelation() {
-			target = userset.TupleToUserset.ComputedUserset.GetRelation()
+	if cu := userset.GetComputedUserset(); cu != nil {
+		if rel := cu.GetRelation(); rel != "" {
+			return rel
 		}
-
-		if userset.TupleToUserset.Tupleset.HasRelation() {
-			from = userset.TupleToUserset.Tupleset.GetRelation()
-		}
-
+	}
+	if ttu := userset.GetTupleToUserset(); ttu != nil {
+		target := ttu.GetComputedUserset().GetRelation()
+		from := ttu.GetTupleset().GetRelation()
 		if target != "" && from != "" {
 			return target + " from " + from
 		}
-
 		if target != "" {
 			return target
 		}
 	}
-
 	return ""
 }
 
-// ValidateDuplicates performs comprehensive duplicate detection on a model
-// This combines all duplicate detection logic
-func ValidateDuplicates(collector *ErrorCollector, model *fgaSdk.AuthorizationModel, lines []string) {
+// ValidateDuplicates performs comprehensive duplicate detection on a model.
+func ValidateDuplicates(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-
-	// Create duplicate type tracker
 	typeTracker := NewDuplicateTypeTracker()
-
-	for _, typeDef := range model.TypeDefinitions {
-		if typeDef.Type == "" {
+	for _, typeDef := range model.GetTypeDefinitions() {
+		typeName := typeDef.GetType()
+		if typeName == "" {
 			continue
 		}
-
-		typeName := typeDef.Type
-
-		// Get type metadata
-		var file, module string
-		if typeDef.Metadata != nil {
-			if typeDef.Metadata.HasSourceInfo() {
-				sourceInfo := typeDef.Metadata.GetSourceInfo()
-				file = sourceInfo.GetFile()
-			}
-			if typeDef.Metadata.HasModule() {
-				module = typeDef.Metadata.GetModule()
-			}
+		meta := &Meta{
+			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
+			Module: typeDef.GetMetadata().GetModule(),
 		}
-
-		meta := &Meta{File: file, Module: module}
-
-		// Check for duplicate type names
 		typeTracker.CheckAndAddType(typeName, collector, meta, lines)
-
-		// Check for duplicates in relations
-		if typeDef.Metadata != nil && typeDef.Metadata.HasRelations() {
-			relations := typeDef.Metadata.GetRelations()
-			for relationName, relationMetadata := range relations {
-				// Check for duplicate type names in relation
-				CheckForDuplicateTypeNamesInRelation(collector, &relationMetadata, relationName, typeName, meta, lines)
-
-				// Check for duplicate relations
-				CheckForDuplicatesInRelation(collector, &typeDef, relationName, lines)
+		if metaProto := typeDef.GetMetadata(); metaProto != nil {
+			for relationName, relationMetadata := range metaProto.GetRelations() {
+				CheckForDuplicateTypeNamesInRelation(collector, relationMetadata, relationName, typeName, meta, lines)
+				CheckForDuplicatesInRelation(collector, typeDef, relationName, lines)
 			}
 		}
 	}

@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
 	"github.com/stretchr/testify/assert"
 )
+
+
 
 func TestNewErrorCollector(t *testing.T) {
 	lines := []string{"line 1", "line 2", "line 3"}
@@ -78,7 +79,7 @@ func TestErrorCollector_RaiseInvalidName(t *testing.T) {
 			name:         "relation invalid name",
 			symbol:       "invalid-relation",
 			clause:       "[a-zA-Z]+",
-			typeName:     fgaSdk.PtrString("document"),
+			typeName:     ptrString("document"),
 			expectedMsg:  "relation 'invalid-relation' of type 'document' does not match naming rule: '[a-zA-Z]+'.",
 			expectedType: InvalidName,
 		},

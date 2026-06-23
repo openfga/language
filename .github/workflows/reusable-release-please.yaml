@@ -1,0 +1,352 @@
+name: reusable-release-please
+
+on:
+  workflow_call:
+    inputs:
+      trigger-event:
+        description: "What kicked off the run: workflow_dispatch | push"
+        type: string
+        required: true
+      target-package:
+        description: "Component to target: all | pkg/go | pkg/js | pkg/java"
+        type: string
+        required: false
+        default: "all"
+      bump-type:
+        description: "Version bump: auto | patch | minor | major | explicit"
+        type: string
+        required: false
+        default: "auto"
+      release-version:
+        description: "Explicit version to release (used when bump-type=explicit)"
+        type: string
+        required: false
+        default: ""
+    secrets:
+      RELEASER_APP_CLIENT_ID:
+        required: true
+      RELEASER_APP_PRIVATE_KEY:
+        required: true
+      GPG_PRIVATE_KEY:
+        required: true
+      GPG_PASSPHRASE:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  ###########################################################################
+  # Phase 1: create / retarget the release-please PR(s).
+  ###########################################################################
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.RELEASER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Import GPG key and enable signed commits
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name "openfga-releaser-bot"
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config commit.gpgSign true
+
+      - name: Prepare dispatch run
+        if: inputs.trigger-event == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_PACKAGE: ${{ inputs.target-package }}
+          BUMP_TYPE: ${{ inputs.bump-type }}
+          RELEASE_VERSION: ${{ inputs.release-version }}
+        run: |
+          set -euo pipefail
+          PARSE=".github/workflows/scripts/parse-release.sh"
+
+          git fetch origin main --tags --prune
+
+          # 1) Reset the `release` branch from origin/main.
+          git branch -f release origin/main
+          git push -f origin release
+
+          # 2) Ensure a baseline tag exists for every component in the manifest.
+          while read -r component version; do
+            tag="${component}/v${version}"
+            if ! git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "Creating baseline tag ${tag}"
+              git tag "${tag}" origin/main
+              git push origin "refs/tags/${tag}"
+            fi
+          done < <(jq -r 'to_entries[] | "\(.key) \(.value)"' .release-please-manifest.json)
+
+          # 3) Close stale release-please PRs (REST API avoids search-index lag).
+          for pr in $(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" \
+                        --jq '.[] | select(.head.ref | startswith("release-please--branches--")) | .number'); do
+            echo "Closing stale release PR #${pr}"
+            gh pr close "${pr}" --delete-branch || true
+          done
+
+          # 4) Drop stale `autorelease: pending` labels on non-main merged PRs.
+          for pr in $(gh pr list --state merged --label "autorelease: pending" \
+                        --json number,baseRefName \
+                        --jq '.[] | select(.baseRefName != "main") | .number'); do
+            echo "Removing stale label from PR #${pr}"
+            gh pr edit "${pr}" --remove-label "autorelease: pending" || true
+          done
+
+          # 5) Optionally force a version via a Release-As marker commit.
+          if [[ "${BUMP_TYPE}" != "auto" ]]; then
+            git checkout release
+
+            components=()
+            if [[ "${TARGET_PACKAGE}" == "all" ]]; then
+              while read -r c; do components+=("$c"); done \
+                < <(jq -r 'keys[]' .release-please-manifest.json)
+            else
+              components=("${TARGET_PACKAGE}")
+            fi
+
+            for component in "${components[@]}"; do
+              current="$(jq -r --arg c "${component}" '.[$c]' .release-please-manifest.json)"
+              case "${BUMP_TYPE}" in
+                explicit)
+                  newver="${RELEASE_VERSION}"
+                  ;;
+                patch|minor|major)
+                  newver="$("${PARSE}" next-version "${current}" "${BUMP_TYPE}")"
+                  ;;
+                *)
+                  echo "Unsupported bump-type: ${BUMP_TYPE}" >&2
+                  exit 1
+                  ;;
+              esac
+
+              if [[ -z "${newver}" ]]; then
+                echo "Could not resolve a version for ${component}" >&2
+                exit 1
+              fi
+
+              echo "Forcing ${component} -> ${newver} via Release-As"
+              marker="${component}/.release-please-trigger"
+              printf 'Release-As %s requested at %s\n' "${newver}" "$(date -u +%FT%TZ)" >"${marker}"
+              git add "${marker}"
+              git commit -m "chore(${component}): release ${newver}" -m "Release-As: ${newver}"
+            done
+
+            git push -f origin release
+          fi
+
+      - name: Resolve target branch
+        id: target
+        run: |
+          if [[ "${{ inputs.trigger-event }}" == "workflow_dispatch" ]]; then
+            echo "branch=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run release-please
+        # dispatch (target=release): opens the release PR(s).
+        # release: push (target=main): updates the merged PR's labels/comment.
+        # skip-github-release keeps tagging in the post-release job.
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: ${{ steps.target.outputs.branch }}
+
+      - name: Retarget release PRs onto main
+        if: inputs.trigger-event == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_PACKAGE: ${{ inputs.target-package }}
+        run: |
+          set -euo pipefail
+
+          # Move each release PR from the `release` branch onto `main`.
+          # REST API (not `gh pr list --search`) avoids search-index lag.
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" \
+            --jq '.[] | select(.head.ref | startswith("release-please--branches--release")) | "\(.number) \(.head.ref)"' \
+          | while read -r pr head; do
+              echo "Processing PR #${pr} (head: ${head})"
+
+              # Single-package dispatch: close other packages' PRs.
+              if [[ "${TARGET_PACKAGE}" != "all" \
+                    && "${head}" != *"--components--${TARGET_PACKAGE}" ]]; then
+                echo "  Closing non-target release PR #${pr}"
+                gh pr close "${pr}" --delete-branch \
+                  --comment "Closing: this dispatch targeted '${TARGET_PACKAGE}' only." || true
+                continue
+              fi
+
+              # Retarget base release -> main.
+              echo "  Retargeting base -> main"
+              gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" -X PATCH -f base=main
+
+              # Rename head ref --branches--release(--) -> --branches--main(--).
+              new_head="${head//--branches--release--/--branches--main--}"
+              new_head="${new_head//--branches--release/--branches--main}"
+
+              if [[ "${new_head}" != "${head}" ]]; then
+                echo "  Renaming head branch -> ${new_head}"
+                # Rename the ref in place; the pulls API can't change a PR head.
+                encoded_head="${head//\//%2F}"
+                sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_head}" --jq '.object.sha')"
+                gh api "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_head}" \
+                  -X PATCH \
+                  -f "ref=refs/heads/${new_head}" \
+                  -f "sha=${sha}"
+              fi
+
+              echo "  Done with PR #${pr}"
+            done
+
+  ###########################################################################
+  # Phase 2: publish releases after a release commit lands on main.
+  ###########################################################################
+  post-release:
+    runs-on: ubuntu-latest
+    needs: [release-please]
+    if: >-
+      inputs.trigger-event == 'push' &&
+      startsWith(github.event.head_commit.message, 'release:')
+    permissions:
+      contents: write
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.RELEASER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Import GPG key and enable signed tags
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_tag_gpgsign: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name "openfga-releaser-bot"
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config tag.gpgSign true
+
+      - name: Create signed tags and draft releases
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PARSE=".github/workflows/scripts/parse-release.sh"
+
+          # Diff the manifest committed by the release commit against its parent.
+          git show "HEAD~1:.release-please-manifest.json" > /tmp/prev-manifest.json 2>/dev/null \
+            || echo '{}' > /tmp/prev-manifest.json
+          cp .release-please-manifest.json /tmp/cur-manifest.json
+
+          # manifest-diff exits non-zero when nothing changed; treat that as a
+          # no-op rather than a failure.
+          if ! releases="$("${PARSE}" manifest-diff /tmp/cur-manifest.json /tmp/prev-manifest.json 2>/dev/null)"; then
+            echo "No changed components; nothing to release."
+            exit 0
+          fi
+          echo "Releases to publish: ${releases}"
+
+          count="$(jq 'length' <<<"${releases}")"
+
+          for i in $(seq 0 $((count - 1))); do
+            component="$(jq -r ".[$i].component" <<<"${releases}")"
+            version="$(jq -r ".[$i].version" <<<"${releases}")"
+            tag="$(jq -r ".[$i].tag_name" <<<"${releases}")"
+
+            # 1) Ensure the signed tag exists.
+            if ! git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "Creating signed tag ${tag}"
+              git tag -s "${tag}" -m "Release ${tag}"
+              git push origin "refs/tags/${tag}"
+            else
+              echo "Tag ${tag} already exists"
+            fi
+
+            # 2) Notes from the package CHANGELOG.
+            NOTES="$("${PARSE}" changelog-notes "${component}/CHANGELOG.md" "${version}" || true)"
+
+            # 3) GitHub auto-generated notes (previous tag = previous version of
+            #    the same component, when one exists).
+            PREV_TAG="$(git tag --list "${component}/v*" --sort=-version:refname \
+                          | grep -vx "${tag}" | head -1 || true)"
+            GEN_PAYLOAD=$(jq -nc \
+              --arg tag "${tag}" \
+              --arg target "main" \
+              --arg prev "${PREV_TAG}" \
+              '{tag_name: $tag, target_commitish: $target}
+                + (if $prev != "" then {previous_tag_name: $prev} else {} end)')
+
+            AUTO_NOTES=$(gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${REPO}/releases/generate-notes" \
+              --input - <<<"${GEN_PAYLOAD}" \
+              --jq '.body' 2>/dev/null || true)
+
+            # 4) Combine: changelog notes + blank line + API notes.
+            if [[ -n "${AUTO_NOTES}" ]]; then
+              NOTES=$(printf '%s\n\n%s\n' "${NOTES}" "${AUTO_NOTES}")
+            fi
+
+            # 4b) Mark non-X.Y.Z versions (e.g. -beta.1) as pre-releases.
+            PRERELEASE_FLAG=()
+            if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              PRERELEASE_FLAG=(--prerelease)
+            fi
+
+            # 5) Create the draft release, or refresh notes if it exists
+            #    (no --draft on refresh, to avoid re-drafting a published release).
+            if gh release view "${tag}" >/dev/null 2>&1; then
+              echo "Release ${tag} already exists; refreshing notes"
+              gh release edit "${tag}" --title "${tag}" --notes "${NOTES}" "${PRERELEASE_FLAG[@]}"
+            else
+              echo "Creating draft release ${tag}"
+              gh release create "${tag}" --title "${tag}" --notes "${NOTES}" --draft "${PRERELEASE_FLAG[@]}"
+            fi
+          done
+
+          # Keep the `release` branch in sync with main for the next dispatch run.
+          git push -f origin "HEAD:refs/heads/release"
+
+
+
+
+

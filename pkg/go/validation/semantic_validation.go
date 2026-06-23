@@ -1,52 +1,41 @@
 package validation
 
 import (
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// SemanticValidator handles semantic validation of authorization models
-// This is equivalent to the semantic validation logic in the JS implementation
+// SemanticValidator handles semantic validation of authorization models.
 type SemanticValidator struct {
-	model       *fgaSdk.AuthorizationModel
-	typeMap     map[string]*fgaSdk.TypeDefinition
-	relationMap map[string]map[string]*fgaSdk.Userset
+	model       *openfgav1.AuthorizationModel
+	typeMap     map[string]*openfgav1.TypeDefinition
+	relationMap map[string]map[string]*openfgav1.Userset
 }
 
-// NewSemanticValidator creates a new semantic validator for the given model.
-func NewSemanticValidator(model *fgaSdk.AuthorizationModel) *SemanticValidator {
+func NewSemanticValidator(model *openfgav1.AuthorizationModel) *SemanticValidator {
 	validator := &SemanticValidator{
 		model:       model,
-		typeMap:     make(map[string]*fgaSdk.TypeDefinition),
-		relationMap: make(map[string]map[string]*fgaSdk.Userset),
+		typeMap:     make(map[string]*openfgav1.TypeDefinition),
+		relationMap: make(map[string]map[string]*openfgav1.Userset),
 	}
-
-	// Build type and relation maps for efficient lookups
 	validator.buildMaps()
 	return validator
 }
 
-// buildMaps constructs internal maps for efficient type and relation lookups.
 func (sv *SemanticValidator) buildMaps() {
 	if sv.model == nil {
 		return
 	}
-
-	for i, typeDef := range sv.model.TypeDefinitions {
-		sv.typeMap[typeDef.Type] = &sv.model.TypeDefinitions[i]
-
-		if typeDef.HasRelations() {
-			relations := typeDef.GetRelations()
-			sv.relationMap[typeDef.Type] = make(map[string]*fgaSdk.Userset)
-
+	for _, typeDef := range sv.model.GetTypeDefinitions() {
+		sv.typeMap[typeDef.GetType()] = typeDef
+		if relations := typeDef.GetRelations(); len(relations) > 0 {
+			sv.relationMap[typeDef.GetType()] = make(map[string]*openfgav1.Userset)
 			for relationName, userset := range relations {
-				sv.relationMap[typeDef.Type][relationName] = &userset
+				sv.relationMap[typeDef.GetType()][relationName] = userset
 			}
 		}
 	}
 }
 
-// RelationDefined checks if a relation is defined for a given type
-// This is equivalent to the relationDefined function in the JS implementation
 func (sv *SemanticValidator) RelationDefined(typeName, relationName string) bool {
 	if relations, exists := sv.relationMap[typeName]; exists {
 		_, relationExists := relations[relationName]
@@ -55,158 +44,114 @@ func (sv *SemanticValidator) RelationDefined(typeName, relationName string) bool
 	return false
 }
 
-// TypeDefined checks if a type is defined in the model.
 func (sv *SemanticValidator) TypeDefined(typeName string) bool {
 	_, exists := sv.typeMap[typeName]
 	return exists
 }
 
-// GetTypeDefinition returns the type definition for a given type name.
-func (sv *SemanticValidator) GetTypeDefinition(typeName string) *fgaSdk.TypeDefinition {
+func (sv *SemanticValidator) GetTypeDefinition(typeName string) *openfgav1.TypeDefinition {
 	return sv.typeMap[typeName]
 }
 
-// GetRelationUserset returns the userset definition for a specific relation.
-func (sv *SemanticValidator) GetRelationUserset(typeName, relationName string) *fgaSdk.Userset {
+func (sv *SemanticValidator) GetRelationUserset(typeName, relationName string) *openfgav1.Userset {
 	if relations, exists := sv.relationMap[typeName]; exists {
 		return relations[relationName]
 	}
 	return nil
 }
 
-// ValidateRelationReferences validates that all relation references in the model are valid
-// This checks that referenced types and relations actually exist
-func ValidateRelationReferences(collector *ErrorCollector, model *fgaSdk.AuthorizationModel, lines []string) {
+// ValidateRelationReferences validates that all relation references in the model are valid.
+func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-
 	validator := NewSemanticValidator(model)
-
-	for _, typeDef := range model.TypeDefinitions {
-		// Validate relations in metadata (type restrictions)
-		if typeDef.Metadata != nil && typeDef.Metadata.HasRelations() {
-			relations := typeDef.Metadata.GetRelations()
-			for relationName, relationMetadata := range relations {
-				validateTypeRestrictions(collector, validator, typeDef.Type, relationName, relationMetadata, lines)
+	for _, typeDef := range model.GetTypeDefinitions() {
+		if meta := typeDef.GetMetadata(); meta != nil {
+			for relationName, relationMetadata := range meta.GetRelations() {
+				validateTypeRestrictions(collector, validator, typeDef.GetType(), relationName, relationMetadata, lines)
 			}
 		}
-
-		// Validate userset definitions
-		if typeDef.HasRelations() {
-			relations := typeDef.GetRelations()
-			for relationName, userset := range relations {
-				validateUsersetReferences(collector, validator, typeDef.Type, relationName, userset, lines)
-			}
+		for relationName, userset := range typeDef.GetRelations() {
+			validateUsersetReferences(collector, validator, typeDef.GetType(), relationName, userset, lines)
 		}
 	}
 }
 
-// validateTypeRestrictions validates type restrictions in relation metadata
-func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticValidator, 
-	typeName, relationName string, relationMetadata fgaSdk.RelationMetadata, lines []string) {
-	if !relationMetadata.HasDirectlyRelatedUserTypes() {
+func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticValidator,
+	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, lines []string) {
+	if relationMetadata == nil {
 		return
 	}
-
-	// Get file and module metadata
-	var file, module string
-	if relationMetadata.HasSourceInfo() {
-		sourceInfo := relationMetadata.GetSourceInfo()
-		file = sourceInfo.GetFile()
+	meta := &Meta{
+		File:   relationMetadata.GetSourceInfo().GetFile(),
+		Module: relationMetadata.GetModule(),
 	}
-	if relationMetadata.HasModule() {
-		module = relationMetadata.GetModule()
-	}
-
-	meta := &Meta{File: file, Module: module}
-
-	userTypes := relationMetadata.GetDirectlyRelatedUserTypes()
-	for _, typeRestriction := range userTypes {
-		if typeRestriction.Type == "" {
+	for _, typeRestriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
+		if typeRestriction.GetType() == "" {
 			continue
 		}
-
-		// Check if the referenced type exists
-		if !validator.TypeDefined(typeRestriction.Type) {
-			relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-			collector.RaiseUndefinedType(typeRestriction.Type, relationName, typeName, meta, relationLineIndex)
+		if !validator.TypeDefined(typeRestriction.GetType()) {
+			lineIndex := GetRelationLineNumber(relationName, lines, nil)
+			collector.RaiseUndefinedType(typeRestriction.GetType(), relationName, typeName, meta, lineIndex)
 		}
-
-		// If there's a relation specified, check if it exists on the referenced type
-		if typeRestriction.Relation != nil && *typeRestriction.Relation != "" {
-			if !validator.RelationDefined(typeRestriction.Type, *typeRestriction.Relation) {
-				relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-				collector.RaiseUndefinedRelation(*typeRestriction.Relation, typeRestriction.Type, relationName, typeName, meta, relationLineIndex)
+		if rel := typeRestriction.GetRelation(); rel != "" {
+			if !validator.RelationDefined(typeRestriction.GetType(), rel) {
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseUndefinedRelation(rel, typeRestriction.GetType(), relationName, typeName, meta, lineIndex)
 			}
 		}
 	}
 }
 
-// validateUsersetReferences validates references in userset definitions
-func validateUsersetReferences(collector *ErrorCollector, validator *SemanticValidator, 
-	typeName, relationName string, userset fgaSdk.Userset, lines []string) {
-	// Get file and module metadata from type definition
-	var file, module string
-	if typeDef := validator.GetTypeDefinition(typeName); typeDef != nil && typeDef.Metadata != nil {
-		if typeDef.Metadata.HasSourceInfo() {
-			sourceInfo := typeDef.Metadata.GetSourceInfo()
-			file = sourceInfo.GetFile()
-		}
-		if typeDef.Metadata.HasModule() {
-			module = typeDef.Metadata.GetModule()
-		}
+func validateUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
+	typeName, relationName string, userset *openfgav1.Userset, lines []string) {
+	if userset == nil {
+		return
 	}
-
+	var file, module string
+	if typeDef := validator.GetTypeDefinition(typeName); typeDef != nil {
+		file = typeDef.GetMetadata().GetSourceInfo().GetFile()
+		module = typeDef.GetMetadata().GetModule()
+	}
 	meta := &Meta{File: file, Module: module}
 
-	// Validate computed userset
-	if userset.ComputedUserset != nil && userset.ComputedUserset.HasRelation() {
-		targetRelation := userset.ComputedUserset.GetRelation()
-		if !validator.RelationDefined(typeName, targetRelation) {
-			relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-			collector.RaiseUndefinedRelation(targetRelation, typeName, relationName, typeName, meta, relationLineIndex)
-		}
-	}
-
-	// Validate tuple-to-userset
-	if userset.TupleToUserset != nil {
-		// Validate the computed userset part
-		if userset.TupleToUserset.ComputedUserset.HasRelation() {
-			targetRelation := userset.TupleToUserset.ComputedUserset.GetRelation()
+	if cu := userset.GetComputedUserset(); cu != nil {
+		if targetRelation := cu.GetRelation(); targetRelation != "" {
 			if !validator.RelationDefined(typeName, targetRelation) {
-				relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-				collector.RaiseUndefinedRelation(targetRelation, typeName, relationName, typeName, meta, relationLineIndex)
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseUndefinedRelation(targetRelation, typeName, relationName, typeName, meta, lineIndex)
 			}
 		}
+	}
 
-		// Validate the tupleset part
-		if userset.TupleToUserset.Tupleset.HasRelation() {
-			tuplesetRelation := userset.TupleToUserset.Tupleset.GetRelation()
+	if ttu := userset.GetTupleToUserset(); ttu != nil {
+		if targetRelation := ttu.GetComputedUserset().GetRelation(); targetRelation != "" {
+			if !validator.RelationDefined(typeName, targetRelation) {
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseUndefinedRelation(targetRelation, typeName, relationName, typeName, meta, lineIndex)
+			}
+		}
+		if tuplesetRelation := ttu.GetTupleset().GetRelation(); tuplesetRelation != "" {
 			if !validator.RelationDefined(typeName, tuplesetRelation) {
-				relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-				collector.RaiseUndefinedRelation(tuplesetRelation, typeName, relationName, typeName, meta, relationLineIndex)
+				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				collector.RaiseUndefinedRelation(tuplesetRelation, typeName, relationName, typeName, meta, lineIndex)
 			}
 		}
 	}
 
-	// Recursively validate union operations
-	if userset.Union != nil {
-		for _, child := range userset.Union.Child {
+	if union := userset.GetUnion(); union != nil {
+		for _, child := range union.GetChild() {
 			validateUsersetReferences(collector, validator, typeName, relationName, child, lines)
 		}
 	}
-
-	// Recursively validate intersection operations
-	if userset.Intersection != nil {
-		for _, child := range userset.Intersection.Child {
+	if intersection := userset.GetIntersection(); intersection != nil {
+		for _, child := range intersection.GetChild() {
 			validateUsersetReferences(collector, validator, typeName, relationName, child, lines)
 		}
 	}
-
-	// Recursively validate difference operations
-	if userset.Difference != nil {
-		validateUsersetReferences(collector, validator, typeName, relationName, userset.Difference.Base, lines)
-		validateUsersetReferences(collector, validator, typeName, relationName, userset.Difference.Subtract, lines)
+	if diff := userset.GetDifference(); diff != nil {
+		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetBase(), lines)
+		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetSubtract(), lines)
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	language "github.com/openfga/language/pkg/go/transformer"
 )
 
 /*
@@ -1212,4 +1214,411 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.True(t, graph.nodes["state-member-or-or"].tupleCycle)
 	require.False(t, graph.nodes["state-parent"].tupleCycle)
 	require.True(t, graph.nodes["state-parent_member"].tupleCycle)
+}
+func TestGetEdgesFromNodeID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns_edges_for_existing_node", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("state-member", "member", SpecificTypeAndRelation)
+		graph.AddNode("state-owner", "owner", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add edges from state-member
+		graph.AddEdge("state-member", "user", DirectEdge, "state-member", "", nil)
+		graph.AddEdge("state-member", "state-owner", ComputedEdge, "state-member", "", nil)
+
+		// Get edges
+		edges, found := graph.GetEdgesFromNodeID("state-member")
+
+		require.True(t, found)
+		require.Len(t, edges, 2)
+
+		// Verify edge properties
+		require.Equal(t, "user", edges[0].to.uniqueLabel)
+		require.Equal(t, DirectEdge, edges[0].edgeType)
+		require.Equal(t, "state-owner", edges[1].to.uniqueLabel)
+		require.Equal(t, ComputedEdge, edges[1].edgeType)
+	})
+
+	t.Run("returns_empty_for_node_with_no_edges", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add node without edges
+		graph.AddNode("state-member", "member", SpecificTypeAndRelation)
+
+		edges, found := graph.GetEdgesFromNodeID("state-member")
+
+		require.False(t, found)
+		require.Nil(t, edges)
+	})
+
+	t.Run("returns_empty_for_non_existent_node", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		edges, found := graph.GetEdgesFromNodeID("non-existent")
+
+		require.False(t, found)
+		require.Nil(t, edges)
+	})
+
+	t.Run("returns_multiple_edges_with_different_types", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("transition-can_apply", "can_apply", SpecificTypeAndRelation)
+		graph.AddNode("transition-can_apply-and", IntersectionOperator, OperatorNode)
+		graph.AddNode("state-can_view", "can_view", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add different types of edges
+		graph.AddEdge("transition-can_apply", "transition-can_apply-and", RewriteEdge, "transition-can_apply", "", nil)
+		graph.AddEdge("transition-can_apply-and", "user", DirectEdge, "transition-can_apply", "", nil)
+		graph.AddEdge("transition-can_apply-and", "state-can_view", TTUEdge, "transition-can_apply", "transition-start", nil)
+		graph.AddEdge("transition-can_apply-and", "state-can_view", TTUEdge, "transition-can_apply", "transition-end", nil)
+
+		// Get edges from transition-can_apply-and
+		edges, found := graph.GetEdgesFromNodeID("transition-can_apply-and")
+
+		require.True(t, found)
+		require.Len(t, edges, 3)
+
+		// Verify different edge types
+		edgeTypes := make(map[EdgeType]int)
+		for _, edge := range edges {
+			edgeTypes[edge.edgeType]++
+		}
+		require.Equal(t, 1, edgeTypes[DirectEdge])
+		require.Equal(t, 2, edgeTypes[TTUEdge])
+	})
+
+	t.Run("returns_edges_with_conditions", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("license-owner", "owner", SpecificTypeAndRelation)
+		graph.AddNode("group", "group", SpecificType)
+
+		// Add edges with conditions
+		graph.AddEdge("license-owner", "group", DirectEdge, "license-owner", "", []string{"condition1", "condition2"})
+
+		edges, found := graph.GetEdgesFromNodeID("license-owner")
+
+		require.True(t, found)
+		require.Len(t, edges, 1)
+		require.Equal(t, []string{"condition1", "condition2"}, edges[0].conditions)
+	})
+
+	t.Run("handles_operator_nodes", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add operator nodes
+		graph.AddNode("state-owner-and", IntersectionOperator, OperatorNode)
+		graph.AddNode("state-approved_member", "approved_member", SpecificTypeAndRelation)
+		graph.AddNode("user", "user", SpecificType)
+
+		// Add edges from operator node
+		graph.AddEdge("state-owner-and", "state-approved_member", ComputedEdge, "state-owner", "", nil)
+		graph.AddEdge("state-owner-and", "user", DirectEdge, "state-owner", "", nil)
+
+		edges, found := graph.GetEdgesFromNodeID("state-owner-and")
+
+		require.True(t, found)
+		require.Len(t, edges, 2)
+	})
+
+	t.Run("preserves_edge_order", func(t *testing.T) {
+		graph := NewWeightedAuthorizationModelGraph()
+
+		// Add nodes
+		graph.AddNode("parent", "parent", SpecificTypeAndRelation)
+		graph.AddNode("child1", "child1", SpecificType)
+		graph.AddNode("child2", "child2", SpecificType)
+		graph.AddNode("child3", "child3", SpecificType)
+
+		// Add edges in specific order
+		graph.AddEdge("parent", "child1", DirectEdge, "parent", "", nil)
+		graph.AddEdge("parent", "child2", DirectEdge, "parent", "", nil)
+		graph.AddEdge("parent", "child3", DirectEdge, "parent", "", nil)
+
+		edges, found := graph.GetEdgesFromNodeID("parent")
+
+		require.True(t, found)
+		require.Len(t, edges, 3)
+		require.Equal(t, "child1", edges[0].to.uniqueLabel)
+		require.Equal(t, "child2", edges[1].to.uniqueLabel)
+		require.Equal(t, "child3", edges[2].to.uniqueLabel)
+	})
+}
+
+func TestDirectAssignsGraph(t *testing.T) {
+	t.Parallel()
+	t.Run("valid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user]
+				define locator: [user] but not viewer
+				define role: [role]
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		parentNode, _ := graph.GetNodeByID("group#parent")
+		require.NotNil(t, parentNode)
+		require.Len(t, parentNode.directAssigns, 1)
+		require.Contains(t, parentNode.directAssigns, "group")
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		require.Len(t, adminNode.directAssigns, 3)
+		require.Contains(t, adminNode.directAssigns, "user")
+		require.Contains(t, adminNode.directAssigns, "employee")
+		require.Contains(t, adminNode.directAssigns, "group#principal")
+		bannedNode, _ := graph.GetNodeByID("group#banned")
+		require.NotNil(t, bannedNode)
+		require.Len(t, bannedNode.directAssigns, 1)
+		require.Contains(t, bannedNode.directAssigns, "user")
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		require.Len(t, viewerNode.directAssigns, 2)
+		require.Contains(t, viewerNode.directAssigns, "user")
+		require.Contains(t, viewerNode.directAssigns, "employee")
+		principalNode, _ := graph.GetNodeByID("group#principal")
+		require.NotNil(t, principalNode)
+		require.Len(t, principalNode.directAssigns, 1)
+		require.Contains(t, principalNode.directAssigns, "user")
+		roleNode, _ := graph.GetNodeByID("group#role")
+		require.NotNil(t, roleNode)
+		require.Len(t, roleNode.directAssigns, 1)
+		require.Contains(t, roleNode.directAssigns, "role")
+		allowedNode, _ := graph.GetNodeByID("role#allowed")
+		require.NotNil(t, allowedNode)
+		require.Len(t, allowedNode.directAssigns, 2)
+		require.Contains(t, allowedNode.directAssigns, "user")
+		require.Contains(t, allowedNode.directAssigns, "role#allowed")
+	})
+}
+
+func TestGetDirectEdgesAssignation(t *testing.T) {
+	t.Parallel()
+	t.Run("valid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user]
+				define locator: [user] but not viewer
+				define role: [role]
+				define verifier: banned from parent or locator
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		parentNode, _ := graph.GetNodeByID("group#parent")
+		require.NotNil(t, parentNode)
+		dEdges, ok := graph.GetDirectEdgesAssignation(parentNode)
+		require.True(t, ok)
+		require.Equal(t, dEdges, graph.edges["group#parent"])
+
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(adminNode)
+		require.True(t, ok)
+		directLogicalEdge := graph.edges["group#direct:admin"]
+		require.NotNil(t, directLogicalEdge)
+		require.Equal(t, dEdges, directLogicalEdge)
+
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(viewerNode)
+		require.True(t, ok)
+		require.Equal(t, dEdges, graph.edges["group#viewer"])
+
+		bannedNode, _ := graph.GetNodeByID("group#banned")
+		require.NotNil(t, bannedNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(bannedNode)
+		require.True(t, ok)
+		require.Contains(t, dEdges, graph.edges[graph.edges["group#banned"][0].to.uniqueLabel][0])
+
+		allowedNode, _ := graph.GetNodeByID("role#allowed")
+		require.NotNil(t, allowedNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(allowedNode)
+		require.True(t, ok)
+		require.Equal(t, dEdges, graph.edges["role#allowed"])
+
+		verifierNode, _ := graph.GetNodeByID("group#verifier")
+		require.NotNil(t, verifierNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(verifierNode)
+		require.False(t, ok)
+		require.Nil(t, dEdges)
+
+		locatorNode, _ := graph.GetNodeByID("group#locator")
+		require.NotNil(t, locatorNode)
+		dEdges, ok = graph.GetDirectEdgesAssignation(locatorNode)
+		require.True(t, ok)
+		require.Contains(t, dEdges, graph.edges[graph.edges["group#locator"][0].to.uniqueLabel][0])
+	})
+}
+
+func TestGetDirectEdgeForUserType(t *testing.T) {
+	t.Parallel()
+	t.Run("valid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user:*, user]
+				define locator: [user] but not viewer
+				define role: [role]
+				define verifier: banned from parent or locator
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		parentNode, _ := graph.GetNodeByID("group#parent")
+		require.NotNil(t, parentNode)
+		dEdge, ok := graph.GetDirectEdgeForUserType(parentNode, "group")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#parent"][0])
+
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "user")
+		require.True(t, ok)
+		directLogicalEdge := graph.edges["group#direct:admin"]
+		require.NotNil(t, directLogicalEdge)
+		require.Equal(t, dEdge, directLogicalEdge[0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "employee")
+		require.True(t, ok)
+		require.Equal(t, dEdge, directLogicalEdge[1])
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "group#principal")
+		require.True(t, ok)
+		require.Equal(t, dEdge, directLogicalEdge[2])
+
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#viewer"][0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "employee")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#viewer"][1])
+
+		bannedNode, _ := graph.GetNodeByID("group#banned")
+		require.NotNil(t, bannedNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(bannedNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges[graph.edges["group#banned"][0].to.uniqueLabel][0])
+
+		allowedNode, _ := graph.GetNodeByID("role#allowed")
+		require.NotNil(t, allowedNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(allowedNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["role#allowed"][0])
+		dEdge, ok = graph.GetDirectEdgeForUserType(allowedNode, "role#allowed")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["role#allowed"][1])
+
+		locatorNode, _ := graph.GetNodeByID("group#locator")
+		require.NotNil(t, locatorNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(locatorNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges[graph.edges["group#locator"][0].to.uniqueLabel][0])
+
+		principalNode, _ := graph.GetNodeByID("group#principal")
+		require.NotNil(t, principalNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(principalNode, "user")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#principal"][1])
+		dEdge, ok = graph.GetDirectEdgeForUserType(principalNode, "user:*")
+		require.True(t, ok)
+		require.Equal(t, dEdge, graph.edges["group#principal"][0])
+	})
+
+	t.Run("invalid assignations", func(t *testing.T) {
+		model := `
+	model
+		schema 1.1
+		type user
+		type other
+		type employee
+		type group
+			relations
+				define parent: [group]
+				define admin: ([user, employee, group#principal] or viewer) or locator
+				define banned: [user] or banned from parent
+				define viewer: [user, employee]
+				define principal: [user:*, user]
+				define locator: [user] but not viewer
+				define role: [role]
+				define verifier: banned from parent or locator
+		type role
+			relations
+				define allowed: [user, role#allowed]
+`
+		authorizationModel := language.MustTransformDSLToProto(model)
+		wgb := NewWeightedAuthorizationModelGraphBuilder()
+		graph, err := wgb.Build(authorizationModel)
+		require.NoError(t, err)
+		dEdge, ok := graph.GetDirectEdgeForUserType(nil, "group")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		verifierNode, _ := graph.GetNodeByID("group#verifier")
+		require.NotNil(t, verifierNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(verifierNode, "user")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		viewerNode, _ := graph.GetNodeByID("group#viewer")
+		require.NotNil(t, viewerNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(viewerNode, "user:*")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+
+		adminNode, _ := graph.GetNodeByID("group#admin")
+		require.NotNil(t, adminNode)
+		dEdge, ok = graph.GetDirectEdgeForUserType(adminNode, "group#viewer")
+		require.False(t, ok)
+		require.Nil(t, dEdge)
+	})
 }

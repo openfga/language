@@ -1,5 +1,7 @@
 package graph
 
+import "sync"
+
 type EdgeType int64
 
 const (
@@ -7,7 +9,7 @@ const (
 	//
 	// e.g. define rel1: [user]
 	// define rel2: [group#member]
-	//define rel2: [user, employee, user:*, user:* with xcond, employee with xcond, group#member, group#member with xcond]
+	// define rel3: [user, employee, user:*, user:* with xcond, employee with xcond, group#member, group#member with xcond]
 	DirectEdge EdgeType = 0
 
 	// RewriteEdge leads from an operator to a relation
@@ -29,7 +31,7 @@ const (
 	//
 	// define rel1: [user, employee, group#member] or rel2
 	// in this case OR node has two edges, one rewrite edge that goes to rel2 and another one that goes the direct edges grouping
-	// however, when there is not operator node involved then the LogicalDirectGrouping is not created to avoid unnecesary nested nodes creation
+	// however, when there is a not operator node involved then the LogicalDirectGrouping is not created to avoid unnecessary nested nodes creation
 	// for example in this use case,
 	// define rel1: [user, employee, group#member]
 	// the node rel1 has three direct edges
@@ -41,7 +43,7 @@ const (
 	//
 	// define parent: [team, group]
 	// define can_view: viewer from parent or member
-	// however, when there is not operator node involved then the LogicalTTUGrouping is not created to avoid unnecesary nested nodes creation
+	// however, when there is a not operator node involved then the LogicalTTUGrouping is not created to avoid unnecessary nested nodes creation
 	// for example in this use case no LogicalTTUGrouping is created, the two ttu edges are referenced directly from the can_view relation node
 	// define can_view: viewer from parent
 	// define parent: [team, group]
@@ -52,7 +54,7 @@ const (
 	// like define rel1: [user, user with condX], in this case the edge will have [none, condX]
 	// or an edge needs to support only condition like define rel1: [user with condX], the edge will have [condX]
 	// in the case the edge does not have any condition like define rel1: [user], the edge will have [none].
-	NoCond string = "none"
+	NoCond string = ""
 )
 
 type WeightedAuthorizationModelEdge struct {
@@ -71,7 +73,8 @@ type WeightedAuthorizationModelEdge struct {
 	// define rel1: [user, user with condX]
 	// then the node rel1 will have an edge pointing to the node user and with two conditions
 	// one that will be none and another one that will be condX
-	conditions []string
+	conditions     []string
+	usersetWeights sync.Map
 }
 
 // GetWeights returns the entire weights map.

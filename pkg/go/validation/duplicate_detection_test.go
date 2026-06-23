@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,7 +77,7 @@ func TestDuplicateTypeTracker_CheckAndAddType(t *testing.T) {
 func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 	tests := []struct {
 		name               string
-		relationMetadata   *fgaSdk.RelationMetadata
+		relationMetadata   *openfgav1.RelationMetadata
 		relationName       string
 		typeName           string
 		expectedErrorCount int
@@ -89,8 +89,8 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "no duplicates",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 					{Type: "user"},
 					{Type: "group"},
 				},
@@ -101,8 +101,8 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "duplicate type restrictions",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 					{Type: "user"},
 					{Type: "user"},
 				},
@@ -113,10 +113,10 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "duplicate with wildcards",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
-					{Type: "user", Wildcard: &map[string]interface{}{"type": "wildcard"}},
-					{Type: "user", Wildcard: &map[string]interface{}{"type": "wildcard"}},
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+					{Type: "user", RelationOrWildcard: &openfgav1.RelationReference_Wildcard{Wildcard: &openfgav1.Wildcard{}}},
+					{Type: "user", RelationOrWildcard: &openfgav1.RelationReference_Wildcard{Wildcard: &openfgav1.Wildcard{}}},
 				},
 			},
 			relationName:       "viewer",
@@ -125,10 +125,10 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "duplicate with relations",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
-					{Type: "group", Relation: fgaSdk.PtrString("member")},
-					{Type: "group", Relation: fgaSdk.PtrString("member")},
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+					{Type: "group", RelationOrWildcard: &openfgav1.RelationReference_Relation{Relation: "member"}},
+					{Type: "group", RelationOrWildcard: &openfgav1.RelationReference_Relation{Relation: "member"}},
 				},
 			},
 			relationName:       "viewer",
@@ -137,10 +137,10 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "duplicate with conditions",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
-					{Type: "user", Condition: fgaSdk.PtrString("is_owner")},
-					{Type: "user", Condition: fgaSdk.PtrString("is_owner")},
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+					{Type: "user", Condition: "is_owner"},
+					{Type: "user", Condition: "is_owner"},
 				},
 			},
 			relationName:       "viewer",
@@ -149,12 +149,12 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 		},
 		{
 			name: "no duplicates with different combinations",
-			relationMetadata: &fgaSdk.RelationMetadata{
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+			relationMetadata: &openfgav1.RelationMetadata{
+				DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 					{Type: "user"},
-					{Type: "user", Wildcard: &map[string]interface{}{"type": "wildcard"}},
-					{Type: "user", Relation: fgaSdk.PtrString("member")},
-					{Type: "user", Condition: fgaSdk.PtrString("is_owner")},
+					{Type: "user", RelationOrWildcard: &openfgav1.RelationReference_Wildcard{Wildcard: &openfgav1.Wildcard{}}},
+					{Type: "user", RelationOrWildcard: &openfgav1.RelationReference_Relation{Relation: "member"}},
+					{Type: "user", Condition: "is_owner"},
 				},
 			},
 			relationName:       "viewer",
@@ -184,27 +184,31 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 func TestGetRelationDefName(t *testing.T) {
 	tests := []struct {
 		name     string
-		userset  fgaSdk.Userset
+		userset  *openfgav1.Userset
 		expected string
 	}{
 		{
 			name: "computed userset",
-			userset: fgaSdk.Userset{
-				ComputedUserset: &fgaSdk.ObjectRelation{
-					Relation: fgaSdk.PtrString("viewer"),
+			userset: &openfgav1.Userset{
+				Userset: &openfgav1.Userset_ComputedUserset{
+					ComputedUserset: &openfgav1.ObjectRelation{
+						Relation: "viewer",
+					},
 				},
 			},
 			expected: "viewer",
 		},
 		{
 			name: "tuple to userset with target and from",
-			userset: fgaSdk.Userset{
-				TupleToUserset: &fgaSdk.TupleToUserset{
-					ComputedUserset: fgaSdk.ObjectRelation{
-						Relation: fgaSdk.PtrString("viewer"),
-					},
-					Tupleset: fgaSdk.ObjectRelation{
-						Relation: fgaSdk.PtrString("parent"),
+			userset: &openfgav1.Userset{
+				Userset: &openfgav1.Userset_TupleToUserset{
+					TupleToUserset: &openfgav1.TupleToUserset{
+						ComputedUserset: &openfgav1.ObjectRelation{
+							Relation: "viewer",
+						},
+						Tupleset: &openfgav1.ObjectRelation{
+							Relation: "parent",
+						},
 					},
 				},
 			},
@@ -212,23 +216,27 @@ func TestGetRelationDefName(t *testing.T) {
 		},
 		{
 			name: "tuple to userset with target only",
-			userset: fgaSdk.Userset{
-				TupleToUserset: &fgaSdk.TupleToUserset{
-					ComputedUserset: fgaSdk.ObjectRelation{
-						Relation: fgaSdk.PtrString("viewer"),
+			userset: &openfgav1.Userset{
+				Userset: &openfgav1.Userset_TupleToUserset{
+					TupleToUserset: &openfgav1.TupleToUserset{
+						ComputedUserset: &openfgav1.ObjectRelation{
+							Relation: "viewer",
+						},
+						Tupleset: &openfgav1.ObjectRelation{},
 					},
-					Tupleset: fgaSdk.ObjectRelation{},
 				},
 			},
 			expected: "viewer",
 		},
 		{
 			name: "tuple to userset with from only",
-			userset: fgaSdk.Userset{
-				TupleToUserset: &fgaSdk.TupleToUserset{
-					ComputedUserset: fgaSdk.ObjectRelation{},
-					Tupleset: fgaSdk.ObjectRelation{
-						Relation: fgaSdk.PtrString("parent"),
+			userset: &openfgav1.Userset{
+				Userset: &openfgav1.Userset_TupleToUserset{
+					TupleToUserset: &openfgav1.TupleToUserset{
+						ComputedUserset: &openfgav1.ObjectRelation{},
+						Tupleset: &openfgav1.ObjectRelation{
+							Relation: "parent",
+						},
 					},
 				},
 			},
@@ -236,14 +244,16 @@ func TestGetRelationDefName(t *testing.T) {
 		},
 		{
 			name:     "empty userset",
-			userset:  fgaSdk.Userset{},
+			userset:  &openfgav1.Userset{},
 			expected: "",
 		},
 		{
 			name: "computed userset with nil relation",
-			userset: fgaSdk.Userset{
-				ComputedUserset: &fgaSdk.ObjectRelation{
-					Relation: nil,
+			userset: &openfgav1.Userset{
+				Userset: &openfgav1.Userset_ComputedUserset{
+					ComputedUserset: &openfgav1.ObjectRelation{
+						Relation: "",
+					},
 				},
 			},
 			expected: "",
@@ -261,7 +271,7 @@ func TestGetRelationDefName(t *testing.T) {
 func TestCheckForDuplicatesInRelation(t *testing.T) {
 	tests := []struct {
 		name               string
-		typeDef            *fgaSdk.TypeDefinition
+		typeDef            *openfgav1.TypeDefinition
 		relationName       string
 		expectedErrorCount int
 	}{
@@ -273,7 +283,7 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 		},
 		{
 			name: "nil relations",
-			typeDef: &fgaSdk.TypeDefinition{
+			typeDef: &openfgav1.TypeDefinition{
 				Type:      "document",
 				Relations: nil,
 			},
@@ -282,11 +292,13 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 		},
 		{
 			name: "simple relation with no duplicates",
-			typeDef: &fgaSdk.TypeDefinition{
+			typeDef: &openfgav1.TypeDefinition{
 				Type: "document",
-				Relations: &map[string]fgaSdk.Userset{
+				Relations: map[string]*openfgav1.Userset{
 					"viewer": {
-						This: &map[string]interface{}{},
+						Userset: &openfgav1.Userset_This{
+							This: &openfgav1.DirectUserset{},
+						},
 					},
 				},
 			},
@@ -295,20 +307,26 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 		},
 		{
 			name: "union with duplicates",
-			typeDef: &fgaSdk.TypeDefinition{
+			typeDef: &openfgav1.TypeDefinition{
 				Type: "document",
-				Relations: &map[string]fgaSdk.Userset{
+				Relations: map[string]*openfgav1.Userset{
 					"viewer": {
-						Union: &fgaSdk.Usersets{
-							Child: []fgaSdk.Userset{
-								{
-									ComputedUserset: &fgaSdk.ObjectRelation{
-										Relation: fgaSdk.PtrString("admin"),
+						Userset: &openfgav1.Userset_Union{
+							Union: &openfgav1.Usersets{
+								Child: []*openfgav1.Userset{
+									{
+										Userset: &openfgav1.Userset_ComputedUserset{
+											ComputedUserset: &openfgav1.ObjectRelation{
+												Relation: "admin",
+											},
+										},
 									},
-								},
-								{
-									ComputedUserset: &fgaSdk.ObjectRelation{
-										Relation: fgaSdk.PtrString("admin"),
+									{
+										Userset: &openfgav1.Userset_ComputedUserset{
+											ComputedUserset: &openfgav1.ObjectRelation{
+												Relation: "admin",
+											},
+										},
 									},
 								},
 							},
@@ -321,20 +339,26 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 		},
 		{
 			name: "intersection with duplicates",
-			typeDef: &fgaSdk.TypeDefinition{
+			typeDef: &openfgav1.TypeDefinition{
 				Type: "document",
-				Relations: &map[string]fgaSdk.Userset{
+				Relations: map[string]*openfgav1.Userset{
 					"can_edit": {
-						Intersection: &fgaSdk.Usersets{
-							Child: []fgaSdk.Userset{
-								{
-									ComputedUserset: &fgaSdk.ObjectRelation{
-										Relation: fgaSdk.PtrString("admin"),
+						Userset: &openfgav1.Userset_Intersection{
+							Intersection: &openfgav1.Usersets{
+								Child: []*openfgav1.Userset{
+									{
+										Userset: &openfgav1.Userset_ComputedUserset{
+											ComputedUserset: &openfgav1.ObjectRelation{
+												Relation: "admin",
+											},
+										},
 									},
-								},
-								{
-									ComputedUserset: &fgaSdk.ObjectRelation{
-										Relation: fgaSdk.PtrString("admin"),
+									{
+										Userset: &openfgav1.Userset_ComputedUserset{
+											ComputedUserset: &openfgav1.ObjectRelation{
+												Relation: "admin",
+											},
+										},
 									},
 								},
 							},
@@ -366,7 +390,7 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 func TestValidateDuplicates(t *testing.T) {
 	tests := []struct {
 		name               string
-		model              *fgaSdk.AuthorizationModel
+		model              *openfgav1.AuthorizationModel
 		expectedErrorCount int
 		expectedErrorTypes []ValidationErrorType
 	}{
@@ -377,21 +401,21 @@ func TestValidateDuplicates(t *testing.T) {
 		},
 		{
 			name: "nil type definitions",
-			model: &fgaSdk.AuthorizationModel{
+			model: &openfgav1.AuthorizationModel{
 				TypeDefinitions: nil,
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name: "no duplicates",
-			model: &fgaSdk.AuthorizationModel{
-				TypeDefinitions: []fgaSdk.TypeDefinition{
+			model: &openfgav1.AuthorizationModel{
+				TypeDefinitions: []*openfgav1.TypeDefinition{
 					{
 						Type: "document",
-						Metadata: &fgaSdk.Metadata{
-							Relations: &map[string]fgaSdk.RelationMetadata{
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
 								"viewer": {
-									DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 										{Type: "user"},
 									},
 								},
@@ -407,8 +431,8 @@ func TestValidateDuplicates(t *testing.T) {
 		},
 		{
 			name: "duplicate type names",
-			model: &fgaSdk.AuthorizationModel{
-				TypeDefinitions: []fgaSdk.TypeDefinition{
+			model: &openfgav1.AuthorizationModel{
+				TypeDefinitions: []*openfgav1.TypeDefinition{
 					{
 						Type: "document",
 					},
@@ -422,14 +446,14 @@ func TestValidateDuplicates(t *testing.T) {
 		},
 		{
 			name: "duplicate type restrictions in relation",
-			model: &fgaSdk.AuthorizationModel{
-				TypeDefinitions: []fgaSdk.TypeDefinition{
+			model: &openfgav1.AuthorizationModel{
+				TypeDefinitions: []*openfgav1.TypeDefinition{
 					{
 						Type: "document",
-						Metadata: &fgaSdk.Metadata{
-							Relations: &map[string]fgaSdk.RelationMetadata{
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
 								"viewer": {
-									DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 										{Type: "user"},
 										{Type: "user"},
 									},
@@ -444,14 +468,14 @@ func TestValidateDuplicates(t *testing.T) {
 		},
 		{
 			name: "multiple types of duplicates",
-			model: &fgaSdk.AuthorizationModel{
-				TypeDefinitions: []fgaSdk.TypeDefinition{
+			model: &openfgav1.AuthorizationModel{
+				TypeDefinitions: []*openfgav1.TypeDefinition{
 					{
 						Type: "document",
-						Metadata: &fgaSdk.Metadata{
-							Relations: &map[string]fgaSdk.RelationMetadata{
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
 								"viewer": {
-									DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 										{Type: "user"},
 										{Type: "user"},
 									},
@@ -490,7 +514,7 @@ func TestValidateDuplicates(t *testing.T) {
 func TestCheckDuplicatesInUnion(t *testing.T) {
 	tests := []struct {
 		name               string
-		union              *fgaSdk.Usersets
+		union              *openfgav1.Usersets
 		expectedErrorCount int
 	}{
 		{
@@ -500,23 +524,27 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 		},
 		{
 			name: "union with nil child",
-			union: &fgaSdk.Usersets{
+			union: &openfgav1.Usersets{
 				Child: nil,
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name: "union with no duplicates",
-			union: &fgaSdk.Usersets{
-				Child: []fgaSdk.Userset{
+			union: &openfgav1.Usersets{
+				Child: []*openfgav1.Userset{
 					{
-						ComputedUserset: &fgaSdk.ObjectRelation{
-							Relation: fgaSdk.PtrString("admin"),
+						Userset: &openfgav1.Userset_ComputedUserset{
+							ComputedUserset: &openfgav1.ObjectRelation{
+								Relation: "admin",
+							},
 						},
 					},
 					{
-						ComputedUserset: &fgaSdk.ObjectRelation{
-							Relation: fgaSdk.PtrString("viewer"),
+						Userset: &openfgav1.Userset_ComputedUserset{
+							ComputedUserset: &openfgav1.ObjectRelation{
+								Relation: "viewer",
+							},
 						},
 					},
 				},
@@ -525,16 +553,20 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 		},
 		{
 			name: "union with duplicates",
-			union: &fgaSdk.Usersets{
-				Child: []fgaSdk.Userset{
+			union: &openfgav1.Usersets{
+				Child: []*openfgav1.Userset{
 					{
-						ComputedUserset: &fgaSdk.ObjectRelation{
-							Relation: fgaSdk.PtrString("admin"),
+						Userset: &openfgav1.Userset_ComputedUserset{
+							ComputedUserset: &openfgav1.ObjectRelation{
+								Relation: "admin",
+							},
 						},
 					},
 					{
-						ComputedUserset: &fgaSdk.ObjectRelation{
-							Relation: fgaSdk.PtrString("admin"),
+						Userset: &openfgav1.Userset_ComputedUserset{
+							ComputedUserset: &openfgav1.ObjectRelation{
+								Relation: "admin",
+							},
 						},
 					},
 				},
@@ -565,8 +597,8 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 		collector := NewErrorCollector(nil)
 
 		// Model with duplicate type names
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{Type: "document"},
 				{Type: "document"}, // Duplicate
 			},
@@ -583,14 +615,14 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 		collector := NewErrorCollector(nil)
 
 		// Model with duplicate type restrictions in relation
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{Type: "user"},
 									{Type: "user"}, // Duplicate
 								},

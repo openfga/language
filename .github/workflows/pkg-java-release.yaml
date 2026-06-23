@@ -23,7 +23,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           path: "."
@@ -31,16 +31,18 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up JDK
-        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
         with:
           java-version: 11
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/wrapper-validation@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        with:
+          cache-provider: basic # Use the open-source basic cache provider
 
         # Tasks created by https://github.com/gradle-nexus/publish-plugin
       - name: Publish package
@@ -62,7 +64,7 @@ jobs:
         working-directory: "pkg/java"
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           path: "."
@@ -70,16 +72,18 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up JDK
-        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
         with:
           java-version: 11
           distribution: "temurin"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/wrapper-validation@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        with:
+          cache-provider: basic # Use the open-source basic cache provider
 
       # Tasks created by https://docs.gradle.org/current/userguide/publishing_maven.html
       - name: Publish package
@@ -89,23 +93,30 @@ jobs:
           ORG_GRADLE_PROJECT_SIGNINGKEY: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_SIGNINGPASSWORD: ${{ secrets.GPG_PASSPHRASE }}
 
-  create-release:
+  # The release-please post-release job already created a draft GitHub release
+  # (CHANGELOG notes + auto-generated notes) when it pushed this tag. Publish
+  # (undraft) it only after both Maven publishes above have succeeded.
+  finalize-release:
     runs-on: ubuntu-latest
     needs: [publish-maven-central, publish-github-packages]
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
-      contents: write
-      packages: write # publish a new github release
+      contents: write # publish (undraft) the github release
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
-
-      - name: Create Release
-        uses: Roang-zero1/github-create-release-action@57eb9bdce7a964e48788b9e78b5ac766cb684803 # v3.0.1
-        with:
-          version_regex: ^pkg/java/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
-          prerelease_regex: ^pkg/java/v[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-(alpha|beta)\.[[:digit:]]+$
-          changelog_file: pkg/java/CHANGELOG.md
-          create_draft: true
+      - name: Publish the draft GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # The draft is created right after the tag is pushed; wait briefly in
+          # case this job gets there first.
+          for _ in $(seq 1 10); do
+            if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for draft release $TAG ..."
+            sleep 6
+          done
+          gh release edit "$TAG" --repo "$REPO" --draft=false

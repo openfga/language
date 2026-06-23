@@ -651,27 +651,27 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	conditions := edges[0].conditions
 	require.Empty(t, edges[0].tuplesetRelation)
 	require.Len(t, conditions, 2)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
 
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_read"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "job#permission", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#permission"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 2)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["role#assignee"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["permission#member"])
 	require.Len(t, edges, 2)
@@ -686,25 +686,25 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	}
 	conditions = recursiveEdge.conditions
 	require.Len(t, conditions, 2)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "", userEdge.tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#owner"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 2)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_view"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "", edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(edges[0].to) // OR node
 	require.Len(t, edges, 2)
@@ -717,12 +717,12 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	}
 	conditions = recursiveEdge.conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "job#owner", recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
 	require.Equal(t, "", userEdge.tuplesetRelation)
-	require.Equal(t, "none", conditions[0])
+	require.Equal(t, NoCond, conditions[0])
 
 	require.Equal(t, 2, graph.nodes["permission#assignee"].weights["user"])
 	require.Equal(t, 3, graph.nodes["job#can_read"].weights["user"])
@@ -953,49 +953,48 @@ func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
 	weight, _ := graph.nodes["wrapper#assigned"].GetWeight("user")
 	require.Equal(t, 3, weight)
 
-	butnot_node := graph.edges["wrapper#assigned"][0].to
-	require.Len(t, graph.edges[butnot_node.uniqueLabel], 2)
-	mixedLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][0].to
-	daLogicalTTU_node := graph.edges[butnot_node.uniqueLabel][1].to
+	butnotNode := graph.edges["wrapper#assigned"][0].to
+	require.Len(t, graph.edges[butnotNode.uniqueLabel], 2)
+	mixedLogicalTTUNode := graph.edges[butnotNode.uniqueLabel][0].to
+	daLogicalTTUNode := graph.edges[butnotNode.uniqueLabel][1].to
 
-	weight, _ = mixedLogicalTTU_node.GetWeight("user")
+	weight, _ = mixedLogicalTTUNode.GetWeight("user")
 	require.Equal(t, 3, weight)
-	weight, _ = daLogicalTTU_node.GetWeight("user")
+	weight, _ = daLogicalTTUNode.GetWeight("user")
 	require.Equal(t, 2, weight)
 
-	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	weight, _ = graph.edges[mixedLogicalTTUNode.uniqueLabel][0].GetWeight("user")
 	require.Equal(t, 3, weight)
-	weight, _ = graph.edges[mixedLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	weight, _ = graph.edges[mixedLogicalTTUNode.uniqueLabel][1].GetWeight("user")
 	require.Equal(t, 2, weight)
 
-	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][0].GetWeight("user")
+	weight, _ = graph.edges[daLogicalTTUNode.uniqueLabel][0].GetWeight("user")
 	require.Equal(t, 2, weight)
-	weight, _ = graph.edges[daLogicalTTU_node.uniqueLabel][1].GetWeight("user")
+	weight, _ = graph.edges[daLogicalTTUNode.uniqueLabel][1].GetWeight("user")
 	require.Equal(t, 2, weight)
 
 	require.Len(t, graph.edges["usersets-user#mixed"], 1)
 	weight, _ = graph.nodes["usersets-user#mixed"].GetWeight("user")
 	require.Equal(t, 2, weight)
-	and_node := graph.edges["usersets-user#mixed"][0].to
-	weight, _ = graph.nodes[and_node.uniqueLabel].GetWeight("user")
+	andNode := graph.edges["usersets-user#mixed"][0].to
+	weight, _ = graph.nodes[andNode.uniqueLabel].GetWeight("user")
 	require.Equal(t, 2, weight)
-	edges := graph.edges[and_node.uniqueLabel]
-	ta_node := edges[1].to
-	logical_node := edges[0].to
+	edges := graph.edges[andNode.uniqueLabel]
+	taNode := edges[1].to
+	logicalNode := edges[0].to
 
-	require.Len(t, graph.edges[ta_node.uniqueLabel], 1)
-	weight, _ = ta_node.GetWeight("user")
+	require.Len(t, graph.edges[taNode.uniqueLabel], 1)
+	weight, _ = taNode.GetWeight("user")
 	require.Equal(t, 1, weight)
 
-	require.Len(t, graph.edges[logical_node.uniqueLabel], 2)
-	weight, _ = logical_node.GetWeight("user")
+	require.Len(t, graph.edges[logicalNode.uniqueLabel], 2)
+	weight, _ = logicalNode.GetWeight("user")
 	require.Equal(t, 2, weight)
 
-	weight, _ = graph.edges[logical_node.uniqueLabel][0].GetWeight("user")
+	weight, _ = graph.edges[logicalNode.uniqueLabel][0].GetWeight("user")
 	require.Equal(t, 2, weight)
-	weight, _ = graph.edges[logical_node.uniqueLabel][1].GetWeight("user")
+	weight, _ = graph.edges[logicalNode.uniqueLabel][1].GetWeight("user")
 	require.Equal(t, 1, weight)
-
 }
 
 func TestGraphConstructionSuperNestedCycles(t *testing.T) {
@@ -1054,7 +1053,6 @@ func TestGraphConstructionSuperNestedCycles(t *testing.T) {
 	weight, _ = graph.edges["org#employee"][2].GetWeight("user")
 	require.Equal(t, Infinite, weight)
 	require.True(t, graph.edges["org#employee"][2].IsPartOfTupleCycle())
-
 }
 
 func TestGraphConstructionAlgebraicWithNestedCycles(t *testing.T) {
@@ -1091,29 +1089,29 @@ func TestGraphConstructionAlgebraicWithNestedCycles(t *testing.T) {
 	require.True(t, graph.edges["document#viewer"][0].IsPartOfTupleCycle())
 	require.Equal(t, Infinite, weight)
 
-	outer_or := graph.edges["document#viewer"][0].GetTo()
-	outer_or_edges := graph.edges[outer_or.GetUniqueLabel()]
-	require.Len(t, outer_or_edges, 2)
-	require.True(t, outer_or.IsPartOfTupleCycle())
-	require.Equal(t, Infinite, outer_or.weights["user"])
-	weight, _ = outer_or_edges[0].GetWeight("user")
+	outerOr := graph.edges["document#viewer"][0].GetTo()
+	outerOrEdges := graph.edges[outerOr.GetUniqueLabel()]
+	require.Len(t, outerOrEdges, 2)
+	require.True(t, outerOr.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, outerOr.weights["user"])
+	weight, _ = outerOrEdges[0].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, outer_or_edges[0].IsPartOfTupleCycle())
-	weight, _ = outer_or_edges[1].GetWeight("user")
+	require.True(t, outerOrEdges[0].IsPartOfTupleCycle())
+	weight, _ = outerOrEdges[1].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, outer_or_edges[1].IsPartOfTupleCycle())
+	require.True(t, outerOrEdges[1].IsPartOfTupleCycle())
 
-	inner_or := outer_or_edges[1].GetTo()
-	inner_or_edges := graph.edges[inner_or.GetUniqueLabel()]
-	require.True(t, inner_or.IsPartOfTupleCycle())
-	require.Equal(t, Infinite, inner_or.weights["user"])
-	require.Len(t, inner_or_edges, 2)
-	weight, _ = inner_or_edges[0].GetWeight("user")
+	innerOr := outerOrEdges[1].GetTo()
+	innerOrEdges := graph.edges[innerOr.GetUniqueLabel()]
+	require.True(t, innerOr.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, innerOr.weights["user"])
+	require.Len(t, innerOrEdges, 2)
+	weight, _ = innerOrEdges[0].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, inner_or_edges[0].IsPartOfTupleCycle())
-	weight, _ = inner_or_edges[1].GetWeight("user")
+	require.True(t, innerOrEdges[0].IsPartOfTupleCycle())
+	weight, _ = innerOrEdges[1].GetWeight("user")
 	require.Equal(t, 1, weight)
-	require.False(t, inner_or_edges[1].IsPartOfTupleCycle())
+	require.False(t, innerOrEdges[1].IsPartOfTupleCycle())
 
 	require.Len(t, graph.edges["team#member"], 2)
 	weight, _ = graph.edges["team#member"][0].GetWeight("user")
@@ -1130,7 +1128,6 @@ func TestGraphConstructionAlgebraicWithNestedCycles(t *testing.T) {
 	weight, _ = graph.edges["org#employee"][1].GetWeight("user")
 	require.Equal(t, Infinite, weight)
 	require.True(t, graph.edges["org#employee"][1].IsPartOfTupleCycle())
-
 }
 
 func TestGraphConstructionRecursioncWithNestedCycles(t *testing.T) {
@@ -1168,34 +1165,34 @@ func TestGraphConstructionRecursioncWithNestedCycles(t *testing.T) {
 	require.Equal(t, Infinite, weight)
 	require.Equal(t, "document#viewer", graph.nodes["document#viewer"].recursiveRelation)
 
-	outer_or := graph.edges["document#viewer"][0].GetTo()
-	outer_or_edges := graph.edges[outer_or.GetUniqueLabel()]
-	require.Equal(t, "document#viewer", outer_or.recursiveRelation)
-	require.Len(t, outer_or_edges, 2)
-	require.True(t, outer_or.IsPartOfTupleCycle())
-	require.Equal(t, Infinite, outer_or.weights["user"])
-	weight, _ = outer_or_edges[0].GetWeight("user")
+	outerOr := graph.edges["document#viewer"][0].GetTo()
+	outerOrEdges := graph.edges[outerOr.GetUniqueLabel()]
+	require.Equal(t, "document#viewer", outerOr.recursiveRelation)
+	require.Len(t, outerOrEdges, 2)
+	require.True(t, outerOr.IsPartOfTupleCycle())
+	require.Equal(t, Infinite, outerOr.weights["user"])
+	weight, _ = outerOrEdges[0].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, outer_or_edges[0].IsPartOfTupleCycle())
-	require.Equal(t, "document#viewer", outer_or_edges[0].recursiveRelation)
-	weight, _ = outer_or_edges[1].GetWeight("user")
+	require.True(t, outerOrEdges[0].IsPartOfTupleCycle())
+	require.Equal(t, "document#viewer", outerOrEdges[0].recursiveRelation)
+	weight, _ = outerOrEdges[1].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, outer_or_edges[1].IsPartOfTupleCycle())
-	require.Empty(t, outer_or_edges[1].recursiveRelation)
+	require.True(t, outerOrEdges[1].IsPartOfTupleCycle())
+	require.Empty(t, outerOrEdges[1].recursiveRelation)
 
-	inner_or := outer_or_edges[1].GetTo()
-	inner_or_edges := graph.edges[inner_or.GetUniqueLabel()]
-	require.True(t, inner_or.IsPartOfTupleCycle())
-	require.Empty(t, inner_or.recursiveRelation)
+	innerOr := outerOrEdges[1].GetTo()
+	innerOrEdges := graph.edges[innerOr.GetUniqueLabel()]
+	require.True(t, innerOr.IsPartOfTupleCycle())
+	require.Empty(t, innerOr.recursiveRelation)
 
-	require.Equal(t, Infinite, inner_or.weights["user"])
-	require.Len(t, inner_or_edges, 2)
-	weight, _ = inner_or_edges[0].GetWeight("user")
+	require.Equal(t, Infinite, innerOr.weights["user"])
+	require.Len(t, innerOrEdges, 2)
+	weight, _ = innerOrEdges[0].GetWeight("user")
 	require.Equal(t, Infinite, weight)
-	require.True(t, inner_or_edges[0].IsPartOfTupleCycle())
-	weight, _ = inner_or_edges[1].GetWeight("user")
+	require.True(t, innerOrEdges[0].IsPartOfTupleCycle())
+	weight, _ = innerOrEdges[1].GetWeight("user")
 	require.Equal(t, 1, weight)
-	require.False(t, inner_or_edges[1].IsPartOfTupleCycle())
+	require.False(t, innerOrEdges[1].IsPartOfTupleCycle())
 
 	require.Len(t, graph.edges["team#member"], 2)
 	weight, _ = graph.edges["team#member"][0].GetWeight("user")
@@ -1212,7 +1209,6 @@ func TestGraphConstructionRecursioncWithNestedCycles(t *testing.T) {
 	weight, _ = graph.edges["org#employee"][1].GetWeight("user")
 	require.Equal(t, Infinite, weight)
 	require.True(t, graph.edges["org#employee"][1].IsPartOfTupleCycle())
-
 }
 
 func TestGraphConstructionWildcardAssignation(t *testing.T) {
@@ -1346,7 +1342,7 @@ func TestGraphConstructionDirectAssignmentWithConditions(t *testing.T) {
 	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
 	require.Equal(t, "user", graph.edges["folder#viewer"][0].to.uniqueLabel)
 	require.Equal(t, "condX", graph.edges["folder#viewer"][0].conditions[0])
-	require.Equal(t, "none", graph.edges["folder#viewer"][0].conditions[1])
+	require.Equal(t, NoCond, graph.edges["folder#viewer"][0].conditions[1])
 }
 
 func TestGraphConstructioComputedRelation(t *testing.T) {
@@ -1375,7 +1371,7 @@ func TestGraphConstructioComputedRelation(t *testing.T) {
 	require.Len(t, graph.edges["folder#y"], 1)
 	require.Equal(t, ComputedEdge, graph.edges["folder#x"][0].edgeType)
 	require.Len(t, graph.edges["folder#y"][0].conditions, 1)
-	require.Equal(t, "none", graph.edges["folder#y"][0].conditions[0])
+	require.Equal(t, NoCond, graph.edges["folder#y"][0].conditions[0])
 	require.Equal(t, DirectEdge, graph.edges["folder#y"][0].edgeType)
 }
 
@@ -1466,7 +1462,7 @@ func TestGraphConstructionTTUConditional(t *testing.T) {
 	require.Len(t, graph.edges["document#viewer"][0].conditions, 1)
 	require.Len(t, graph.edges["document#parent"], 1)
 	require.Len(t, graph.edges["document#parent"][0].conditions, 2)
-	require.Equal(t, "none", graph.edges["document#parent"][0].conditions[0])
+	require.Equal(t, NoCond, graph.edges["document#parent"][0].conditions[0])
 	require.Equal(t, "condX", graph.edges["document#parent"][0].conditions[1])
 }
 
@@ -1502,7 +1498,7 @@ func TestGraphConstructionUsersetConditional(t *testing.T) {
 	require.Equal(t, "group#member", graph.edges["folder#viewer"][0].to.uniqueLabel)
 	require.Equal(t, DirectEdge, graph.edges["folder#viewer"][0].edgeType)
 	require.Len(t, graph.edges["folder#viewer"][0].conditions, 2)
-	require.Equal(t, "none", graph.edges["folder#viewer"][0].conditions[0])
+	require.Equal(t, NoCond, graph.edges["folder#viewer"][0].conditions[0])
 	require.Equal(t, "condX", graph.edges["folder#viewer"][0].conditions[1])
 }
 
@@ -1986,7 +1982,6 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			require.Equal(t, map[string]int{"user1": 1}, graph.edges["document#a"][0].GetWeights())
 		})
 	})
-
 }
 
 func TestGraphConstructionIntersectionWithType(t *testing.T) {
@@ -2459,10 +2454,10 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 
 		require.Len(t, graph.nodes, 4)
 		require.Len(t, graph.edges, 2)
-		require.Equal(t, graph.nodes["user"].nodeType, SpecificType)
-		require.Equal(t, graph.nodes["folder"].nodeType, SpecificType)
-		require.Equal(t, graph.nodes["folder#viewer"].nodeType, SpecificTypeAndRelation)
-		require.Equal(t, graph.nodes["folder#can_view"].nodeType, SpecificTypeAndRelation)
+		require.Equal(t, SpecificType, graph.nodes["user"].nodeType)
+		require.Equal(t, SpecificType, graph.nodes["folder"].nodeType)
+		require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#viewer"].nodeType)
+		require.Equal(t, SpecificTypeAndRelation, graph.nodes["folder#can_view"].nodeType)
 
 		for _, node := range graph.nodes {
 			require.Empty(t, node.GetRecursiveRelation())
@@ -2472,17 +2467,17 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 
 		require.Len(t, graph.edges["folder#can_view"], 2)
 		require.Len(t, graph.edges["folder#viewer"], 2)
-		require.Equal(t, graph.edges["folder#viewer"][0].edgeType, DirectEdge)
-		require.Equal(t, graph.edges["folder#viewer"][0].to.nodeType, SpecificType)
-		require.Equal(t, graph.edges["folder#viewer"][1].edgeType, DirectEdge)
-		require.Equal(t, graph.edges["folder#viewer"][1].to.nodeType, SpecificTypeAndRelation)
-		require.Equal(t, graph.edges["folder#viewer"][1].to.uniqueLabel, "folder#can_view")
+		require.Equal(t, DirectEdge, graph.edges["folder#viewer"][0].edgeType)
+		require.Equal(t, SpecificType, graph.edges["folder#viewer"][0].to.nodeType)
+		require.Equal(t, DirectEdge, graph.edges["folder#viewer"][1].edgeType)
+		require.Equal(t, SpecificTypeAndRelation, graph.edges["folder#viewer"][1].to.nodeType)
+		require.Equal(t, "folder#can_view", graph.edges["folder#viewer"][1].to.uniqueLabel)
 
-		require.Equal(t, graph.edges["folder#can_view"][0].edgeType, DirectEdge)
-		require.Equal(t, graph.edges["folder#can_view"][0].to.nodeType, SpecificType)
-		require.Equal(t, graph.edges["folder#can_view"][1].edgeType, DirectEdge)
-		require.Equal(t, graph.edges["folder#can_view"][1].to.nodeType, SpecificTypeAndRelation)
-		require.Equal(t, graph.edges["folder#can_view"][1].to.uniqueLabel, "folder#viewer")
+		require.Equal(t, DirectEdge, graph.edges["folder#can_view"][0].edgeType)
+		require.Equal(t, SpecificType, graph.edges["folder#can_view"][0].to.nodeType)
+		require.Equal(t, DirectEdge, graph.edges["folder#can_view"][1].edgeType)
+		require.Equal(t, SpecificTypeAndRelation, graph.edges["folder#can_view"][1].to.nodeType)
+		require.Equal(t, "folder#viewer", graph.edges["folder#can_view"][1].to.uniqueLabel)
 	})
 
 	t.Run("recursive_cycles_with_intermediate_relation", func(t *testing.T) {

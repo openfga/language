@@ -3,13 +3,13 @@ package validation
 import (
 	"testing"
 
-	fgaSdk "github.com/openfga/go-sdk"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConditionValidator(t *testing.T) {
 	t.Run("Empty model", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{}
+		model := &openfgav1.AuthorizationModel{}
 		validator := NewConditionValidator(model)
 
 		assert.NotNil(t, validator)
@@ -20,27 +20,25 @@ func TestNewConditionValidator(t *testing.T) {
 	})
 
 	t.Run("Model with conditions", func(t *testing.T) {
-		conditionsMap := map[string]fgaSdk.Condition{
-			"is_owner": {Name: "is_owner"},
-			"is_admin": {Name: "is_admin"},
-		}
-		relationsMap := map[string]fgaSdk.RelationMetadata{
-			"viewer": {
-				DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
-					{
-						Type:      "user",
-						Condition: fgaSdk.PtrString("is_owner"),
-					},
-				},
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
+				"is_owner": {Name: "is_owner"},
+				"is_admin": {Name: "is_admin"},
 			},
-		}
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &conditionsMap,
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &relationsMap,
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
+							"viewer": {
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+									{
+										Type: "user",
+									Condition: "is_owner",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -59,8 +57,8 @@ func TestNewConditionValidator(t *testing.T) {
 }
 
 func TestConditionValidator_GetDefinedConditions(t *testing.T) {
-	model := &fgaSdk.AuthorizationModel{
-		Conditions: &map[string]fgaSdk.Condition{
+	model := &openfgav1.AuthorizationModel{
+		Conditions: map[string]*openfgav1.Condition{
 			"condition1": {Name: "condition1"},
 			"condition2": {Name: "condition2"},
 			"condition3": {Name: "condition3"},
@@ -77,21 +75,21 @@ func TestConditionValidator_GetDefinedConditions(t *testing.T) {
 }
 
 func TestConditionValidator_GetUsedConditions(t *testing.T) {
-	model := &fgaSdk.AuthorizationModel{
-		Conditions: &map[string]fgaSdk.Condition{
+	model := &openfgav1.AuthorizationModel{
+		Conditions: map[string]*openfgav1.Condition{
 			"used_condition":   {Name: "used_condition"},
 			"unused_condition": {Name: "unused_condition"},
 		},
-		TypeDefinitions: []fgaSdk.TypeDefinition{
+		TypeDefinitions: []*openfgav1.TypeDefinition{
 			{
 				Type: "document",
-				Metadata: &fgaSdk.Metadata{
-					Relations: &map[string]fgaSdk.RelationMetadata{
+				Metadata: &openfgav1.Metadata{
+					Relations: map[string]*openfgav1.RelationMetadata{
 						"viewer": {
-							DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type:      "user",
-									Condition: fgaSdk.PtrString("used_condition"),
+									Type: "user",
+									Condition: "used_condition",
 								},
 							},
 						},
@@ -110,28 +108,28 @@ func TestConditionValidator_GetUsedConditions(t *testing.T) {
 }
 
 func TestConditionValidator_GetConditionReferences(t *testing.T) {
-	model := &fgaSdk.AuthorizationModel{
-		Conditions: &map[string]fgaSdk.Condition{
+	model := &openfgav1.AuthorizationModel{
+		Conditions: map[string]*openfgav1.Condition{
 			"test_condition": {Name: "test_condition"},
 		},
-		TypeDefinitions: []fgaSdk.TypeDefinition{
+		TypeDefinitions: []*openfgav1.TypeDefinition{
 			{
 				Type: "document",
-				Metadata: &fgaSdk.Metadata{
-					Relations: &map[string]fgaSdk.RelationMetadata{
+				Metadata: &openfgav1.Metadata{
+					Relations: map[string]*openfgav1.RelationMetadata{
 						"viewer": {
-							DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type:      "user",
-									Condition: fgaSdk.PtrString("test_condition"),
+									Type: "user",
+									Condition: "test_condition",
 								},
 							},
 						},
 						"editor": {
-							DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type:      "user",
-									Condition: fgaSdk.PtrString("test_condition"),
+									Type: "user",
+									Condition: "test_condition",
 								},
 							},
 						},
@@ -167,20 +165,20 @@ func TestConditionValidator_GetConditionReferences(t *testing.T) {
 
 func TestValidateUnusedConditions(t *testing.T) {
 	t.Run("No unused conditions", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"used_condition": {Name: "used_condition"},
 			},
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("used_condition"),
+										Type: "user",
+									Condition: "used_condition",
 									},
 								},
 							},
@@ -198,21 +196,21 @@ func TestValidateUnusedConditions(t *testing.T) {
 	})
 
 	t.Run("Unused condition detected", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"unused_condition": {Name: "unused_condition"},
 				"used_condition":   {Name: "used_condition"},
 			},
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("used_condition"),
+										Type: "user",
+									Condition: "used_condition",
 									},
 								},
 							},
@@ -234,22 +232,22 @@ func TestValidateUnusedConditions(t *testing.T) {
 	})
 
 	t.Run("Multiple unused conditions", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"unused1":        {Name: "unused1"},
 				"unused2":        {Name: "unused2"},
 				"used_condition": {Name: "used_condition"},
 			},
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("used_condition"),
+										Type: "user",
+									Condition: "used_condition",
 									},
 								},
 							},
@@ -278,20 +276,20 @@ func TestValidateUnusedConditions(t *testing.T) {
 
 func TestValidateConditionReferences(t *testing.T) {
 	t.Run("All referenced conditions defined", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"valid_condition": {Name: "valid_condition"},
 			},
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("valid_condition"),
+										Type: "user",
+									Condition: "valid_condition",
 									},
 								},
 							},
@@ -309,17 +307,17 @@ func TestValidateConditionReferences(t *testing.T) {
 	})
 
 	t.Run("Undefined condition referenced", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("undefined_condition"),
+										Type: "user",
+									Condition: "undefined_condition",
 									},
 								},
 							},
@@ -340,25 +338,25 @@ func TestValidateConditionReferences(t *testing.T) {
 	})
 
 	t.Run("Multiple undefined conditions", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("undefined1"),
+										Type: "user",
+									Condition: "undefined1",
 									},
 								},
 							},
 							"editor": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("undefined2"),
+										Type: "user",
+									Condition: "undefined2",
 									},
 								},
 							},
@@ -387,8 +385,8 @@ func TestValidateConditionReferences(t *testing.T) {
 
 func TestValidateConditionConsistency(t *testing.T) {
 	t.Run("Valid condition consistency", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"valid_condition": {Name: "valid_condition"},
 			},
 		}
@@ -401,8 +399,8 @@ func TestValidateConditionConsistency(t *testing.T) {
 	})
 
 	t.Run("Anonymous condition detected", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"": {Name: ""}, // Anonymous condition
 			},
 		}
@@ -418,37 +416,49 @@ func TestValidateConditionConsistency(t *testing.T) {
 
 func TestScanForConditionUsage(t *testing.T) {
 	t.Run("Complex condition usage scanning", func(t *testing.T) {
-		model := &fgaSdk.AuthorizationModel{
-			Conditions: &map[string]fgaSdk.Condition{
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
 				"condition1": {Name: "condition1"},
 				"condition2": {Name: "condition2"},
 				"condition3": {Name: "condition3"},
 			},
-			TypeDefinitions: []fgaSdk.TypeDefinition{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Metadata: &fgaSdk.Metadata{
-						Relations: &map[string]fgaSdk.RelationMetadata{
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
 							"viewer": {
-								DirectlyRelatedUserTypes: &[]fgaSdk.RelationReference{
+								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type:      "user",
-										Condition: fgaSdk.PtrString("condition1"),
+										Type: "user",
+									Condition: "condition1",
 									},
 									{
-										Type:      "group",
-										Condition: fgaSdk.PtrString("condition2"),
+										Type: "group",
+									Condition: "condition2",
 									},
 								},
 							},
 						},
 					},
-					Relations: &map[string]fgaSdk.Userset{
+					Relations: map[string]*openfgav1.Userset{
 						"editor": {
-							Union: &fgaSdk.Usersets{
-								Child: []fgaSdk.Userset{
-									{This: &map[string]interface{}{}},
-									{ComputedUserset: &fgaSdk.ObjectRelation{Relation: fgaSdk.PtrString("viewer")}},
+							Userset: &openfgav1.Userset_Union{
+								Union: &openfgav1.Usersets{
+									Child: []*openfgav1.Userset{
+										{
+											Userset: &openfgav1.Userset_This{
+												This: &openfgav1.DirectUserset{},
+											},
+										},
+										{
+											Userset: &openfgav1.Userset_ComputedUserset{
+												ComputedUserset: &openfgav1.ObjectRelation{
+													Relation: "viewer",
+												},
+											},
+										},
+									},
 								},
 							},
 						},

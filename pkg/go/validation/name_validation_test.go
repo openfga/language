@@ -409,14 +409,16 @@ func TestGetRelationLineNumber(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name:         "skips specified index",
+			name:         "searches from skipIndex onward",
 			relationName: "viewer",
 			lines: []string{
 				"    define viewer: [user]",
 				"  relations",
 				"    define viewer: [group]",
 			},
-			skipIndex: ptrInt(0),
+			// skipIndex is a start offset: searching from index 1 finds the
+			// second occurrence at index 2.
+			skipIndex: ptrInt(1),
 			expected:  ptrInt(2),
 		},
 		{

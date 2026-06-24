@@ -111,21 +111,25 @@ func GetTypeLineNumber(typeName string, lines []string, skipIndex *int) *int {
 	return nil
 }
 
-// GetRelationLineNumber finds the line number where a relation is defined
-// This is equivalent to the getRelationLineNumber function in JS
+// GetRelationLineNumber finds the line number where a relation is defined.
+// skipIndex, when provided, is the index to begin searching from (inclusive) —
+// matching the reference implementation's getRelationLineNumber, which slices
+// the lines from skipIndex onward. This lets callers anchor the search to a
+// specific type block so the correct occurrence is found when several types
+// declare a relation of the same name.
 func GetRelationLineNumber(relationName string, lines []string, skipIndex *int) *int {
 	if len(lines) == 0 {
 		return nil
 	}
 
-	for i, line := range lines {
-		// Skip the specified index if provided
-		if skipIndex != nil && i == *skipIndex {
-			continue
-		}
+	start := 0
+	if skipIndex != nil && *skipIndex > 0 {
+		start = *skipIndex
+	}
 
+	for i := start; i < len(lines); i++ {
 		// Look for "define relationName:" pattern
-		trimmedLine := strings.TrimSpace(line)
+		trimmedLine := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(trimmedLine, "define ") {
 			// Extract relation name from "define relationName:"
 			definePart := strings.TrimPrefix(trimmedLine, "define ")

@@ -7,6 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// hasEntry is a small test helper that runs the entry-point traversal for a
+// single relation from a fresh visited set.
+func (cd *CycleDetector) hasEntry(typeName, relationName string) entryPointResult {
+	return cd.hasEntryPointOrLoop(typeName, relationName,
+		cd.validator.GetRelationUserset(typeName, relationName), map[string]map[string]bool{})
+}
+
 func TestCycleDetector(t *testing.T) {
 	t.Run("NewCycleDetector", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
@@ -20,13 +27,10 @@ func TestCycleDetector(t *testing.T) {
 
 		assert.NotNil(t, detector)
 		assert.Equal(t, validator, detector.validator)
-		assert.NotNil(t, detector.visitedNodes)
-		assert.NotNil(t, detector.currentPath)
-		assert.NotNil(t, detector.entryPoints)
 	})
 
-	t.Run("Simple cycle detection", func(t *testing.T) {
-		// Create a model with a simple cycle: viewer -> editor -> viewer
+	t.Run("Mutual computed-userset loop has no entry point", func(t *testing.T) {
+		// viewer -> editor -> viewer, neither directly assignable.
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
@@ -34,16 +38,12 @@ func TestCycleDetector(t *testing.T) {
 					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
 							Userset: &openfgav1.Userset_ComputedUserset{
-								ComputedUserset: &openfgav1.ObjectRelation{
-									Relation: "editor",
-								},
+								ComputedUserset: &openfgav1.ObjectRelation{Relation: "editor"},
 							},
 						},
 						"editor": {
 							Userset: &openfgav1.Userset_ComputedUserset{
-								ComputedUserset: &openfgav1.ObjectRelation{
-									Relation: "viewer",
-								},
+								ComputedUserset: &openfgav1.ObjectRelation{Relation: "viewer"},
 							},
 						},
 					},
@@ -55,36 +55,24 @@ func TestCycleDetector(t *testing.T) {
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 
 		errors := collector.GetErrors()
-		assert.GreaterOrEqual(t, len(errors), 2, "Expected at least 2 errors (cycle and no entry point)")
-
-		// Check for cycle errors
-		cycleFound := false
+		// Each relation is impossible: one error per relation, all RelationNoEntrypoint.
+		assert.Len(t, errors, 2)
 		for _, err := range errors {
-			if err.Metadata.ErrorType == CyclicError {
-				cycleFound = true
-				break
-			}
+			assert.Equal(t, RelationNoEntrypoint, err.Metadata.ErrorType)
+			assert.Contains(t, err.Message, "is an impossible relation")
+			assert.Contains(t, err.Message, "(potential loop)")
 		}
-		assert.True(t, cycleFound, "Expected to find a cycle error")
 	})
 
-	t.Run("No cycle with valid relations", func(t *testing.T) {
+	t.Run("No errors when relations are reachable", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
 					Metadata: &openfgav1.Metadata{
 						Relations: map[string]*openfgav1.RelationMetadata{
-							"viewer": {
-								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
-									{Type: "user"},
-								},
-							},
-							"editor": {
-								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
-									{Type: "user"},
-								},
-							},
+							"viewer": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
+							"editor": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
 						},
 					},
 					Relations: map[string]*openfgav1.Userset{
@@ -92,244 +80,120 @@ func TestCycleDetector(t *testing.T) {
 							Userset: &openfgav1.Userset_Union{
 								Union: &openfgav1.Usersets{
 									Child: []*openfgav1.Userset{
-										{
-											Userset: &openfgav1.Userset_This{
-												This: &openfgav1.DirectUserset{},
-											},
-										},
-										{
-											Userset: &openfgav1.Userset_ComputedUserset{
-												ComputedUserset: &openfgav1.ObjectRelation{
-													Relation: "editor",
-												},
-											},
-										},
+										{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
+										{Userset: &openfgav1.Userset_ComputedUserset{ComputedUserset: &openfgav1.ObjectRelation{Relation: "editor"}}},
 									},
 								},
 							},
 						},
-						"editor": {
-							Userset: &openfgav1.Userset_This{
-								This: &openfgav1.DirectUserset{},
-							},
-						},
+						"editor": {Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
 					},
 				},
-				{
-					Type: "user",
-				},
+				{Type: "user"},
 			},
 		}
 
 		collector := NewErrorCollector(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
-
-		errors := collector.GetErrors()
-
-		// Filter for cycle errors only
-		cycleErrors := make([]*ValidationError, 0)
-		for _, err := range errors {
-			if err.Metadata.ErrorType == CyclicError {
-				cycleErrors = append(cycleErrors, err)
-			}
-		}
-
-		assert.Empty(t, cycleErrors, "Expected no cycle errors")
+		assert.Empty(t, collector.GetErrors())
 	})
 
-	t.Run("Entry point detection - direct assignment", func(t *testing.T) {
+	t.Run("Computed chain terminating in a direct assignment is reachable", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
 					Metadata: &openfgav1.Metadata{
 						Relations: map[string]*openfgav1.RelationMetadata{
-							"viewer": {
-								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
-									{Type: "user"},
-								},
-							},
+							"owner": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
 						},
 					},
 					Relations: map[string]*openfgav1.Userset{
-						"viewer": {
-							Userset: &openfgav1.Userset_This{
-								This: &openfgav1.DirectUserset{},
-							},
-						},
+						"viewer": {Userset: &openfgav1.Userset_ComputedUserset{ComputedUserset: &openfgav1.ObjectRelation{Relation: "editor"}}},
+						"editor": {Userset: &openfgav1.Userset_ComputedUserset{ComputedUserset: &openfgav1.ObjectRelation{Relation: "owner"}}},
+						"owner":  {Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
 					},
 				},
-				{
-					Type: "user",
-				},
+				{Type: "user"},
 			},
 		}
 
 		collector := NewErrorCollector(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
-
-		errors := collector.GetErrors()
-
-		// Filter for entry point errors only
-		entryPointErrors := make([]*ValidationError, 0)
-		for _, err := range errors {
-			if err.Metadata.ErrorType == RelationNoEntrypoint {
-				entryPointErrors = append(entryPointErrors, err)
-			}
-		}
-
-		assert.Empty(t, entryPointErrors, "Expected no entry point errors with direct assignment")
-	})
-
-	t.Run("Missing entry point", func(t *testing.T) {
-		model := &openfgav1.AuthorizationModel{
-			TypeDefinitions: []*openfgav1.TypeDefinition{
-				{
-					Type: "document",
-					Relations: map[string]*openfgav1.Userset{
-						"viewer": {
-							Userset: &openfgav1.Userset_ComputedUserset{
-								ComputedUserset: &openfgav1.ObjectRelation{
-									Relation: "editor",
-								},
-							},
-						},
-						"editor": {
-							Userset: &openfgav1.Userset_ComputedUserset{
-								ComputedUserset: &openfgav1.ObjectRelation{
-									Relation: "admin",
-								},
-							},
-						},
-						"admin": {
-							// No direct assignment or type restrictions - missing entry point
-							Userset: &openfgav1.Userset_ComputedUserset{
-								ComputedUserset: &openfgav1.ObjectRelation{
-									Relation: "owner",
-								},
-							},
-						},
-						"owner": {
-							Userset: &openfgav1.Userset_This{
-								This: &openfgav1.DirectUserset{},
-							},
-						},
-					},
-				},
-			},
-		}
-
-		collector := NewErrorCollector(nil)
-		ValidateCyclesAndEntryPoints(collector, model, nil)
-
-		errors := collector.GetErrors()
-
-		// Filter for entry point errors
-		entryPointErrors := make([]*ValidationError, 0)
-		for _, err := range errors {
-			if err.Metadata.ErrorType == RelationNoEntrypoint {
-				entryPointErrors = append(entryPointErrors, err)
-			}
-		}
-
-		// viewer, editor, and admin should have no entry point errors since they eventually lead to owner
-		// Only relations that truly have no path to direct assignment should error
-		assert.Equal(t, 3, len(entryPointErrors), "Entry point validation working")
+		// All three relations resolve to owner's direct assignment.
+		assert.Empty(t, collector.GetErrors())
 	})
 }
 
-func TestHasEntryPoint(t *testing.T) {
+func TestHasEntryPointOrLoop(t *testing.T) {
 	t.Run("Direct this assignment", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
-					Relations: map[string]*openfgav1.Userset{
-						"viewer": {
-							Userset: &openfgav1.Userset_This{
-								This: &openfgav1.DirectUserset{},
-							},
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
+							"viewer": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
 						},
 					},
+					Relations: map[string]*openfgav1.Userset{
+						"viewer": {Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
+					},
 				},
+				{Type: "user"},
 			},
 		}
 
-		validator := NewSemanticValidator(model)
-		detector := NewCycleDetector(validator)
-
-		hasEntryPoint := detector.hasEntryPoint("document", "viewer")
-		assert.True(t, hasEntryPoint, "Direct 'this' assignment should be an entry point")
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		assert.True(t, detector.hasEntry("document", "viewer").hasEntry)
 	})
 
-	t.Run("Type restrictions as entry point", func(t *testing.T) {
+	t.Run("Union with this has entry point", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
 					Type: "document",
 					Metadata: &openfgav1.Metadata{
 						Relations: map[string]*openfgav1.RelationMetadata{
-							"viewer": {
-								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
-									{Type: "user"},
-								},
-							},
+							"viewer": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
 						},
 					},
-					Relations: map[string]*openfgav1.Userset{
-						"viewer": {
-							// No direct 'this', but has type restrictions
-						},
-					},
-				},
-				{
-					Type: "user",
-				},
-			},
-		}
-
-		validator := NewSemanticValidator(model)
-		detector := NewCycleDetector(validator)
-
-		hasEntryPoint := detector.hasEntryPoint("document", "viewer")
-		assert.True(t, hasEntryPoint, "Type restrictions should provide entry point")
-	})
-
-	t.Run("Union with entry point", func(t *testing.T) {
-		model := &openfgav1.AuthorizationModel{
-			TypeDefinitions: []*openfgav1.TypeDefinition{
-				{
-					Type: "document",
 					Relations: map[string]*openfgav1.Userset{
 						"viewer": {
 							Userset: &openfgav1.Userset_Union{
 								Union: &openfgav1.Usersets{
 									Child: []*openfgav1.Userset{
-										{
-											Userset: &openfgav1.Userset_This{
-												This: &openfgav1.DirectUserset{},
-											},
-										},
-										{
-											Userset: &openfgav1.Userset_ComputedUserset{
-												ComputedUserset: &openfgav1.ObjectRelation{
-													Relation: "editor",
-												},
-											},
-										},
+										{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
+										{Userset: &openfgav1.Userset_ComputedUserset{ComputedUserset: &openfgav1.ObjectRelation{Relation: "editor"}}},
 									},
 								},
 							},
 						},
 					},
 				},
+				{Type: "user"},
 			},
 		}
 
-		validator := NewSemanticValidator(model)
-		detector := NewCycleDetector(validator)
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		assert.True(t, detector.hasEntry("document", "viewer").hasEntry)
+	})
 
-		hasEntryPoint := detector.hasEntryPoint("document", "viewer")
-		assert.True(t, hasEntryPoint, "Union with 'this' should have entry point")
+	t.Run("Self-referential computed userset is a loop", func(t *testing.T) {
+		model := &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
+				{
+					Type: "document",
+					Relations: map[string]*openfgav1.Userset{
+						"viewer": {Userset: &openfgav1.Userset_ComputedUserset{ComputedUserset: &openfgav1.ObjectRelation{Relation: "viewer"}}},
+					},
+				},
+			},
+		}
+
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		res := detector.hasEntry("document", "viewer")
+		assert.False(t, res.hasEntry)
+		assert.True(t, res.loop)
 	})
 }

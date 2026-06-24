@@ -169,7 +169,7 @@ func (c *ErrorCollector) RaiseNoEntryPointLoop(symbol, typeName string, meta *Me
 
 // RaiseNoEntryPoint raises an error for impossible relation without entry point.
 func (c *ErrorCollector) RaiseNoEntryPoint(symbol, typeName string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("`%s` is an impossible relation for `%s`.", symbol, typeName)
+	message := fmt.Sprintf("`%s` is an impossible relation for `%s` (no entrypoint).", symbol, typeName)
 	c.addError(message, RelationNoEntrypoint, symbol, lineIndex, meta, nil)
 }
 

@@ -77,7 +77,10 @@ func (sv *SemanticValidator) GetRelationNames(typeName string) []string {
 // implementation's allowableTypes helper used for tuple-to-userset validation.
 func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName string) ([]string, bool) {
 	userset := sv.GetRelationUserset(typeName, relationName)
-	if userset == nil || userset.GetThis() == nil {
+	if userset == nil {
+		return nil, false
+	}
+	if _, ok := userset.GetUserset().(*openfgav1.Userset_This); !ok {
 		return nil, false
 	}
 	typeDef := sv.typeMap[typeName]

@@ -199,7 +199,7 @@ func TestErrorCollector_RaiseNoEntryPoint(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "`viewer` is an impossible relation for `document`.", errors[0].Message)
+	assert.Equal(t, "`viewer` is an impossible relation for `document` (no entrypoint).", errors[0].Message)
 	assert.Equal(t, RelationNoEntrypoint, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "viewer", errors[0].Metadata.Symbol)
 }

@@ -213,15 +213,24 @@ func (c *ErrorCollector) RaiseInvalidRelationError(symbol, typeName, relation st
 	c.addError(message, MissingDefinition, symbol, lineIndex, meta, nil)
 }
 
-// RaiseInvalidSchemaVersion raises an error for invalid schema version.
+// RaiseInvalidSchemaVersion raises an error for a schema version that was never
+// valid (e.g. "0.9", "2.0"). This is distinct from a version that is recognized
+// but no longer supported (see RaiseSchemaVersionUnsupported).
 func (c *ErrorCollector) RaiseInvalidSchemaVersion(symbol string, lineIndex *int) {
-	message := fmt.Sprintf("the schema version '%s' is not supported.", symbol)
+	message := fmt.Sprintf("invalid schema %s", symbol)
+	c.addError(message, InvalidSchema, symbol, lineIndex, nil, nil)
+}
+
+// RaiseSchemaVersionUnsupported raises an error for a recognized but retired
+// schema version (e.g. "1.0").
+func (c *ErrorCollector) RaiseSchemaVersionUnsupported(symbol string, lineIndex *int) {
+	message := "schema version no longer supported"
 	c.addError(message, SchemaVersionUnsupported, symbol, lineIndex, nil, nil)
 }
 
 // RaiseSchemaVersionRequired raises an error for missing schema version.
 func (c *ErrorCollector) RaiseSchemaVersionRequired(symbol string, lineIndex *int) {
-	message := "a schema version is required in the model."
+	message := "schema version required"
 	c.addError(message, SchemaVersionRequired, symbol, lineIndex, nil, nil)
 }
 

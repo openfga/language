@@ -183,8 +183,22 @@ func TestValidateSchemaVersion(t *testing.T) {
 				"type document",
 			},
 			expectedErrorCount:  1,
-			expectedErrorType:   SchemaVersionUnsupported,
+			expectedErrorType:   InvalidSchema,
 			expectedErrorSymbol: "2.0",
+		},
+		{
+			name: "retired schema version 1.0",
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.0",
+			},
+			lines: []string{
+				"model",
+				"  schema 1.0",
+				"type document",
+			},
+			expectedErrorCount:  1,
+			expectedErrorType:   SchemaVersionUnsupported,
+			expectedErrorSymbol: "1.0",
 		},
 	}
 
@@ -380,5 +394,5 @@ func TestSchemaVersionValidation(t *testing.T) {
 	ValidateSchemaVersion(collector, invalidModel, nil)
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, SchemaVersionUnsupported, errors[0].Metadata.ErrorType)
+	assert.Equal(t, InvalidSchema, errors[0].Metadata.ErrorType)
 }

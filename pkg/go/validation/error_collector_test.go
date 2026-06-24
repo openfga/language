@@ -254,7 +254,7 @@ func TestErrorCollector_RaiseSchemaVersionRequired(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "a schema version is required in the model.", errors[0].Message)
+	assert.Equal(t, "schema version required", errors[0].Message)
 	assert.Equal(t, SchemaVersionRequired, errors[0].Metadata.ErrorType)
 }
 
@@ -266,9 +266,22 @@ func TestErrorCollector_RaiseInvalidSchemaVersion(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "the schema version '2.0' is not supported.", errors[0].Message)
-	assert.Equal(t, SchemaVersionUnsupported, errors[0].Metadata.ErrorType)
+	assert.Equal(t, "invalid schema 2.0", errors[0].Message)
+	assert.Equal(t, InvalidSchema, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "2.0", errors[0].Metadata.Symbol)
+}
+
+func TestErrorCollector_RaiseSchemaVersionUnsupported(t *testing.T) {
+	collector := NewErrorCollector(nil)
+	lineIndex := 1
+
+	collector.RaiseSchemaVersionUnsupported("1.0", &lineIndex)
+
+	errors := collector.GetErrors()
+	assert.Len(t, errors, 1)
+	assert.Equal(t, "schema version no longer supported", errors[0].Message)
+	assert.Equal(t, SchemaVersionUnsupported, errors[0].Metadata.ErrorType)
+	assert.Equal(t, "1.0", errors[0].Metadata.Symbol)
 }
 
 func TestErrorCollector_RaiseUnusedCondition(t *testing.T) {

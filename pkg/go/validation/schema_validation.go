@@ -48,9 +48,15 @@ func ValidateSchemaVersion(collector *ErrorCollector, model *openfgav1.Authoriza
 		collector.RaiseSchemaVersionRequired("", &lineIndex)
 		return
 	}
-	if !IsValidSchemaVersion(schemaVersion) {
-		lineIndex := GetSchemaLineNumber(schemaVersion, lines)
-		collector.RaiseInvalidSchemaVersion(schemaVersion, lineIndex)
+	switch schemaVersion {
+	case SchemaVersion11, SchemaVersion12:
+		// Supported — nothing to report.
+	case "1.0":
+		// Recognized but retired.
+		collector.RaiseSchemaVersionUnsupported(schemaVersion, GetSchemaLineNumber(schemaVersion, lines))
+	default:
+		// Never a valid schema version.
+		collector.RaiseInvalidSchemaVersion(schemaVersion, GetSchemaLineNumber(schemaVersion, lines))
 	}
 }
 

@@ -328,9 +328,9 @@ type user
 `,
 			ExpectedErrors: []YAMLExpectedError{
 				{
-					Message: "invalid schema version",
+					Message: "invalid schema 0.9",
 					Metadata: YAMLErrorMetadata{
-						ErrorType: "invalid-schema-version",
+						ErrorType: "invalid-schema",
 					},
 				},
 			},

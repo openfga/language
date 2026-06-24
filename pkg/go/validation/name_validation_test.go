@@ -457,14 +457,15 @@ func TestGetConditionLineNumber(t *testing.T) {
 		expected      *int
 	}{
 		{
-			name:          "finds condition in line",
+			name:          "finds condition declaration",
 			conditionName: "is_owner",
 			lines: []string{
 				"type document",
 				"  relations",
 				"    define viewer: [user with is_owner]",
+				"condition is_owner(x: int) {",
 			},
-			expected: ptrInt(2),
+			expected: ptrInt(3),
 		},
 		{
 			name:          "condition not found",
@@ -477,14 +478,15 @@ func TestGetConditionLineNumber(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name:          "skips specified index",
+			name:          "searches from skipIndex onward",
 			conditionName: "is_owner",
 			lines: []string{
-				"    define viewer: [user with is_owner]",
+				"condition is_owner(x: int) {",
 				"  relations",
-				"    condition is_owner: some_condition",
+				"condition is_owner(y: int) {",
 			},
-			skipIndex: ptrInt(0),
+			// skipIndex is a start offset: from index 1 the next declaration is at 2.
+			skipIndex: ptrInt(1),
 			expected:  ptrInt(2),
 		},
 		{

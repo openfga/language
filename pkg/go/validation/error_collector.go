@@ -2,8 +2,32 @@ package validation
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+// wordIndex returns the index of symbol in rawLine matched on word boundaries,
+// mirroring the reference's `\bsymbol\b` lookup. This avoids matching a symbol
+// as a substring of another word (e.g. finding `t` inside `type`). Returns 0
+// when the symbol is not found, matching the reference's fallback.
+func wordIndex(rawLine, symbol string) int {
+	if symbol == "" {
+		return 0
+	}
+	// Prefer a word-boundary match so a symbol isn't found as a substring of
+	// another word (e.g. `t` inside `type`). Symbols that contain non-word
+	// characters (e.g. `user:*`) won't match `\bsymbol\b`, so fall back to a
+	// plain substring search for those.
+	if re, err := regexp.Compile(`\b` + regexp.QuoteMeta(symbol) + `\b`); err == nil {
+		if loc := re.FindStringIndex(rawLine); loc != nil {
+			return loc[0]
+		}
+	}
+	if idx := strings.Index(rawLine, symbol); idx >= 0 {
+		return idx
+	}
+	return 0
+}
 
 // ErrorCollector collects validation errors during model validation
 // This is equivalent to the JS ExceptionCollector class
@@ -45,9 +69,10 @@ func (c *ErrorCollector) addError(message string, errorType ValidationErrorType,
 	if lineIndex != nil && *lineIndex >= 0 && *lineIndex < len(c.lines) {
 		line = &LineRange{Start: *lineIndex, End: *lineIndex}
 
-		// Find symbol position in line for column calculation
+		// Find symbol position in line for column calculation, matching on word
+		// boundaries as the reference does.
 		rawLine := c.lines[*lineIndex]
-		symbolPos := strings.Index(rawLine, symbol)
+		symbolPos := wordIndex(rawLine, symbol)
 
 		if customResolver != nil {
 			symbolPos = customResolver(symbolPos, rawLine, symbol)
@@ -191,7 +216,20 @@ func (c *ErrorCollector) RaiseInvalidTypeRelation(symbol, typeName, relationName
 // RaiseInvalidType raises an error for invalid type.
 func (c *ErrorCollector) RaiseInvalidType(symbol, typeName, relation string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("`%s` is not a valid type.", symbol)
-	c.addError(message, InvalidType, symbol, lineIndex, meta, nil)
+	// The invalid type appears in the assignable-types list (after the colon),
+	// which may share a name with the relation key before the colon. Resolve the
+	// column to the value side so it marks the type, not the relation name —
+	// mirroring the reference's customResolver.
+	resolver := func(_ int, rawLine, sym string) int {
+		colon := strings.Index(rawLine, ":")
+		if colon < 0 {
+			return wordIndex(rawLine, sym)
+		}
+		value := rawLine[colon+1:]
+		idx := wordIndex(value, sym)
+		return colon + 1 + idx
+	}
+	c.addError(message, InvalidType, symbol, lineIndex, meta, resolver)
 }
 
 // RaiseAssignableRelationMustHaveTypes raises an error for assignable relations without types.

@@ -153,19 +153,17 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 		return nil
 	}
 
-	for i, line := range lines {
-		// Skip the specified index if provided
-		if skipIndex != nil && i == *skipIndex {
-			continue
-		}
+	start := 0
+	if skipIndex != nil && *skipIndex > 0 {
+		start = *skipIndex
+	}
 
-		// Look for condition definitions in various formats
-		trimmedLine := strings.TrimSpace(line)
-
-		// Check for condition name in the line
-		if strings.Contains(trimmedLine, conditionName) {
-			// Additional validation to ensure it's actually a condition definition
-			// This could be enhanced based on the specific DSL format
+	for i := start; i < len(lines); i++ {
+		// Match the condition declaration itself, mirroring the reference's
+		// `condition <name>` prefix check, so we don't match an unrelated line
+		// that merely contains the condition name as a substring.
+		trimmedLine := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(trimmedLine, "condition "+conditionName) {
 			return &i
 		}
 	}

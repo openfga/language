@@ -70,12 +70,13 @@ func (sv *SemanticValidator) GetRelationNames(typeName string) []string {
 	return names
 }
 
-// GetDirectlyAssignableTypes returns the type names a relation is directly
-// assignable to, but only when that relation is a single direct assignment
-// (i.e. `define r: [a, b]` rather than a rewrite). The bool reports whether the
-// relation is such a single direct assignment. This mirrors the reference
-// implementation's allowableTypes helper used for tuple-to-userset validation.
-func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName string) ([]string, bool) {
+// GetDirectlyAssignableTypes returns the type restrictions a relation is
+// directly assignable to, but only when that relation is a single direct
+// assignment (i.e. `define r: [a, b]` rather than a rewrite). The bool reports
+// whether the relation is such a single direct assignment. This mirrors the
+// reference implementation's allowableTypes helper used for tuple-to-userset
+// validation.
+func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName string) ([]*openfgav1.RelationReference, bool) {
 	userset := sv.GetRelationUserset(typeName, relationName)
 	if userset == nil {
 		return nil, false
@@ -88,13 +89,7 @@ func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName s
 		return nil, false
 	}
 	relMeta := typeDef.GetMetadata().GetRelations()[relationName]
-	types := make([]string, 0)
-	for _, tr := range relMeta.GetDirectlyRelatedUserTypes() {
-		if tr.GetType() != "" {
-			types = append(types, tr.GetType())
-		}
-	}
-	return types, true
+	return relMeta.GetDirectlyRelatedUserTypes(), true
 }
 
 // ValidateRelationReferences validates that all relation references in the model are valid.
@@ -220,16 +215,25 @@ func validateTupleToUsersetReferences(collector *ErrorCollector, validator *Sema
 		return
 	}
 
-	// 3. The computed `target` must exist on at least one assignable type.
-	notValid := 0
-	for _, fromType := range fromTypes {
-		if !validator.TypeDefined(fromType) || !validator.RelationDefined(fromType, targetRelation) {
-			notValid++
+	// 3. Each assignable type of `from` must be a concrete type (no wildcard, no
+	//    type#relation), and the computed `target` must exist on at least one of
+	//    them.
+	notValid := make([]*openfgav1.RelationReference, 0, len(fromTypes))
+	for _, tr := range fromTypes {
+		decodedType := tr.GetType()
+		if tr.GetWildcard() != nil || tr.GetRelation() != "" {
+			// A wildcard or type#relation cannot be used as a tupleset target.
+			collector.RaiseTupleUsersetRequiresDirect(fromRelation, typeName, relationName, meta, lineIndex)
+			continue
+		}
+		if !validator.TypeDefined(decodedType) || !validator.RelationDefined(decodedType, targetRelation) {
+			notValid = append(notValid, tr)
 		}
 	}
-	if notValid == len(fromTypes) {
-		for _, fromType := range fromTypes {
-			collector.RaiseInvalidRelationOnTupleset(symbol, fromType, typeName, relationName, targetRelation, fromRelation, lineIndex, meta)
+	// If the target is missing on every assignable type, report it per type.
+	if len(notValid) == len(fromTypes) {
+		for _, tr := range notValid {
+			collector.RaiseInvalidRelationOnTupleset(symbol, tr.GetType(), typeName, relationName, targetRelation, fromRelation, lineIndex, meta)
 		}
 	}
 }

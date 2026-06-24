@@ -54,19 +54,39 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 		return NewValidationErrors(nil)
 	}
 
+	// Schema and name validation run first and unconditionally.
 	ve.runSchemaValidation()
 	ve.runNameValidation()
-	ve.runDuplicateDetection()
 
+	// Relation-reference validation always runs. The phases that follow are
+	// gated on there being no errors yet: a model with bad references or
+	// duplicates would otherwise produce a cascade of derived entry-point and
+	// complex-operation errors for the same root cause. This mirrors the
+	// reference implementation's modelValidation, which skips the later passes
+	// once any error has been recorded.
 	if !options.SkipSemanticValidation {
-		ve.runSemanticValidation()
+		ValidateRelationReferences(ve.collector, ve.model, ve.lines)
 	}
-	if !options.SkipComplexOperationValidation {
-		ve.runComplexOperationValidation()
+
+	if !ve.collector.HasErrors() {
+		ve.runDuplicateDetection()
 	}
-	if !options.SkipWildcardValidation {
-		ve.runWildcardValidation()
+
+	if !ve.collector.HasErrors() {
+		if !options.SkipSemanticValidation {
+			ValidateCyclesAndEntryPoints(ve.collector, ve.model, ve.lines)
+			ValidateTupleToUsersetRequirements(ve.collector, ve.model, ve.lines)
+		}
+		if !options.SkipComplexOperationValidation {
+			ve.runComplexOperationValidation()
+		}
+		if !options.SkipWildcardValidation {
+			ve.runWildcardValidation()
+		}
 	}
+
+	// Multi-file and condition checks are independent of the cascade and always
+	// run, matching the reference's handling of conditions.
 	if !options.SkipMultiFileValidation {
 		ve.runMultiFileValidation()
 	}
@@ -87,12 +107,6 @@ func (ve *ValidationEngine) runNameValidation() {
 
 func (ve *ValidationEngine) runDuplicateDetection() {
 	ValidateDuplicates(ve.collector, ve.model, ve.lines)
-}
-
-func (ve *ValidationEngine) runSemanticValidation() {
-	ValidateRelationReferences(ve.collector, ve.model, ve.lines)
-	ValidateCyclesAndEntryPoints(ve.collector, ve.model, ve.lines)
-	ValidateTupleToUsersetRequirements(ve.collector, ve.model, ve.lines)
 }
 
 func (ve *ValidationEngine) runComplexOperationValidation() {

@@ -150,8 +150,8 @@ func (ec *ErrorCollector) RaiseUndefinedRelation(relationName, typeName, parentR
 
 // RaiseDuplicateType raises a duplicate type error in relation.
 func (c *ErrorCollector) RaiseDuplicateType(symbol, relationName, typeName string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("the type '%s' is defined more than once in relation '%s' of type '%s'.",
-		symbol, relationName, typeName)
+	message := fmt.Sprintf("the partial relation definition `%s` is a duplicate in the relation `%s`.",
+		symbol, relationName)
 	c.addError(message, DuplicatedError, symbol, lineIndex, meta, nil)
 }
 

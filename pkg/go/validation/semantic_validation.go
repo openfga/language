@@ -110,19 +110,23 @@ func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.Auth
 			continue
 		}
 
+		// Anchor relation line lookups to the type's declaration so the correct
+		// `define` occurrence is found when several types share a relation name.
+		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
+
 		if meta := typeDef.GetMetadata(); meta != nil {
 			for relationName, relationMetadata := range meta.GetRelations() {
-				validateTypeRestrictions(collector, validator, typeName, relationName, relationMetadata, lines)
+				validateTypeRestrictions(collector, validator, typeName, relationName, relationMetadata, typeLineIndex, lines)
 			}
 		}
 		for relationName, userset := range typeDef.GetRelations() {
-			validateUsersetReferences(collector, validator, typeName, relationName, userset, lines)
+			validateUsersetReferences(collector, validator, typeName, relationName, userset, typeLineIndex, lines)
 		}
 	}
 }
 
 func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, lines []string) {
+	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, typeLineIndex *int, lines []string) {
 	if relationMetadata == nil {
 		return
 	}
@@ -137,7 +141,7 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 		}
 		// A directly-related type that doesn't exist: `X` is not a valid type.
 		if !validator.TypeDefined(restrictedType) {
-			lineIndex := GetRelationLineNumber(relationName, lines, nil)
+			lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 			collector.RaiseInvalidType(restrictedType, typeName, relationName, meta, lineIndex)
 			continue
 		}
@@ -145,7 +149,7 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 		// `rel` is not a valid relation for `X`.
 		if rel := typeRestriction.GetRelation(); rel != "" {
 			if !validator.RelationDefined(restrictedType, rel) {
-				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				symbol := restrictedType + "#" + rel
 				collector.RaiseInvalidTypeRelation(symbol, restrictedType, relationName, rel, restrictedType, lineIndex, meta)
 			}
@@ -154,7 +158,7 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 }
 
 func validateUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, userset *openfgav1.Userset, lines []string) {
+	typeName, relationName string, userset *openfgav1.Userset, typeLineIndex *int, lines []string) {
 	if userset == nil {
 		return
 	}
@@ -169,7 +173,7 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 		// `define a: b` where b is not a relation on this type.
 		if targetRelation := cu.GetRelation(); targetRelation != "" {
 			if !validator.RelationDefined(typeName, targetRelation) {
-				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				validRelations := validator.GetRelationNames(typeName)
 				collector.RaiseInvalidRelationError(targetRelation, typeName, relationName, validRelations, lineIndex, meta)
 			}
@@ -177,22 +181,22 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		validateTupleToUsersetReferences(collector, validator, typeName, relationName, ttu, meta, lines)
+		validateTupleToUsersetReferences(collector, validator, typeName, relationName, ttu, meta, typeLineIndex, lines)
 	}
 
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, lines)
+			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
 		}
 	}
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, lines)
+			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
 		}
 	}
 	if diff := userset.GetDifference(); diff != nil {
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetBase(), lines)
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetSubtract(), lines)
+		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetBase(), typeLineIndex, lines)
+		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetSubtract(), typeLineIndex, lines)
 	}
 }
 
@@ -204,13 +208,13 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 //   - the computed `target` relation must exist on at least one of the types the
 //     `from` relation is assignable to.
 func validateTupleToUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, ttu *openfgav1.TupleToUserset, meta *Meta, lines []string) {
+	typeName, relationName string, ttu *openfgav1.TupleToUserset, meta *Meta, typeLineIndex *int, lines []string) {
 	fromRelation := ttu.GetTupleset().GetRelation()
 	targetRelation := ttu.GetComputedUserset().GetRelation()
 	if fromRelation == "" || targetRelation == "" {
 		return
 	}
-	lineIndex := GetRelationLineNumber(relationName, lines, nil)
+	lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 	symbol := targetRelation + " from " + fromRelation
 
 	// 1. The `from` relation must exist on the current type.

@@ -168,7 +168,7 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 			collector := NewErrorCollector(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			CheckForDuplicateTypeNamesInRelation(collector, tt.relationMetadata, tt.relationName, tt.typeName, meta, nil)
+			CheckForDuplicateTypeNamesInRelation(collector, tt.relationMetadata, tt.relationName, tt.typeName, meta, nil, nil)
 
 			errors := collector.GetErrors()
 			assert.Len(t, errors, tt.expectedErrorCount)
@@ -375,7 +375,7 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			collector := NewErrorCollector(nil)
 
-			CheckForDuplicatesInRelation(collector, tt.typeDef, tt.relationName, nil)
+			CheckForDuplicatesInRelation(collector, tt.typeDef, tt.relationName, nil, nil)
 
 			errors := collector.GetErrors()
 			assert.Len(t, errors, tt.expectedErrorCount)
@@ -580,7 +580,7 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 			collector := NewErrorCollector(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			checkDuplicatesInUnion(collector, tt.union, "test_relation", "test_type", meta, nil)
+			checkDuplicatesInUnion(collector, tt.union, "test_relation", "test_type", meta, nil, nil)
 
 			errors := collector.GetErrors()
 			assert.Len(t, errors, tt.expectedErrorCount)

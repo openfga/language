@@ -26,7 +26,7 @@ func (dt *DuplicateTypeTracker) CheckAndAddType(typeName string, collector *Erro
 
 // CheckForDuplicateTypeNamesInRelation checks for duplicate type restrictions within a relation.
 func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMetadata *openfgav1.RelationMetadata,
-	relationName, typeName string, meta *Meta, lines []string) {
+	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if relationMetadata == nil {
 		return
 	}
@@ -45,7 +45,7 @@ func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMet
 			typeRestrictionString += " with " + cond
 		}
 		if typeRestrictions[typeRestrictionString] {
-			lineIndex := GetRelationLineNumber(relationName, lines, nil)
+			lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 			collector.RaiseDuplicateTypeRestriction(typeRestrictionString, relationName, typeName, meta, lineIndex)
 		} else {
 			typeRestrictions[typeRestrictionString] = true
@@ -55,7 +55,7 @@ func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMet
 
 // CheckForDuplicatesInRelation checks for duplicate relations in type definitions.
 func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.TypeDefinition,
-	relationName string, lines []string) {
+	relationName string, typeLineIndex *int, lines []string) {
 	if typeDef == nil {
 		return
 	}
@@ -81,18 +81,18 @@ func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.
 	meta := &Meta{File: file, Module: module}
 
 	if union := relation.GetUnion(); union != nil {
-		checkDuplicatesInUnion(collector, union, relationName, typeDef.GetType(), meta, lines)
+		checkDuplicatesInUnion(collector, union, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if intersection := relation.GetIntersection(); intersection != nil {
-		checkDuplicatesInIntersection(collector, intersection, relationName, typeDef.GetType(), meta, lines)
+		checkDuplicatesInIntersection(collector, intersection, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if diff := relation.GetDifference(); diff != nil {
-		checkDuplicatesInDifference(collector, diff, relationName, typeDef.GetType(), meta, lines)
+		checkDuplicatesInDifference(collector, diff, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 }
 
 func checkDuplicatesInUnion(collector *ErrorCollector, union *openfgav1.Usersets,
-	relationName, typeName string, meta *Meta, lines []string) {
+	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if union == nil {
 		return
 	}
@@ -100,7 +100,7 @@ func checkDuplicatesInUnion(collector *ErrorCollector, union *openfgav1.Usersets
 	for _, child := range union.GetChild() {
 		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
-				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
 			} else {
 				relationDefs[relationDef] = true
@@ -110,7 +110,7 @@ func checkDuplicatesInUnion(collector *ErrorCollector, union *openfgav1.Usersets
 }
 
 func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *openfgav1.Usersets,
-	relationName, typeName string, meta *Meta, lines []string) {
+	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if intersection == nil {
 		return
 	}
@@ -118,7 +118,7 @@ func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *open
 	for _, child := range intersection.GetChild() {
 		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
-				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
 			} else {
 				relationDefs[relationDef] = true
@@ -128,14 +128,14 @@ func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *open
 }
 
 func checkDuplicatesInDifference(collector *ErrorCollector, difference *openfgav1.Difference,
-	relationName, typeName string, meta *Meta, lines []string) {
+	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if difference == nil {
 		return
 	}
 	baseName := getRelationDefName(difference.GetBase())
 	subtractName := getRelationDefName(difference.GetSubtract())
 	if baseName != "" && baseName == subtractName {
-		lineIndex := GetRelationLineNumber(relationName, lines, nil)
+		lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 		collector.RaiseDuplicateType(baseName, relationName, typeName, meta, lineIndex)
 	}
 }
@@ -178,10 +178,11 @@ func ValidateDuplicates(collector *ErrorCollector, model *openfgav1.Authorizatio
 			Module: typeDef.GetMetadata().GetModule(),
 		}
 		typeTracker.CheckAndAddType(typeName, collector, meta, lines)
+		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 		if metaProto := typeDef.GetMetadata(); metaProto != nil {
 			for relationName, relationMetadata := range metaProto.GetRelations() {
-				CheckForDuplicateTypeNamesInRelation(collector, relationMetadata, relationName, typeName, meta, lines)
-				CheckForDuplicatesInRelation(collector, typeDef, relationName, lines)
+				CheckForDuplicateTypeNamesInRelation(collector, relationMetadata, relationName, typeName, meta, typeLineIndex, lines)
+				CheckForDuplicatesInRelation(collector, typeDef, relationName, typeLineIndex, lines)
 			}
 		}
 	}

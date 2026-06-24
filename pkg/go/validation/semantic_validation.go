@@ -99,13 +99,24 @@ func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.Auth
 	}
 	validator := NewSemanticValidator(model)
 	for _, typeDef := range model.GetTypeDefinitions() {
+		typeName := typeDef.GetType()
+		// When a type is declared more than once, the relation maps are built
+		// last-wins (matching the reference's typeMap). Only the winning
+		// definition is validated; a shadowed duplicate's relations are resolved
+		// against the winning type by the reference, so validating the winning
+		// definition alone avoids spurious reference errors. The duplicate-type
+		// error itself is reported by duplicate detection.
+		if winning := validator.GetTypeDefinition(typeName); winning != nil && winning != typeDef {
+			continue
+		}
+
 		if meta := typeDef.GetMetadata(); meta != nil {
 			for relationName, relationMetadata := range meta.GetRelations() {
-				validateTypeRestrictions(collector, validator, typeDef.GetType(), relationName, relationMetadata, lines)
+				validateTypeRestrictions(collector, validator, typeName, relationName, relationMetadata, lines)
 			}
 		}
 		for relationName, userset := range typeDef.GetRelations() {
-			validateUsersetReferences(collector, validator, typeDef.GetType(), relationName, userset, lines)
+			validateUsersetReferences(collector, validator, typeName, relationName, userset, lines)
 		}
 	}
 }

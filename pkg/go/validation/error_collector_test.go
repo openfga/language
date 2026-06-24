@@ -213,7 +213,7 @@ func TestErrorCollector_RaiseInvalidType(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "type 'unknown_type' is not defined.", errors[0].Message)
+	assert.Equal(t, "`unknown_type` is not a valid type.", errors[0].Message)
 	assert.Equal(t, InvalidType, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "unknown_type", errors[0].Metadata.Symbol)
 }

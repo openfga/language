@@ -166,7 +166,7 @@ func TestValidateRelationReferences(t *testing.T) {
 
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
-		assert.Equal(t, UndefinedType, errors[0].Metadata.ErrorType)
+		assert.Equal(t, InvalidType, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_type")
 	})
 
@@ -196,7 +196,7 @@ func TestValidateRelationReferences(t *testing.T) {
 
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
-		assert.Equal(t, UndefinedRelation, errors[0].Metadata.ErrorType)
+		assert.Equal(t, InvalidRelationType, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_relation")
 	})
 
@@ -223,7 +223,7 @@ func TestValidateRelationReferences(t *testing.T) {
 
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
-		assert.Equal(t, UndefinedRelation, errors[0].Metadata.ErrorType)
+		assert.Equal(t, MissingDefinition, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_relation")
 	})
 
@@ -270,7 +270,7 @@ func TestValidateRelationReferences(t *testing.T) {
 
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
-		assert.Equal(t, UndefinedRelation, errors[0].Metadata.ErrorType)
+		assert.Equal(t, MissingDefinition, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_relation")
 	})
 }

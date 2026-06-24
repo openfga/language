@@ -176,20 +176,21 @@ func (c *ErrorCollector) RaiseNoEntryPoint(symbol, typeName string, meta *Meta, 
 // RaiseInvalidRelationOnTupleset raises an error for invalid relation on tupleset.
 func (c *ErrorCollector) RaiseInvalidRelationOnTupleset(symbol, typeName, typeDef, relationName,
 	offendingRelation, parent string, lineIndex *int, meta *Meta) {
-	message := fmt.Sprintf("the relation '%s' is not valid on type '%s'.", offendingRelation, typeDef)
+	message := fmt.Sprintf("the `%s` relation definition on type `%s` is not valid: `%s` does not exist on `%s`, which is of type `%s`.",
+		offendingRelation, typeDef, offendingRelation, parent, typeName)
 	c.addError(message, InvalidRelationOnTupleset, symbol, lineIndex, meta, nil)
 }
 
 // RaiseInvalidTypeRelation raises an error for invalid type relation.
 func (c *ErrorCollector) RaiseInvalidTypeRelation(symbol, typeName, relationName, offendingRelation,
 	offendingType string, lineIndex *int, meta *Meta) {
-	message := fmt.Sprintf("the relation '%s' does not exist on type '%s'.", offendingRelation, offendingType)
+	message := fmt.Sprintf("`%s` is not a valid relation for `%s`.", offendingRelation, typeName)
 	c.addError(message, InvalidRelationType, symbol, lineIndex, meta, nil)
 }
 
 // RaiseInvalidType raises an error for invalid type.
 func (c *ErrorCollector) RaiseInvalidType(symbol, typeName, relation string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("type '%s' is not defined.", symbol)
+	message := fmt.Sprintf("`%s` is not a valid type.", symbol)
 	c.addError(message, InvalidType, symbol, lineIndex, meta, nil)
 }
 

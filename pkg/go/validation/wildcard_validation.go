@@ -103,19 +103,13 @@ func validateTupleToUsersetOperation(collector *ErrorCollector, validator *Seman
 	if tuplesetRelation == "" {
 		return
 	}
+	// Whether the tupleset/computed relations exist is validated in the
+	// relation-reference pass (semantic_validation.go). Here we only check that
+	// an existing tupleset relation is directly assignable.
 	if !validator.RelationDefined(typeName, tuplesetRelation) {
-		lineIndex := GetRelationLineNumber(relationName, lines, nil)
-		collector.RaiseUndefinedRelation(tuplesetRelation, typeName, relationName, typeName, meta, lineIndex)
 		return
 	}
 	validateTuplesetDirectAssignment(collector, validator, typeName, tuplesetRelation, relationName, meta, lines)
-
-	if computedRelation := ttu.GetComputedUserset().GetRelation(); computedRelation != "" {
-		if !validator.RelationDefined(typeName, computedRelation) {
-			lineIndex := GetRelationLineNumber(relationName, lines, nil)
-			collector.RaiseUndefinedRelation(computedRelation, typeName, relationName, typeName, meta, lineIndex)
-		}
-	}
 }
 
 func validateTuplesetDirectAssignment(collector *ErrorCollector, validator *SemanticValidator,

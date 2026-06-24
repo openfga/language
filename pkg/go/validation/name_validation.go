@@ -33,9 +33,11 @@ func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int
 		return false
 	}
 
-	// Then check regex pattern
-	if !validateFieldValue(fmt.Sprintf("^%s$", ValidationRegexRules.Type), typeName) {
-		collector.RaiseInvalidName(typeName, ValidationRegexRules.Type, nil, lineIndex, meta)
+	// Then check regex pattern. The clause passed to the error is the full
+	// anchored rule, matching the reference implementation's reported rule.
+	typeRule := fmt.Sprintf("^%s$", ValidationRegexRules.Type)
+	if !validateFieldValue(typeRule, typeName) {
+		collector.RaiseInvalidName(typeName, typeRule, nil, lineIndex, meta)
 		return false
 	}
 
@@ -51,9 +53,11 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 		return false
 	}
 
-	// Then check regex pattern
-	if !validateFieldValue(fmt.Sprintf("^%s$", ValidationRegexRules.Relation), relationName) {
-		collector.RaiseInvalidName(relationName, ValidationRegexRules.Relation, &typeName, lineIndex, meta)
+	// Then check regex pattern. The clause passed to the error is the full
+	// anchored rule, matching the reference implementation's reported rule.
+	relationRule := fmt.Sprintf("^%s$", ValidationRegexRules.Relation)
+	if !validateFieldValue(relationRule, relationName) {
+		collector.RaiseInvalidName(relationName, relationRule, &typeName, lineIndex, meta)
 		return false
 	}
 
@@ -62,8 +66,9 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 
 // ValidateConditionName validates a condition name with regex pattern.
 func ValidateConditionName(conditionName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
-	if !validateFieldValue(fmt.Sprintf("^%s$", ValidationRegexRules.Condition), conditionName) {
-		collector.RaiseInvalidName(conditionName, ValidationRegexRules.Condition, nil, lineIndex, meta)
+	conditionRule := fmt.Sprintf("^%s$", ValidationRegexRules.Condition)
+	if !validateFieldValue(conditionRule, conditionName) {
+		collector.RaiseInvalidName(conditionName, conditionRule, nil, lineIndex, meta)
 		return false
 	}
 

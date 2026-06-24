@@ -1,8 +1,6 @@
 package validation
 
 import (
-	"strings"
-
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -199,11 +197,12 @@ func (cov *ComplexOperationValidator) getTypeMeta(typeName string) *Meta {
 	return &Meta{}
 }
 
-// stubs required by validateUnionSemantics / validateIntersectionSemantics — no-op for now.
 func (cov *ComplexOperationValidator) checkSubsumingUnionMembers(_ *ErrorCollector, _, _ string, _ *openfgav1.Usersets, _ []string) {
-}
-func (cov *ComplexOperationValidator) checkRedundantIntersectionMembers(_ *ErrorCollector, _, _ string, _ *openfgav1.Usersets, _ []string) {
+	// Would check for cases like [user:*, user] where the wildcard subsumes the
+	// specific relation. This requires detailed analysis of type restrictions.
 }
 
-// Keep strings import used — referenced only by RaiseImpossibleIntersection in error_collector.go.
-var _ = strings.Join
+func (cov *ComplexOperationValidator) checkRedundantIntersectionMembers(_ *ErrorCollector, _, _ string, _ *openfgav1.Usersets, _ []string) {
+	// Would check for intersection members that don't restrict the result, e.g.
+	// intersecting with `this`, which adds no restriction.
+}

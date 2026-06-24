@@ -55,6 +55,7 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 	}
 
 	ve.runSchemaValidation()
+	ve.runNameValidation()
 	ve.runDuplicateDetection()
 
 	if !options.SkipSemanticValidation {
@@ -78,6 +79,10 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 
 func (ve *ValidationEngine) runSchemaValidation() {
 	ValidateSchemaVersion(ve.collector, ve.model, ve.lines)
+}
+
+func (ve *ValidationEngine) runNameValidation() {
+	ValidateNames(ve.collector, ve.model, ve.lines)
 }
 
 func (ve *ValidationEngine) runDuplicateDetection() {

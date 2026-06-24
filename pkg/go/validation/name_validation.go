@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
 // ValidationRegexRules contains the regex rules for validation
@@ -173,5 +175,42 @@ func ValidateNameRules(collector *ErrorCollector, typeName string, relationNames
 	for _, relationName := range relationNames {
 		relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
 		ValidateRelationName(relationName, typeName, collector, relationLineIndex, meta)
+	}
+}
+
+// ValidateNames checks every type, relation, and condition name in the model
+// against the reserved-keyword and naming-rule constraints. It mirrors the name
+// validation performed in the JS reference implementation's populateRelations.
+func ValidateNames(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+	if model == nil {
+		return
+	}
+
+	for _, typeDef := range model.GetTypeDefinitions() {
+		typeName := typeDef.GetType()
+		if typeName == "" {
+			continue
+		}
+		meta := &Meta{
+			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
+			Module: typeDef.GetMetadata().GetModule(),
+		}
+
+		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
+		ValidateTypeName(typeName, collector, typeLineIndex, meta)
+
+		for relationName := range typeDef.GetRelations() {
+			relationLineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
+			ValidateRelationName(relationName, typeName, collector, relationLineIndex, meta)
+		}
+	}
+
+	for conditionName, condition := range model.GetConditions() {
+		conditionLineIndex := GetConditionLineNumber(conditionName, lines, nil)
+		meta := &Meta{
+			File:   condition.GetMetadata().GetSourceInfo().GetFile(),
+			Module: condition.GetMetadata().GetModule(),
+		}
+		ValidateConditionName(conditionName, collector, conditionLineIndex, meta)
 	}
 }

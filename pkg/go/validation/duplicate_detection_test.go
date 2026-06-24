@@ -63,7 +63,7 @@ func TestDuplicateTypeTracker_CheckAndAddType(t *testing.T) {
 				for _, err := range errors {
 					if err.Metadata.Symbol == tt.expectedDuplicate {
 						assert.Equal(t, DuplicatedError, err.Metadata.ErrorType)
-						assert.Contains(t, err.Message, "defined more than once")
+						assert.Contains(t, err.Message, "is a duplicate")
 						found = true
 						break
 					}
@@ -175,7 +175,7 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 
 			if tt.expectedErrorCount > 0 {
 				assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
-				assert.Contains(t, errors[0].Message, "defined more than once")
+				assert.Contains(t, errors[0].Message, "is a duplicate")
 			}
 		})
 	}
@@ -608,7 +608,7 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
-		assert.Contains(t, errors[0].Message, "defined more than once")
+		assert.Contains(t, errors[0].Message, "is a duplicate")
 	})
 
 	t.Run("Duplicate Type Restriction Detection", func(t *testing.T) {

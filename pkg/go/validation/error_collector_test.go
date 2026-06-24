@@ -157,7 +157,7 @@ func TestErrorCollector_RaiseDuplicateTypeName(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "the type definition 'document' is defined more than once.", errors[0].Message)
+	assert.Equal(t, "the type `document` is a duplicate.", errors[0].Message)
 	assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "document", errors[0].Metadata.Symbol)
 }
@@ -171,7 +171,7 @@ func TestErrorCollector_RaiseDuplicateTypeRestriction(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "the type restriction 'user' in relation 'viewer' of type 'document' is defined more than once.", errors[0].Message)
+	assert.Equal(t, "the type restriction `user` is a duplicate in the relation `viewer`.", errors[0].Message)
 	assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "user", errors[0].Metadata.Symbol)
 }

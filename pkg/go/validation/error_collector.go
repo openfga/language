@@ -126,14 +126,13 @@ func (c *ErrorCollector) RaiseTupleUsersetRequiresDirect(symbol, typeName, relat
 
 // RaiseDuplicateTypeName raises a duplicate type name error.
 func (c *ErrorCollector) RaiseDuplicateTypeName(symbol string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("the type definition '%s' is defined more than once.", symbol)
+	message := fmt.Sprintf("the type `%s` is a duplicate.", symbol)
 	c.addError(message, DuplicatedError, symbol, lineIndex, meta, nil)
 }
 
 // RaiseDuplicateTypeRestriction raises a duplicate type restriction error.
 func (c *ErrorCollector) RaiseDuplicateTypeRestriction(symbol, relationName, typeName string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("the type restriction '%s' in relation '%s' of type '%s' is defined more than once.",
-		symbol, relationName, typeName)
+	message := fmt.Sprintf("the type restriction `%s` is a duplicate in the relation `%s`.", symbol, relationName)
 	c.addError(message, DuplicatedError, symbol, lineIndex, meta, nil)
 }
 
@@ -235,7 +234,7 @@ func (c *ErrorCollector) RaiseMaximumOneDirectRelationship(symbol string, lineIn
 // RaiseInvalidConditionNameInParameter raises an error for invalid condition names.
 func (c *ErrorCollector) RaiseInvalidConditionNameInParameter(symbol, typeName, relationName, conditionName string,
 	meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("condition parameter name '%s' is invalid.", conditionName)
+	message := fmt.Sprintf("`%s` is not a defined condition in the model.", conditionName)
 	c.addError(message, ConditionNotDefined, symbol, lineIndex, meta, nil)
 }
 

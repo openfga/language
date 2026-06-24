@@ -249,7 +249,7 @@ func (c *ErrorCollector) RaiseInvalidConditionNameInParameter(symbol, typeName, 
 
 // RaiseUnusedCondition raises an error for unused conditions.
 func (c *ErrorCollector) RaiseUnusedCondition(symbol string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("condition '%s' is defined but not used.", symbol)
+	message := fmt.Sprintf("`%s` condition is not used in the model.", symbol)
 	c.addError(message, ConditionNotUsed, symbol, lineIndex, meta, nil)
 }
 

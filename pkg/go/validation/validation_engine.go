@@ -110,6 +110,7 @@ func (ve *ValidationEngine) runMultiFileValidation() {
 func (ve *ValidationEngine) runConditionValidation() {
 	ValidateConditionReferences(ve.collector, ve.model, ve.lines)
 	ValidateConditionConsistency(ve.collector, ve.model, ve.lines)
+	ValidateUnusedConditions(ve.collector, ve.model, ve.lines)
 }
 
 // ValidateModel is a convenience function that validates a model with default options.

@@ -293,7 +293,7 @@ func TestErrorCollector_RaiseUnusedCondition(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "condition 'unused_condition' is defined but not used.", errors[0].Message)
+	assert.Equal(t, "`unused_condition` condition is not used in the model.", errors[0].Message)
 	assert.Equal(t, ConditionNotUsed, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "unused_condition", errors[0].Metadata.Symbol)
 }

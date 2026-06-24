@@ -228,7 +228,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 		assert.Equal(t, ConditionNotUsed, errors[0].Metadata.ErrorType)
 		assert.Equal(t, "unused_condition", errors[0].Metadata.Symbol)
 		assert.Contains(t, errors[0].Message, "unused_condition")
-		assert.Contains(t, errors[0].Message, "defined but not used")
+		assert.Contains(t, errors[0].Message, "is not used in the model")
 	})
 
 	t.Run("Multiple unused conditions", func(t *testing.T) {

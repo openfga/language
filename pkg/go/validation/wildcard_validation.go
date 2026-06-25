@@ -11,7 +11,14 @@ func ValidateWildcardUsage(collector *ErrorCollector, model *openfgav1.Authoriza
 	if model == nil {
 		return
 	}
-	validator := NewSemanticValidator(model)
+	validateWildcardUsage(collector, NewSemanticValidator(model), lines)
+}
+
+func validateWildcardUsage(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+	model := validator.model
+	if model == nil {
+		return
+	}
 	for _, typeDef := range model.GetTypeDefinitions() {
 		if typeDef.GetMetadata() == nil {
 			continue
@@ -60,7 +67,14 @@ func ValidateTupleToUsersetRequirements(collector *ErrorCollector, model *openfg
 	if model == nil {
 		return
 	}
-	validator := NewSemanticValidator(model)
+	validateTupleToUsersetRequirements(collector, NewSemanticValidator(model), lines)
+}
+
+func validateTupleToUsersetRequirements(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+	model := validator.model
+	if model == nil {
+		return
+	}
 	for _, typeDef := range model.GetTypeDefinitions() {
 		for relationName, userset := range typeDef.GetRelations() {
 			validateTupleToUsersetInUserset(collector, validator, typeDef.GetType(), relationName, userset, lines)

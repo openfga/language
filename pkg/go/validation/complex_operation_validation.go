@@ -11,9 +11,13 @@ type ComplexOperationValidator struct {
 }
 
 func NewComplexOperationValidator(model *openfgav1.AuthorizationModel) *ComplexOperationValidator {
+	return newComplexOperationValidator(NewSemanticValidator(model))
+}
+
+func newComplexOperationValidator(validator *SemanticValidator) *ComplexOperationValidator {
 	return &ComplexOperationValidator{
-		model:     model,
-		validator: NewSemanticValidator(model),
+		model:     validator.model,
+		validator: validator,
 	}
 }
 
@@ -22,7 +26,15 @@ func ValidateComplexOperations(collector *ErrorCollector, model *openfgav1.Autho
 	if model == nil {
 		return
 	}
-	opValidator := NewComplexOperationValidator(model)
+	validateComplexOperations(collector, NewSemanticValidator(model), lines)
+}
+
+func validateComplexOperations(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+	model := validator.model
+	if model == nil {
+		return
+	}
+	opValidator := newComplexOperationValidator(validator)
 	for _, typeDef := range model.GetTypeDefinitions() {
 		for relationName, userset := range typeDef.GetRelations() {
 			opValidator.validateUsersetOperations(collector, typeDef.GetType(), relationName, userset, lines)

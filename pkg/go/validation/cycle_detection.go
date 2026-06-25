@@ -33,7 +33,14 @@ func ValidateCyclesAndEntryPoints(collector *ErrorCollector, model *openfgav1.Au
 	if model == nil {
 		return
 	}
-	validator := NewSemanticValidator(model)
+	validateCyclesAndEntryPoints(collector, NewSemanticValidator(model), lines)
+}
+
+func validateCyclesAndEntryPoints(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+	model := validator.model
+	if model == nil {
+		return
+	}
 	detector := NewCycleDetector(validator)
 
 	for _, typeDef := range model.GetTypeDefinitions() {

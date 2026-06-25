@@ -97,7 +97,14 @@ func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.Auth
 	if model == nil {
 		return
 	}
-	validator := NewSemanticValidator(model)
+	validateRelationReferences(collector, NewSemanticValidator(model), lines)
+}
+
+func validateRelationReferences(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+	model := validator.model
+	if model == nil {
+		return
+	}
 	for _, typeDef := range model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
 		// When a type is declared more than once, the relation maps are built

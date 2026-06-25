@@ -11,6 +11,10 @@ type ValidationEngine struct {
 	model     *openfgav1.AuthorizationModel
 	lines     []string
 	collector *ErrorCollector
+	// semantic and condition index the model once and are shared across every
+	// phase that needs them, rather than each phase rebuilding its own.
+	semantic  *SemanticValidator
+	condition *ConditionValidator
 }
 
 // EngineOptions configures validation behavior.
@@ -29,7 +33,12 @@ func DefaultEngineOptions() *EngineOptions {
 func NewValidationEngine(model *openfgav1.AuthorizationModel, dslContent string) *ValidationEngine {
 	lines := strings.Split(dslContent, "\n")
 	collector := NewErrorCollector(lines)
-	return &ValidationEngine{model: model, lines: lines, collector: collector}
+	ve := &ValidationEngine{model: model, lines: lines, collector: collector}
+	if model != nil {
+		ve.semantic = NewSemanticValidator(model)
+		ve.condition = NewConditionValidator(model)
+	}
+	return ve
 }
 
 // ValidateDSL validates a DSL model with all available validations.
@@ -65,7 +74,7 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 	// reference implementation's modelValidation, which skips the later passes
 	// once any error has been recorded.
 	if !options.SkipSemanticValidation {
-		ValidateRelationReferences(ve.collector, ve.model, ve.lines)
+		validateRelationReferences(ve.collector, ve.semantic, ve.lines)
 	}
 
 	if !ve.collector.HasErrors() {
@@ -74,14 +83,14 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 
 	if !ve.collector.HasErrors() {
 		if !options.SkipSemanticValidation {
-			ValidateCyclesAndEntryPoints(ve.collector, ve.model, ve.lines)
-			ValidateTupleToUsersetRequirements(ve.collector, ve.model, ve.lines)
+			validateCyclesAndEntryPoints(ve.collector, ve.semantic, ve.lines)
+			validateTupleToUsersetRequirements(ve.collector, ve.semantic, ve.lines)
 		}
 		if !options.SkipComplexOperationValidation {
-			ve.runComplexOperationValidation()
+			validateComplexOperations(ve.collector, ve.semantic, ve.lines)
 		}
 		if !options.SkipWildcardValidation {
-			ve.runWildcardValidation()
+			validateWildcardUsage(ve.collector, ve.semantic, ve.lines)
 		}
 	}
 
@@ -109,22 +118,14 @@ func (ve *ValidationEngine) runDuplicateDetection() {
 	ValidateDuplicates(ve.collector, ve.model, ve.lines)
 }
 
-func (ve *ValidationEngine) runComplexOperationValidation() {
-	ValidateComplexOperations(ve.collector, ve.model, ve.lines)
-}
-
-func (ve *ValidationEngine) runWildcardValidation() {
-	ValidateWildcardUsage(ve.collector, ve.model, ve.lines)
-}
-
 func (ve *ValidationEngine) runMultiFileValidation() {
 	ValidateMultiFileConsistency(ve.collector, ve.model, ve.lines)
 }
 
 func (ve *ValidationEngine) runConditionValidation() {
-	ValidateConditionReferences(ve.collector, ve.model, ve.lines)
+	validateConditionReferences(ve.collector, ve.condition, ve.lines)
 	ValidateConditionConsistency(ve.collector, ve.model, ve.lines)
-	ValidateUnusedConditions(ve.collector, ve.model, ve.lines)
+	validateUnusedConditions(ve.collector, ve.condition, ve.lines)
 }
 
 // ValidateModel is a convenience function that validates a model with default options.

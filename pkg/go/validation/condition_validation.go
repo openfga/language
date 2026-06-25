@@ -94,7 +94,10 @@ func ValidateUnusedConditions(collector *ErrorCollector, model *openfgav1.Author
 	if model == nil {
 		return
 	}
-	validator := NewConditionValidator(model)
+	validateUnusedConditions(collector, NewConditionValidator(model), lines)
+}
+
+func validateUnusedConditions(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
 	for conditionName, condition := range validator.definedConds {
 		if !validator.usedConds[conditionName] {
 			lineIndex := GetConditionLineNumber(conditionName, lines, nil)
@@ -112,7 +115,11 @@ func ValidateConditionReferences(collector *ErrorCollector, model *openfgav1.Aut
 	if model == nil {
 		return
 	}
-	validator := NewConditionValidator(model)
+	validateConditionReferences(collector, NewConditionValidator(model), lines)
+}
+
+func validateConditionReferences(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
+	model := validator.model
 	for conditionName := range validator.usedConds {
 		if _, exists := validator.definedConds[conditionName]; !exists {
 			for _, ref := range validator.conditionRefs[conditionName] {

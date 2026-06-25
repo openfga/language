@@ -80,13 +80,18 @@ func relationMeta(typeDef *openfgav1.TypeDefinition, relationName string) *Meta 
 // hasEntryPointOrLoop determines whether a rewrite reaches a concrete entry point.
 // visited tracks type#relation pairs already on the current traversal so that a
 // rewrite referencing a relation already being resolved is reported as a loop.
+//
+// Sibling branches (the this/ttu type loops, union/intersection children, and a
+// difference's base/subtract) each get an isolated copy of visited so one
+// branch's path can't poison another's loop check. The lone linear successor —
+// the computed-userset tail call — shares visited directly: it accumulates down
+// the chain to detect back-edges, and avoids an O(n²) copy on deep chains.
 func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
-	rewrite *openfgav1.Userset, visitedRecords map[string]map[string]bool) entryPointResult {
+	rewrite *openfgav1.Userset, visited map[string]map[string]bool) entryPointResult {
 	if relationName == "" || rewrite == nil {
 		return entryPointResult{}
 	}
 
-	visited := copyVisited(visitedRecords)
 	if visited[typeName] == nil {
 		visited[typeName] = map[string]bool{}
 	}
@@ -116,7 +121,7 @@ func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
 			if visited[decodedType][decodedRelation] {
 				continue
 			}
-			if cd.hasEntryPointOrLoop(decodedType, decodedRelation, assignable, visited).hasEntry {
+			if cd.hasEntryPointOrLoop(decodedType, decodedRelation, assignable, copyVisited(visited)).hasEntry {
 				return entryPointResult{hasEntry: true}
 			}
 		}
@@ -130,6 +135,7 @@ func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
 		if visited[typeName][computed] {
 			return entryPointResult{loop: true}
 		}
+		// Linear successor: share visited so the chain accumulates (see doc above).
 		return cd.hasEntryPointOrLoop(typeName, computed, cd.validator.GetRelationUserset(typeName, computed), visited)
 
 	case *openfgav1.Userset_TupleToUserset:
@@ -151,7 +157,7 @@ func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
 			if visited[assignableType][computed] {
 				continue
 			}
-			if cd.hasEntryPointOrLoop(assignableType, computed, assignable, visited).hasEntry {
+			if cd.hasEntryPointOrLoop(assignableType, computed, assignable, copyVisited(visited)).hasEntry {
 				return entryPointResult{hasEntry: true}
 			}
 		}
@@ -179,11 +185,11 @@ func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
 
 	case *openfgav1.Userset_Difference:
 		diff := rewrite.GetDifference()
-		base := cd.hasEntryPointOrLoop(typeName, relationName, diff.GetBase(), visited)
+		base := cd.hasEntryPointOrLoop(typeName, relationName, diff.GetBase(), copyVisited(visited))
 		if !base.hasEntry {
 			return entryPointResult{loop: base.loop}
 		}
-		subtract := cd.hasEntryPointOrLoop(typeName, relationName, diff.GetSubtract(), visited)
+		subtract := cd.hasEntryPointOrLoop(typeName, relationName, diff.GetSubtract(), copyVisited(visited))
 		if !subtract.hasEntry {
 			return entryPointResult{loop: subtract.loop}
 		}

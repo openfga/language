@@ -162,17 +162,15 @@ func TestYAMLTestRunner_ComprehensiveValidation(t *testing.T) {
 				passedTests++
 			case "FAIL":
 				failedTests++
-				if testing.Verbose() {
-					t.Logf("  ❌ FAIL: %s", result.Message)
-					for _, detail := range result.ErrorDetails {
-						t.Logf("    • %s", detail)
-					}
+				t.Errorf("❌ FAIL: %s: %s", testCase.Name, result.Message)
+				for _, detail := range result.ErrorDetails {
+					t.Errorf("    • %s", detail)
 				}
 			case "SKIPPED":
 				skippedTests++
 			case "ERROR":
 				errorTests++
-				t.Logf("  💥 ERROR: %s", result.Message)
+				t.Errorf("💥 ERROR: %s: %s", testCase.Name, result.Message)
 			}
 		}
 		
@@ -185,16 +183,11 @@ func TestYAMLTestRunner_ComprehensiveValidation(t *testing.T) {
 		t.Logf("  Failed: %d", failedTests)
 		t.Logf("  Skipped: %d", skippedTests)
 		t.Logf("  Errors: %d", errorTests)
-		
-		// For now, we don't fail the test if pass rate is low since we're still integrating
-		// In the future, we'd want a high pass rate to ensure parity with JS implementation
-		if passRate > 0 {
-			t.Logf("✅ Framework is working - found %d passing tests", passedTests)
-		}
-		
-		if failedTests > 0 {
-			t.Logf("🔧 Found %d failing tests - indicates areas for validation improvement", failedTests)
-		}
+
+		// Every non-skipped case must match the JS reference. Individual FAIL and
+		// ERROR cases already call t.Errorf above; this guards against a case
+		// silently vanishing (e.g. all cases skipped or none loaded).
+		require.Positive(t, passedTests, "expected passing semantic validation cases")
 	})
 }
 

@@ -147,6 +147,11 @@ func (ve *ValidationEngine) GetValidationSummary() ValidationSummary {
 		HasCriticalErrors: false,
 	}
 	for _, err := range errors {
+		if err == nil || err.Metadata == nil {
+			// Metadata is always set by the collector, but a directly-constructed
+			// error (e.g. in a consumer or test) could omit it; don't panic.
+			continue
+		}
 		summary.ErrorsByType[err.Metadata.ErrorType]++
 		if err.File != "" {
 			summary.ErrorsByFile[err.File]++
@@ -176,6 +181,7 @@ var criticalErrorTypes = map[ValidationErrorType]bool{
 	UndefinedRelation:     true,
 	InvalidRelationType:   true,
 	DuplicatedError:       true,
+	InvalidSchema:         true,
 	InvalidSchemaVersion:  true,
 	MultipleModulesInFile: true,
 }

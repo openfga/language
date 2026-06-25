@@ -123,6 +123,9 @@ func (cd *CycleDetector) hasEntryPointOrLoop(typeName, relationName string,
 			}
 			assignable := cd.validator.GetRelationUserset(decodedType, decodedRelation)
 			if assignable == nil {
+				// Matches validate-dsl.ts: returns on the first missing reference
+				// rather than trying later types. Unreachable in practice (the
+				// reference pass + cascade gate run first).
 				return entryPointResult{}
 			}
 			if visited[decodedType][decodedRelation] {

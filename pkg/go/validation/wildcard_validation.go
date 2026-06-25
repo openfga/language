@@ -38,15 +38,18 @@ func validateWildcardInRelation(collector *ErrorCollector, validator *SemanticVa
 		File:   relationMetadata.GetSourceInfo().GetFile(),
 		Module: relationMetadata.GetModule(),
 	}
+	// Anchor relation line lookups to this type's declaration so the correct
+	// `define` is found when several types share a relation name.
+	typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 	for _, typeRestriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
 		if typeRestriction.GetType() == "" {
 			continue
 		}
 		if typeRestriction.GetWildcard() != nil {
-			validateWildcardRestriction(collector, validator, typeRestriction, relationName, typeName, meta, lines)
+			validateWildcardRestriction(collector, validator, typeRestriction, relationName, typeName, meta, lines, typeLineIndex)
 			// wildcard and explicit relation together is invalid
 			if typeRestriction.GetRelation() != "" {
-				lineIndex := GetRelationLineNumber(relationName, lines, nil)
+				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				collector.RaiseInvalidWildcardUsage(typeRestriction.GetType(), relationName, typeName,
 					"wildcard cannot be used with specific relation", meta, lineIndex)
 			}
@@ -55,9 +58,9 @@ func validateWildcardInRelation(collector *ErrorCollector, validator *SemanticVa
 }
 
 func validateWildcardRestriction(collector *ErrorCollector, validator *SemanticValidator,
-	typeRestriction *openfgav1.RelationReference, relationName, typeName string, meta *Meta, lines []string) {
+	typeRestriction *openfgav1.RelationReference, relationName, typeName string, meta *Meta, lines []string, typeLineIndex *int) {
 	if !validator.TypeDefined(typeRestriction.GetType()) {
-		lineIndex := GetRelationLineNumber(relationName, lines, nil)
+		lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 		collector.RaiseUndefinedType(typeRestriction.GetType(), relationName, typeName, meta, lineIndex)
 	}
 }

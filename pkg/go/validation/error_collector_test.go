@@ -327,9 +327,9 @@ func TestErrorCollector_RaiseDifferentNestedConditionName(t *testing.T) {
 
 	errors := collector.GetErrors()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "the 'condition1' condition has a different nested condition name ('condition2').", errors[0].Message)
+	assert.Equal(t, "condition key is `condition1` but nested name property is condition2", errors[0].Message)
 	assert.Equal(t, DifferentNestedConditionName, errors[0].Metadata.ErrorType)
-	assert.Equal(t, "condition1", errors[0].Metadata.Symbol)
+	assert.Equal(t, "condition2", errors[0].Metadata.Symbol)
 }
 
 func TestErrorCollector_RaiseMultipleModulesInSingleFile(t *testing.T) {

@@ -314,10 +314,11 @@ func (c *ErrorCollector) RaiseUnusedCondition(symbol string, meta *Meta, lineInd
 	c.addError(message, ConditionNotUsed, symbol, lineIndex, meta, nil)
 }
 
-// RaiseDifferentNestedConditionName raises an error for mismatched condition names.
+// RaiseDifferentNestedConditionName raises an error for a condition whose nested
+// name property differs from its map key. The message mirrors the reference.
 func (c *ErrorCollector) RaiseDifferentNestedConditionName(condition, nestedConditionName string) {
-	message := fmt.Sprintf("the '%s' condition has a different nested condition name ('%s').", condition, nestedConditionName)
-	c.addError(message, DifferentNestedConditionName, condition, nil, nil, nil)
+	message := fmt.Sprintf("condition key is `%s` but nested name property is %s", condition, nestedConditionName)
+	c.addError(message, DifferentNestedConditionName, nestedConditionName, nil, nil, nil)
 }
 
 // RaiseMultipleModulesInSingleFile raises an error for multiple modules in single file.

@@ -398,10 +398,10 @@ func TestValidateConditionConsistency(t *testing.T) {
 		assert.Empty(t, errors)
 	})
 
-	t.Run("Anonymous condition detected", func(t *testing.T) {
+	t.Run("Nested name differs from map key", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			Conditions: map[string]*openfgav1.Condition{
-				"": {Name: ""}, // Anonymous condition
+				"in_office": {Name: "different_name"},
 			},
 		}
 
@@ -411,6 +411,20 @@ func TestValidateConditionConsistency(t *testing.T) {
 		errors := collector.GetErrors()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, DifferentNestedConditionName, errors[0].Metadata.ErrorType)
+		assert.Equal(t, "condition key is `in_office` but nested name property is different_name", errors[0].Message)
+	})
+
+	t.Run("Empty name matching empty key is consistent", func(t *testing.T) {
+		model := &openfgav1.AuthorizationModel{
+			Conditions: map[string]*openfgav1.Condition{
+				"": {Name: ""},
+			},
+		}
+
+		collector := NewErrorCollector(nil)
+		ValidateConditionConsistency(collector, model, nil)
+
+		assert.Empty(t, collector.GetErrors())
 	})
 }
 

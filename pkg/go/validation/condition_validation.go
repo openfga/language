@@ -100,7 +100,11 @@ func validateConditionReferences(collector *ErrorCollector, validator *Condition
 	for conditionName := range validator.usedConds {
 		if _, exists := validator.definedConds[conditionName]; !exists {
 			for _, ref := range validator.conditionRefs[conditionName] {
-				lineIndex := GetRelationLineNumber(ref.RelationName, lines, nil)
+				// Anchor the relation line lookup to the referencing type's
+				// declaration so the correct `define` is found when several types
+				// share a relation name, matching the reference.
+				typeLineIndex := GetTypeLineNumber(ref.TypeName, lines, nil)
+				lineIndex := GetRelationLineNumber(ref.RelationName, lines, typeLineIndex)
 				var file, module string
 				for _, typeDef := range model.GetTypeDefinitions() {
 					if typeDef.GetType() == ref.TypeName {
@@ -116,14 +120,19 @@ func validateConditionReferences(collector *ErrorCollector, validator *Condition
 	}
 }
 
-// ValidateConditionConsistency validates condition name consistency.
+// ValidateConditionConsistency checks that each condition's nested name property
+// matches its map key, mirroring the reference (validate-dsl.ts): the nested name
+// is compared to the key and any difference is reported.
 func ValidateConditionConsistency(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	for _, condition := range model.GetConditions() {
-		if condition.GetName() == "" {
-			collector.RaiseDifferentNestedConditionName("", "anonymous_condition")
+	for conditionKey, condition := range model.GetConditions() {
+		if condition == nil {
+			continue
+		}
+		if condition.GetName() != conditionKey {
+			collector.RaiseDifferentNestedConditionName(conditionKey, condition.GetName())
 		}
 	}
 }

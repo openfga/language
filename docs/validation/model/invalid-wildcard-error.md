@@ -30,7 +30,7 @@ type user
 
 type document
   relations
-    define viewer: [user:*]  # Error: Invalid wildcard syntax
+    define viewer: [*]  # Error: wildcard is missing its type
 ```
 
 ### Wildcard in wrong context:

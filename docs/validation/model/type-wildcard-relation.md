@@ -140,7 +140,7 @@ type document
 
 - [`invalid-wildcard-error`](./invalid-wildcard-error.md) - General wildcard usage issues
 - [`assignable-relation-must-have-type`](./assignable-relation-must-have-type.md) - Type requirement issues
-- [`allowed-type-schema-10`](./allowed-type-schema-10.md) - Schema version compatibility
+- [`schema-version-unsupported`](./schema-version-unsupported.md) - Schema version compatibility
 
 ## Implementation Notes
 

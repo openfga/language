@@ -127,7 +127,7 @@ define admin: [user:*, *]   # Mixed invalid syntax
 ## Related Errors
 
 - [`type-wildcard-relation`](./type-wildcard-relation.md) - Wildcard and relation conflicts
-- [`allowed-type-schema-10`](./allowed-type-schema-10.md) - Schema version requirements
+- [`schema-version-unsupported`](./schema-version-unsupported.md) - Schema version requirements
 - [`assignable-relation-must-have-type`](./assignable-relation-must-have-type.md) - Type requirement issues
 
 ## Implementation Notes

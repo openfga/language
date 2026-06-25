@@ -44,8 +44,6 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `condition-not-used` | Condition | Defined condition is never used | [condition-not-used.md](./condition-not-used.md) |
 | `different-nested-condition-name` | Condition | Condition name mismatch in nested structure | [different-nested-condition-name.md](./different-nested-condition-name.md) |
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
-| `module-split-across-files` | Multi-file | Module definition split across multiple files | [module-split-across-files.md](./module-split-across-files.md) |
-| `cross-module-reference` | Multi-file | Reference crosses module boundaries | [cross-module-reference.md](./cross-module-reference.md) |
 | `invalid-schema` | Schema | Invalid schema structure | [invalid-schema.md](./invalid-schema.md) |
 | `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
 

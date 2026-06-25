@@ -123,8 +123,6 @@ type document
 
 ## Related Errors
 
-- [`module-split-across-files`](./module-split-across-files.md) - When single module spans multiple files
-- [`cross-module-reference`](./cross-module-reference.md) - Invalid references between modules
 - [`invalid-syntax`](./invalid-syntax.md) - Syntax issues in module declarations
 
 ## Implementation Notes

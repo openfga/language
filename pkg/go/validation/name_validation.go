@@ -24,6 +24,22 @@ var ValidationRegexRules = struct {
 	Object:    "[^\\s]{2,256}",
 }
 
+// The anchored type, relation, and condition name rules are fixed, so compile
+// them once. compiledNameRules caches them by their anchored rule string, which
+// is also the clause reported in the error, so validateFieldValue can look up
+// the compiled pattern without recompiling on every name.
+var (
+	typeNameRule      = fmt.Sprintf("^%s$", ValidationRegexRules.Type)
+	relationNameRule  = fmt.Sprintf("^%s$", ValidationRegexRules.Relation)
+	conditionNameRule = fmt.Sprintf("^%s$", ValidationRegexRules.Condition)
+
+	compiledNameRules = map[string]*regexp.Regexp{
+		typeNameRule:      regexp.MustCompile(typeNameRule),
+		relationNameRule:  regexp.MustCompile(relationNameRule),
+		conditionNameRule: regexp.MustCompile(conditionNameRule),
+	}
+)
+
 // ValidateTypeName validates a type name with both regex and reserved keyword checking
 // This enhances the basic regex validation with semantic checks
 func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
@@ -35,9 +51,8 @@ func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
-	typeRule := fmt.Sprintf("^%s$", ValidationRegexRules.Type)
-	if !validateFieldValue(typeRule, typeName) {
-		collector.RaiseInvalidName(typeName, typeRule, nil, lineIndex, meta)
+	if !validateFieldValue(typeNameRule, typeName) {
+		collector.RaiseInvalidName(typeName, typeNameRule, nil, lineIndex, meta)
 		return false
 	}
 
@@ -55,9 +70,8 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
-	relationRule := fmt.Sprintf("^%s$", ValidationRegexRules.Relation)
-	if !validateFieldValue(relationRule, relationName) {
-		collector.RaiseInvalidName(relationName, relationRule, &typeName, lineIndex, meta)
+	if !validateFieldValue(relationNameRule, relationName) {
+		collector.RaiseInvalidName(relationName, relationNameRule, &typeName, lineIndex, meta)
 		return false
 	}
 
@@ -66,18 +80,20 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 
 // ValidateConditionName validates a condition name with regex pattern.
 func ValidateConditionName(conditionName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
-	conditionRule := fmt.Sprintf("^%s$", ValidationRegexRules.Condition)
-	if !validateFieldValue(conditionRule, conditionName) {
-		collector.RaiseInvalidName(conditionName, conditionRule, nil, lineIndex, meta)
+	if !validateFieldValue(conditionNameRule, conditionName) {
+		collector.RaiseInvalidName(conditionName, conditionNameRule, nil, lineIndex, meta)
 		return false
 	}
 
 	return true
 }
 
-// validateFieldValue validates a field against a regex pattern
-// This is equivalent to the validateFieldValue function in the JS implementation
+// validateFieldValue validates a field against a regex rule. Fixed rules are
+// served from the precompiled cache; any other rule is compiled on demand.
 func validateFieldValue(rule, value string) bool {
+	if regex, ok := compiledNameRules[rule]; ok {
+		return regex.MatchString(value)
+	}
 	regex, err := regexp.Compile(rule)
 	if err != nil {
 		return false

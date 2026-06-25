@@ -9,6 +9,28 @@ import (
 
 
 
+func TestWordIndex(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawLine string
+		symbol  string
+		want    int
+	}{
+		{"empty symbol returns 0", "define viewer: [user]", "", 0},
+		{"not found returns 0", "define viewer: [user]", "missing", 0},
+		{"word-boundary match", "define viewer: [user]", "user", 16},
+		{"prefers boundary over earlier substring", "define ownerx: owner", "owner", 15},
+		{"falls back to substring when no boundary", "type usergroup", "user", 5},
+		{"non-word symbol falls back to substring", "define x: [user:*]", "user:*", 11},
+		{"first occurrence wins on boundary", "a or a", "a", 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, wordIndex(tt.rawLine, tt.symbol))
+		})
+	}
+}
+
 func TestNewErrorCollector(t *testing.T) {
 	lines := []string{"line 1", "line 2", "line 3"}
 	collector := NewErrorCollector(lines)

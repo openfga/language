@@ -17,6 +17,10 @@ var SupportedSchemaVersions = map[string]bool{
 	SchemaVersion12: true,
 }
 
+// multiSpaceRegex collapses runs of whitespace when normalizing a DSL line for
+// schema-version matching. Hoisted so it is compiled once, not per line.
+var multiSpaceRegex = regexp.MustCompile(`\s{2,}`)
+
 func IsValidSchemaVersion(version string) bool {
 	return SupportedSchemaVersions[version]
 }
@@ -29,7 +33,7 @@ func GetSchemaLineNumber(schemaVersion string, lines []string) *int {
 	regex := regexp.MustCompile(pattern)
 	for i, line := range lines {
 		normalizedLine := strings.TrimSpace(line)
-		normalizedLine = regexp.MustCompile(`\s{2,}`).ReplaceAllString(normalizedLine, " ")
+		normalizedLine = multiSpaceRegex.ReplaceAllString(normalizedLine, " ")
 		if regex.MatchString(normalizedLine) {
 			return &i
 		}

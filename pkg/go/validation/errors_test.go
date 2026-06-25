@@ -57,14 +57,14 @@ func TestValidationError_Error(t *testing.T) {
 }
 
 func TestValidationError_String(t *testing.T) {
-	error := &ValidationError{
+	valErr := &ValidationError{
 		Message: "test error",
 		Line:    &LineRange{Start: 1, End: 1},
 		Column:  &ColumnRange{Start: 5, End: 10},
 	}
 
 	// String() should return the same as Error()
-	assert.Equal(t, error.Error(), error.String())
+	assert.Equal(t, valErr.Error(), valErr.String())
 }
 
 func TestValidationErrors_Error(t *testing.T) {

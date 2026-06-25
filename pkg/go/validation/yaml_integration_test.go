@@ -22,7 +22,7 @@ func TestYAMLTestRunner_Basic(t *testing.T) {
 			return
 		}
 		
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Greater(t, len(suites), 0, "Should find YAML test files")
 		
 		// Check for expected YAML files
@@ -97,7 +97,7 @@ func TestYAMLTestRunner_SemanticValidation(t *testing.T) {
 			t.Logf("Running test case %d: %s", i+1, testCase.Name)
 			
 			result, err := runner.RunTestCase(testCase)
-			assert.NoError(t, err, "Should not error when running test case")
+			require.NoError(t, err, "Should not error when running test case")
 			
 			if result != nil {
 				switch result.Status {

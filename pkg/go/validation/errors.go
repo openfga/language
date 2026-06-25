@@ -90,6 +90,8 @@ func (e *ValidationError) String() string {
 }
 
 // ValidationErrors represents a collection of validation errors.
+//
+//nolint:errname // plural name intentionally describes a collection of errors
 type ValidationErrors struct {
 	Errors []*ValidationError `json:"errors"`
 }
@@ -120,8 +122,8 @@ func (e *ValidationErrors) Add(err *ValidationError) {
 }
 
 // GetErrors returns a slice of all validation errors.
-func (ve *ValidationErrors) GetErrors() []*ValidationError {
-	return ve.Errors
+func (e *ValidationErrors) GetErrors() []*ValidationError {
+	return e.Errors
 }
 
 // NewValidationErrors creates a new ValidationErrors instance from a slice of ValidationError

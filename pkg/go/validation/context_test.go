@@ -201,22 +201,22 @@ func TestValidationContext_DeepCopyVisitedRelations(t *testing.T) {
 	ctx.MarkRelationVisited("user", "member")
 
 	// Create deep copy
-	copy := ctx.DeepCopyVisitedRelations()
+	copied := ctx.DeepCopyVisitedRelations()
 
 	// Verify copy has same content
-	assert.True(t, copy["document"]["viewer"])
-	assert.True(t, copy["document"]["admin"])
-	assert.True(t, copy["user"]["member"])
+	assert.True(t, copied["document"]["viewer"])
+	assert.True(t, copied["document"]["admin"])
+	assert.True(t, copied["user"]["member"])
 
 	// Modify original
 	ctx.MarkRelationVisited("document", "owner")
 
 	// Verify copy is not affected
-	assert.False(t, copy["document"]["owner"])
+	assert.False(t, copied["document"]["owner"])
 	assert.True(t, ctx.IsRelationVisited("document", "owner"))
 
 	// Modify copy
-	copy["user"]["admin"] = true
+	copied["user"]["admin"] = true
 
 	// Verify original is not affected
 	assert.False(t, ctx.IsRelationVisited("user", "admin"))
@@ -329,11 +329,11 @@ func TestValidationContext_Integration(t *testing.T) {
 	assert.True(t, ctx.HasMultipleModulesInFile("permissions.fga"))
 
 	// Test deep copy doesn't affect original
-	copy := ctx.DeepCopyVisitedRelations()
+	copied := ctx.DeepCopyVisitedRelations()
 	// Initialize user map if it doesn't exist
-	if copy["user"] == nil {
-		copy["user"] = make(map[string]bool)
+	if copied["user"] == nil {
+		copied["user"] = make(map[string]bool)
 	}
-	copy["user"]["member"] = true
+	copied["user"]["member"] = true
 	assert.False(t, ctx.IsRelationVisited("user", "member"))
 }

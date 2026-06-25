@@ -59,11 +59,7 @@ func (cov *ComplexOperationValidator) validateUsersetOperationsWithVisited(colle
 	if diff := userset.GetDifference(); diff != nil {
 		cov.validateDifferenceOperationWithVisited(collector, typeName, relationName, diff, lines, visited)
 	}
-	cov.validateNestedOperationsWithVisited(collector, typeName, relationName, userset, lines, visited)
-}
-
-func (cov *ComplexOperationValidator) validateUnionOperation(collector *ErrorCollector, typeName, relationName string, union *openfgav1.Usersets, lines []string) {
-	cov.validateUnionOperationWithVisited(collector, typeName, relationName, union, lines, make(map[string]bool))
+	cov.validateNestedOperationsWithVisited(collector, typeName, userset, lines, visited)
 }
 
 func (cov *ComplexOperationValidator) validateUnionOperationWithVisited(collector *ErrorCollector, typeName, relationName string, union *openfgav1.Usersets, lines []string, visited map[string]bool) {
@@ -77,10 +73,6 @@ func (cov *ComplexOperationValidator) validateUnionOperationWithVisited(collecto
 	cov.validateUnionSemantics(collector, typeName, relationName, union, lines)
 }
 
-func (cov *ComplexOperationValidator) validateIntersectionOperation(collector *ErrorCollector, typeName, relationName string, intersection *openfgav1.Usersets, lines []string) {
-	cov.validateIntersectionOperationWithVisited(collector, typeName, relationName, intersection, lines, make(map[string]bool))
-}
-
 func (cov *ComplexOperationValidator) validateIntersectionOperationWithVisited(collector *ErrorCollector, typeName, relationName string, intersection *openfgav1.Usersets, lines []string, visited map[string]bool) {
 	if intersection == nil || len(intersection.GetChild()) == 0 {
 		return
@@ -90,10 +82,6 @@ func (cov *ComplexOperationValidator) validateIntersectionOperationWithVisited(c
 		cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, child, lines, visited)
 	}
 	cov.validateIntersectionSemantics(collector, typeName, relationName, intersection, lines)
-}
-
-func (cov *ComplexOperationValidator) validateDifferenceOperation(collector *ErrorCollector, typeName, relationName string, difference *openfgav1.Difference, lines []string) {
-	cov.validateDifferenceOperationWithVisited(collector, typeName, relationName, difference, lines, make(map[string]bool))
 }
 
 func (cov *ComplexOperationValidator) validateDifferenceOperationWithVisited(collector *ErrorCollector, typeName, relationName string, difference *openfgav1.Difference, lines []string, visited map[string]bool) {
@@ -160,11 +148,7 @@ func (cov *ComplexOperationValidator) validateDifferenceSemantics(collector *Err
 	}
 }
 
-func (cov *ComplexOperationValidator) validateNestedOperations(collector *ErrorCollector, typeName, relationName string, userset *openfgav1.Userset, lines []string) {
-	cov.validateNestedOperationsWithVisited(collector, typeName, relationName, userset, lines, make(map[string]bool))
-}
-
-func (cov *ComplexOperationValidator) validateNestedOperationsWithVisited(collector *ErrorCollector, typeName, relationName string, userset *openfgav1.Userset, lines []string, visited map[string]bool) {
+func (cov *ComplexOperationValidator) validateNestedOperationsWithVisited(collector *ErrorCollector, typeName string, userset *openfgav1.Userset, lines []string, visited map[string]bool) {
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
 		if targetRelation := ttu.GetComputedUserset().GetRelation(); targetRelation != "" {
 			key := typeName + "#" + targetRelation

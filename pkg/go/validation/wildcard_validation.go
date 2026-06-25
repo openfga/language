@@ -142,14 +142,14 @@ func validateTuplesetDirectAssignment(collector *ErrorCollector, validator *Sema
 	}
 }
 
-func (ec *ErrorCollector) RaiseInvalidWildcardUsage(typeName, relationName, parentTypeName, reason string, meta *Meta, lineIndex *int) {
+func (c *ErrorCollector) RaiseInvalidWildcardUsage(typeName, relationName, parentTypeName, reason string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Invalid wildcard usage for type '%s' in relation '%s' of type '%s': %s",
 		typeName, relationName, parentTypeName, reason)
-	ec.addError(message, InvalidWildcardError, typeName, lineIndex, meta, nil)
+	c.addError(message, InvalidWildcardError, typeName, lineIndex, meta, nil)
 }
 
-func (ec *ErrorCollector) RaiseTuplesetNotDirect(tuplesetRelation, typeName, parentRelation string, meta *Meta, lineIndex *int) {
+func (c *ErrorCollector) RaiseTuplesetNotDirect(tuplesetRelation, typeName, parentRelation string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Tupleset relation '%s' on type '%s' must allow direct assignment (used in relation '%s')",
 		tuplesetRelation, typeName, parentRelation)
-	ec.addError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil)
+	c.addError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil)
 }

@@ -118,7 +118,7 @@ func (c *ErrorCollector) addError(message string, errorType ValidationErrorType,
 		// Set file in both metadata and error for consistency with JS implementation
 	}
 
-	error := &ValidationError{
+	validationErr := &ValidationError{
 		Message:  message,
 		Line:     line,
 		Column:   column,
@@ -126,10 +126,10 @@ func (c *ErrorCollector) addError(message string, errorType ValidationErrorType,
 	}
 
 	if meta != nil {
-		error.File = meta.File
+		validationErr.File = meta.File
 	}
 
-	c.errors = append(c.errors, error)
+	c.errors = append(c.errors, validationErr)
 }
 
 // RaiseInvalidName raises an invalid name error.
@@ -184,15 +184,15 @@ func (c *ErrorCollector) RaiseDuplicateTypeRestriction(symbol, relationName, typ
 }
 
 // RaiseUndefinedType raises an error for undefined type references.
-func (ec *ErrorCollector) RaiseUndefinedType(typeName, relationName, parentTypeName string, meta *Meta, lineIndex *int) {
+func (c *ErrorCollector) RaiseUndefinedType(typeName, relationName, parentTypeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Type '%s' is not defined (referenced in relation '%s' of type '%s')", typeName, relationName, parentTypeName)
-	ec.addError(message, UndefinedType, typeName, lineIndex, meta, nil)
+	c.addError(message, UndefinedType, typeName, lineIndex, meta, nil)
 }
 
 // RaiseUndefinedRelation raises an error for undefined relation references.
-func (ec *ErrorCollector) RaiseUndefinedRelation(relationName, typeName, parentRelation, parentTypeName string, meta *Meta, lineIndex *int) {
+func (c *ErrorCollector) RaiseUndefinedRelation(relationName, typeName, parentRelation, parentTypeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Relation '%s' is not defined on type '%s' (referenced in relation '%s' of type '%s')", relationName, typeName, parentRelation, parentTypeName)
-	ec.addError(message, UndefinedRelation, relationName, lineIndex, meta, nil)
+	c.addError(message, UndefinedRelation, relationName, lineIndex, meta, nil)
 }
 
 // RaiseDuplicateType raises a duplicate type error in relation.

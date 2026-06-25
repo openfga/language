@@ -20,10 +20,10 @@ func IsReservedKeyword(keyword string) bool {
 
 // IsReservedTypeName checks if a type name is reserved.
 func IsReservedTypeName(typeName string) bool {
-	return typeName == KeywordSelf || typeName == KeywordThis
+	return IsReservedKeyword(typeName)
 }
 
 // IsReservedRelationName checks if a relation name is reserved.
 func IsReservedRelationName(relationName string) bool {
-	return relationName == KeywordSelf || relationName == KeywordThis
+	return IsReservedKeyword(relationName)
 }

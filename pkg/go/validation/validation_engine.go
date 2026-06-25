@@ -166,18 +166,22 @@ type ValidationSummary struct {
 	HasCriticalErrors bool
 }
 
+// criticalErrorTypes is the fixed set of error types considered critical. It is
+// a package-level lookup table so it isn't rebuilt on every isCriticalError call
+// (which runs once per error while summarizing).
+var criticalErrorTypes = map[ValidationErrorType]bool{
+	RelationNoEntrypoint:  true,
+	CyclicRelation:        true,
+	UndefinedType:         true,
+	UndefinedRelation:     true,
+	InvalidRelationType:   true,
+	DuplicatedError:       true,
+	InvalidSchemaVersion:  true,
+	MultipleModulesInFile: true,
+}
+
 func (ve *ValidationEngine) isCriticalError(errorType ValidationErrorType) bool {
-	criticalErrors := map[ValidationErrorType]bool{
-		RelationNoEntrypoint:  true,
-		CyclicRelation:        true,
-		UndefinedType:         true,
-		UndefinedRelation:     true,
-		InvalidRelationType:   true,
-		DuplicatedError:       true,
-		InvalidSchemaVersion:  true,
-		MultipleModulesInFile: true,
-	}
-	return criticalErrors[errorType]
+	return criticalErrorTypes[errorType]
 }
 
 // CreateValidationReport creates a detailed validation report.

@@ -81,41 +81,26 @@ func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.
 	meta := &Meta{File: file, Module: module}
 
 	if union := relation.GetUnion(); union != nil {
-		checkDuplicatesInUnion(collector, union, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
+		checkDuplicatesInOperands(collector, union, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if intersection := relation.GetIntersection(); intersection != nil {
-		checkDuplicatesInIntersection(collector, intersection, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
+		checkDuplicatesInOperands(collector, intersection, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if diff := relation.GetDifference(); diff != nil {
 		checkDuplicatesInDifference(collector, diff, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 }
 
-func checkDuplicatesInUnion(collector *ErrorCollector, union *openfgav1.Usersets,
+// checkDuplicatesInOperands flags duplicate operands within a union or
+// intersection. Both operators store their members as a *openfgav1.Usersets and
+// treat a repeated member as redundant, so they share this check.
+func checkDuplicatesInOperands(collector *ErrorCollector, operands *openfgav1.Usersets,
 	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
-	if union == nil {
+	if operands == nil {
 		return
 	}
 	relationDefs := make(map[string]bool)
-	for _, child := range union.GetChild() {
-		if relationDef := getRelationDefName(child); relationDef != "" {
-			if relationDefs[relationDef] {
-				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
-			} else {
-				relationDefs[relationDef] = true
-			}
-		}
-	}
-}
-
-func checkDuplicatesInIntersection(collector *ErrorCollector, intersection *openfgav1.Usersets,
-	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
-	if intersection == nil {
-		return
-	}
-	relationDefs := make(map[string]bool)
-	for _, child := range intersection.GetChild() {
+	for _, child := range operands.GetChild() {
 		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)

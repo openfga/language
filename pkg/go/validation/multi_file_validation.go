@@ -133,7 +133,7 @@ func (mfv *MultiFileValidator) GetModuleForCondition(conditionName string) strin
 	return mfv.conditionModuleMap[conditionName]
 }
 func (mfv *MultiFileValidator) GetFilesForModule(moduleName string) []string {
-	files := make([]string, 0)
+	files := make([]string, 0, len(mfv.moduleToFileMap[moduleName]))
 	if moduleFiles, exists := mfv.moduleToFileMap[moduleName]; exists {
 		for file := range moduleFiles {
 			files = append(files, file)
@@ -142,7 +142,7 @@ func (mfv *MultiFileValidator) GetFilesForModule(moduleName string) []string {
 	return files
 }
 func (mfv *MultiFileValidator) GetModulesForFile(filePath string) []string {
-	modules := make([]string, 0)
+	modules := make([]string, 0, len(mfv.fileToModuleMap[filePath]))
 	if fileModules, exists := mfv.fileToModuleMap[filePath]; exists {
 		for module := range fileModules {
 			modules = append(modules, module)

@@ -87,12 +87,13 @@ func validateTupleToUsersetInUserset(collector *ErrorCollector, validator *Seman
 	if userset == nil {
 		return
 	}
-	meta := &Meta{
-		File:   validator.GetTypeDefinition(typeName).GetMetadata().GetSourceInfo().GetFile(),
-		Module: validator.GetTypeDefinition(typeName).GetMetadata().GetModule(),
-	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
+		typeDef := validator.GetTypeDefinition(typeName)
+		meta := &Meta{
+			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
+			Module: typeDef.GetMetadata().GetModule(),
+		}
 		validateTupleToUsersetOperation(collector, validator, typeName, relationName, ttu, meta, lines)
 	}
 	if union := userset.GetUnion(); union != nil {

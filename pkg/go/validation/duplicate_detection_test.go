@@ -580,7 +580,7 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 			collector := NewErrorCollector(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			checkDuplicatesInUnion(collector, tt.union, "test_relation", "test_type", meta, nil, nil)
+			checkDuplicatesInOperands(collector, tt.union, "test_relation", "test_type", meta, nil, nil)
 
 			errors := collector.GetErrors()
 			assert.Len(t, errors, tt.expectedErrorCount)

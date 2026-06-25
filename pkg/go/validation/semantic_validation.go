@@ -14,8 +14,8 @@ type SemanticValidator struct {
 func NewSemanticValidator(model *openfgav1.AuthorizationModel) *SemanticValidator {
 	validator := &SemanticValidator{
 		model:       model,
-		typeMap:     make(map[string]*openfgav1.TypeDefinition),
-		relationMap: make(map[string]map[string]*openfgav1.Userset),
+		typeMap:     make(map[string]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions())),
+		relationMap: make(map[string]map[string]*openfgav1.Userset, len(model.GetTypeDefinitions())),
 	}
 	validator.buildMaps()
 	return validator
@@ -28,7 +28,7 @@ func (sv *SemanticValidator) buildMaps() {
 	for _, typeDef := range sv.model.GetTypeDefinitions() {
 		sv.typeMap[typeDef.GetType()] = typeDef
 		if relations := typeDef.GetRelations(); len(relations) > 0 {
-			sv.relationMap[typeDef.GetType()] = make(map[string]*openfgav1.Userset)
+			sv.relationMap[typeDef.GetType()] = make(map[string]*openfgav1.Userset, len(relations))
 			for relationName, userset := range relations {
 				sv.relationMap[typeDef.GetType()][relationName] = userset
 			}

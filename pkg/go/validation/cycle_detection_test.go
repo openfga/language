@@ -197,3 +197,86 @@ func TestHasEntryPointOrLoop(t *testing.T) {
 		assert.True(t, res.loop)
 	})
 }
+
+func TestHasEntryPointOrLoop_TupleToUserset(t *testing.T) {
+	// ttuModel builds: document has `parent` (a tupleset assignable to folder) and
+	// `viewer: viewer from parent`. folderViewer controls whether the resolved
+	// folder#viewer relation exists / has an entry point.
+	ttuModel := func(folderViewer *openfgav1.Userset) *openfgav1.AuthorizationModel {
+		folder := &openfgav1.TypeDefinition{
+			Type: "folder",
+			Metadata: &openfgav1.Metadata{
+				Relations: map[string]*openfgav1.RelationMetadata{
+					"viewer": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "user"}}},
+				},
+			},
+			Relations: map[string]*openfgav1.Userset{},
+		}
+		if folderViewer != nil {
+			folder.Relations["viewer"] = folderViewer
+		} else {
+			delete(folder.Metadata.Relations, "viewer")
+		}
+		return &openfgav1.AuthorizationModel{
+			TypeDefinitions: []*openfgav1.TypeDefinition{
+				{
+					Type: "document",
+					Metadata: &openfgav1.Metadata{
+						Relations: map[string]*openfgav1.RelationMetadata{
+							"parent": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "folder"}}},
+						},
+					},
+					Relations: map[string]*openfgav1.Userset{
+						"parent": {Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
+						"viewer": {Userset: &openfgav1.Userset_TupleToUserset{
+							TupleToUserset: &openfgav1.TupleToUserset{
+								Tupleset:        &openfgav1.ObjectRelation{Relation: "parent"},
+								ComputedUserset: &openfgav1.ObjectRelation{Relation: "viewer"},
+							},
+						}},
+					},
+				},
+				folder,
+				{Type: "user"},
+			},
+		}
+	}
+
+	t.Run("TTU resolving to a direct assignment has an entry point", func(t *testing.T) {
+		// folder#viewer is directly assignable to user, so document#viewer reaches it.
+		model := ttuModel(&openfgav1.Userset{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}})
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		res := detector.hasEntry("document", "viewer")
+		assert.True(t, res.hasEntry)
+		assert.False(t, res.loop)
+		// folder#viewer is itself directly assignable to user, so it also has an entry point.
+		folderRes := detector.hasEntry("folder", "viewer")
+		assert.True(t, folderRes.hasEntry)
+		// document#parent is directly assignable to folder, so it also has an entry point.
+		parentRes := detector.hasEntry("document", "parent")
+		assert.True(t, parentRes.hasEntry)
+	})
+
+	t.Run("TTU whose computed relation is missing on the assignable type has no entry point", func(t *testing.T) {
+		// folder has no `viewer` relation at all, so the computed lookup is nil and
+		// the TTU branch skips it (the assignable == nil continue).
+		model := ttuModel(nil)
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		res := detector.hasEntry("document", "viewer")
+		assert.False(t, res.hasEntry)
+		assert.False(t, res.loop)
+	})
+
+	t.Run("TTU through a self-looping computed relation has no entry point", func(t *testing.T) {
+		// folder#viewer computes itself, so it never bottoms out at a concrete type.
+		// The TTU branch swallows the looping sub-result and reports no entry point.
+		model := ttuModel(&openfgav1.Userset{
+			Userset: &openfgav1.Userset_ComputedUserset{
+				ComputedUserset: &openfgav1.ObjectRelation{Relation: "viewer"},
+			},
+		})
+		detector := NewCycleDetector(NewSemanticValidator(model))
+		res := detector.hasEntry("document", "viewer")
+		assert.False(t, res.hasEntry)
+	})
+}

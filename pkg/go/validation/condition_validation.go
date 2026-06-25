@@ -47,9 +47,6 @@ func (cv *ConditionValidator) scanForConditionUsage() {
 				cv.scanRelationMetadataForConditions(typeDef.GetType(), relationName, relationMetadata)
 			}
 		}
-		for _, userset := range typeDef.GetRelations() {
-			cv.scanUsersetForConditions(userset)
-		}
 	}
 }
 
@@ -66,26 +63,6 @@ func (cv *ConditionValidator) scanRelationMetadataForConditions(typeName, relati
 				Context:      "type_restriction",
 			})
 		}
-	}
-}
-
-func (cv *ConditionValidator) scanUsersetForConditions(userset *openfgav1.Userset) {
-	if userset == nil {
-		return
-	}
-	if union := userset.GetUnion(); union != nil {
-		for _, child := range union.GetChild() {
-			cv.scanUsersetForConditions(child)
-		}
-	}
-	if intersection := userset.GetIntersection(); intersection != nil {
-		for _, child := range intersection.GetChild() {
-			cv.scanUsersetForConditions(child)
-		}
-	}
-	if diff := userset.GetDifference(); diff != nil {
-		cv.scanUsersetForConditions(diff.GetBase())
-		cv.scanUsersetForConditions(diff.GetSubtract())
 	}
 }
 

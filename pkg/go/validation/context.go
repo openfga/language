@@ -64,7 +64,7 @@ func (ctx *ValidationContext) AddModuleToFile(filename, module string) {
 }
 
 func (ctx *ValidationContext) GetModulesForFile(filename string) []string {
-	modules := make([]string, 0)
+	modules := make([]string, 0, len(ctx.FileToModuleMap[filename]))
 	if moduleMap := ctx.FileToModuleMap[filename]; moduleMap != nil {
 		for module := range moduleMap {
 			modules = append(modules, module)

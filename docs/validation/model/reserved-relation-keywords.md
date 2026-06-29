@@ -6,21 +6,17 @@
 
 ## Summary
 
-Relation names cannot use reserved keywords that have special meaning in OpenFGA's authorization language and system operations.
+Relation names cannot use the reserved keywords `self` or `this`, which have special meaning in OpenFGA's authorization language.
 
 ## Description
 
-OpenFGA reserves certain keywords for internal operations, language constructs, and future feature expansion. Using these reserved words as relation names can cause:
-- Parsing conflicts during DSL processing
-- Ambiguous references in authorization evaluation
-- Runtime errors during permission checks
-- Incompatibility with future OpenFGA versions
+OpenFGA reserves `self` and `this` because they carry special meaning in relation definitions (`this` refers to a relation's directly-assigned users). Using either as a relation name triggers this error.
 
-Reserved relation keywords include system identifiers, built-in operations, and terms that have special meaning in OpenFGA's relation resolution logic.
+These are the only reserved relation names. Operators that appear in the DSL grammar (`or`, `and`, `but not`, `from`, `define`, etc.) are handled by the parser and are not reported through this error.
 
 ## Example
 
-The following models would trigger this error:
+The following model would trigger this error:
 
 ```
 model
@@ -30,35 +26,14 @@ type user
 
 type document
   relations
-    define define: [user]     # Error: 'define' is a reserved keyword
-    define relation: [user]   # Error: 'relation' is a reserved keyword
-    define union: [user]      # Error: 'union' is a reserved keyword
-    define from: [user]       # Error: 'from' is a reserved keyword
+    define this: [user]  # Error: a relation cannot be named 'self' or 'this'
 ```
 
-**Error Message:** `Relation name 'define' is a reserved keyword and cannot be used`
+**Error Message:** `a relation cannot be named 'self' or 'this'.`
 
 ## Resolution
 
-Choose different relation names that don't conflict with reserved keywords:
-
-### Use descriptive, business-oriented names:
-
-```
-model
-  schema 1.1
-
-type user
-
-type document
-  relations
-    define definition: [user]      # Instead of 'define'
-    define association: [user]     # Instead of 'relation'
-    define combined_access: [user] # Instead of 'union'
-    define source_reference: [user] # Instead of 'from'
-```
-
-### Better domain-specific alternatives:
+Rename the relation to anything other than `self` or `this`:
 
 ```
 model
@@ -71,52 +46,20 @@ type document
     define viewer: [user]
     define editor: [user] or viewer
     define owner: [user] or editor
-    define admin: [user] or owner
 ```
 
 ### Steps to fix:
 
-1. **Identify the reserved keyword:**
-   - Check the error message for the specific reserved word
-   - Note which relation definition is using the reserved keyword
+1. **Locate the offending relation:**
+   - The error symbol is the reserved name (`self` or `this`).
 
-2. **Choose appropriate replacement:**
-   - Select names that reflect the relation's authorization purpose
-   - Use clear, business-domain terminology
-   - Avoid other reserved keywords and system terms
+2. **Rename it:**
+   - Choose a descriptive name that reflects the permission granted.
 
 3. **Update all references:**
-   - Change the relation definition
-   - Update any computed userset references to the renamed relation
-   - Update tuple-to-userset operations that reference the relation
-   - Verify no broken references remain
+   - Update any computed-userset or tuple-to-userset rewrites that referenced the renamed relation.
 
-4. **Test the model:**
-   - Validate the updated model
-   - Ensure authorization logic still works correctly
-
-## Common Reserved Keywords
-
-| Reserved Word | Alternative Names | Purpose |
-|---------------|-------------------|---------|
-| `define` | `definition`, `specification`, `rule` | Business rule definitions |
-| `relation` | `association`, `connection`, `link` | Business relationships |
-| `union` | `combined`, `merged`, `aggregate` | Combined permissions |
-| `intersection` | `shared`, `common`, `overlap` | Shared permissions |
-| `difference` | `exclusive`, `except`, `minus` | Exclusive permissions |
-| `from` | `via`, `through`, `source` | Relation traversal |
-| `this` | `direct`, `assigned`, `explicit` | Direct assignment |
-| `schema` | `version`, `structure`, `format` | Model structure |
-
-## TODO: Complete Reserved Keywords List
-
-<!-- TODO: Add comprehensive list of:
-- All reserved relation keywords across OpenFGA versions
-- Built-in operation keywords that cannot be used as relation names
-- Future reserved keywords for compatibility
-- Context-specific reserved terms
-- Language construct keywords that affect relation parsing
--->
+4. **Re-validate the model.**
 
 ## Best Practices for Relation Naming
 
@@ -129,7 +72,7 @@ type document
 ## Related Errors
 
 - [`reserved-type-keywords`](./reserved-type-keywords.md) - Reserved keywords for type names
-- [`self-error`](./self-error.md) - Specific reserved words 'self' and 'this'
+- [`self-error`](./self-error.md) - Reserved error code, not currently emitted
 - [`invalid-name`](./invalid-name.md) - General invalid naming issues
 
 ## Implementation Notes
@@ -139,4 +82,4 @@ This validation is enforced consistently across:
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java naming validation package
 
-The validation maintains a list of reserved keywords and checks all relation names against this list during the parsing phase.
+The validation checks each relation name against the reserved set (`self`, `this`) during the name-validation phase.

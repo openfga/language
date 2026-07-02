@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased](https://github.com/openfga/language/compare/pkg/go/v0.3.0...main)
+
 ## [0.3.0](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.3.0) (2026-06-16)
 
 > [!WARNING]  

@@ -6,7 +6,7 @@ public class Validator {
         public static final String TYPE = "[^:#@\\*\\s]{1,254}";
         public static final String RELATION = "[^:#@\\*\\s]{1,50}";
         public static final String CONDITION = "[^\\*\\s]{1,50}";
-        public static final String ID = "[^#:\\s*][a-zA-Z0-9_|*@.+/-]*";
+        public static final String ID = "[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*";
         public static final String OBJECT = "[^\\s]{2,256}";
     }
 

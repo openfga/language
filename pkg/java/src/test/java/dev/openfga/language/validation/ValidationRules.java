@@ -1,10 +1,17 @@
 package dev.openfga.language.validation;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import dev.openfga.language.util.TestsData;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ValidationRules {
 
@@ -43,31 +50,15 @@ public class ValidationRules {
         validatedBadStructure(Validator::validateObject);
     }
 
-    @Test
-    public void testValidateObjectId() {
-        // Valid cases
-        assertTrue(Validator.Regexes.objectId.matches("document1"));
-        assertTrue(Validator.Regexes.objectId.matches("doc_123"));
-        assertTrue(Validator.Regexes.objectId.matches("user@domain.com"));
-        assertTrue(Validator.Regexes.objectId.matches("file.name"));
-        assertTrue(Validator.Regexes.objectId.matches("data+set"));
-        assertTrue(Validator.Regexes.objectId.matches("pipe|char"));
-        assertTrue(Validator.Regexes.objectId.matches("dash-char"));
-        assertTrue(Validator.Regexes.objectId.matches("slash/char"));
-        assertTrue(Validator.Regexes.objectId.matches("a-b/c|d.e+f@g"));
-        assertTrue(Validator.Regexes.objectId.matches("star*char"));
-        assertTrue(Validator.Regexes.objectId.matches("underscore_"));
-        assertTrue(Validator.Regexes.objectId.matches("pipe|underscore_@domain.com"));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("objectIdValidationCases")
+    public void testValidateObjectId(String name, String objectId, boolean valid) {
+        assertEquals(valid, Validator.validateObjectId(objectId));
+    }
 
-        // Invalid cases
-        assertFalse(Validator.Regexes.objectId.matches("#document1"));
-        assertFalse(Validator.Regexes.objectId.matches(":doc123"));
-        assertFalse(Validator.Regexes.objectId.matches(" doc123"));
-        assertFalse(Validator.Regexes.objectId.matches("doc:123"));
-        assertFalse(Validator.Regexes.objectId.matches("doc#123"));
-        assertFalse(Validator.Regexes.objectId.matches("doc 123"));
-        assertFalse(Validator.Regexes.objectId.matches("doc:"));
-        assertFalse(Validator.Regexes.objectId.matches("    doc"));
+    private static Stream<Arguments> objectIdValidationCases() {
+        return TestsData.OBJECT_ID_VALIDATION_TEST_CASES.stream()
+                .map(testCase -> arguments(testCase.getName(), testCase.getObjectId(), testCase.isValid()));
     }
 
     @Test

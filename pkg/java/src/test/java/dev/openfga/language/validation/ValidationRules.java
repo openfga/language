@@ -52,6 +52,9 @@ public class ValidationRules {
         assertTrue(Validator.Regexes.objectId.matches("file.name"));
         assertTrue(Validator.Regexes.objectId.matches("data+set"));
         assertTrue(Validator.Regexes.objectId.matches("pipe|char"));
+        assertTrue(Validator.Regexes.objectId.matches("dash-char"));
+        assertTrue(Validator.Regexes.objectId.matches("slash/char"));
+        assertTrue(Validator.Regexes.objectId.matches("a-b/c|d.e+f@g"));
         assertTrue(Validator.Regexes.objectId.matches("star*char"));
         assertTrue(Validator.Regexes.objectId.matches("underscore_"));
         assertTrue(Validator.Regexes.objectId.matches("pipe|underscore_@domain.com"));

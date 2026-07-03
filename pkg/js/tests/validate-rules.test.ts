@@ -198,6 +198,18 @@ describe("Validation Rules", () => {
       expect(Validator.objectId("pipe|char")).toBeTruthy();
     });
 
+    it("should pass 'dash-char'", () => {
+      expect(Validator.objectId("dash-char")).toBeTruthy();
+    });
+
+    it("should pass 'slash/char'", () => {
+      expect(Validator.objectId("slash/char")).toBeTruthy();
+    });
+
+    it("should pass 'a-b/c|d.e+f@g'", () => {
+      expect(Validator.objectId("a-b/c|d.e+f@g")).toBeTruthy();
+    });
+
     it("should pass 'star*char'", () => {
       expect(Validator.objectId("star*char")).toBeTruthy();
     });

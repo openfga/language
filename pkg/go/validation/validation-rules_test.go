@@ -37,6 +37,9 @@ func TestValidateObjectID(t *testing.T) {
 		{"file.name", true},                   // Should pass valid ID with dot
 		{"data+set", true},                    // Should pass valid ID with plus
 		{"pipe|char", true},                   // Should pass valid ID with pipe
+		{"dash-char", true},                   // Should pass valid ID with dash
+		{"slash/char", true},                  // Should pass valid ID with slash
+		{"a-b/c|d.e+f@g", true},               // Should pass valid ID with mix of allowed chars
 		{"star*char", true},                   // Should pass valid ID with star
 		{"underscore_", true},                 // Should pass valid ID with underscore
 		{"pipe|underscore_@domain.com", true}, // Should pass valid complex ID

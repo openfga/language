@@ -20,6 +20,7 @@ public class TestsData {
             "../../tests/data/json-syntax-transformer-validation-cases.yaml";
     public static final String FGA_MOD_CASES_FILE = "../../tests/data/fga-mod-transformer-cases.yaml";
     public static final String JSON_VALIDATION_CASES_FILE = "../../tests/data/json-validation-cases.yaml";
+    public static final String OBJECT_ID_VALIDATION_CASES_FILE = "../../tests/data/object-id-validation-cases.yaml";
     public static final String SKIP_FILE = "test.skip";
     public static final String AUTHORIZATION_MODEL_JSON_FILE = "authorization-model.json";
     public static final String AUTHORIZATION_MODEL_DSL_FILE = "authorization-model.fga";
@@ -30,6 +31,8 @@ public class TestsData {
     public static final List<JsonSyntaxTestCase> JSON_SYNTAX_TEST_CASES = loadJsonSyntaxTestCases();
     public static final List<FgaModTestCase> FGA_MOD_TRANSFORM_TEST_CASES = loadFgaModTransformTestCases();
     public static final List<JsonValidationTestCase> JSON_VALIDATION_TEST_CASES = loadJsonValidationTestCases();
+    public static final List<ObjectIdValidationTestCase> OBJECT_ID_VALIDATION_TEST_CASES =
+            loadObjectIdValidationTestCases();
 
     private static List<ValidTransformerTestCase> loadValidTransformerTestCases() {
         var transformerCasesFolder = Paths.get(TRANSFORMER_CASES_FOLDER);
@@ -100,6 +103,16 @@ public class TestsData {
         var fgaModCasesFile = Paths.get(FGA_MOD_CASES_FILE);
         try {
             var yaml = Files.readString(fgaModCasesFile);
+            return YAML.parseList(yaml, new TypeReference<>() {});
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<ObjectIdValidationTestCase> loadObjectIdValidationTestCases() {
+        var objectIdValidationCasesFile = Paths.get(OBJECT_ID_VALIDATION_CASES_FILE);
+        try {
+            var yaml = Files.readString(objectIdValidationCasesFile);
             return YAML.parseList(yaml, new TypeReference<>() {});
         } catch (IOException e) {
             throw new RuntimeException(e);

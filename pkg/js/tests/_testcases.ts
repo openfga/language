@@ -55,6 +55,12 @@ interface FGAModFileTestCase extends Omit<ValidTestCase, "dsl"> {
   expected_errors?: FGAModFileValidationSingleError[];
 }
 
+interface ObjectIdValidationTestCase {
+  name: string;
+  object_id: string;
+  valid: boolean;
+}
+
 interface ModuleTestCase extends ValidTestCase {
   modules: ModuleFile[];
   dslWithSourceInfo?: string;
@@ -137,6 +143,12 @@ export function loadModFileTestCases(): FGAModFileTestCase[] {
   return yaml.parse(
     fs.readFileSync(path.join(__dirname, "../../../tests", "data", "fga-mod-transformer-cases.yaml"), "utf-8"),
   ) as FGAModFileTestCase[];
+}
+
+export function loadObjectIdValidationTestCases(): ObjectIdValidationTestCase[] {
+  return yaml.parse(
+    fs.readFileSync(path.join(__dirname, "../../../tests", "data", "object-id-validation-cases.yaml"), "utf-8"),
+  ) as ObjectIdValidationTestCase[];
 }
 
 export function loadModuleTestCases(): ModuleTestCase[] {

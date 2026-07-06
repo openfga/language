@@ -17,7 +17,7 @@
 * **language:** fix java lint issue ([23f369d](https://github.com/openfga/language/commit/23f369d63fddc45653f67177d8d42c9168e4f8d8))
 
 
-### [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/java/v0.2.0-beta.1...pkg/java/v0.2.0-beta.2) (2024-09-06)
+## [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/java/v0.2.0-beta.1...pkg/java/v0.2.0-beta.2) (2024-09-06)
 
 Added:
 - Add `getModuleForObjectTypeRelation` utility method (#336)

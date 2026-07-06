@@ -18,11 +18,6 @@
 * fix validation of object IDs ([#348](https://github.com/openfga/language/issues/348)) ([dc0d9f1](https://github.com/openfga/language/commit/dc0d9f1e83a164a95e2a0352128a3a8fb373250f))
 * **language:** fix java lint issue ([23f369d](https://github.com/openfga/language/commit/23f369d63fddc45653f67177d8d42c9168e4f8d8))
 
-
-### Miscellaneous
-
-* **pkg/java:** release 0.3.0 ([c7f5a0f](https://github.com/openfga/language/commit/c7f5a0f4016c40e62650434728bb1cf377ee9bda))
-
 ### [v0.2.0-beta.2](https://github.com/openfga/language/compare/pkg/java/v0.2.0-beta.1...pkg/java/v0.2.0-beta.2) (2024-09-06)
 
 Added:

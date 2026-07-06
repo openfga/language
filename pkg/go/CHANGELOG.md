@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/openfga/language/compare/pkg/go/v0.3.0...pkg/go/v0.4.0) (2026-07-06)
+
+
+### Added
+
+* allow '-' and '/' in object IDs ([#624](https://github.com/openfga/language/issues/624)) ([e9a8cce](https://github.com/openfga/language/commit/e9a8cce18daf33b83d394a20daf96292c1bf9a54)), closes [#437](https://github.com/openfga/language/issues/437)
+
+
+### Miscellaneous
+
+* **pkg/go:** release 0.4.0 ([0680d0c](https://github.com/openfga/language/commit/0680d0c0c4f0fc084d5be421e83a171796c4a6a8))
+
 ## [0.3.0](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.3.0) (2026-06-16)
 
 > [!WARNING]  

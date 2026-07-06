@@ -24,7 +24,7 @@ class Dsl {
             return -1;
         }
 
-        return IntStream.range(skipIndex, lines.length)
+        return IntStream.range(Math.max(skipIndex, 0), lines.length)
                 .filter(index -> predicate.test(lines[index]))
                 .findFirst()
                 .orElse(-1);
@@ -51,7 +51,8 @@ class Dsl {
     }
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
-        return findLine(line -> line.trim().matches("type " + typeName), skipIndex);
+        // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
+        return findLine(line -> line.trim().matches("type " + typeName + "\\s*(#.*)?"), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

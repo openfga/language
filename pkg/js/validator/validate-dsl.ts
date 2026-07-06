@@ -292,39 +292,41 @@ function hasEntryPointOrLoop(
 }
 
 const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {
-  if (!skipIndex) {
+  if (!skipIndex || skipIndex < 0) {
     skipIndex = 0;
   }
   if (!lines) {
     return undefined;
   }
-  return (
-    lines.slice(skipIndex).findIndex((line: string) => line.trim().startsWith(`condition ${conditionName}`)) + skipIndex
-  );
+  const index = lines
+    .slice(skipIndex)
+    .findIndex((line: string) => line.trim().startsWith(`condition ${conditionName}`));
+  return index === -1 ? -1 : index + skipIndex;
 };
 
 const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: number) => {
-  if (!skipIndex) {
+  if (!skipIndex || skipIndex < 0) {
     skipIndex = 0;
   }
   if (!lines) {
     return undefined;
   }
-  return lines.slice(skipIndex).findIndex((line: string) => line.trim().match(`^type ${typeName}$`)) + skipIndex;
+  // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
+  const index = lines.slice(skipIndex).findIndex((line: string) => line.trim().match(`^type ${typeName}\\s*(#.*)?$`));
+  return index === -1 ? -1 : index + skipIndex;
 };
 
 const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: number) => {
-  if (!skipIndex) {
+  if (!skipIndex || skipIndex < 0) {
     skipIndex = 0;
   }
   if (!lines) {
     return undefined;
   }
-  return (
-    lines
-      .slice(skipIndex)
-      .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`)) + skipIndex
-  );
+  const index = lines
+    .slice(skipIndex)
+    .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`));
+  return index === -1 ? -1 : index + skipIndex;
 };
 
 const getSchemaLineNumber = (schema: string, lines?: string[]) => {
@@ -332,7 +334,10 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
     return undefined;
   }
 
-  const index = lines.findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^schema ${schema}$`));
+  // Allow an optional trailing comment (e.g. `schema 1.1 # ...`) after the schema version.
+  const index = lines
+    .slice(0)
+    .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^schema ${schema}\\s*(#.*)?$`));
 
   // As findIndex returns -1 when it doesn't find the line, we want to return 0 instead
   if (index >= 1) {

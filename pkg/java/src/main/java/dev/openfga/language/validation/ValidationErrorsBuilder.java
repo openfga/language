@@ -25,7 +25,7 @@ class ValidationErrorsBuilder {
 
         var properties = new ErrorProperties(null, null, message);
 
-        if (lines != null) {
+        if (lines != null && lineIndex >= 0 && lineIndex < lines.length) {
             var rawLine = lines[lineIndex];
             var regex = Pattern.compile("\\b" + symbol + "\\b");
             var wordIdx = 0;

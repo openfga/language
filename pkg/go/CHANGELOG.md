@@ -8,10 +8,6 @@
 * allow '-' and '/' in object IDs ([#624](https://github.com/openfga/language/issues/624)) ([e9a8cce](https://github.com/openfga/language/commit/e9a8cce18daf33b83d394a20daf96292c1bf9a54)), closes [#437](https://github.com/openfga/language/issues/437)
 
 
-### Miscellaneous
-
-* **pkg/go:** release 0.3.1 ([437dbc4](https://github.com/openfga/language/commit/437dbc45ea68ff42b070a0f57c3faa78f423fc00))
-
 ## [0.3.0](https://github.com/openfga/language/compare/pkg/go/v0.2.1...pkg/go/v0.3.0) (2026-06-16)
 
 > [!WARNING]  

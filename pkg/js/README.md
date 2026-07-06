@@ -10,6 +10,10 @@ Javascript implementation of ANTLR Grammar for the OpenFGA DSL and parser from a
 npm install @openfga/syntax-transformer
 ```
 
+### Supported Node.js Versions
+
+For details on the supported Node.js versions and our support policy, see [SUPPORTED_RUNTIMES.md](./SUPPORTED_RUNTIMES.md).
+
 ## Usage
 
 ### Transformer

@@ -1,0 +1,67 @@
+name: Release Please
+
+on:
+  workflow_dispatch:
+    inputs:
+      target-package:
+        description: "Component to target"
+        type: choice
+        required: false
+        default: "all"
+        options:
+          - all
+          - pkg/go
+          - pkg/js
+          - pkg/java
+      bump-type:
+        description: "Version bump"
+        type: choice
+        required: false
+        default: "auto"
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+          - explicit
+      release-version:
+        description: "Explicit version (only used when bump-type=explicit)"
+        type: string
+        required: false
+        default: ""
+  # Phase 2 (automatic): publish releases when a release commit lands on main.
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Phase 1 runs on manual dispatch. Phase 2 runs on push to main ONLY when
+    # the merged commit is a release commit (`release: ...`). Routine merges to
+    # main therefore never invoke release-please, so they never spawn release
+    # PRs; only a merged release PR drives the publish path.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'release:')
+    uses: ./.github/workflows/reusable-release-please.yaml
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      trigger-event: ${{ github.event_name == 'workflow_dispatch' && 'workflow_dispatch' || 'push' }}
+      target-package: ${{ inputs.target-package || 'all' }}
+      bump-type: ${{ inputs.bump-type || 'auto' }}
+      release-version: ${{ inputs.release-version || '' }}
+    secrets:
+      RELEASER_APP_CLIENT_ID: ${{ secrets.RELEASER_APP_CLIENT_ID }}
+      RELEASER_APP_PRIVATE_KEY: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+

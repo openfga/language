@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": true,
+  "pull-request-title-pattern": "release: ${component} v${version}",
+  "skip-github-release": true,
+  "include-component-in-tag": true,
+  "tag-separator": "/",
+  "changelog-path": "CHANGELOG.md",
+  "changelog-type": "default",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "changelog-sections": [
+    { "type": "feat", "section": "Added", "hidden": false },
+    { "type": "fix", "section": "Fixed", "hidden": false },
+    { "type": "perf", "section": "Changed", "hidden": false },
+    { "type": "refactor", "section": "Changed", "hidden": false },
+    { "type": "revert", "section": "Removed", "hidden": false },
+    { "type": "docs", "section": "Documentation", "hidden": false },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true },
+    { "type": "release", "section": "Miscellaneous", "hidden": true }
+  ],
+  "packages": {
+    "pkg/go": {
+      "release-type": "go",
+      "component": "pkg/go",
+      "package-name": "pkg/go"
+    },
+    "pkg/js": {
+      "release-type": "node",
+      "component": "pkg/js",
+      "package-name": "@openfga/syntax-transformer"
+    },
+    "pkg/java": {
+      "release-type": "java",
+      "component": "pkg/java",
+      "package-name": "openfga-language",
+      "skip-snapshot": true,
+      "extra-files": ["build.gradle"]
+    }
+  }
+}
+
+
+

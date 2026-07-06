@@ -15,6 +15,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "gradle/actions/setup-gradle"
+        versions: [">= 6.0.0, < 6.1.0"]
     groups:
       dependencies:
         patterns:
@@ -33,6 +36,9 @@ updates:
     directory: "/pkg/js"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "eslint"
+        versions: [">=10.0.0 <11.0.0"]
     groups:
       dependencies:
         patterns:

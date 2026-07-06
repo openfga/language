@@ -20,7 +20,7 @@ func TestConcurrentUsersetWeights(t *testing.T) {
 	graph.AddNode("type2#rel2", "type2#rel2", SpecificTypeAndRelation)
 
 	graph.AddEdge("type#rel", "type2#rel2", DirectEdge, "rel", "", []string{NoCond})
-	edges, _ := graph.GetEdgesFromNodeId("type#rel")
+	edges, _ := graph.GetEdgesFromNodeID("type#rel")
 	edge := edges[0]
 
 	// Test concurrent writes to node

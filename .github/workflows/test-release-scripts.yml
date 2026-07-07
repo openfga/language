@@ -5,12 +5,16 @@ on:
     paths:
       - .github/workflows/scripts/parse-release.sh
       - .github/workflows/scripts/parse-release.test.sh
+      - .github/workflows/scripts/downstream-bump.sh
+      - .github/workflows/scripts/downstream-bump.test.sh
       - .github/workflows/test-release-scripts.yml
   push:
     branches: [main]
     paths:
       - .github/workflows/scripts/parse-release.sh
       - .github/workflows/scripts/parse-release.test.sh
+      - .github/workflows/scripts/downstream-bump.sh
+      - .github/workflows/scripts/downstream-bump.test.sh
 
 permissions:
   contents: read
@@ -22,4 +26,6 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Run parse-release tests
         run: bash .github/workflows/scripts/parse-release.test.sh
+      - name: Run downstream-bump tests
+        run: bash .github/workflows/scripts/downstream-bump.test.sh
 

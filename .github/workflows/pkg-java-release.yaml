@@ -8,7 +8,8 @@ on:
 
 jobs:
   test:
-    permissions: {}
+    permissions:
+      contents: read
     uses: ./.github/workflows/pkg-java-build.yaml
     secrets: inherit
 

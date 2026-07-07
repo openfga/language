@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## [0.2.2](https://github.com/openfga/language/compare/pkg/js/v0.2.1...pkg/js/v0.2.2) (2026-07-07)
+
+
+### Added
+
+* allow '-' and '/' in object IDs ([#624](https://github.com/openfga/language/issues/624)) ([e9a8cce](https://github.com/openfga/language/commit/e9a8cce18daf33b83d394a20daf96292c1bf9a54)), closes [#437](https://github.com/openfga/language/issues/437)
+
+
+### Fixed
+
+* don't use openfga/sdk for assertNever ([#539](https://github.com/openfga/language/issues/539)) ([efc2679](https://github.com/openfga/language/commit/efc2679964f754bbb5747ce8fe71372ddbcd472c))
+* **js:** resolve npm audit vulnerabilities ([#617](https://github.com/openfga/language/issues/617)) ([8582b6b](https://github.com/openfga/language/commit/8582b6b41832724f0c4c731911656cc30fe9f026))
+* pkg/js/package.json & pkg/js/package-lock.json to reduce vulnerabilities ([e70c0e2](https://github.com/openfga/language/commit/e70c0e2447b579a126b2f1090ecdcb9e9af587ec))
+
+
+### Miscellaneous
+
+* **pkg/js:** release 0.2.2 ([1b2a268](https://github.com/openfga/language/commit/1b2a268d33b3ae42c52bdb20d05c545825438280))
+
 ### [Unreleased](https://github.com/openfga/language/compare/pkg/js/v0.2.1...HEAD)
 
 ## pkg/js/v0.2.1

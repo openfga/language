@@ -23,11 +23,12 @@ export const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?
     return undefined;
   }
   // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
+  // The comment must be preceded by whitespace so a `#` glued to the name isn't treated as a comment.
   // Match the type name literally (it may contain regex metacharacters like `.`).
   const typePrefix = `${extension ? "extend " : ""}type ${typeName}`;
   const index = lines.slice(skipIndex).findIndex((line: string) => {
     const trimmed = line.trim();
-    return trimmed.startsWith(typePrefix) && /^\s*(#.*)?$/.test(trimmed.slice(typePrefix.length));
+    return trimmed.startsWith(typePrefix) && /^(\s+#.*)?$/.test(trimmed.slice(typePrefix.length));
   });
   return index === -1 ? -1 : index + skipIndex;
 };

@@ -54,11 +54,12 @@ class Dsl {
 
     public int getSchemaLineNumber(String schemaVersion) {
         // Allow only whitespace or a trailing comment after the version so
-        // e.g. `1.1` cannot match `schema 1.10`.
+        // e.g. `1.1` cannot match `schema 1.10`. A comment must be preceded by
+        // whitespace so a `#` glued to the version isn't treated as a comment.
         return findLine(
                 line -> line.trim()
                         .replaceAll(" {2,}", " ")
-                        .matches("schema " + Pattern.quote(schemaVersion) + "\\s*(#.*)?"),
+                        .matches("schema " + Pattern.quote(schemaVersion) + "(\\s+#.*)?"),
                 0);
     }
 
@@ -68,8 +69,9 @@ class Dsl {
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
         // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
+        // The comment must be preceded by whitespace so a `#` glued to the name isn't treated as a comment.
         // Quote the type name so regex metacharacters (e.g. `.`) are matched literally.
-        return findLine(line -> line.trim().matches("type " + Pattern.quote(typeName) + "\\s*(#.*)?"), skipIndex);
+        return findLine(line -> line.trim().matches("type " + Pattern.quote(typeName) + "(\\s+#.*)?"), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/oklog/ulid/v2"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/multi"
@@ -45,7 +44,12 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 			uniqueLabel := typeDef.GetType() + "#" + relation
 			parentNode := wb.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
 			rewrite := typeDef.GetRelations()[relation]
-			err := wgb.parseRewrite(wb, parentNode, model, rewrite, typeDef, relation)
+			// operatorIndex is a per-relation running counter incremented in DFS pre-order.
+			// It gives every operator node a deterministic, stable identifier, so the same
+			// model always produces the same operator labels no matter how many times the
+			// weighted graph is regenerated.
+			operatorIndex := 0
+			err := wgb.parseRewrite(wb, parentNode, model, rewrite, typeDef, relation, &operatorIndex)
 			if err != nil {
 				return nil, err
 			}
@@ -60,7 +64,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 	return wb, nil
 }
 
-func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string) error {
+func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string, operatorIndex *int) error {
 	var operator string
 	parentNodeName := fmt.Sprintf("%s#%s", typeDef.GetType(), relation)
 
@@ -89,15 +93,23 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 			rw.Difference.GetSubtract(),
 		}
 	}
-
-	operatorNodeName := operator + ":" + ulid.Make().String()
+	// Build a deterministic unique label of the form "type#relation:operator:index".
+	// The prefix is built from typeDef+relation (never from parentNode, which is itself
+	// an operator node when operators are nested). index is a per-relation running counter
+	// assigned in DFS pre-order, so sibling operators at the same depth still get distinct,
+	// stable identifiers, and the same model always yields the same operator labels across
+	// regenerations.
+	operatorNodeName := fmt.Sprintf("%s#%s:%s:%d", typeDef.GetType(), relation, operator, *operatorIndex)
+	*operatorIndex++
 	operatorNode := wg.GetOrAddNode(operatorNodeName, operator, OperatorNode)
 
 	// add one edge "relation" -> "operation that defined the operator"
 	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
 	wg.AddEdge(parentNode.GetUniqueLabel(), operatorNodeName, RewriteEdge, parentNodeName, "", nil)
 	for _, child := range children {
-		err := wgb.parseRewrite(wg, operatorNode, model, child, typeDef, relation)
+		// recurse depth-first; the shared operatorIndex pointer keeps incrementing so
+		// every operator node in this relation gets a unique, order-stable index.
+		err := wgb.parseRewrite(wg, operatorNode, model, child, typeDef, relation, operatorIndex)
 		if err != nil {
 			return err
 		}

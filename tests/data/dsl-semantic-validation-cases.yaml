@@ -2228,3 +2228,50 @@
       metadata:
         symbol: "member"
         errorType: missing-definition
+- name: error on a relation whose name is a prefix of an earlier relation points at the correct line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define writers: [user]
+        define writer: nonexistent
+  expected_errors:
+    - msg: "the relation `nonexistent` does not exist."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 19
+        end: 30
+      metadata:
+        symbol: "nonexistent"
+        errorType: missing-definition
+- name: unused condition whose name is a prefix of an earlier condition points at the correct line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define viewer: [user with less_than]
+
+    condition less_than(x: int) {
+      x < 100
+    }
+
+    condition less(x: int) {
+      x < 10
+    }
+  expected_errors:
+    - msg: "`less` condition is not used in the model."
+      line:
+        start: 11
+        end: 11
+      column:
+        start: 10
+        end: 14
+      metadata:
+        symbol: "less"
+        errorType: condition-not-used

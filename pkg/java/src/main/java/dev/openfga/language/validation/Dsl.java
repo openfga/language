@@ -9,6 +9,7 @@ import dev.openfga.sdk.api.model.Userset;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 class Dsl {
@@ -52,7 +53,8 @@ class Dsl {
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
         // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
-        return findLine(line -> line.trim().matches("type " + typeName + "\\s*(#.*)?"), skipIndex);
+        // Quote the type name so regex metacharacters (e.g. `.`) are matched literally.
+        return findLine(line -> line.trim().matches("type " + Pattern.quote(typeName) + "\\s*(#.*)?"), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

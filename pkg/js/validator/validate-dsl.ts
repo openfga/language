@@ -312,7 +312,12 @@ const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: numbe
     return undefined;
   }
   // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
-  const index = lines.slice(skipIndex).findIndex((line: string) => line.trim().match(`^type ${typeName}\\s*(#.*)?$`));
+  // Match the type name literally (it may contain regex metacharacters like `.`).
+  const typePrefix = `type ${typeName}`;
+  const index = lines.slice(skipIndex).findIndex((line: string) => {
+    const trimmed = line.trim();
+    return trimmed.startsWith(typePrefix) && /^\s*(#.*)?$/.test(trimmed.slice(typePrefix.length));
+  });
   return index === -1 ? -1 : index + skipIndex;
 };
 
@@ -323,9 +328,12 @@ const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: n
   if (!lines) {
     return undefined;
   }
-  const index = lines
-    .slice(skipIndex)
-    .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`));
+  // Match the relation name literally (it may contain regex metacharacters like `.`).
+  const relationPrefix = `define ${relation}`;
+  const index = lines.slice(skipIndex).findIndex((line: string) => {
+    const normalized = line.trim().replace(/ {2,}/g, " ");
+    return normalized.startsWith(relationPrefix) && /^\s*:/.test(normalized.slice(relationPrefix.length));
+  });
   return index === -1 ? -1 : index + skipIndex;
 };
 
@@ -335,9 +343,12 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
   }
 
   // Allow an optional trailing comment (e.g. `schema 1.1 # ...`) after the schema version.
-  const index = lines
-    .slice(0)
-    .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^schema ${schema}\\s*(#.*)?$`));
+  // Match the schema version literally (it contains `.`).
+  const schemaPrefix = `schema ${schema}`;
+  const index = lines.slice(0).findIndex((line: string) => {
+    const normalized = line.trim().replace(/ {2,}/g, " ");
+    return normalized.startsWith(schemaPrefix) && /^\s*(#.*)?$/.test(normalized.slice(schemaPrefix.length));
+  });
 
   // As findIndex returns -1 when it doesn't find the line, we want to return 0 instead
   if (index >= 1) {

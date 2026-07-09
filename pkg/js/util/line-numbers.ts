@@ -19,9 +19,12 @@ export const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?
     return undefined;
   }
   // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
-  const index = lines
-    .slice(skipIndex)
-    .findIndex((line: string) => line.trim().match(`^${extension ? "extend " : ""}type ${typeName}\\s*(#.*)?$`));
+  // Match the type name literally (it may contain regex metacharacters like `.`).
+  const typePrefix = `${extension ? "extend " : ""}type ${typeName}`;
+  const index = lines.slice(skipIndex).findIndex((line: string) => {
+    const trimmed = line.trim();
+    return trimmed.startsWith(typePrefix) && /^\s*(#.*)?$/.test(trimmed.slice(typePrefix.length));
+  });
   return index === -1 ? -1 : index + skipIndex;
 };
 
@@ -32,8 +35,11 @@ export const getRelationLineNumber = (relation: string, lines?: string[], skipIn
   if (!lines) {
     return undefined;
   }
-  const index = lines
-    .slice(skipIndex)
-    .findIndex((line: string) => line.trim().replace(/ {2,}/g, " ").match(`^define ${relation}\\s*:`));
+  // Match the relation name literally (it may contain regex metacharacters like `.`).
+  const relationPrefix = `define ${relation}`;
+  const index = lines.slice(skipIndex).findIndex((line: string) => {
+    const normalized = line.trim().replace(/ {2,}/g, " ");
+    return normalized.startsWith(relationPrefix) && /^\s*:/.test(normalized.slice(relationPrefix.length));
+  });
   return index === -1 ? -1 : index + skipIndex;
 };

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strconv"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
@@ -99,7 +100,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 	// assigned in DFS pre-order, so sibling operators at the same depth still get distinct,
 	// stable identifiers, and the same model always yields the same operator labels across
 	// regenerations.
-	operatorNodeName := fmt.Sprintf("%s#%s:%s:%d", typeDef.GetType(), relation, operator, *operatorIndex)
+	operatorNodeName := typeDef.GetType() + "#" + relation + ":" + operator + ":" + strconv.Itoa(*operatorIndex)
 	*operatorIndex++
 	operatorNode := wg.GetOrAddNode(operatorNodeName, operator, OperatorNode)
 

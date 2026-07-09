@@ -36,15 +36,30 @@ class Dsl {
     }
 
     public int getConditionLineNumber(String conditionName, int skipIndex) {
-        return findLine(line -> line.trim().startsWith("condition " + conditionName), skipIndex);
+        // Require `(` after the name so a condition name that is a prefix of
+        // another (e.g. `less` vs `less_than`) cannot match the wrong line.
+        return findLine(
+                line -> line.trim().matches("condition " + Pattern.quote(conditionName) + "\\s*\\(.*"), skipIndex);
     }
 
     public int getRelationLineNumber(String relationName, int skipIndex) {
-        return findLine(line -> line.trim().replaceAll(" {2,}", " ").startsWith("define " + relationName), skipIndex);
+        // Require `:` after the name so a relation name that is a prefix of
+        // another (e.g. `writer` vs `writers`) cannot match the wrong line.
+        return findLine(
+                line -> line.trim()
+                        .replaceAll(" {2,}", " ")
+                        .matches("define " + Pattern.quote(relationName) + "\\s*:.*"),
+                skipIndex);
     }
 
     public int getSchemaLineNumber(String schemaVersion) {
-        return findLine(line -> line.trim().replaceAll(" {2,}", " ").startsWith("schema " + schemaVersion), 0);
+        // Allow only whitespace or a trailing comment after the version so
+        // e.g. `1.1` cannot match `schema 1.10`.
+        return findLine(
+                line -> line.trim()
+                        .replaceAll(" {2,}", " ")
+                        .matches("schema " + Pattern.quote(schemaVersion) + "\\s*(#.*)?"),
+                0);
     }
 
     public int getTypeLineNumber(String typeName) {

@@ -5,9 +5,13 @@ export const getConditionLineNumber = (conditionName: string, lines?: string[], 
   if (!lines) {
     return undefined;
   }
-  const index = lines
-    .slice(skipIndex)
-    .findIndex((line: string) => line.trim().startsWith(`condition ${conditionName}`));
+  // Require `(` after the name so a condition name that is a prefix of another
+  // (e.g. `less` vs `less_than`) cannot match the wrong line.
+  const conditionPrefix = `condition ${conditionName}`;
+  const index = lines.slice(skipIndex).findIndex((line: string) => {
+    const trimmed = line.trim();
+    return trimmed.startsWith(conditionPrefix) && /^\s*\(/.test(trimmed.slice(conditionPrefix.length));
+  });
   return index === -1 ? -1 : index + skipIndex;
 };
 

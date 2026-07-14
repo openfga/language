@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"slices"
 	"testing"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
@@ -920,7 +921,7 @@ func TestMixingTerminalTypesInIntersection(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node group#member:intersection:0")
 }
 
 func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
@@ -1908,7 +1909,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node document#viewer:intersection:0")
 		})
 		t.Run("without_direct_types", func(t *testing.T) {
 			t.Parallel()
@@ -1928,7 +1929,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node document#viewer:intersection:0")
 		})
 		t.Run("empty_intersection", func(t *testing.T) {
 			t.Parallel()
@@ -2710,4 +2711,143 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 			require.Equal(t, "group#member", edge.GetRecursiveRelation())
 		}
 	})
+}
+
+// operatorNodeLabels collects the unique labels of all operator nodes in the graph, sorted.
+func operatorNodeLabels(graph *WeightedAuthorizationModelGraph) []string {
+	var labels []string
+	for _, node := range graph.GetNodes() {
+		if node.GetNodeType() == OperatorNode {
+			labels = append(labels, node.GetUniqueLabel())
+		}
+	}
+	slices.Sort(labels)
+	return labels
+}
+
+func TestGraphConstructionDeterministicOperatorNodeLabels(t *testing.T) {
+	t.Parallel()
+	// A model with mixed operators, sibling operators at the same depth,
+	// and multiple relations that each contain operators.
+	model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define d: [user]
+				define e: (a or b) but not (c and d)
+				define f: a and b
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+
+	// The operator node unique labels must be deterministic: the same model must
+	// produce exactly the same operator identifiers no matter how many times the
+	// weighted graph is regenerated.
+	firstGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+	secondGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+
+	firstLabels := operatorNodeLabels(firstGraph)
+	secondLabels := operatorNodeLabels(secondGraph)
+
+	require.Equal(t, firstLabels, secondLabels, "operator node labels must be identical across regenerations")
+
+	// The identifiers are of the form "type#relation:operator:index" where index is a
+	// per-relation running counter assigned in DFS pre-order. This guarantees sibling
+	// operators at the same depth get distinct, stable identifiers.
+	require.Equal(t, []string{
+		"folder#e:exclusion:0",
+		"folder#e:intersection:2",
+		"folder#e:union:1",
+		"folder#f:intersection:0",
+	}, firstLabels)
+
+	// Sanity check: the operators are wired in the expected topology using the deterministic labels.
+	require.Equal(t, "folder#e:exclusion:0", firstGraph.edges["folder#e"][0].to.GetUniqueLabel())
+	exclusionEdges := firstGraph.edges["folder#e:exclusion:0"]
+	require.Len(t, exclusionEdges, 2)
+	require.Equal(t, "folder#e:union:1", exclusionEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#e:intersection:2", exclusionEdges[1].to.GetUniqueLabel())
+}
+
+func TestGraphConstructionDeterministicOperatorNodeLabelsAcrossRelations(t *testing.T) {
+	t.Parallel()
+	// Multiple types, each with multiple relations that contain nested operations.
+	// folder#x has two sibling unions at the same depth (union:1 and union:2), which
+	// proves the per-relation index is a running DFS counter and not a nesting depth.
+	// document also has a relation "x" with operators, proving the type#relation prefix
+	// keeps operator identifiers unique across types (they must not collide).
+	model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define d: [user]
+				define x: (a or b) and (c or d)
+				define y: a but not (b or c)
+		type document
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define x: (a and b) or c
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+
+	// Regenerate the weighted graph twice; every operator node label must be identical.
+	firstGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+	secondGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Equal(t, operatorNodeLabels(firstGraph), operatorNodeLabels(secondGraph),
+		"operator node labels must be identical across regenerations")
+
+	// Assert the name of every operator node in the whole model.
+	require.Equal(t, []string{
+		"document#x:intersection:1",
+		"document#x:union:0",
+		"folder#x:intersection:0",
+		"folder#x:union:1",
+		"folder#x:union:2",
+		"folder#y:exclusion:0",
+		"folder#y:union:1",
+	}, operatorNodeLabels(firstGraph))
+
+	// folder#x: (a or b) and (c or d) -> intersection(union(a,b), union(c,d))
+	folderX := firstGraph.edges["folder#x"][0].to
+	require.Equal(t, "folder#x:intersection:0", folderX.GetUniqueLabel())
+	folderXEdges := firstGraph.edges["folder#x:intersection:0"]
+	require.Len(t, folderXEdges, 2)
+	require.Equal(t, "folder#x:union:1", folderXEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#x:union:2", folderXEdges[1].to.GetUniqueLabel())
+	require.Equal(t, []string{"folder#a", "folder#b"},
+		[]string{firstGraph.edges["folder#x:union:1"][0].to.GetUniqueLabel(), firstGraph.edges["folder#x:union:1"][1].to.GetUniqueLabel()})
+	require.Equal(t, []string{"folder#c", "folder#d"},
+		[]string{firstGraph.edges["folder#x:union:2"][0].to.GetUniqueLabel(), firstGraph.edges["folder#x:union:2"][1].to.GetUniqueLabel()})
+
+	// folder#y: a but not (b or c) -> exclusion(a, union(b,c))
+	folderY := firstGraph.edges["folder#y"][0].to
+	require.Equal(t, "folder#y:exclusion:0", folderY.GetUniqueLabel())
+	folderYEdges := firstGraph.edges["folder#y:exclusion:0"]
+	require.Len(t, folderYEdges, 2)
+	require.Equal(t, "folder#a", folderYEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#y:union:1", folderYEdges[1].to.GetUniqueLabel())
+
+	// document#x: (a and b) or c -> union(intersection(a,b), c)
+	documentX := firstGraph.edges["document#x"][0].to
+	require.Equal(t, "document#x:union:0", documentX.GetUniqueLabel())
+	documentXEdges := firstGraph.edges["document#x:union:0"]
+	require.Len(t, documentXEdges, 2)
+	require.Equal(t, "document#x:intersection:1", documentXEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "document#c", documentXEdges[1].to.GetUniqueLabel())
 }

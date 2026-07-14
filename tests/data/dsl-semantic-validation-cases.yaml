@@ -2074,3 +2074,204 @@
         end: 48
       metadata:
         errorType: tupleuserset-not-direct
+
+- name: missing relation reference with a trailing comment on the type line
+  dsl: |
+    model
+      schema 1.2
+    type user
+    type group
+      relations
+        define member: [user]
+    type page # module: confluence, file: confluence.fga
+      relations
+        define owner: member
+  expected_errors:
+    - msg: "the relation `member` does not exist."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 18
+        end: 24
+      metadata:
+        symbol: "member"
+        errorType: missing-definition
+- name: reserved type name with a trailing comment on the type line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type self # a comment
+      relations
+        define member: [user]
+  expected_errors:
+    - msg: "a type cannot be named 'self' or 'this'."
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 5
+        end: 9
+      metadata:
+        symbol: "self"
+        errorType: reserved-type-keywords
+- name: reserved relation name with a trailing comment on the enclosing type line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group # a comment
+      relations
+        define self: [user]
+  expected_errors:
+    - msg: "a relation cannot be named 'self' or 'this'."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 15
+      metadata:
+        symbol: "self"
+        errorType: reserved-relation-keywords
+- name: invalid type in restriction with a trailing comment on the enclosing type line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group # a comment
+      relations
+        define member: [banana]
+  expected_errors:
+    - msg: "`banana` is not a valid type."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 20
+        end: 26
+      metadata:
+        symbol: "banana"
+        errorType: invalid-type
+- name: no entrypoint relation with a trailing comment on the enclosing type line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder # a comment
+      relations
+        define parent: [folder]
+        define viewer: viewer from parent
+  expected_errors:
+    - msg: "`viewer` is an impossible relation for `folder` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "viewer"
+        errorType: relation-no-entry-point
+- name: invalid schema version with a trailing comment on the schema line
+  dsl: |
+    model
+      schema 1.5 # a comment
+    type user
+  expected_errors:
+    - msg: "invalid schema 1.5"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 9
+        end: 12
+      metadata:
+        errorType: invalid-schema
+- name: multiple missing relation references with module comments on every type line
+  dsl: |
+    model
+      schema 1.2
+
+    type group # module: common, file: common.fga
+      relations
+        define member: [user]
+
+    type user # module: common, file: common.fga
+
+    type page # module: confluence, file: confluence.fga
+      relations
+        define owner: member
+
+    type ticket # module: jira, file: jira.fga
+      relations
+        define reporter: member
+  expected_errors:
+    - msg: "the relation `member` does not exist."
+      line:
+        start: 11
+        end: 11
+      column:
+        start: 18
+        end: 24
+      metadata:
+        symbol: "member"
+        errorType: missing-definition
+    - msg: "the relation `member` does not exist."
+      line:
+        start: 15
+        end: 15
+      column:
+        start: 21
+        end: 27
+      metadata:
+        symbol: "member"
+        errorType: missing-definition
+- name: error on a relation whose name is a prefix of an earlier relation points at the correct line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define writers: [user]
+        define writer: nonexistent
+  expected_errors:
+    - msg: "the relation `nonexistent` does not exist."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 19
+        end: 30
+      metadata:
+        symbol: "nonexistent"
+        errorType: missing-definition
+- name: unused condition whose name is a prefix of an earlier condition points at the correct line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type doc
+      relations
+        define viewer: [user with less_than]
+
+    condition less_than(x: int) {
+      x < 100
+    }
+
+    condition less(x: int) {
+      x < 10
+    }
+  expected_errors:
+    - msg: "`less` condition is not used in the model."
+      line:
+        start: 11
+        end: 11
+      column:
+        start: 10
+        end: 14
+      metadata:
+        symbol: "less"
+        errorType: condition-not-used

@@ -67,8 +67,10 @@ describe("transformModuleFilesToModel - module test cases", () => {
       testFn = it.skip;
     }
 
-    // Skip schema validation errors
-    if (testCase.dsl.includes("0.9")) {
+    // The rewrite below only converts `model\n  schema 1.1` into a module, so cases using a
+    // different schema version (or an invalid one) cannot be exercised here; they are covered
+    // by the DSL validator tests instead.
+    if (!testCase.dsl.includes("schema 1.1")) {
       testFn = it.skip;
     }
 

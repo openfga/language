@@ -82,7 +82,11 @@ jobs:
           path: _scripts
           sparse-checkout: .github/workflows/scripts
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
+      # persist-credentials: false so the App token never lands in .git/config,
+      # where npm lifecycle scripts could read it. Pushes authenticate
+      # explicitly in the final step instead.
       - name: Checkout target repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -90,6 +94,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           path: target
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node (js)
         if: inputs.ecosystem == 'js'
@@ -107,40 +112,38 @@ jobs:
           go-version-file: target/go.mod
           cache-dependency-path: target/go.sum
 
-      - name: Import GPG key and enable signed commits
-        id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          workdir: target
-
-      - name: Apply bump and open PR
+      - name: Check for existing bump PR
+        id: precheck
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ECOSYSTEM: ${{ inputs.ecosystem }}
-          VERSION: ${{ steps.ver.outputs.version }}
-          ARTIFACT: ${{ inputs.artifact }}
           TARGET_REPO: ${{ inputs.target-repo }}
-          BOT_EMAIL: ${{ steps.import-gpg.outputs.email }}
-        working-directory: target
+          ARTIFACT: ${{ inputs.artifact }}
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
           set -euo pipefail
-
-          git config user.name "openfga-releaser-bot"
-          git config user.email "${BOT_EMAIL}"
-          git config commit.gpgSign true
-
           BRANCH="chore/bump-${ARTIFACT}-${VERSION}"
-
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
           # Idempotency: if a bump PR for this exact version is already open, stop.
           if gh pr list --repo "${TARGET_REPO}" --state open --head "${BRANCH}" \
                --json number --jq '.[0].number' | grep -q '[0-9]'; then
             echo "PR for ${BRANCH} already open; nothing to do."
-            exit 0
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+
+      # Deliberately no token in the environment: the js path runs npm install,
+      # which executes third-party lifecycle scripts.
+      - name: Apply bump
+        id: bump
+        if: steps.precheck.outputs.skip != 'true'
+        env:
+          ECOSYSTEM: ${{ inputs.ecosystem }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          BRANCH: ${{ steps.precheck.outputs.branch }}
+        working-directory: target
+        run: |
+          set -euo pipefail
 
           git checkout -b "${BRANCH}"
 
@@ -153,11 +156,47 @@ jobs:
           git add -A
           if git diff --cached --quiet; then
             echo "No changes after bump (already up to date); nothing to do."
-            exit 0
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Imported only after the untrusted toolchain work above has finished,
+      # so npm lifecycle scripts never run alongside the loaded key.
+      - name: Import GPG key and enable signed commits
+        id: import-gpg
+        if: steps.bump.outputs.changed == 'true'
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          workdir: target
+
+      - name: Commit, push and open PR
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          ARTIFACT: ${{ inputs.artifact }}
+          TARGET_REPO: ${{ inputs.target-repo }}
+          BRANCH: ${{ steps.precheck.outputs.branch }}
+          BOT_EMAIL: ${{ steps.import-gpg.outputs.email }}
+        working-directory: target
+        run: |
+          set -euo pipefail
+
+          git config user.name "openfga-releaser-bot"
+          git config user.email "${BOT_EMAIL}"
+          git config commit.gpgSign true
 
           TITLE="chore(deps): bump ${ARTIFACT} to ${VERSION}"
           git commit -m "${TITLE}"
+
+          # Checkout ran with persist-credentials: false; authenticate the
+          # push with the short-lived App token here instead.
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git"
           git push --force-with-lease origin "${BRANCH}"
 
           BODY="$(printf 'Automated bump of \x60%s\x60 to \x60%s\x60, published from openfga/language.\n\nOpened by openfga-releaser-bot as part of the language release flow.' "${ARTIFACT}" "${VERSION}")"

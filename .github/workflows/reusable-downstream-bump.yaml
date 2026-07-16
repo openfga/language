@@ -102,8 +102,10 @@ jobs:
         if: inputs.ecosystem == 'go'
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: ">=1.25.0"
-          check-latest: true
+          # Use the toolchain the downstream repo declares, so go.mod/go.sum
+          # churn from a newer Go doesn't leak into the bump PR.
+          go-version-file: target/go.mod
+          cache-dependency-path: target/go.sum
 
       - name: Import GPG key and enable signed commits
         id: import-gpg
@@ -146,14 +148,17 @@ jobs:
           bash "${GITHUB_WORKSPACE}/_scripts/.github/workflows/scripts/downstream-bump.sh" \
             "${ECOSYSTEM}" "${VERSION}"
 
-          if git diff --quiet; then
+          # Stage everything (gitignore still applies) so newly created files
+          # (e.g. a first package-lock.json) make it into the PR too.
+          git add -A
+          if git diff --cached --quiet; then
             echo "No changes after bump (already up to date); nothing to do."
             exit 0
           fi
 
           TITLE="chore(deps): bump ${ARTIFACT} to ${VERSION}"
-          git commit -am "${TITLE}"
-          git push -f origin "${BRANCH}"
+          git commit -m "${TITLE}"
+          git push --force-with-lease origin "${BRANCH}"
 
           BODY="$(printf 'Automated bump of \x60%s\x60 to \x60%s\x60, published from openfga/language.\n\nOpened by openfga-releaser-bot as part of the language release flow.' "${ARTIFACT}" "${VERSION}")"
 

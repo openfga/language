@@ -126,6 +126,14 @@ assert_contains "java falls back to build.gradle" \
   'dev.openfga:openfga-language:0.2.1' "$(cat "$d/build.gradle")"
 rm -rf "$d"
 
+# 4b. groovy build.gradle with single quotes keeps its closing quote intact
+d=$(fresh)
+echo "implementation 'dev.openfga:openfga-language:0.2.0'" >"$d/build.gradle"
+run_in "$d" java 0.2.1 >/dev/null 2>&1
+assert_contains "java handles single-quoted build.gradle" \
+  "'dev.openfga:openfga-language:0.2.1'" "$(cat "$d/build.gradle")"
+rm -rf "$d"
+
 # 5. missing build file -> error exit
 d=$(fresh)
 run_in "$d" java 0.2.1 >/dev/null 2>&1

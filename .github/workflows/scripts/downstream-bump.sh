@@ -15,8 +15,8 @@
 #
 # <version> is the plain semver (e.g. 0.2.2), without a leading "v".
 #
-# Requires the relevant toolchain on PATH: npm for js, go for go. java needs
-# nothing beyond coreutils.
+# Requires the relevant toolchain on PATH: npm for js, go for go. java uses
+# perl for the in-place build.gradle(.kts) edit.
 set -euo pipefail
 
 ecosystem="${1:?ecosystem required: js|java|go}"
@@ -59,9 +59,10 @@ case "${ecosystem}" in
     fi
     echo "Bumping dev.openfga:openfga-language to ${version} in ${file}"
     # Replace the version segment of the coordinate, whatever it currently is
-    # (e.g. 0.2.0-beta.2 -> 0.2.1). Only touch chars up to the closing quote.
+    # (e.g. 0.2.0-beta.2 -> 0.2.1). Only touch chars up to the closing quote,
+    # which may be single (groovy) or double (groovy/kts).
     # perl for portability (GNU vs BSD sed differ on -i / backrefs).
-    perl -i -pe "s/(dev\.openfga:openfga-language:)[^\"]+/\${1}${version}/g" "${file}"
+    perl -i -pe "s/(dev\.openfga:openfga-language:)[^\"']+([\"'])/\${1}${version}\${2}/g" "${file}"
     ;;
 
   go)

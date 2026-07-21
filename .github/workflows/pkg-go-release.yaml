@@ -40,3 +40,28 @@ jobs:
             sleep 6
           done
           gh release edit "$TAG" --repo "$REPO" --draft=false
+
+  # Once the release is published, open a bump PR against downstream consumers
+  # of github.com/openfga/language/pkg/go.
+  downstream-bump:
+    needs: [finalize-release]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        target-repo:
+          - openfga/cli
+          - openfga/terraform-provider-openfga
+    uses: ./.github/workflows/reusable-downstream-bump.yaml
+    with:
+      target-repo: ${{ matrix.target-repo }}
+      ecosystem: go
+      version: ${{ github.ref_name }}
+      artifact: openfga-language
+    secrets:
+      RELEASER_APP_CLIENT_ID: ${{ secrets.RELEASER_APP_CLIENT_ID }}
+      RELEASER_APP_PRIVATE_KEY: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

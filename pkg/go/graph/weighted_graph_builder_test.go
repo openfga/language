@@ -2984,31 +2984,4 @@ func TestRecursionWithTwoIndependentTTUBranches(t *testing.T) {
 	require.Equal(t, Infinite, unionEdges[2].weights["user"])
 	require.Equal(t, "group#member", unionEdges[2].recursiveRelation)
 	require.True(t, unionEdges[2].tupleCycle)
-
-	/*
-		WHY MODEL 2 IS A TUPLE CYCLE (and still does not fail)
-		------------------------------------------------------
-		`member` is recursive through two independent branches, member from
-		parent_group and member from child_group. Both branches loop back to the
-		SAME relation node group#member, so during per-path traversal isTupleCycle()
-		sees each branch in isolation and cannot tell that two distinct edges both
-		close a cycle onto the relation. Each branch reports group#member as an
-		unresolved cycle, so the node ends up in the tupleCycles list once per
-		branch.
-
-		When the anchor relation resolves its own cycle in
-		calculateNodeWeightAndFixDependencies(), it counts how many times it appears
-		in tupleCycles. More than one occurrence means more than one independent
-		recursive branch, i.e. two edges depending on each other, which is the
-		definition of a tuple cycle. fixTupleCycle() then flags every edge recorded
-		for the relation together with its from/to nodes, so the whole cycle
-		(group#member, the union node, and both TTU edges) is marked tupleCycle=true
-		while still keeping the recursiveRelation metadata.
-
-		The model still builds: `member` reaches the terminal type `user` directly
-		(no ErrInvalidModel), and neither branch crosses an AND / BUT NOT operator
-		(no ErrContrainstTupleCycle). The union operator combines the branches with
-		the max strategy, giving Infinite weight to `user`, the correct weight for a
-		recursive relation.
-	*/
 }

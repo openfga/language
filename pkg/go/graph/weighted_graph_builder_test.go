@@ -2788,3 +2788,200 @@ func TestGraphConstructionDeterministicOperatorNodeLabelsAcrossRelations(t *test
 	require.Equal(t, "document#x:intersection:1", documentXEdges[0].to.GetUniqueLabel())
 	require.Equal(t, "document#c", documentXEdges[1].to.GetUniqueLabel())
 }
+
+// TestRecursionThroughComputedTupleCycle covers "Model 1" from requests.md.
+//
+//	type user
+//	type group
+//	  relations
+//	    define parent_group: [group]
+//	    define child_group: [group]
+//	    define member2: member from parent_group
+//	    define member: [user, group#member] or member2
+//
+// The claim under test is that `member` "should not depend on an edge like member2
+// that has a cycle to member relation" — i.e. the expectation is that this model
+// might fail to build.
+//
+// It does NOT fail: the weighted graph is built successfully. This test documents
+// that observed behavior and explains WHY (see the block comment at the end).
+func TestRecursionThroughComputedTupleCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+		schema 1.1
+	type user
+	type group
+		relations
+			define parent_group: [group]
+			define child_group: [group]
+			define member2: member from parent_group
+			define member: [user, group#member] or member2
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+
+	// The graph builds cleanly. The cycle member -> ... -> member is a *valid*
+	// recursive/tuple cycle (it is reached through a TTU edge and a userset
+	// DirectEdge), not a model cycle. A model cycle (ErrModelCycle) only happens
+	// when a cycle is formed exclusively by computed/rewrite edges with no
+	// terminal type reachable; here `user` is directly assignable to `member`,
+	// so every node in the cycle can reach the terminal type `user`.
+	require.NoError(t, err)
+
+	// `member` reaches the terminal type `user`, but because it participates in a
+	// cycle the weight is Infinite (unbounded number of hops).
+	memberNode := graph.nodes["group#member"]
+	require.Equal(t, Infinite, memberNode.weights["user"])
+	require.Len(t, memberNode.weights, 1)
+
+	// The cycle involves more than one distinct SpecificTypeAndRelation node in
+	// the tupleset path (member -> member2 -> member via `from parent_group`),
+	// so it is flagged as a tuple cycle. It is still recursive on `member`, so
+	// the recursiveRelation is also set to group#member.
+	require.True(t, memberNode.tupleCycle)
+	require.Equal(t, "group#member", memberNode.recursiveRelation)
+
+	// member2 is the intermediate relation the request worried about. It exists,
+	// is part of the same tuple cycle, and also carries Infinite weight to user.
+	member2Node := graph.nodes["group#member2"]
+	require.Equal(t, Infinite, member2Node.weights["user"])
+	require.True(t, member2Node.tupleCycle)
+
+	// The direct-assignment grouping for `member` ([user, group#member]) reaches
+	// user directly (weight 1) via its DirectEdge to user, and loops back to
+	// member via the group#member userset DirectEdge.
+	directGrouping := graph.nodes["group#direct:member"]
+	require.Equal(t, Infinite, directGrouping.weights["user"])
+
+	directEdges := graph.edges["group#direct:member"]
+	require.Len(t, directEdges, 2)
+	// Edge to the terminal type user has weight 1.
+	require.Equal(t, "user", directEdges[0].to.uniqueLabel)
+	require.Equal(t, 1, directEdges[0].weights["user"])
+	// Edge to the group#member userset closes the cycle: Infinite + recursive.
+	require.Equal(t, "group#member", directEdges[1].to.uniqueLabel)
+	require.Equal(t, Infinite, directEdges[1].weights["user"])
+	require.Equal(t, "group#member", directEdges[1].recursiveRelation)
+
+	// The member2 -> member TTU edge (member from parent_group) is the second
+	// back-edge that closes the cycle through the computed relation member2.
+	member2Edges := graph.edges["group#member2"]
+	require.Len(t, member2Edges, 1)
+	require.Equal(t, TTUEdge, member2Edges[0].GetEdgeType())
+	require.Equal(t, "group#parent_group", member2Edges[0].GetTuplesetRelation())
+	require.Equal(t, "group#member", member2Edges[0].to.uniqueLabel)
+	require.True(t, member2Edges[0].tupleCycle)
+
+	/*
+		WHY MODEL 1 DOES NOT FAIL
+		-------------------------
+		The request expected `member` to reject depending on `member2`, which
+		closes a cycle back to `member`. The builder does not reject it because,
+		from the weighted-graph's point of view, this is a *legal* recursive
+		definition, not an illegal one:
+
+		  1. The only construct the builder rejects for cycles is:
+		       - ErrModelCycle: a cycle composed ONLY of computed/rewrite edges
+		         that never reaches a terminal type (e.g. `x: y` / `y: x`).
+		       - ErrContrainstTupleCycle: a cycle whose path crosses an AND
+		         (intersection) or BUT NOT (exclusion) operator.
+		  2. This cycle is neither. The back-edges that close it are:
+		       - group#direct:member --DirectEdge--> group#member (a userset
+		         [group#member]), and
+		       - group#member2 --TTUEdge--> group#member (member from parent_group).
+		     Because at least one edge in the cycle is a TTU or a userset
+		     DirectEdge to a SpecificTypeAndRelation, isTupleCycle() classifies it
+		     as a valid tuple/recursive cycle rather than a model cycle.
+		  3. `member` also has a DirectEdge to the terminal type `user`, so the
+		     node can reach a terminal type. A node with no reachable terminal
+		     type is what triggers ErrInvalidModel — that is not the case here.
+
+		So the presence of the intermediate `member2` relation does not matter:
+		whether the loop goes member -> member (direct userset) or
+		member -> member2 -> member (via TTU), the resulting cycle is a supported
+		recursive relation and the weight to `user` is correctly set to Infinite.
+		The "should not depend on member2" expectation is a semantic/modeling
+		preference, not a rule the weighted-graph builder enforces.
+	*/
+}
+
+// TestRecursionWithTwoIndependentTTUBranches covers "Model 2" from requests.md.
+//
+//	type user
+//	type group
+//	  relations
+//	    define parent_group: [group]
+//	    define child_group: [group]
+//	    define member: [user] or member from parent_group or member from child_group
+//
+// `member` is recursive with TWO independent recursive branches
+// (member from parent_group and member from child_group). This test verifies the
+// graph builds and explains why two recursive branches are still fine.
+func TestRecursionWithTwoIndependentTTUBranches(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+		schema 1.1
+	type user
+	type group
+		relations
+			define parent_group: [group]
+			define child_group: [group]
+			define member: [user] or member from parent_group or member from child_group
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+
+	// Builds cleanly — same reasoning as Model 1: user is directly reachable and
+	// the cycles are closed by TTU edges, so they are valid recursive cycles.
+	require.NoError(t, err)
+
+	memberNode := graph.nodes["group#member"]
+	require.Equal(t, Infinite, memberNode.weights["user"])
+	require.Len(t, memberNode.weights, 1)
+
+	// `member` recurses through TWO independent branches (member from parent_group
+	// and member from child_group). Two distinct edges depending on each other to
+	// close the cycle is, by definition, a tuple cycle, so the node is flagged as
+	// BOTH recursive (recursiveRelation = group#member) AND part of a tuple cycle.
+	require.Equal(t, "group#member", memberNode.recursiveRelation)
+	require.True(t, memberNode.tupleCycle)
+
+	// The union has exactly three outgoing edges: one to the terminal type user,
+	// and one TTU edge per recursive branch. Both TTU edges point back to
+	// group#member but are distinguished by their tupleset relation.
+	unionNode := graph.edges["group#member"][0].to
+	require.Equal(t, OperatorNode, unionNode.GetNodeType())
+	require.Equal(t, UnionOperator, unionNode.GetLabel())
+	// The union node is on the cycle path, so it is flagged as a tuple cycle too.
+	require.True(t, unionNode.tupleCycle)
+	require.Equal(t, "group#member", unionNode.recursiveRelation)
+	unionEdges := graph.edges[unionNode.uniqueLabel]
+	require.Len(t, unionEdges, 3)
+
+	// Edge 1: direct to user, weight 1. This edge is NOT part of the cycle (it
+	// reaches a terminal type), so it is not flagged as a tuple cycle.
+	require.Equal(t, "user", unionEdges[0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, unionEdges[0].GetEdgeType())
+	require.Equal(t, 1, unionEdges[0].weights["user"])
+	require.False(t, unionEdges[0].tupleCycle)
+
+	// Edge 2: member from parent_group (recursive branch #1). Part of the cycle.
+	require.Equal(t, "group#member", unionEdges[1].to.uniqueLabel)
+	require.Equal(t, TTUEdge, unionEdges[1].GetEdgeType())
+	require.Equal(t, "group#parent_group", unionEdges[1].GetTuplesetRelation())
+	require.Equal(t, Infinite, unionEdges[1].weights["user"])
+	require.Equal(t, "group#member", unionEdges[1].recursiveRelation)
+	require.True(t, unionEdges[1].tupleCycle)
+
+	// Edge 3: member from child_group (recursive branch #2). Part of the cycle.
+	require.Equal(t, "group#member", unionEdges[2].to.uniqueLabel)
+	require.Equal(t, TTUEdge, unionEdges[2].GetEdgeType())
+	require.Equal(t, "group#child_group", unionEdges[2].GetTuplesetRelation())
+	require.Equal(t, Infinite, unionEdges[2].weights["user"])
+	require.Equal(t, "group#member", unionEdges[2].recursiveRelation)
+	require.True(t, unionEdges[2].tupleCycle)
+}

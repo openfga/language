@@ -174,12 +174,18 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 		start = *skipIndex
 	}
 
+	conditionPrefix := "condition " + conditionName
 	for i := start; i < len(lines); i++ {
 		// Match the condition declaration itself, mirroring the reference's
 		// `condition <name>` prefix check, so we don't match an unrelated line
-		// that merely contains the condition name as a substring.
+		// that merely contains the condition name as a substring. The parameter
+		// list's `(` must follow the name so a condition whose name is a prefix
+		// of another (e.g. `less` vs `less_than`) cannot match the wrong line.
 		trimmedLine := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(trimmedLine, "condition "+conditionName) {
+		if !strings.HasPrefix(trimmedLine, conditionPrefix) {
+			continue
+		}
+		if strings.HasPrefix(strings.TrimLeft(trimmedLine[len(conditionPrefix):], " \t"), "(") {
 			return &i
 		}
 	}

@@ -2789,8 +2789,6 @@ func TestGraphConstructionDeterministicOperatorNodeLabelsAcrossRelations(t *test
 	require.Equal(t, "document#c", documentXEdges[1].to.GetUniqueLabel())
 }
 
-// TestRecursionThroughComputedTupleCycle covers "Model 1" from requests.md.
-//
 //	type user
 //	type group
 //	  relations
@@ -2821,13 +2819,6 @@ func TestRecursionThroughComputedTupleCycle(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	graph, err := wgb.Build(authorizationModel)
-
-	// The graph builds cleanly. The cycle member -> ... -> member is a *valid*
-	// recursive/tuple cycle (it is reached through a TTU edge and a userset
-	// DirectEdge), not a model cycle. A model cycle (ErrModelCycle) only happens
-	// when a cycle is formed exclusively by computed/rewrite edges with no
-	// terminal type reachable; here `user` is directly assignable to `member`,
-	// so every node in the cycle can reach the terminal type `user`.
 	require.NoError(t, err)
 
 	// `member` reaches the terminal type `user`, but because it participates in a
@@ -2843,8 +2834,6 @@ func TestRecursionThroughComputedTupleCycle(t *testing.T) {
 	require.True(t, memberNode.tupleCycle)
 	require.Equal(t, "group#member", memberNode.recursiveRelation)
 
-	// member2 is the intermediate relation the request worried about. It exists,
-	// is part of the same tuple cycle, and also carries Infinite weight to user.
 	member2Node := graph.nodes["group#member2"]
 	require.Equal(t, Infinite, member2Node.weights["user"])
 	require.True(t, member2Node.tupleCycle)
@@ -2873,42 +2862,8 @@ func TestRecursionThroughComputedTupleCycle(t *testing.T) {
 	require.Equal(t, "group#parent_group", member2Edges[0].GetTuplesetRelation())
 	require.Equal(t, "group#member", member2Edges[0].to.uniqueLabel)
 	require.True(t, member2Edges[0].tupleCycle)
-
-	/*
-		WHY MODEL 1 DOES NOT FAIL
-		-------------------------
-		The request expected `member` to reject depending on `member2`, which
-		closes a cycle back to `member`. The builder does not reject it because,
-		from the weighted-graph's point of view, this is a *legal* recursive
-		definition, not an illegal one:
-
-		  1. The only construct the builder rejects for cycles is:
-		       - ErrModelCycle: a cycle composed ONLY of computed/rewrite edges
-		         that never reaches a terminal type (e.g. `x: y` / `y: x`).
-		       - ErrContrainstTupleCycle: a cycle whose path crosses an AND
-		         (intersection) or BUT NOT (exclusion) operator.
-		  2. This cycle is neither. The back-edges that close it are:
-		       - group#direct:member --DirectEdge--> group#member (a userset
-		         [group#member]), and
-		       - group#member2 --TTUEdge--> group#member (member from parent_group).
-		     Because at least one edge in the cycle is a TTU or a userset
-		     DirectEdge to a SpecificTypeAndRelation, isTupleCycle() classifies it
-		     as a valid tuple/recursive cycle rather than a model cycle.
-		  3. `member` also has a DirectEdge to the terminal type `user`, so the
-		     node can reach a terminal type. A node with no reachable terminal
-		     type is what triggers ErrInvalidModel — that is not the case here.
-
-		So the presence of the intermediate `member2` relation does not matter:
-		whether the loop goes member -> member (direct userset) or
-		member -> member2 -> member (via TTU), the resulting cycle is a supported
-		recursive relation and the weight to `user` is correctly set to Infinite.
-		The "should not depend on member2" expectation is a semantic/modeling
-		preference, not a rule the weighted-graph builder enforces.
-	*/
 }
 
-// TestRecursionWithTwoIndependentTTUBranches covers "Model 2" from requests.md.
-//
 //	type user
 //	type group
 //	  relations

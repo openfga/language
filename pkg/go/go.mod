@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
 	github.com/google/go-cmp v0.7.0
-	github.com/oklog/ulid/v2 v2.1.1
+	github.com/oklog/ulid/v2 v2.1.2
 	github.com/openfga/api/proto v0.0.0-20260319214821-f153694bfc20
 	github.com/stretchr/testify v1.11.1
 	gonum.org/v1/gonum v0.17.0

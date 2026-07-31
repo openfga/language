@@ -911,6 +911,11 @@ export function validateJSON(
   }
 
   switch (schemaVersion) {
+    case "1.0": {
+      const lineIndex = getSchemaLineNumber(schemaVersion, lines);
+      collector.raiseSchemaVersionUnsupported(schemaVersion, lineIndex);
+      break;
+    }
     case "1.1":
     case "1.2":
       modelValidation(collector, errors, authorizationModel, fileToModuleMap, lines);

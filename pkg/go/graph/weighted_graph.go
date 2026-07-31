@@ -474,7 +474,12 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeight(nodeID string, vi
 			return tupleCycles, err
 		}
 		if len(tcycle) > 0 {
-			tupleCycles = append(tupleCycles, tcycle...) // verify if does not exist first
+			// A relation can appear here more than once when it is recursive through several
+			// independent branches (each branch closes the cycle back onto the same relation).
+			// We intentionally keep the duplicates: the count is used later, when the relation
+			// resolves its own cycle, to detect a multi-branch recursion and flag it as a tuple
+			// cycle (see calculateNodeWeightAndFixDependencies).
+			tupleCycles = append(tupleCycles, tcycle...)
 		}
 	}
 
@@ -628,7 +633,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	// tuple cycle where the node is responsible for the cycle and it needs to fix the cycle
 	if node.nodeType == SpecificTypeAndRelation && wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
 		// calculate the weight of the node and fix all the dependencies that are in the tuple cycle.
-		err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+		err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies, tupleCycles)
 		if err != nil {
 			return tupleCycles, err
 		}
@@ -652,7 +657,7 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	if wg.isLogicalUnionOperator(node) {
 		// if the node is the reference node of the cycle, recalculate the weight, solve the depencies and remove the node from the tuple cycle
 		if wg.isNodeTupleCycleReference(nodeID, tupleCycles) {
-			err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies)
+			err := wg.calculateNodeWeightAndFixDependencies(nodeID, tupleCycleDependencies, tupleCycles)
 			if err != nil {
 				return tupleCycles, err
 			}
@@ -783,7 +788,7 @@ func (wg *WeightedAuthorizationModelGraph) isNodeTupleCycleReference(nodeID stri
 // This function will calculate the weight of the node by eliminating the reference node of itself and
 // fixing the dependencies on the edges and the nodes that are part of the tuple cycle.
 // Once all the dependencies are fixed, the node is removed from the tuple cycle list.
-func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies(nodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) error {
+func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies(nodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge, tupleCycles []string) error {
 	node := wg.nodes[nodeID]
 	weights := make(map[string]int)
 	referenceNodeID := "R#" + nodeID
@@ -795,6 +800,18 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 
 	if len(edges) == 0 && node.nodeType != SpecificType && node.nodeType != SpecificTypeWildcard {
 		return fmt.Errorf("%w: %s node does not have any terminal type to reach to", ErrInvalidModel, node.uniqueLabel)
+	}
+
+	// A relation can be recursive through more than one independent branch, e.g.
+	// `define member: [user] or member from parent or member from child`. Each branch closes
+	// the cycle back onto this same node, so calculateEdgeWeight reports this nodeID once per
+	// branch and it appears in tupleCycles more than once. Two or more distinct edges depending
+	// on each other is, by definition, a tuple cycle.
+	multiBranchCycle := 0
+	for _, tupleCycle := range tupleCycles {
+		if tupleCycle == nodeID {
+			multiBranchCycle++
+		}
 	}
 
 	references := make([]string, 0)
@@ -813,8 +830,29 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightAndFixDependencies
 
 	wg.fixDependantEdgesWeight(nodeID, referenceNodeID, references, tupleCycleDependencies)
 	wg.fixDependantNodesWeight(nodeID, referenceNodeID, tupleCycleDependencies)
+
+	// When the relation recurses through more than one branch, mark the whole cycle as a
+	// tuple cycle. All the edges and nodes that form the cycle are recorded in
+	// tupleCycleDependencies[nodeID], so we can flag each edge together with its from/to nodes.
+	if multiBranchCycle > 1 {
+		wg.fixTupleCycle(nodeID, tupleCycleDependencies)
+	}
+
 	delete(tupleCycleDependencies, nodeID)
 	return nil
+}
+
+// fixTupleCycle marks every edge (and its from/to nodes) recorded for nodeID as part of a
+// tuple cycle. It is used when a relation is recursive through more than one independent
+// branch: each such branch is a distinct edge that depends on the others to close the cycle,
+// which is the definition of a tuple cycle.
+func (wg *WeightedAuthorizationModelGraph) fixTupleCycle(nodeID string, tupleCycleDependencies map[string][]*WeightedAuthorizationModelEdge) {
+	wg.nodes[nodeID].tupleCycle = true
+	for _, edge := range tupleCycleDependencies[nodeID] {
+		edge.tupleCycle = true
+		edge.from.tupleCycle = true
+		edge.to.tupleCycle = true
+	}
 }
 
 func assignRecursiveCycleMetadata(edgesInCycle []*WeightedAuthorizationModelEdge, recursiveRelation string) {

@@ -31,7 +31,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 	})
 
 	for _, typeDef := range sortedTypeDefs {
-		wb.GetOrAddNode(typeDef.GetType(), typeDef.GetType(), SpecificType)
+		// A type node belongs to no single relation, so it carries no relation definition.
+		wb.GetOrAddNode(typeDef.GetType(), typeDef.GetType(), SpecificType, "")
 
 		// sort relations by name to guarantee stable output
 		sortedRelations := make([]string, 0, len(typeDef.GetRelations()))
@@ -43,7 +44,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 
 		for _, relation := range sortedRelations {
 			uniqueLabel := typeDef.GetType() + "#" + relation
-			parentNode := wb.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation)
+			// A relation node is its own relation definition.
+			parentNode := wb.GetOrAddNode(uniqueLabel, uniqueLabel, SpecificTypeAndRelation, uniqueLabel)
 			rewrite := typeDef.GetRelations()[relation]
 			// operatorIndex is a per-relation running counter incremented in DFS pre-order.
 			// It gives every operator node a deterministic, stable identifier, so the same
@@ -102,7 +104,11 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuth
 	// regenerations.
 	operatorNodeName := typeDef.GetType() + "#" + relation + ":" + operator + ":" + strconv.Itoa(*operatorIndex)
 	*operatorIndex++
-	operatorNode := wg.GetOrAddNode(operatorNodeName, operator, OperatorNode)
+	// An operator node is attributed to the relation whose rewrite created it, which is the
+	// same value already used for the edge below. parentNodeName is built from typeDef and
+	// relation rather than from parentNode, so nested operators attribute to the relation
+	// rather than to the enclosing operator.
+	operatorNode := wg.GetOrAddNode(operatorNodeName, operator, OperatorNode, parentNodeName)
 
 	// add one edge "relation" -> "operation that defined the operator"
 	// Note: if this is a composition of operators, operationNode will be nil and this edge won't be added.
@@ -139,8 +145,9 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 	node := parentNode
 	if parentNode.nodeType != SpecificTypeAndRelation && len(directlyRelated) > 1 {
 		uniqueLabel := typeDef.GetType() + "#ttu:" + tuplesetRelation + "#" + computedRelation
-		// add a logical ttu node for grouping of TTU that are part of the same tuplesetrelation and computed relation
-		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalTTUGrouping)
+		// add a logical ttu node for grouping of TTU that are part of the same tuplesetrelation and computed relation.
+		// It is attributed to the relation being rewritten, not to the tupleset it reads through.
+		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalTTUGrouping, parentRelationName)
 		wg.AddEdge(parentNode.uniqueLabel, logicalNode.uniqueLabel, TTULogicalEdge, parentRelationName, typeTuplesetRelation, nil)
 		node = logicalNode
 	}
@@ -153,7 +160,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseTupleToUserset(wg *Weigh
 		}
 
 		rewrittenNodeName := fmt.Sprintf("%s#%s", tuplesetType, computedRelation)
-		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
+		// The target is a relation node on another type, so it is its own relation definition.
+		nodeSource := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation, rewrittenNodeName)
 
 		if wg.HasEdge(node, nodeSource, TTUEdge, typeTuplesetRelation) {
 			// we don't need to do any condition update, only de-dup the edge. In case of TTU
@@ -178,7 +186,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAut
 	nodeType := RewriteEdge
 	// e.g. define x: y. Here y is the rewritten relation
 	rewrittenNodeName := typeDef.GetType() + "#" + relation
-	newNode := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation)
+	// The rewritten target is a relation node, so it is its own relation definition.
+	newNode := wg.GetOrAddNode(rewrittenNodeName, rewrittenNodeName, SpecificTypeAndRelation, rewrittenNodeName)
 	// new edge from x to y
 	if parentNode.nodeType == SpecificTypeAndRelation && newNode.nodeType == SpecificTypeAndRelation {
 		nodeType = ComputedEdge
@@ -197,7 +206,8 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 	// add a logical userset node for grouping of direct usersets that are defined in the same relation
 	if parentNode.nodeType != SpecificTypeAndRelation && len(directlyRelated) > 1 {
 		uniqueLabel := typeDef.GetType() + "#direct:" + relation
-		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalDirectGrouping)
+		// Attributed to the relation whose direct assignments it groups.
+		logicalNode := wg.GetOrAddNode(uniqueLabel, uniqueLabel, LogicalDirectGrouping, parentRelationName)
 		wg.AddEdge(parentNode.uniqueLabel, logicalNode.uniqueLabel, DirectLogicalEdge, parentRelationName, "", nil)
 		node = logicalNode
 	}
@@ -209,17 +219,17 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 	for _, directlyRelatedDef := range directlyRelated {
 		switch {
 		case directlyRelatedDef.GetRelationOrWildcard() == nil:
-			// direct assignment to concrete type
+			// direct assignment to concrete type; a type node belongs to no single relation
 			assignableType := directlyRelatedDef.GetType()
-			curNode = wg.GetOrAddNode(assignableType, assignableType, SpecificType)
+			curNode = wg.GetOrAddNode(assignableType, assignableType, SpecificType, "")
 		case directlyRelatedDef.GetWildcard() != nil:
-			// direct assignment to wildcard
+			// direct assignment to wildcard; a wildcard node belongs to no single relation
 			assignableWildcard := directlyRelatedDef.GetType() + ":*"
-			curNode = wg.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
+			curNode = wg.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard, "")
 		default:
-			// direct assignment to userset
+			// direct assignment to userset, which is a relation node on the assignable type
 			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
-			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
+			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation, assignableUserset)
 		}
 
 		parentRelationNode.directAssigns = append(parentRelationNode.directAssigns, curNode.uniqueLabel)

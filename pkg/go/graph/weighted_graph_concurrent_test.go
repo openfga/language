@@ -14,10 +14,10 @@ func TestConcurrentUsersetWeights(t *testing.T) {
 	graph := NewWeightedAuthorizationModelGraph()
 
 	// Add a node and edge for testing
-	graph.AddNode("type#rel", "type#rel", SpecificTypeAndRelation)
+	graph.AddNode("type#rel", "type#rel", SpecificTypeAndRelation, "type#rel")
 	node, _ := graph.GetNodeByID("type#rel")
 
-	graph.AddNode("type2#rel2", "type2#rel2", SpecificTypeAndRelation)
+	graph.AddNode("type2#rel2", "type2#rel2", SpecificTypeAndRelation, "type2#rel2")
 
 	graph.AddEdge("type#rel", "type2#rel2", DirectEdge, "rel", "", []string{NoCond})
 	edges, _ := graph.GetEdgesFromNodeID("type#rel")

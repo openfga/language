@@ -63,25 +63,40 @@ func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 }
 
 // AddNode adds a node to the graph with optional nodeType and weight.
-func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType) {
-	var wildcards []string
-	if nodeType == SpecificTypeWildcard {
-		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
-	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, directAssigns: make([]string, 0)}
+// The relationDefinition argument names the relation the node belongs to, e.g. "document#parent".
+// Pass the empty string for nodes that do not belong to a single relation, i.e. SpecificType and
+// SpecificTypeWildcard nodes. See WeightedAuthorizationModelNode.GetRelationDefinition.
+func (wg *WeightedAuthorizationModelGraph) AddNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) {
+	wg.nodes[uniqueLabel] = newWeightedNode(uniqueLabel, label, nodeType, relationDefinition)
 }
 
-// AddNode adds a node to the graph with optional nodeType and weight.
-func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label string, nodeType NodeType) *WeightedAuthorizationModelNode {
+// GetOrAddNode returns the existing node for uniqueLabel, or adds it if absent. The
+// relationDefinition argument follows the same rules as AddNode; it is ignored when the node
+// already exists, so the first writer of a node determines its relation attribution.
+func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) *WeightedAuthorizationModelNode {
 	if existingNode := wg.nodes[uniqueLabel]; existingNode != nil {
 		return existingNode
 	}
+	wg.nodes[uniqueLabel] = newWeightedNode(uniqueLabel, label, nodeType, relationDefinition)
+
+	return wg.nodes[uniqueLabel]
+}
+
+// newWeightedNode builds a node, deriving the wildcard list from the label for wildcard nodes.
+func newWeightedNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) *WeightedAuthorizationModelNode {
 	var wildcards []string
 	if nodeType == SpecificTypeWildcard {
 		wildcards = []string{uniqueLabel[:len(uniqueLabel)-2]}
 	}
-	wg.nodes[uniqueLabel] = &WeightedAuthorizationModelNode{uniqueLabel: uniqueLabel, label: label, nodeType: nodeType, wildcards: wildcards, directAssigns: make([]string, 0)}
-	return wg.nodes[uniqueLabel]
+
+	return &WeightedAuthorizationModelNode{
+		uniqueLabel:        uniqueLabel,
+		label:              label,
+		nodeType:           nodeType,
+		wildcards:          wildcards,
+		directAssigns:      make([]string, 0),
+		relationDefinition: relationDefinition,
+	}
 }
 
 func (wg *WeightedAuthorizationModelGraph) AddEdge(fromID, toID string, edgeType EdgeType, relationDefinition string, tuplesetRelation string, conditions []string) {

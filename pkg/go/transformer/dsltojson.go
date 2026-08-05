@@ -14,10 +14,10 @@ import (
 type RelationDefinitionOperator string
 
 const (
-	RELATION_DEFINITION_OPERATOR_NONE    RelationDefinitionOperator = ""        //nolint:stylecheck,revive
-	RELATION_DEFINITION_OPERATOR_OR      RelationDefinitionOperator = "or"      //nolint:stylecheck,revive
-	RELATION_DEFINITION_OPERATOR_AND     RelationDefinitionOperator = "and"     //nolint:stylecheck,revive
-	RELATION_DEFINITION_OPERATOR_BUT_NOT RelationDefinitionOperator = "but not" //nolint:stylecheck,revive
+	RELATION_DEFINITION_OPERATOR_NONE    RelationDefinitionOperator = ""        //nolint:staticcheck,revive
+	RELATION_DEFINITION_OPERATOR_OR      RelationDefinitionOperator = "or"      //nolint:staticcheck,revive
+	RELATION_DEFINITION_OPERATOR_AND     RelationDefinitionOperator = "and"     //nolint:staticcheck,revive
+	RELATION_DEFINITION_OPERATOR_BUT_NOT RelationDefinitionOperator = "but not" //nolint:staticcheck,revive
 )
 
 // OpenFGA DSL Listener

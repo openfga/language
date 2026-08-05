@@ -39,7 +39,7 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeID(nodeID string) ([]
 
 // Deprecated: Use GetEdgesFromNodeID instead.
 //
-//nolint:revive,stylecheck
+//nolint:revive,staticcheck
 func (wg *WeightedAuthorizationModelGraph) GetEdgesFromNodeId(nodeID string) ([]*WeightedAuthorizationModelEdge, bool) {
 	return wg.GetEdgesFromNodeID(nodeID)
 }

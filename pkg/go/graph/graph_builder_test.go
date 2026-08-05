@@ -1148,9 +1148,10 @@ func TestGetDOTRepresentation_2(t *testing.T) {
 			return err
 		}
 
-		if extension == ".fga" {
+		switch extension {
+		case ".fga":
 			testCases[pathWithoutExtension].model = string(content)
-		} else if extension == ".dot" {
+		case ".dot":
 			testCases[pathWithoutExtension].expectedOutput = string(content)
 		}
 

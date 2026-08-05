@@ -9,44 +9,44 @@ const (
 	//
 	// e.g. define rel1: [user]
 	// define rel2: [group#member]
-	// define rel3: [user, employee, user:*, user:* with xcond, employee with xcond, group#member, group#member with xcond]
+	// define rel3: [user, employee, user:*, user:* with xcond, employee with xcond, group#member, group#member with xcond].
 	DirectEdge EdgeType = 0
 
 	// RewriteEdge leads from an operator to a relation
 	//
-	// in `define rel1: a OR b`, the edge from `OR --> b` and the edge from rel1 -> OR
+	// In `define rel1: a OR b`, the edge from `OR --> b` and the edge from rel1 -> OR.
 	RewriteEdge EdgeType = 1
 
 	// TTUEdge points to a tuple to userset relation
 	//
-	// e.g. define rel1: admin from parent
+	// E.g. define rel1: admin from parent.
 	TTUEdge EdgeType = 2
 
 	// ComputedEdge points to another relation
 	//
-	// e.g. define rel1: rel2
+	// E.g. define rel1: rel2.
 	ComputedEdge EdgeType = 3
 
-	// DirectLogicalEdge points to the LogicalDirectGrouping of multiple direct edges that are part of an operator node
+	// DirectLogicalEdge points to the LogicalDirectGrouping of multiple direct edges that are part of an operator node.
 	//
-	// define rel1: [user, employee, group#member] or rel2
-	// in this case OR node has two edges, one rewrite edge that goes to rel2 and another one that goes the direct edges grouping
-	// however, when there is a not operator node involved then the LogicalDirectGrouping is not created to avoid unnecessary nested nodes creation
-	// for example in this use case,
-	// define rel1: [user, employee, group#member]
-	// the node rel1 has three direct edges
+	// Define rel1: [user, employee, group#member] or rel2.
+	// In this case the OR node has two edges: one rewrite edge that goes to rel2 and another one that goes to the direct edges grouping.
+	// However, when a not operator node is involved then the LogicalDirectGrouping is not created to avoid unnecessary nested nodes.
+	// For example, in this use case:
+	// Define rel1: [user, employee, group#member].
+	// The node rel1 has three direct edges.
 	DirectLogicalEdge EdgeType = 4
 
-	// TTULogicalEdge points to the LogicalTTUGrouping when a TTU has multiple possible parents and are part of an operator node
-	// For example, if both team and group below had a #viewer relation and viewer from parent is defined as part of a union operation
-	// then a new node is create to group the TTUs
+	// TTULogicalEdge points to the LogicalTTUGrouping when a TTU has multiple possible parents and are part of an operator node.
+	// For example, if both team and group below had a #viewer relation and viewer from parent is defined as part of a union operation,
+	// then a new node is created to group the TTUs.
 	//
-	// define parent: [team, group]
-	// define can_view: viewer from parent or member
-	// however, when there is a not operator node involved then the LogicalTTUGrouping is not created to avoid unnecessary nested nodes creation
-	// for example in this use case no LogicalTTUGrouping is created, the two ttu edges are referenced directly from the can_view relation node
-	// define can_view: viewer from parent
-	// define parent: [team, group]
+	// Define parent: [team, group].
+	// Define can_view: viewer from parent or member.
+	// However, when a not operator node is involved then the LogicalTTUGrouping is not created to avoid unnecessary nested nodes.
+	// For example, in this use case no LogicalTTUGrouping is created and the two TTU edges are referenced directly from the can_view relation node.
+	// Define can_view: viewer from parent.
+	// Define parent: [team, group].
 	TTULogicalEdge EdgeType = 5
 
 	// When an edge does not have cond in the model, it will have a condition with value none.

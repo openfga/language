@@ -1206,8 +1206,8 @@ func TestValidMixedRecursionWithTupleCycles(t *testing.T) {
 	require.Equal(t, "state-member", graph.nodes["state-member"].recursiveRelation)
 	require.Equal(t, "state-member", graph.nodes["state-member-or"].recursiveRelation)
 	require.Equal(t, "state-member", graph.nodes["state-member-or-or"].recursiveRelation)
-	require.Equal(t, "", graph.nodes["state-parent"].recursiveRelation)
-	require.Equal(t, "", graph.nodes["state-parent_member"].recursiveRelation)
+	require.Empty(t, graph.nodes["state-parent"].recursiveRelation)
+	require.Empty(t, graph.nodes["state-parent_member"].recursiveRelation)
 
 	require.True(t, graph.nodes["state-member"].tupleCycle)
 	require.True(t, graph.nodes["state-member-or"].tupleCycle)

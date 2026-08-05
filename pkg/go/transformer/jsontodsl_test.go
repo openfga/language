@@ -49,7 +49,7 @@ func TestJSONToDSLTransformerForSyntaxErrorCases(t *testing.T) {
 			if testCase.ErrorMessage == "" {
 				require.NoError(t, err)
 			} else {
-				require.EqualErrorf(t, err, testCase.ErrorMessage, "")
+				require.EqualError(t, err, testCase.ErrorMessage)
 			}
 		})
 	}

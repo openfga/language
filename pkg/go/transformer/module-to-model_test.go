@@ -59,7 +59,7 @@ func TestTransformModuleToJSON(t *testing.T) {
 				if errors.As(err, &verr) {
 					errors := verr.Errors
 
-					require.Equal(t, len(errors), len(testCase.ExpectedErrors), "did not get the expected amount of errors")
+					require.Len(t, errors, len(testCase.ExpectedErrors), "did not get the expected amount of errors")
 
 					for i := 0; i < len(testCase.ExpectedErrors); i++ {
 						errorDetails := testCase.ExpectedErrors[i]

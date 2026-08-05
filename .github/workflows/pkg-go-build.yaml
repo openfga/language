@@ -9,6 +9,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -23,8 +24,12 @@ jobs:
       - name: Audit dependencies
         run: make audit-go
 
-      - name: Lint
-        run: make lint-go
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: ./pkg/go
+          args: -v -c .golangci.yaml
 
   check-gen:
     runs-on: ubuntu-latest

@@ -1,6 +1,7 @@
 BINARY_NAME=openfga-language
 DOCKER_BINARY=docker
 GO_BIN ?= $(shell go env GOPATH)/bin
+GOLANGCI_LINT_VERSION := v2.12.2
 .DEFAULT_GOAL := help
 
 help: ## Show this help
@@ -11,8 +12,8 @@ help: ## Show this help
 # Rules (https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction)
 #-----------------------------------------------------------------------------------------------------------------------
 $(GO_BIN)/golangci-lint:
-	@echo "==> Installing golangci-lint within "${GO_BIN}""
-	@go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "==> Installing golangci-lint $(GOLANGCI_LINT_VERSION) within "${GO_BIN}""
+	@go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 $(GO_BIN)/govulncheck:
 	@echo "==> Installing govulncheck within "${GO_BIN}""
@@ -38,7 +39,7 @@ test: ## Run Go tests
 
 lint: $(GO_BIN)/golangci-lint ## Lint Go source files
 	@echo "==> Linting Go source files"
-	@golangci-lint run -v --fix -c .golangci.yaml ./...
+	@$(GO_BIN)/golangci-lint run -v --fix -c .golangci.yaml ./...
 
 audit: $(GO_BIN)/govulncheck ## Audit Go source files
 	@echo "==> Checking Go source files for vulnerabilities"

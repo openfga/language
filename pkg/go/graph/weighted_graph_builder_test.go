@@ -667,13 +667,13 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Len(t, conditions, 2)
 	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
-	require.Equal(t, "", edges[0].tuplesetRelation)
+	require.Empty(t, edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["role#assignee"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
 	require.Equal(t, NoCond, conditions[0])
-	require.Equal(t, "", edges[0].tuplesetRelation)
+	require.Empty(t, edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["permission#member"])
 	require.Len(t, edges, 2)
 	var recursiveEdge *WeightedAuthorizationModelEdge
@@ -689,24 +689,24 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Len(t, conditions, 2)
 	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
-	require.Equal(t, "", recursiveEdge.tuplesetRelation)
+	require.Empty(t, recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
 	require.Equal(t, NoCond, conditions[0])
-	require.Equal(t, "", userEdge.tuplesetRelation)
+	require.Empty(t, userEdge.tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#owner"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 2)
 	require.Equal(t, NoCond, conditions[0])
 	require.Equal(t, "condX", conditions[1])
-	require.Equal(t, "", edges[0].tuplesetRelation)
+	require.Empty(t, edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(graph.nodes["job#can_view"])
 	require.Len(t, edges, 1)
 	conditions = edges[0].conditions
 	require.Len(t, conditions, 1)
 	require.Equal(t, NoCond, conditions[0])
-	require.Equal(t, "", edges[0].tuplesetRelation)
+	require.Empty(t, edges[0].tuplesetRelation)
 	edges, _ = graph.GetEdgesFromNode(edges[0].to) // OR node
 	require.Len(t, edges, 2)
 	if edges[0].weights["user"] == Infinite {
@@ -722,7 +722,7 @@ func TestValidConditionalGraphModel(t *testing.T) {
 	require.Equal(t, "job#owner", recursiveEdge.tuplesetRelation)
 	conditions = userEdge.conditions
 	require.Len(t, conditions, 1)
-	require.Equal(t, "", userEdge.tuplesetRelation)
+	require.Empty(t, userEdge.tuplesetRelation)
 	require.Equal(t, NoCond, conditions[0])
 
 	require.Equal(t, 2, graph.nodes["permission#assignee"].weights["user"])

@@ -62,7 +62,8 @@ func NewWeightedAuthorizationModelGraph() *WeightedAuthorizationModelGraph {
 	}
 }
 
-// AddNode adds a node to the graph with optional nodeType and weight.
+// AddNode adds a node to the graph under uniqueLabel, replacing any node already stored
+// there. Use GetOrAddNode to keep the existing node instead.
 // The relationDefinition argument names the relation the node belongs to, e.g. "document#parent".
 // Pass the empty string for nodes that do not belong to a single relation, i.e. SpecificType and
 // SpecificTypeWildcard nodes. See WeightedAuthorizationModelNode.GetRelationDefinition.
@@ -82,7 +83,8 @@ func (wg *WeightedAuthorizationModelGraph) GetOrAddNode(uniqueLabel, label strin
 	return wg.nodes[uniqueLabel]
 }
 
-// newWeightedNode builds a node, deriving the wildcard list from the label for wildcard nodes.
+// newWeightedNode builds a node, deriving the wildcard list from uniqueLabel for wildcard
+// nodes by stripping its trailing ":*".
 func newWeightedNode(uniqueLabel, label string, nodeType NodeType, relationDefinition string) *WeightedAuthorizationModelNode {
 	var wildcards []string
 	if nodeType == SpecificTypeWildcard {

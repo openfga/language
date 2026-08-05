@@ -42,6 +42,14 @@ func TestGetTypeLineNumber(t *testing.T) {
 			want:     1,
 		},
 		{
+			// WHITESPACE admits \f, so it must separate a name from its trailing
+			// comment as a space would; trimming only " \t" collapsed this to 0:0.
+			name:     "allows a form feed before a trailing comment",
+			typeName: "other",
+			lines:    []string{"type user", "type other\f# module: core, file: core.fga"},
+			want:     1,
+		},
+		{
 			name:     "returns -1 when absent",
 			typeName: "missing",
 			lines:    []string{"type user", "type org"},
@@ -91,6 +99,12 @@ func TestGetExtendedTypeLineNumber(t *testing.T) {
 			name:     "allows a trailing module comment",
 			typeName: "org",
 			lines:    []string{"extend type org # module: org, file: org.fga"},
+			want:     0,
+		},
+		{
+			name:     "allows a form feed before a trailing comment",
+			typeName: "org",
+			lines:    []string{"extend type org\f# module: org, file: org.fga"},
 			want:     0,
 		},
 		{
@@ -146,6 +160,13 @@ func TestGetRelationLineNumber(t *testing.T) {
 			want:     0,
 		},
 		{
+			// `define owner\f: [user]` parses, so it must be findable.
+			name:     "allows a form feed before the colon",
+			relation: "owner",
+			lines:    []string{"    define owner\f: [user]"},
+			want:     0,
+		},
+		{
 			name:     "returns -1 when absent",
 			relation: "missing",
 			lines:    []string{"    define owner: [user]"},
@@ -195,6 +216,13 @@ func TestGetConditionLineNumber(t *testing.T) {
 			name:          "allows whitespace before the parameter list",
 			conditionName: "less",
 			lines:         []string{"condition less (x: int) {"},
+			want:          0,
+		},
+		{
+			// `condition less\f(x: int) {` parses, so it must be findable.
+			name:          "allows a form feed before the parameter list",
+			conditionName: "less",
+			lines:         []string{"condition less\f(x: int) {"},
 			want:          0,
 		},
 		{

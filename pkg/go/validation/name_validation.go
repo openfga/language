@@ -185,7 +185,9 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 		if !strings.HasPrefix(trimmedLine, conditionPrefix) {
 			continue
 		}
-		if strings.HasPrefix(strings.TrimLeft(trimmedLine[len(conditionPrefix):], " \t"), "(") {
+		// The cutset must match the grammar's WHITESPACE token, which admits `\f`
+		// as well as spaces and tabs; see utils.intraLineWhitespace.
+		if strings.HasPrefix(strings.TrimLeft(trimmedLine[len(conditionPrefix):], " \t\f"), "(") {
 			return &i
 		}
 	}

@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+// intraLineWhitespace is the set of characters the grammar's WHITESPACE token
+// admits within a line: `WHITESPACE: ( '\t' | ' ' | '\u000C')+;` (OpenFGALexer.g4).
+// `\f` (U+000C) belongs here because the lexer prefers WHITESPACE over NEWLINE for
+// a bare `\f`, so `define owner\f: [user]` is a single valid line. Trimming a
+// narrower set would make such a declaration unfindable and collapse its reported
+// location to 0:0.
+const intraLineWhitespace = " \t\f"
+
 // declarationIndex returns the index of the first line that, once trimmed, begins
 // with prefix and whose remainder satisfies rest. Requiring the caller to validate
 // the remainder is what keeps a declaration whose name is a prefix of another
@@ -29,7 +37,7 @@ func endOrComment(rest string) bool {
 		return true
 	}
 
-	trimmed := strings.TrimLeft(rest, " \t")
+	trimmed := strings.TrimLeft(rest, intraLineWhitespace)
 	if trimmed == rest {
 		return false
 	}
@@ -39,7 +47,7 @@ func endOrComment(rest string) bool {
 
 // startsWith reports whether rest begins with sep, ignoring leading whitespace.
 func startsWith(rest, sep string) bool {
-	return strings.HasPrefix(strings.TrimLeft(rest, " \t"), sep)
+	return strings.HasPrefix(strings.TrimLeft(rest, intraLineWhitespace), sep)
 }
 
 // normalizeSpaces collapses runs of spaces into one, mirroring the reference's

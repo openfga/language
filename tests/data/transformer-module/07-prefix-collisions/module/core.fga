@@ -1,0 +1,11 @@
+module core
+
+type user
+
+type documentation
+  relations
+    define viewer: [user with less]
+
+condition less(val: int) {
+  val < 5
+}

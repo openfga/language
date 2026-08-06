@@ -1,0 +1,13 @@
+module dup
+
+type document
+  relations
+    define viewer: [user with less_than]
+
+condition less_than(val: int) {
+  val < 10
+}
+
+condition less(val: int) {
+  val < 3
+}

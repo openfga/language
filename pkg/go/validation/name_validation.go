@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+
+	"github.com/openfga/language/pkg/go/utils"
 )
 
 // ValidationRegexRules contains the regex rules for validation
@@ -176,18 +178,15 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 
 	conditionPrefix := "condition " + conditionName
 	for i := start; i < len(lines); i++ {
-		// Match the condition declaration itself, mirroring the reference's
-		// `condition <name>` prefix check, so we don't match an unrelated line
-		// that merely contains the condition name as a substring. The parameter
-		// list's `(` must follow the name so a condition whose name is a prefix
-		// of another (e.g. `less` vs `less_than`) cannot match the wrong line.
+		// The name must end at the prefix, so `less` does not match a declaration
+		// of `less_than`.
 		trimmedLine := strings.TrimSpace(lines[i])
 		if !strings.HasPrefix(trimmedLine, conditionPrefix) {
 			continue
 		}
-		// The cutset must match the grammar's WHITESPACE token, which admits `\f`
-		// as well as spaces and tabs; see utils.intraLineWhitespace.
-		if strings.HasPrefix(strings.TrimLeft(trimmedLine[len(conditionPrefix):], " \t\f"), "(") {
+
+		rest := trimmedLine[len(conditionPrefix):]
+		if rest == "" || !utils.IsNameByte(rest[0]) {
 			return &i
 		}
 	}

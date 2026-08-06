@@ -30,9 +30,28 @@ func TestGetTypeLineNumber(t *testing.T) {
 			want:     1,
 		},
 		{
-			name:     "does not treat a glued hash as a comment",
+			// `#`, `/`, `.` and `-` are all name bytes or name terminators per the
+			// grammar's identifier rules; `#` terminates, so this resolves to the
+			// first line. `type doc#x` is not valid DSL, so it cannot reach here
+			// from a parsed model — the case is pinned only to document the choice.
+			name:     "treats a glued hash as ending the name",
 			typeName: "doc",
 			lines:    []string{"type doc#x", "type doc"},
+			want:     0,
+		},
+		{
+			// EXTENDED_IDENTIFIER admits `.`, `/` and `-` inside a name, so a
+			// module-qualified name must not match a longer one that shares its
+			// prefix.
+			name:     "does not match a dotted name that extends the one asked for",
+			typeName: "core.doc",
+			lines:    []string{"type core.doc2", "type core.doc"},
+			want:     1,
+		},
+		{
+			name:     "does not match a hyphenated name that extends the one asked for",
+			typeName: "my-doc",
+			lines:    []string{"type my-doc-archive", "type my-doc"},
 			want:     1,
 		},
 		{

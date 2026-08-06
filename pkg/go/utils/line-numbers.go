@@ -5,50 +5,44 @@ import (
 	"strings"
 )
 
-// intraLineWhitespace is the set of characters the grammar's WHITESPACE token
-// admits within a line: `WHITESPACE: ( '\t' | ' ' | '\u000C')+;` (OpenFGALexer.g4).
-// `\f` (U+000C) belongs here because the lexer prefers WHITESPACE over NEWLINE for
-// a bare `\f`, so `define owner\f: [user]` is a single valid line. Trimming a
-// narrower set would make such a declaration unfindable and collapse its reported
-// location to 0:0.
-const intraLineWhitespace = " \t\f"
+// IsNameByte reports whether b can appear inside a declaration name. IDENTIFIER
+// admits letters, digits, `_` and MINUS, and EXTENDED_IDENTIFIER adds SLASH and DOT
+// (OpenFGALexer.g4), so `core.doc` is one name rather than `core` and a terminator.
+func IsNameByte(b byte) bool {
+	switch {
+	case b >= 'a' && b <= 'z', b >= 'A' && b <= 'Z', b >= '0' && b <= '9':
+		return true
+	}
 
-// declarationIndex returns the index of the first line that, once trimmed, begins
-// with prefix and whose remainder satisfies rest. Requiring the caller to validate
-// the remainder is what keeps a declaration whose name is a prefix of another
-// (e.g. `type document` vs `type documentation`) from matching the wrong line.
-func declarationIndex(lines []string, prefix string, rest func(string) bool) int {
+	switch b {
+	case '_', '-', '/', '.':
+		return true
+	}
+
+	return false
+}
+
+// declarationIndex returns the index of the first line beginning with prefix whose
+// name ends there, or -1. prefix always spans whole words (`type <name>`, `define
+// <name>`, `condition <name>`), so requiring the next byte to end the name is what
+// stops `document` matching a declaration of `documentation`.
+func declarationIndex(lines []string, prefix string, normalize func(string) string) int {
 	return slices.IndexFunc(lines, func(line string) bool {
-		trimmed := strings.TrimSpace(line)
+		trimmed := normalize(strings.TrimSpace(line))
 		if !strings.HasPrefix(trimmed, prefix) {
 			return false
 		}
 
-		return rest(trimmed[len(prefix):])
+		rest := trimmed[len(prefix):]
+
+		return rest == "" || !IsNameByte(rest[0])
 	})
 }
 
-// endOrComment reports whether the remainder of a declaration line is empty or is
-// only a trailing comment, mirroring the reference's `^(\s+#.*)?$`. The `#` must be
-// preceded by whitespace so a `#` glued to the name isn't treated as a comment —
-// `type doc#x` is not a declaration of `doc`.
-func endOrComment(rest string) bool {
-	if rest == "" {
-		return true
-	}
-
-	trimmed := strings.TrimLeft(rest, intraLineWhitespace)
-	if trimmed == rest {
-		return false
-	}
-
-	return strings.HasPrefix(trimmed, "#")
-}
-
-// startsWith reports whether rest begins with sep, ignoring leading whitespace.
-func startsWith(rest, sep string) bool {
-	return strings.HasPrefix(strings.TrimLeft(rest, intraLineWhitespace), sep)
-}
+// keepSpaces leaves a line as-is. Only the relation helper collapses repeated
+// spaces, matching the reference, where ` {2,}` normalization is applied in
+// getRelationLineNumber alone.
+func keepSpaces(line string) string { return line }
 
 // normalizeSpaces collapses runs of spaces into one, mirroring the reference's
 // ` {2,}` normalization, so `define  owner:` is matched the same as `define owner:`.
@@ -61,40 +55,26 @@ func normalizeSpaces(line string) string {
 }
 
 // GetConditionLineNumber returns the index of the line declaring conditionName, or
-// -1. The parameter list's `(` must follow the name, so `less` does not match a
-// declaration of `less_than`.
+// -1. `less` does not match a declaration of `less_than`.
 func GetConditionLineNumber(conditionName string, lines []string) int {
-	return declarationIndex(lines, "condition "+conditionName, func(rest string) bool {
-		return startsWith(rest, "(")
-	})
+	return declarationIndex(lines, "condition "+conditionName, keepSpaces)
 }
 
-// GetTypeLineNumber returns the index of the line declaring typeName, or -1. Only a
-// trailing comment may follow the name, so `document` does not match a declaration
-// of `documentation`.
+// GetTypeLineNumber returns the index of the line declaring typeName, or -1.
+// `document` does not match a declaration of `documentation`.
 func GetTypeLineNumber(typeName string, lines []string) int {
-	return declarationIndex(lines, "type "+typeName, endOrComment)
+	return declarationIndex(lines, "type "+typeName, keepSpaces)
 }
 
 // GetExtendedTypeLineNumber returns the index of the line extending typeName, or -1.
-// The name must be followed only by a trailing comment, as in GetTypeLineNumber.
 func GetExtendedTypeLineNumber(typeName string, lines []string) int {
-	return declarationIndex(lines, "extend type "+typeName, endOrComment)
+	return declarationIndex(lines, "extend type "+typeName, keepSpaces)
 }
 
-// GetRelationLineNumber returns the index of the line defining relation, or -1. The
-// `:` must follow the name, so `owner` does not match a definition of `owner_group`.
+// GetRelationLineNumber returns the index of the line defining relation, or -1.
+// `owner` does not match a definition of `owner_group`.
 func GetRelationLineNumber(relation string, lines []string) int {
-	prefix := "define " + relation
-
-	return slices.IndexFunc(lines, func(line string) bool {
-		normalized := normalizeSpaces(strings.TrimSpace(line))
-		if !strings.HasPrefix(normalized, prefix) {
-			return false
-		}
-
-		return startsWith(normalized[len(prefix):], ":")
-	})
+	return declarationIndex(lines, "define "+relation, normalizeSpaces)
 }
 
 type StartEnd struct {

@@ -24,7 +24,7 @@ Every edge has exactly one kind, drawn from `{DirectEdge, RewriteEdge, TTUEdge, 
 1. Each vertex carries a label unique to it, determined entirely by the model.
 2. A vertex has an outdegree of zero if and only if its kind is `SpecificType` or `SpecificTypeWildcard`.
 3. No edge is without a condition; where none is imposed, a placeholder token stands in its place.
-4. For any unique combination of source, target, kind, and tupleset relation, there exists exactly one edge, and its condition set is the accumulation of all specified conditions for that combination.
+4. For each represented combination of source, target, kind, and tupleset relation, exactly one edge exists. Its condition set is the accumulation of all specified conditions for that combination.
 5. An edge has a non-empty tupleset relation if and only if its kind is `TTUEdge` or `TTULogicalEdge`.
 6. Every `OperatorNode` has an indegree of exactly one, and its incoming edge must be a `RewriteEdge`.
 7. Every `OperatorNode` vertex represents exactly one of three specific operations: union, intersection, or exclusion.

@@ -2,6 +2,32 @@ package utils
 
 import "testing"
 
+func TestIsNameByte(t *testing.T) {
+	t.Parallel()
+
+	// IDENTIFIER: (LETTER | '_') (LETTER | DIGIT | '_' | MINUS)*, and
+	// EXTENDED_IDENTIFIER adds SLASH and DOT (OpenFGALexer.g4), so the name bytes
+	// are exactly the ASCII letters, digits, `_`, `-`, `/` and `.`. Checking every
+	// byte pins the table to those ranges, so a mistyped entry cannot survive.
+	isName := func(b byte) bool {
+		switch {
+		case b >= 'a' && b <= 'z', b >= 'A' && b <= 'Z', b >= '0' && b <= '9':
+			return true
+		case b == '_', b == '-', b == '/', b == '.':
+			return true
+		}
+
+		return false
+	}
+
+	for i := range 256 {
+		b := byte(i)
+		if got, want := IsNameByte(b), isName(b); got != want {
+			t.Errorf("IsNameByte(0x%02X) = %v, want %v", b, got, want)
+		}
+	}
+}
+
 func TestGetTypeLineNumber(t *testing.T) {
 	t.Parallel()
 
@@ -52,6 +78,12 @@ func TestGetTypeLineNumber(t *testing.T) {
 			name:     "does not match a hyphenated name that extends the one asked for",
 			typeName: "my-doc",
 			lines:    []string{"type my-doc-archive", "type my-doc"},
+			want:     1,
+		},
+		{
+			name:     "does not match a slashed name that extends the one asked for",
+			typeName: "internal",
+			lines:    []string{"type internal/doc", "type internal"},
 			want:     1,
 		},
 		{

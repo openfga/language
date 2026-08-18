@@ -1249,7 +1249,7 @@ func TestParseThisMalformedRelationReference(t *testing.T) {
 					},
 				},
 			},
-			expectPanic:           true, // Should not panic; parseThis must handle all oneof states
+			expectPanic:           false, // Should not panic; parseThis must handle all oneof states
 			expectedUserNode:      true,
 			expectedGroupNode:     false,
 			expectedUserEdgeCond:  []string{""},
@@ -1282,7 +1282,7 @@ func TestParseThisMalformedRelationReference(t *testing.T) {
 					},
 				},
 			},
-			expectPanic:           true, // Should not panic; parseThis must handle all oneof states
+			expectPanic:           false, // Should not panic; parseThis must handle all oneof states
 			expectedUserNode:      true,
 			expectedGroupNode:     false,
 			expectedUserEdgeCond:  []string{""},
@@ -1391,14 +1391,14 @@ func TestParseThisMalformedRelationReference(t *testing.T) {
 
 				// Verify edge conditions
 				if testCase.expectedUserNode && len(testCase.expectedUserEdgeCond) > 0 {
-					userToViewer := findEdge(t, graph, userNode, viewerNode)
+					userToViewer := findEdge(t, graph, userNode, viewerNode, DirectEdge, "")
 					require.NotNil(t, userToViewer, "edge from user to document#viewer should exist")
 					require.ElementsMatch(t, testCase.expectedUserEdgeCond, userToViewer.conditions,
 						"user -> document#viewer edge should have expected conditions")
 				}
 
 				if testCase.expectedGroupNode && len(testCase.expectedGroupEdgeCond) > 0 {
-					groupToViewer := findEdge(t, graph, groupNode, viewerNode)
+					groupToViewer := findEdge(t, graph, groupNode, viewerNode, DirectEdge, "")
 					require.NotNil(t, groupToViewer, "edge from group to document#viewer should exist")
 					require.ElementsMatch(t, testCase.expectedGroupEdgeCond, groupToViewer.conditions,
 						"group -> document#viewer edge should have expected conditions")
@@ -1408,15 +1408,20 @@ func TestParseThisMalformedRelationReference(t *testing.T) {
 	}
 }
 
-// findEdge returns the edge from fromNode to toNode, or nil if it doesn't exist.
-func findEdge(t *testing.T, graph *AuthorizationModelGraph, fromNode, toNode *AuthorizationModelNode) *AuthorizationModelEdge {
+// findEdge returns the edge from fromNode to toNode matching the given edgeType and tuplesetRelation,
+// or nil if no matching edge exists.
+func findEdge(t *testing.T, graph *AuthorizationModelGraph, fromNode, toNode *AuthorizationModelNode, edgeType EdgeType, tuplesetRelation string) *AuthorizationModelEdge {
 	t.Helper()
 	if fromNode == nil || toNode == nil {
 		return nil
 	}
 	iter := graph.Lines(fromNode.ID(), toNode.ID())
 	for iter.Next() {
-		if edge, ok := iter.Line().(*AuthorizationModelEdge); ok {
+		edge, ok := iter.Line().(*AuthorizationModelEdge)
+		if !ok {
+			continue
+		}
+		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
 			return edge
 		}
 	}

@@ -3093,6 +3093,68 @@ func TestWeightedParseThisMalformedRelationReference(t *testing.T) {
 			userInDirectAssigns:     true,
 			groupInDirectAssigns:    true, // group must be in directAssigns; not inherited from user
 		},
+		`type_with_special_chars_is_skipped`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"}, // Valid entry
+										{Type: "user:admin"}, // Invalid: contains colon, should be skipped
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true, // Valid user entry creates node
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false, // Invalid entry skipped, no bogus node created
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
+		`nil_wildcard_in_oneof_creates_concrete_type`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Wildcard{
+												Wildcard: nil,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true, // Default case: treats as concrete type
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false,
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
 	}
 
 	for name, testCase := range testCases {

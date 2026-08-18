@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
@@ -207,31 +206,13 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 		return fmt.Errorf("%w: parent relation node %s not found", ErrInvalidModel, parentRelationName)
 	}
 	for _, directlyRelatedDef := range directlyRelated {
-		typeName := directlyRelatedDef.GetType()
-		// Skip entries with invalid Type field: empty, or containing special characters
-		// that would break node label format.
-		if typeName == "" || strings.ContainsAny(typeName, ":#") {
+		label, nodeType := classifyRelationReference(directlyRelatedDef)
+		if label == "" {
+			// Invalid Type field (empty or contains special characters)
 			continue
 		}
 
-		var curNode *WeightedAuthorizationModelNode
-
-		switch {
-		case directlyRelatedDef.GetWildcard() != nil:
-			// direct assignment to wildcard
-			assignableWildcard := typeName + ":*"
-			curNode = wg.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
-		case directlyRelatedDef.GetRelation() != "":
-			// direct assignment to userset
-			assignableUserset := typeName + "#" + directlyRelatedDef.GetRelation()
-			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
-		default:
-			// Direct assignment to concrete type.
-			// Covers both: (1) relation_or_wildcard unset, and (2) the oneof-set-but-empty shape.
-			// Matches graph_builder.go parseThis default case. A relation named "" cannot exist
-			// (relation names are {1,50} chars), so the reference degrades to the concrete type.
-			curNode = wg.GetOrAddNode(typeName, typeName, SpecificType)
-		}
+		curNode := wg.GetOrAddNode(label, label, nodeType)
 
 		parentRelationNode.directAssigns = append(parentRelationNode.directAssigns, curNode.uniqueLabel)
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]

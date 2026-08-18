@@ -118,6 +118,33 @@ func checkRewrite(graphBuilder *AuthorizationModelGraphBuilder, parentNode *Auth
 	}
 }
 
+// classifyRelationReference determines the label and node type for a RelationReference.
+// It validates the Type field and classifies the reference based on its RelationOrWildcard oneof.
+// Returns empty label if the Type is invalid (empty or contains special characters).
+func classifyRelationReference(ref *openfgav1.RelationReference) (label string, nodeType NodeType) {
+	typeName := ref.GetType()
+	// Skip entries with invalid Type field: empty, or containing special characters
+	// that would break node label format (e.g., "user:admin" → "user:admin:*",
+	// "type#rel" → "type#rel#member").
+	if typeName == "" || strings.ContainsAny(typeName, ":#") {
+		return "", 0
+	}
+
+	switch {
+	case ref.GetWildcard() != nil:
+		// direct assignment to wildcard
+		return typeName + ":*", SpecificTypeWildcard
+	case ref.GetRelation() != "":
+		// direct assignment to userset
+		return typeName + "#" + ref.GetRelation(), SpecificTypeAndRelation
+	default:
+		// Direct assignment to concrete type. Covers oneof unset and set-but-empty
+		// (openfga/api gates relation pattern on non-empty, so "" survives validation).
+		// Matches transformer/jsontodsl.go parseTypeRestriction behavior.
+		return typeName, SpecificType
+	}
+}
+
 func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.Node, typeDef *openfgav1.TypeDefinition, relation string) {
 	directlyRelated := make([]*openfgav1.RelationReference, 0)
 
@@ -126,42 +153,13 @@ func parseThis(graphBuilder *AuthorizationModelGraphBuilder, parentNode graph.No
 	}
 
 	for _, directlyRelatedDef := range directlyRelated {
-		typeName := directlyRelatedDef.GetType()
-		// Skip entries with invalid Type field: empty, or containing special characters
-		// that would break node label format (e.g., "user:admin" → "user:admin:*",
-		// "type#rel" → "type#rel#member").
-		if typeName == "" || strings.ContainsAny(typeName, ":#") {
+		label, nodeType := classifyRelationReference(directlyRelatedDef)
+		if label == "" {
+			// Invalid Type field (empty or contains special characters)
 			continue
 		}
 
-		var curNode *AuthorizationModelNode
-
-		switch {
-		case directlyRelatedDef.GetWildcard() != nil:
-			// direct assignment to wildcard
-			assignableWildcard := typeName + ":*"
-			curNode = graphBuilder.getOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
-		case directlyRelatedDef.GetRelation() != "":
-			// direct assignment to userset
-			assignableUserset := typeName + "#" + directlyRelatedDef.GetRelation()
-			curNode = graphBuilder.getOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
-		default:
-			// Direct assignment to concrete type.
-			// Covers both: (1) relation_or_wildcard unset, and (2) the oneof-set-but-empty
-			// shape that survives proto validation (openfga/api authzmodel.pb.validate.go
-			// gates the relation pattern check on non-empty). A relation named "" cannot
-			// exist (relation names are {1,50} chars, grammar requires >=1 after #), so the
-			// reference degrades to the concrete type rather than minting an unresolvable node.
-			// This matches transformer/jsontodsl.go parseTypeRestriction, which already treats
-			// set-but-empty as the bare type name.
-			//
-			// Forward compatibility: if openfga/api adds a new RelationOrWildcard oneof variant,
-			// this default silently treats it as a concrete type. Alerting on unknown variants
-			// would require version-checking or reflection, both expensive for a hot path. The
-			// tradeoff: new variants render as types until this code is updated, but the graph
-			// builds and openfga's validation will catch the unrecognized oneof.
-			curNode = graphBuilder.getOrAddNode(typeName, typeName, SpecificType)
-		}
+		curNode := graphBuilder.getOrAddNode(label, label, nodeType)
 
 		// de-dup types that are conditioned, e.g. if define viewer: [user, user with condX]
 		// we only draw one edge from user to x#viewer, but with two conditions: none and condX

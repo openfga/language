@@ -62,7 +62,7 @@ type document
 ## Related Errors
 
 - [`schema-version-unsupported`](./schema-version-unsupported.md) - When an unsupported version is specified
-- [`invalid-schema-version`](./invalid-schema-version.md) - When the version format is invalid
+- [`invalid-schema-version`](./invalid-schema-version.md) - Declared but not emitted; an unrecognised version reports `invalid-schema`
 
 ## Implementation Notes
 

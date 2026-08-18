@@ -276,23 +276,23 @@ func TestReservedKeywordsValidation(t *testing.T) {
 	// Test type name validation - should pass for valid names
 	isValid := ValidateTypeName("document", collector, nil, nil)
 	assert.True(t, isValid)
-	assert.Empty(t, collector.GetErrors())
+	assert.Empty(t, collector.AllFindings())
 
 	// Test type name validation - should fail for reserved keywords
 	collector = NewErrorCollector(nil)
 	isValid = ValidateTypeName("this", collector, nil, nil)
 	assert.False(t, isValid)
-	assert.NotEmpty(t, collector.GetErrors())
+	assert.NotEmpty(t, collector.AllFindings())
 
 	// Test relation name validation - should pass for valid names
 	collector = NewErrorCollector(nil)
 	isValid = ValidateRelationName("viewer", "document", collector, nil, nil)
 	assert.True(t, isValid)
-	assert.Empty(t, collector.GetErrors())
+	assert.Empty(t, collector.AllFindings())
 
 	// Test relation name validation - should fail for reserved keywords
 	collector = NewErrorCollector(nil)
 	isValid = ValidateRelationName("self", "document", collector, nil, nil)
 	assert.False(t, isValid)
-	assert.NotEmpty(t, collector.GetErrors())
+	assert.NotEmpty(t, collector.AllFindings())
 }

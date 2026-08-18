@@ -55,7 +55,7 @@ func TestDuplicateTypeTracker_CheckAndAddType(t *testing.T) {
 				tracker.CheckAndAddType(typeName, collector, meta, nil)
 			}
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 && tt.expectedDuplicate != "" {
@@ -170,7 +170,7 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 
 			CheckForDuplicateTypeNamesInRelation(collector, tt.relationMetadata, tt.relationName, tt.typeName, meta, nil, nil)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -377,7 +377,7 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 
 			CheckForDuplicatesInRelation(collector, tt.typeDef, tt.relationName, nil, nil)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -499,7 +499,7 @@ func TestValidateDuplicates(t *testing.T) {
 
 			ValidateDuplicates(collector, tt.model, nil)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			for i, expectedType := range tt.expectedErrorTypes {
@@ -582,7 +582,7 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 
 			checkDuplicatesInOperands(collector, tt.union, "test_relation", "test_type", meta, nil, nil)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -605,7 +605,7 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 		}
 
 		ValidateDuplicates(collector, model, nil)
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "is a duplicate")
@@ -634,7 +634,7 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 		}
 
 		ValidateDuplicates(collector, model, nil)
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
 	})

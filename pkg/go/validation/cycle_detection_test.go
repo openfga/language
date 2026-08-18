@@ -54,7 +54,7 @@ func TestCycleDetector(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		// Each relation is impossible: one error per relation, all RelationNoEntrypoint.
 		assert.Len(t, errors, 2)
 		for _, err := range errors {
@@ -95,7 +95,7 @@ func TestCycleDetector(t *testing.T) {
 
 		collector := NewErrorCollector(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
-		assert.Empty(t, collector.GetErrors())
+		assert.Empty(t, collector.AllFindings())
 	})
 
 	t.Run("Computed chain terminating in a direct assignment is reachable", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestCycleDetector(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 		// All three relations resolve to owner's direct assignment.
-		assert.Empty(t, collector.GetErrors())
+		assert.Empty(t, collector.AllFindings())
 	})
 }
 
@@ -215,7 +215,7 @@ func TestHasEntryPointOrLoop_TupleToUserset(t *testing.T) {
 		if folderViewer != nil {
 			folder.Relations["viewer"] = folderViewer
 		} else {
-			delete(folder.Metadata.Relations, "viewer")
+			delete(folder.GetMetadata().GetRelations(), "viewer")
 		}
 		return &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{

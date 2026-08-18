@@ -5,6 +5,9 @@ import (
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
 
 func TestSemanticValidator(t *testing.T) {
@@ -96,11 +99,11 @@ func TestSemanticValidator(t *testing.T) {
 
 		docType := validator.GetTypeDefinition("document")
 		assert.NotNil(t, docType)
-		assert.Equal(t, "document", docType.Type)
+		assert.Equal(t, "document", docType.GetType())
 
 		userType := validator.GetTypeDefinition("user")
 		assert.NotNil(t, userType)
-		assert.Equal(t, "user", userType.Type)
+		assert.Equal(t, "user", userType.GetType())
 
 		groupType := validator.GetTypeDefinition("group")
 		assert.Nil(t, groupType)
@@ -139,7 +142,7 @@ func TestValidateRelationReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateRelationReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Empty(t, errors)
 	})
 
@@ -164,7 +167,7 @@ func TestValidateRelationReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateRelationReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, InvalidType, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_type")
@@ -194,10 +197,23 @@ func TestValidateRelationReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateRelationReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
-		assert.Len(t, errors, 1)
+		errors := collector.AllFindings()
+		require.Len(t, errors, 1)
 		assert.Equal(t, InvalidRelationType, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_relation")
+
+		// The restriction names user#undefined_relation, so the finding is scoped to
+		// the restricted type, while offendingType is the type the restriction was
+		// written in. This is the split pkg/js reports: typeName is the restricted
+		// type, offendingType the enclosing one.
+		assert.Equal(t, "user", errors[0].Metadata.Type)
+		assert.Equal(t, "viewer", errors[0].Metadata.Relation)
+		assert.Equal(t, "document", errors[0].Metadata.OffendingType)
+
+		var scoped *fgaerrors.ErrRelation
+		require.ErrorAs(t, errors[0], &scoped)
+		assert.Equal(t, "user", scoped.ObjectType)
+		assert.Equal(t, "viewer", scoped.Relation)
 	})
 
 	t.Run("Undefined relation in computed userset", func(t *testing.T) {
@@ -221,10 +237,16 @@ func TestValidateRelationReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateRelationReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
-		assert.Len(t, errors, 1)
+		errors := collector.AllFindings()
+		require.Len(t, errors, 1)
 		assert.Equal(t, MissingDefinition, errors[0].Metadata.ErrorType)
+		assert.Equal(t, "viewer", errors[0].Metadata.Relation)
 		assert.Contains(t, errors[0].Message, "undefined_relation")
+
+		var scoped *fgaerrors.ErrRelation
+		require.ErrorAs(t, errors[0], &scoped)
+		assert.Equal(t, "document", scoped.ObjectType)
+		assert.Equal(t, "viewer", scoped.Relation)
 	})
 
 	t.Run("Complex userset validation", func(t *testing.T) {
@@ -268,7 +290,7 @@ func TestValidateRelationReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateRelationReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, MissingDefinition, errors[0].Metadata.ErrorType)
 		assert.Contains(t, errors[0].Message, "undefined_relation")

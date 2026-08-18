@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
-
-
 
 func TestWordIndex(t *testing.T) {
 	tests := []struct {
@@ -45,13 +46,13 @@ func TestErrorCollector_GetErrors(t *testing.T) {
 	collector := NewErrorCollector(nil)
 
 	// Initially no errors
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Empty(t, errors)
 
 	// Add an error
 	collector.RaiseInvalidName("test", "rule", nil, nil, nil)
 
-	errors = collector.GetErrors()
+	errors = collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Contains(t, errors[0].Message, "test")
 }
@@ -112,13 +113,34 @@ func TestErrorCollector_RaiseInvalidName(t *testing.T) {
 			collector := NewErrorCollector(nil)
 			collector.RaiseInvalidName(tt.symbol, tt.clause, tt.typeName, tt.lineIndex, tt.meta)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, 1)
 			assert.Equal(t, tt.expectedMsg, errors[0].Message)
 			assert.Equal(t, tt.expectedType, errors[0].Metadata.ErrorType)
 			assert.Equal(t, tt.symbol, errors[0].Metadata.Symbol)
 		})
 	}
+}
+
+func TestErrorCollector_RaiseInvalidConditionName(t *testing.T) {
+	collector := NewErrorCollector(nil)
+	lineIndex := 5
+	meta := &Meta{File: "test.fga", Module: "test"}
+
+	collector.RaiseInvalidConditionName("bad name", "[a-zA-Z]+", &lineIndex, meta)
+
+	errors := collector.AllFindings()
+	require.Len(t, errors, 1)
+	assert.Equal(t, "condition 'bad name' does not match naming rule: '[a-zA-Z]+'.", errors[0].Message)
+	assert.Equal(t, InvalidName, errors[0].Metadata.ErrorType)
+	assert.Equal(t, "bad name", errors[0].Metadata.Symbol)
+	assert.Equal(t, fgaerrors.ErrorKindCondition, errors[0].Category)
+	assert.Equal(t, "bad name", errors[0].Metadata.Condition)
+	assert.Empty(t, errors[0].Metadata.Type)
+
+	var scoped *fgaerrors.ErrCondition
+	require.ErrorAs(t, errors[0], &scoped)
+	assert.Equal(t, "bad name", scoped.Condition)
 }
 
 func TestErrorCollector_RaiseReservedTypeName(t *testing.T) {
@@ -128,7 +150,7 @@ func TestErrorCollector_RaiseReservedTypeName(t *testing.T) {
 
 	collector.RaiseReservedTypeName("self", &lineIndex, meta)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "a type cannot be named 'self' or 'this'.", errors[0].Message)
 	assert.Equal(t, ReservedTypeKeywords, errors[0].Metadata.ErrorType)
@@ -141,13 +163,14 @@ func TestErrorCollector_RaiseReservedRelationName(t *testing.T) {
 	lineIndex := 3
 	meta := &Meta{File: "test.fga", Module: "test"}
 
-	collector.RaiseReservedRelationName("this", &lineIndex, meta)
+	collector.RaiseReservedRelationName("this", "document", &lineIndex, meta)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "a relation cannot be named 'self' or 'this'.", errors[0].Message)
 	assert.Equal(t, ReservedRelationKeywords, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "this", errors[0].Metadata.Symbol)
+	assert.Equal(t, "document", errors[0].Metadata.Type)
 }
 
 func TestErrorCollector_RaiseTupleUsersetRequiresDirect(t *testing.T) {
@@ -163,7 +186,7 @@ func TestErrorCollector_RaiseTupleUsersetRequiresDirect(t *testing.T) {
 
 	collector.RaiseTupleUsersetRequiresDirect("user", "document", "viewer", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "`user` relation used inside from allows only direct relation.", errors[0].Message)
 	assert.Equal(t, TuplesetNotDirect, errors[0].Metadata.ErrorType)
@@ -177,7 +200,7 @@ func TestErrorCollector_RaiseDuplicateTypeName(t *testing.T) {
 
 	collector.RaiseDuplicateTypeName("document", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "the type `document` is a duplicate.", errors[0].Message)
 	assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
@@ -191,7 +214,7 @@ func TestErrorCollector_RaiseDuplicateTypeRestriction(t *testing.T) {
 
 	collector.RaiseDuplicateTypeRestriction("user", "viewer", "document", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "the type restriction `user` is a duplicate in the relation `viewer`.", errors[0].Message)
 	assert.Equal(t, DuplicatedError, errors[0].Metadata.ErrorType)
@@ -205,7 +228,7 @@ func TestErrorCollector_RaiseNoEntryPointLoop(t *testing.T) {
 
 	collector.RaiseNoEntryPointLoop("viewer", "document", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "`viewer` is an impossible relation for `document` (potential loop).", errors[0].Message)
 	assert.Equal(t, RelationNoEntrypoint, errors[0].Metadata.ErrorType)
@@ -219,7 +242,7 @@ func TestErrorCollector_RaiseNoEntryPoint(t *testing.T) {
 
 	collector.RaiseNoEntryPoint("viewer", "document", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "`viewer` is an impossible relation for `document` (no entrypoint).", errors[0].Message)
 	assert.Equal(t, RelationNoEntrypoint, errors[0].Metadata.ErrorType)
@@ -233,7 +256,7 @@ func TestErrorCollector_RaiseInvalidType(t *testing.T) {
 
 	collector.RaiseInvalidType("unknown_type", "document", "viewer", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "`unknown_type` is not a valid type.", errors[0].Message)
 	assert.Equal(t, InvalidType, errors[0].Metadata.ErrorType)
@@ -246,7 +269,7 @@ func TestErrorCollector_RaiseAssignableRelationMustHaveTypes(t *testing.T) {
 
 	collector.RaiseAssignableRelationMustHaveTypes("viewer", &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "the assignable relation 'viewer' must have at least one assignable type.", errors[0].Message)
 	assert.Equal(t, AssignableRelationsMustHaveType, errors[0].Metadata.ErrorType)
@@ -257,11 +280,10 @@ func TestErrorCollector_RaiseInvalidRelationError(t *testing.T) {
 	collector := NewErrorCollector(nil)
 	meta := &Meta{File: "test.fga", Module: "test"}
 	lineIndex := 4
-	validRelations := []string{"admin", "viewer"}
 
-	collector.RaiseInvalidRelationError("unknown", "document", "relation", validRelations, &lineIndex, meta)
+	collector.RaiseInvalidRelationError("unknown", "document", "relation", &lineIndex, meta)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "the relation `unknown` does not exist.", errors[0].Message)
 	assert.Equal(t, MissingDefinition, errors[0].Metadata.ErrorType)
@@ -274,7 +296,7 @@ func TestErrorCollector_RaiseSchemaVersionRequired(t *testing.T) {
 
 	collector.RaiseSchemaVersionRequired("", &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "schema version required", errors[0].Message)
 	assert.Equal(t, SchemaVersionRequired, errors[0].Metadata.ErrorType)
@@ -286,7 +308,7 @@ func TestErrorCollector_RaiseInvalidSchemaVersion(t *testing.T) {
 
 	collector.RaiseInvalidSchemaVersion("2.0", &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "invalid schema 2.0", errors[0].Message)
 	assert.Equal(t, InvalidSchema, errors[0].Metadata.ErrorType)
@@ -299,7 +321,7 @@ func TestErrorCollector_RaiseSchemaVersionUnsupported(t *testing.T) {
 
 	collector.RaiseSchemaVersionUnsupported("1.0", &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "schema version no longer supported", errors[0].Message)
 	assert.Equal(t, SchemaVersionUnsupported, errors[0].Metadata.ErrorType)
@@ -313,7 +335,7 @@ func TestErrorCollector_RaiseUnusedCondition(t *testing.T) {
 
 	collector.RaiseUnusedCondition("unused_condition", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "`unused_condition` condition is not used in the model.", errors[0].Message)
 	assert.Equal(t, ConditionNotUsed, errors[0].Metadata.ErrorType)
@@ -325,7 +347,7 @@ func TestErrorCollector_RaiseDifferentNestedConditionName(t *testing.T) {
 
 	collector.RaiseDifferentNestedConditionName("condition1", "condition2")
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, "condition key is `condition1` but nested name property is condition2", errors[0].Message)
 	assert.Equal(t, DifferentNestedConditionName, errors[0].Metadata.ErrorType)
@@ -338,9 +360,10 @@ func TestErrorCollector_RaiseMultipleModulesInSingleFile(t *testing.T) {
 
 	collector.RaiseMultipleModulesInSingleFile("test.fga", modules)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
-	assert.Equal(t, "file 'test.fga' contains multiple modules: module1, module2, module3.", errors[0].Message)
+	assert.Equal(t, "file test.fga would contain multiple module definitions (module1, module2, module3) "+
+		"when transforming to DSL. Only one module can be defined per file.", errors[0].Message)
 	assert.Equal(t, MultipleModulesInFile, errors[0].Metadata.ErrorType)
 	assert.Equal(t, "test.fga", errors[0].Metadata.Symbol)
 }
@@ -358,7 +381,7 @@ func TestErrorCollector_LineAndColumnResolution(t *testing.T) {
 
 	collector.RaiseInvalidName("viewer", "rule", nil, &lineIndex, nil)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 
 	// Check line information
@@ -386,7 +409,7 @@ func TestErrorCollector_CustomResolver(t *testing.T) {
 
 	collector.RaiseTupleUsersetRequiresDirect("user", "document", "viewer", meta, &lineIndex)
 
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 
 	// The custom resolver should position the error after "from" keyword

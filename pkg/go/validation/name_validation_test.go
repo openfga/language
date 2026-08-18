@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestValidationRegexRules(t *testing.T) {
 	// Test that regex rules match the JS implementation
 	assert.Equal(t, "[^:#@\\*\\s]{1,254}", ValidationRegexRules.Type)
@@ -130,7 +129,7 @@ func TestValidateTypeName(t *testing.T) {
 
 			assert.Equal(t, tt.expectedValid, result)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -216,7 +215,7 @@ func TestValidateRelationName(t *testing.T) {
 
 			assert.Equal(t, tt.expectedValid, result)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -281,12 +280,15 @@ func TestValidateConditionName(t *testing.T) {
 
 			assert.Equal(t, tt.expectedValid, result)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
 				assert.Equal(t, InvalidName, errors[0].Metadata.ErrorType)
 				assert.Equal(t, tt.conditionName, errors[0].Metadata.Symbol)
+				// The finding is scoped to the condition, not to a type.
+				assert.Equal(t, tt.conditionName, errors[0].Metadata.Condition)
+				assert.Empty(t, errors[0].Metadata.Type)
 			}
 		})
 	}
@@ -593,7 +595,7 @@ func TestValidateNameRules(t *testing.T) {
 
 			ValidateNameRules(collector, tt.typeName, tt.relationNames, typeLineIndex, meta, tt.lines)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 		})
 	}

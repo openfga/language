@@ -33,8 +33,8 @@ func TestNewConditionValidator(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "is_owner",
+										Type:      "user",
+										Condition: "is_owner",
 									},
 								},
 							},
@@ -88,7 +88,7 @@ func TestConditionValidator_GetUsedConditions(t *testing.T) {
 						"viewer": {
 							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type: "user",
+									Type:      "user",
 									Condition: "used_condition",
 								},
 							},
@@ -120,7 +120,7 @@ func TestConditionValidator_GetConditionReferences(t *testing.T) {
 						"viewer": {
 							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type: "user",
+									Type:      "user",
 									Condition: "test_condition",
 								},
 							},
@@ -128,7 +128,7 @@ func TestConditionValidator_GetConditionReferences(t *testing.T) {
 						"editor": {
 							DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 								{
-									Type: "user",
+									Type:      "user",
 									Condition: "test_condition",
 								},
 							},
@@ -177,8 +177,8 @@ func TestValidateUnusedConditions(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "used_condition",
+										Type:      "user",
+										Condition: "used_condition",
 									},
 								},
 							},
@@ -191,7 +191,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Empty(t, errors)
 	})
 
@@ -209,8 +209,8 @@ func TestValidateUnusedConditions(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "used_condition",
+										Type:      "user",
+										Condition: "used_condition",
 									},
 								},
 							},
@@ -223,7 +223,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, ConditionNotUsed, errors[0].Metadata.ErrorType)
 		assert.Equal(t, "unused_condition", errors[0].Metadata.Symbol)
@@ -246,8 +246,8 @@ func TestValidateUnusedConditions(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "used_condition",
+										Type:      "user",
+										Condition: "used_condition",
 									},
 								},
 							},
@@ -260,7 +260,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 2)
 
 		// Check that both unused conditions are reported
@@ -288,8 +288,8 @@ func TestValidateConditionReferences(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "valid_condition",
+										Type:      "user",
+										Condition: "valid_condition",
 									},
 								},
 							},
@@ -302,7 +302,7 @@ func TestValidateConditionReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Empty(t, errors)
 	})
 
@@ -316,8 +316,8 @@ func TestValidateConditionReferences(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "undefined_condition",
+										Type:      "user",
+										Condition: "undefined_condition",
 									},
 								},
 							},
@@ -330,7 +330,7 @@ func TestValidateConditionReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, ConditionNotDefined, errors[0].Metadata.ErrorType)
 		assert.Equal(t, "undefined_condition", errors[0].Metadata.Symbol)
@@ -347,16 +347,16 @@ func TestValidateConditionReferences(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "undefined1",
+										Type:      "user",
+										Condition: "undefined1",
 									},
 								},
 							},
 							"editor": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "undefined2",
+										Type:      "user",
+										Condition: "undefined2",
 									},
 								},
 							},
@@ -369,7 +369,7 @@ func TestValidateConditionReferences(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionReferences(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 2)
 
 		// Check that both undefined conditions are reported
@@ -394,7 +394,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Empty(t, errors)
 	})
 
@@ -408,7 +408,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
-		errors := collector.GetErrors()
+		errors := collector.AllFindings()
 		assert.Len(t, errors, 1)
 		assert.Equal(t, DifferentNestedConditionName, errors[0].Metadata.ErrorType)
 		assert.Equal(t, "condition key is `in_office` but nested name property is different_name", errors[0].Message)
@@ -424,7 +424,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 		collector := NewErrorCollector(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
-		assert.Empty(t, collector.GetErrors())
+		assert.Empty(t, collector.AllFindings())
 	})
 }
 
@@ -444,12 +444,12 @@ func TestScanForConditionUsage(t *testing.T) {
 							"viewer": {
 								DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
 									{
-										Type: "user",
-									Condition: "condition1",
+										Type:      "user",
+										Condition: "condition1",
 									},
 									{
-										Type: "group",
-									Condition: "condition2",
+										Type:      "group",
+										Condition: "condition2",
 									},
 								},
 							},

@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -43,8 +46,12 @@ func (cv *ConditionValidator) buildConditionMaps() {
 func (cv *ConditionValidator) scanForConditionUsage() {
 	for _, typeDef := range cv.model.GetTypeDefinitions() {
 		if metaProto := typeDef.GetMetadata(); metaProto != nil {
-			for relationName, relationMetadata := range metaProto.GetRelations() {
-				cv.scanRelationMetadataForConditions(typeDef.GetType(), relationName, relationMetadata)
+			// Relations in name order: the references collected here are reported in
+			// the order they were appended, so ranging the map would vary it.
+			relationsMetadata := metaProto.GetRelations()
+			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
+				cv.scanRelationMetadataForConditions(typeDef.GetType(), relationName,
+					relationsMetadata[relationName])
 			}
 		}
 	}
@@ -75,8 +82,9 @@ func ValidateUnusedConditions(collector *ErrorCollector, model *openfgav1.Author
 }
 
 func validateUnusedConditions(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
-	for conditionName, condition := range validator.definedConds {
+	for _, conditionName := range slices.Sorted(maps.Keys(validator.definedConds)) {
 		if !validator.usedConds[conditionName] {
+			condition := validator.definedConds[conditionName]
 			lineIndex := GetConditionLineNumber(conditionName, lines, nil)
 			meta := &Meta{
 				File:   condition.GetMetadata().GetSourceInfo().GetFile(),
@@ -97,7 +105,7 @@ func ValidateConditionReferences(collector *ErrorCollector, model *openfgav1.Aut
 
 func validateConditionReferences(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
 	model := validator.model
-	for conditionName := range validator.usedConds {
+	for _, conditionName := range slices.Sorted(maps.Keys(validator.usedConds)) {
 		if _, exists := validator.definedConds[conditionName]; !exists {
 			for _, ref := range validator.conditionRefs[conditionName] {
 				// Anchor the relation line lookup to the referencing type's
@@ -127,7 +135,9 @@ func ValidateConditionConsistency(collector *ErrorCollector, model *openfgav1.Au
 	if model == nil {
 		return
 	}
-	for conditionKey, condition := range model.GetConditions() {
+	conditions := model.GetConditions()
+	for _, conditionKey := range slices.Sorted(maps.Keys(conditions)) {
+		condition := conditions[conditionKey]
 		if condition == nil {
 			continue
 		}

@@ -1,9 +1,13 @@
 package validation
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
 
 func TestValidationError_Error(t *testing.T) {
@@ -16,8 +20,8 @@ func TestValidationError_Error(t *testing.T) {
 			name: "error with line and column",
 			error: &ValidationError{
 				Message: "test error message",
-				Line:    &LineRange{Start: 5, End: 5},
-				Column:  &ColumnRange{Start: 10, End: 15},
+				Line:    &Range{Start: 5, End: 5},
+				Column:  &Range{Start: 10, End: 15},
 				Metadata: &ErrorMetadata{
 					Symbol:    "test_symbol",
 					ErrorType: InvalidName,
@@ -41,8 +45,8 @@ func TestValidationError_Error(t *testing.T) {
 			error: &ValidationError{
 				Message: "test error message",
 				File:    "test.fga",
-				Line:    &LineRange{Start: 3, End: 3},
-				Column:  &ColumnRange{Start: 0, End: 4},
+				Line:    &Range{Start: 3, End: 3},
+				Column:  &Range{Start: 0, End: 4},
 			},
 			expected: "validation error at line=3, column=0: test error message",
 		},
@@ -59,8 +63,8 @@ func TestValidationError_Error(t *testing.T) {
 func TestValidationError_String(t *testing.T) {
 	valErr := &ValidationError{
 		Message: "test error",
-		Line:    &LineRange{Start: 1, End: 1},
-		Column:  &ColumnRange{Start: 5, End: 10},
+		Line:    &Range{Start: 1, End: 1},
+		Column:  &Range{Start: 5, End: 10},
 	}
 
 	// String() should return the same as Error()
@@ -170,13 +174,13 @@ func TestErrorMetadata(t *testing.T) {
 }
 
 func TestLineRange(t *testing.T) {
-	line := &LineRange{Start: 5, End: 10}
+	line := &Range{Start: 5, End: 10}
 	assert.Equal(t, 5, line.Start)
 	assert.Equal(t, 10, line.End)
 }
 
 func TestColumnRange(t *testing.T) {
-	column := &ColumnRange{Start: 15, End: 25}
+	column := &Range{Start: 15, End: 25}
 	assert.Equal(t, 15, column.Start)
 	assert.Equal(t, 25, column.End)
 }
@@ -228,4 +232,139 @@ func TestMeta(t *testing.T) {
 
 	assert.Equal(t, "test.fga", meta.File)
 	assert.Equal(t, "test_module", meta.Module)
+}
+
+// TestCategorySerialisesForEveryCategory checks every finding carries its category
+// on the wire under its name. Category counts from iota + 1, so no real category is
+// the zero value omitempty drops.
+func TestCategorySerialisesForEveryCategory(t *testing.T) {
+	t.Parallel()
+
+	collector := NewErrorCollector(nil)
+	collector.RaiseInvalidType("user", "document", "viewer", nil, nil)              // object-type
+	collector.RaiseDuplicateTypeRestriction("user", "viewer", "document", nil, nil) // relation
+	collector.RaiseUnusedCondition("unused_cond", nil, nil)                         // condition
+
+	wantCategories := []string{`"category":"object-type"`, `"category":"relation"`, `"category":"condition"`}
+
+	findings := collector.AllFindings()
+	require.Len(t, findings, len(wantCategories))
+
+	for i, want := range wantCategories {
+		encoded, err := json.Marshal(findings[i])
+		require.NoError(t, err)
+		assert.Containsf(t, string(encoded), want,
+			"finding %d (%s) must carry its category on the wire", i, findings[i].Metadata.ErrorType)
+	}
+}
+
+// TestSeveritySerialisesUnderItsName checks the same for severity, and that a
+// finding which never set one carries no severity field at all.
+func TestSeveritySerialisesUnderItsName(t *testing.T) {
+	t.Parallel()
+
+	collector := NewErrorCollector(nil)
+	collector.RaiseInvalidType("user", "document", "viewer", nil, nil)
+
+	findings := collector.AllFindings()
+	require.Len(t, findings, 1)
+
+	encoded, err := json.Marshal(findings[0])
+	require.NoError(t, err)
+	assert.Contains(t, string(encoded), `"severity":"error"`,
+		"a classified finding must carry its severity on the wire under its name")
+
+	encoded, err = json.Marshal(&ValidationError{Message: "built without the collector"})
+	require.NoError(t, err)
+	assert.NotContains(t, string(encoded), `"severity"`,
+		"an unclassified finding must omit severity rather than report one it never set")
+}
+
+// TestValidationErrorWireShape checks the serialised document of a finding with
+// every field set.
+//
+// The key names are the cross-language contract: pkg/js and pkg/java agree with Go
+// on msg, line, column and metadata.symbol/errorType, and
+// tests/data/dsl-semantic-validation-cases.yaml is written in them. Nothing else in
+// this package marshals a finding, so a renamed json tag would otherwise change
+// every consumer's output without failing a test. JSONEq compares the whole
+// document, so an added key fails here too.
+func TestValidationErrorWireShape(t *testing.T) {
+	t.Parallel()
+
+	encoded, err := json.Marshal(&ValidationError{
+		Message:  "the relation 'allowed' does not exist.",
+		Severity: fgaerrors.SeverityError,
+		Category: fgaerrors.ErrorKindRelation,
+		Line:     &Range{Start: 6, End: 6},
+		Column:   &Range{Start: 41, End: 48},
+		File:     "model.fga",
+		Metadata: &ErrorMetadata{
+			Symbol:        "allowed",
+			ErrorType:     MissingDefinition,
+			Module:        "core",
+			Type:          "document",
+			Relation:      "reader",
+			Condition:     "inRegion",
+			OffendingType: "folder",
+		},
+	})
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{
+		"msg": "the relation 'allowed' does not exist.",
+		"severity": "error",
+		"category": "relation",
+		"line": {"start": 6, "end": 6},
+		"column": {"start": 41, "end": 48},
+		"file": "model.fga",
+		"metadata": {
+			"symbol": "allowed",
+			"errorType": "missing-definition",
+			"module": "core",
+			"type": "document",
+			"relation": "reader",
+			"condition": "inRegion",
+			"offendingType": "folder"
+		}
+	}`, string(encoded))
+}
+
+// TestValidationErrorWireShapeOmitsUnsetFields checks a finding with nothing but a
+// message and the two mandatory metadata fields emits no keys for scope it does not
+// have. A consumer tells "no condition" from "condition is empty" by the key's
+// absence.
+func TestValidationErrorWireShapeOmitsUnsetFields(t *testing.T) {
+	t.Parallel()
+
+	encoded, err := json.Marshal(&ValidationError{
+		Message:  "schema version required",
+		Metadata: &ErrorMetadata{Symbol: "schema", ErrorType: SchemaVersionRequired},
+	})
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{
+		"msg": "schema version required",
+		"metadata": {"symbol": "schema", "errorType": "schema-version-required"}
+	}`, string(encoded))
+}
+
+// TestValidationErrorsWireShape checks the envelope, which is what a consumer
+// decodes first.
+func TestValidationErrorsWireShape(t *testing.T) {
+	t.Parallel()
+
+	encoded, err := json.Marshal(NewValidationErrors(nil))
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"errors": []}`, string(encoded),
+		"no findings must serialise as an empty list, not null")
+
+	encoded, err = json.Marshal(NewValidationErrors([]*ValidationError{{
+		Message:  "x",
+		Metadata: &ErrorMetadata{Symbol: "s", ErrorType: InvalidType},
+	}}))
+	require.NoError(t, err)
+	assert.JSONEq(t,
+		`{"errors": [{"msg": "x", "metadata": {"symbol": "s", "errorType": "invalid-type"}}]}`,
+		string(encoded))
 }

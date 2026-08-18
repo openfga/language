@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestIsValidSchemaVersion(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -208,7 +207,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 
 			ValidateSchemaVersion(collector, tt.model, tt.lines)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
@@ -222,50 +221,58 @@ func TestValidateSchemaVersion(t *testing.T) {
 func TestValidateMultipleModulesInFile(t *testing.T) {
 	tests := []struct {
 		name               string
-		fileToModuleMap    map[string]map[string]bool
+		files              []FileInfo
 		expectedErrorCount int
 		expectedFile       string
-		expectedModules    []string
+		expectedMessage    string
 	}{
 		{
 			name:               "no files",
-			fileToModuleMap:    map[string]map[string]bool{},
+			files:              nil,
 			expectedErrorCount: 0,
 		},
 		{
 			name: "single module per file",
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {"module1": true},
-				"file2.fga": {"module2": true},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1"}},
+				{Path: "file2.fga", Modules: []string{"module2"}},
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name: "multiple modules in single file",
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {
-					"module1": true,
-					"module2": true,
-					"module3": true,
-				},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1", "module2", "module3"}},
 			},
 			expectedErrorCount: 1,
 			expectedFile:       "file1.fga",
-			expectedModules:    []string{"module1", "module2", "module3"},
+			expectedMessage: "file file1.fga would contain multiple module definitions " +
+				"(module1, module2, module3) when transforming to DSL. Only one module can be defined per file.",
 		},
 		{
 			name: "mixed: some files with single, some with multiple modules",
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {"module1": true},
-				"file2.fga": {
-					"module2": true,
-					"module3": true,
-				},
-				"file3.fga": {"module4": true},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1"}},
+				{Path: "file2.fga", Modules: []string{"module2", "module3"}},
+				{Path: "file3.fga", Modules: []string{"module4"}},
 			},
 			expectedErrorCount: 1,
 			expectedFile:       "file2.fga",
-			expectedModules:    []string{"module2", "module3"},
+			expectedMessage: "file file2.fga would contain multiple module definitions " +
+				"(module2, module3) when transforming to DSL. Only one module can be defined per file.",
+		},
+		{
+			// The modules reach the message in the order they were collected, which is
+			// the order the reference reports them in. Sorting them here would read as
+			// harmless and would diverge from the other SDKs.
+			name: "modules are reported in the order given, not in name order",
+			files: []FileInfo{
+				{Path: "core.fga", Modules: []string{"zulu", "alpha", "mike"}},
+			},
+			expectedErrorCount: 1,
+			expectedFile:       "core.fga",
+			expectedMessage: "file core.fga would contain multiple module definitions " +
+				"(zulu, alpha, mike) when transforming to DSL. Only one module can be defined per file.",
 		},
 	}
 
@@ -273,19 +280,15 @@ func TestValidateMultipleModulesInFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			collector := NewErrorCollector(nil)
 
-			ValidateMultipleModulesInFile(collector, tt.fileToModuleMap)
+			ValidateMultipleModulesInFile(collector, tt.files)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 
 			if tt.expectedErrorCount > 0 {
 				assert.Equal(t, MultipleModulesInFile, errors[0].Metadata.ErrorType)
 				assert.Equal(t, tt.expectedFile, errors[0].Metadata.Symbol)
-
-				// Check that all expected modules are mentioned in the error message
-				for _, module := range tt.expectedModules {
-					assert.Contains(t, errors[0].Message, module)
-				}
+				assert.Equal(t, tt.expectedMessage, errors[0].Message)
 			}
 		})
 	}
@@ -295,7 +298,7 @@ func TestValidateBasicModelStructure(t *testing.T) {
 	tests := []struct {
 		name               string
 		model              *openfgav1.AuthorizationModel
-		fileToModuleMap    map[string]map[string]bool
+		files              []FileInfo
 		lines              []string
 		expectedErrorCount int
 	}{
@@ -304,15 +307,15 @@ func TestValidateBasicModelStructure(t *testing.T) {
 			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.1",
 			},
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {"module1": true},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1"}},
 			},
 			expectedErrorCount: 0,
 		},
 		{
 			name:               "missing schema version",
 			model:              &openfgav1.AuthorizationModel{},
-			fileToModuleMap:    map[string]map[string]bool{},
+			files:              nil,
 			expectedErrorCount: 1,
 		},
 		{
@@ -320,7 +323,7 @@ func TestValidateBasicModelStructure(t *testing.T) {
 			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "2.0",
 			},
-			fileToModuleMap:    map[string]map[string]bool{},
+			files:              nil,
 			expectedErrorCount: 1,
 		},
 		{
@@ -328,22 +331,16 @@ func TestValidateBasicModelStructure(t *testing.T) {
 			model: &openfgav1.AuthorizationModel{
 				SchemaVersion: "1.1",
 			},
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {
-					"module1": true,
-					"module2": true,
-				},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1", "module2"}},
 			},
 			expectedErrorCount: 1,
 		},
 		{
 			name:  "multiple errors",
 			model: &openfgav1.AuthorizationModel{},
-			fileToModuleMap: map[string]map[string]bool{
-				"file1.fga": {
-					"module1": true,
-					"module2": true,
-				},
+			files: []FileInfo{
+				{Path: "file1.fga", Modules: []string{"module1", "module2"}},
 			},
 			expectedErrorCount: 2,
 		},
@@ -353,9 +350,9 @@ func TestValidateBasicModelStructure(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			collector := NewErrorCollector(tt.lines)
 
-			ValidateBasicModelStructure(collector, tt.model, tt.fileToModuleMap, tt.lines)
+			ValidateBasicModelStructure(collector, tt.model, tt.files, tt.lines)
 
-			errors := collector.GetErrors()
+			errors := collector.AllFindings()
 			assert.Len(t, errors, tt.expectedErrorCount)
 		})
 	}
@@ -384,7 +381,7 @@ func TestSchemaVersionValidation(t *testing.T) {
 		SchemaVersion: "1.1",
 	}
 	ValidateSchemaVersion(collector, validModel, nil)
-	assert.Empty(t, collector.GetErrors())
+	assert.Empty(t, collector.AllFindings())
 
 	// Test invalid schema version
 	collector = NewErrorCollector(nil)
@@ -392,7 +389,7 @@ func TestSchemaVersionValidation(t *testing.T) {
 		SchemaVersion: "2.0",
 	}
 	ValidateSchemaVersion(collector, invalidModel, nil)
-	errors := collector.GetErrors()
+	errors := collector.AllFindings()
 	assert.Len(t, errors, 1)
 	assert.Equal(t, InvalidSchema, errors[0].Metadata.ErrorType)
 }

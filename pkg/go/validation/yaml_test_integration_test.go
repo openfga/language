@@ -4,61 +4,67 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v3"
-	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+
 	"github.com/openfga/language/pkg/go/transformer"
 )
 
-// YAMLTestCase represents a single test case from the YAML validation test files
+// Outcomes of a corpus case. ERROR is a case whose DSL no longer parses, which is
+// distinct from FAIL: nothing about validation was tested.
+const (
+	corpusPass    = "PASS"
+	corpusFail    = "FAIL"
+	corpusSkipped = "SKIPPED"
+	corpusError   = "ERROR"
+)
+
+// YAMLTestCase is one case from the shared validation corpus under tests/data.
 type YAMLTestCase struct {
-	Name           string                 `yaml:"name"`
-	DSL            string                 `yaml:"dsl"`
-	Skip           bool                   `yaml:"skip,omitempty"`
-	ExpectedErrors []YAMLExpectedError    `yaml:"expected_errors,omitempty"`
-	Metadata       map[string]interface{} `yaml:"metadata,omitempty"`
+	Name           string              `yaml:"name"`
+	DSL            string              `yaml:"dsl"`
+	Skip           bool                `yaml:"skip,omitempty"`
+	ExpectedErrors []YAMLExpectedError `yaml:"expected_errors,omitempty"`
 }
 
-// YAMLExpectedError represents an expected validation error from YAML test files
+// YAMLExpectedError is one error a corpus case expects.
+//
+// Line and Column are pointers so a case that states no position is told apart from
+// one that states position 0. The corpus counts lines from zero, so the zero value is
+// a real position and a value type would make the two indistinguishable.
 type YAMLExpectedError struct {
-	Message  string               `yaml:"msg"`
-	Line     YAMLLineRange        `yaml:"line,omitempty"`
-	Column   YAMLColumnRange      `yaml:"column,omitempty"`
-	Metadata YAMLErrorMetadata    `yaml:"metadata,omitempty"`
+	Message  string            `yaml:"msg"`
+	Line     *YAMLRange        `yaml:"line,omitempty"`
+	Column   *YAMLRange        `yaml:"column,omitempty"`
+	Metadata YAMLErrorMetadata `yaml:"metadata,omitempty"`
 }
 
-// YAMLLineRange represents line start and end positions
-type YAMLLineRange struct {
+// YAMLRange is a start and end position, used for both the line and the column.
+type YAMLRange struct {
 	Start int `yaml:"start"`
 	End   int `yaml:"end"`
 }
 
-// YAMLColumnRange represents column start and end positions
-type YAMLColumnRange struct {
-	Start int `yaml:"start"`
-	End   int `yaml:"end"`
-}
-
-// YAMLErrorMetadata represents error metadata from YAML test files
+// YAMLErrorMetadata is the metadata a corpus case pins: the offending symbol and the
+// error type. Severity and category are this package's own classification, the corpus
+// states neither, and the severity fixtures cover them instead.
 type YAMLErrorMetadata struct {
 	Symbol    string `yaml:"symbol,omitempty"`
 	ErrorType string `yaml:"errorType,omitempty"`
 }
 
-// YAMLTestSuite represents a collection of YAML test cases
+// YAMLTestSuite is a corpus file's cases.
 type YAMLTestSuite struct {
 	TestCases []YAMLTestCase
 	FilePath  string
 }
 
-// YAMLTestRunner handles running YAML-based validation tests
+// YAMLTestRunner loads corpus files from testDataPath and runs their cases.
 type YAMLTestRunner struct {
 	testDataPath string
 	suites       map[string]*YAMLTestSuite
 }
 
-// NewYAMLTestRunner creates a new YAML test runner
 func NewYAMLTestRunner(testDataPath string) *YAMLTestRunner {
 	return &YAMLTestRunner{
 		testDataPath: testDataPath,
@@ -66,322 +72,203 @@ func NewYAMLTestRunner(testDataPath string) *YAMLTestRunner {
 	}
 }
 
-// LoadTestSuite loads a YAML test suite from file
+// LoadTestSuite reads and parses a corpus file, caching it by name.
 func (runner *YAMLTestRunner) LoadTestSuite(filename string) (*YAMLTestSuite, error) {
-	filePath := filepath.Join(runner.testDataPath, filename)
-	
-	// Check if already loaded
 	if suite, exists := runner.suites[filename]; exists {
 		return suite, nil
 	}
-	
-	// Read YAML file
+
+	filePath := filepath.Join(runner.testDataPath, filename)
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read YAML file %s: %w", filePath, err)
 	}
-	
-	// Parse YAML
+
 	var testCases []YAMLTestCase
 	if err := yaml.Unmarshal(data, &testCases); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML file %s: %w", filePath, err)
 	}
-	
-	suite := &YAMLTestSuite{
-		TestCases: testCases,
-		FilePath:  filePath,
-	}
-	
+
+	suite := &YAMLTestSuite{TestCases: testCases, FilePath: filePath}
 	runner.suites[filename] = suite
+
 	return suite, nil
 }
 
-// GetAvailableTestSuites returns all available YAML test suite files
-func (runner *YAMLTestRunner) GetAvailableTestSuites() ([]string, error) {
-	files, err := os.ReadDir(runner.testDataPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read test data directory: %w", err)
-	}
-	
-	var yamlFiles []string
-	for _, file := range files {
-		if !file.IsDir() && (strings.HasSuffix(file.Name(), ".yaml") || strings.HasSuffix(file.Name(), ".yml")) {
-			yamlFiles = append(yamlFiles, file.Name())
-		}
-	}
-	
-	return yamlFiles, nil
-}
-
-// RunTestCase runs a single YAML test case and compares results
-func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) (*YAMLTestResult, error) {
-	if testCase.Skip {
-		return &YAMLTestResult{
-			TestCase: testCase,
-			Status:   "SKIPPED",
-			Message:  "Test case marked as skip in YAML",
-		}, nil
-	}
-	
-	// Parse DSL to create authorization model
-	model, err := runner.parseDSLToModel(testCase.DSL)
-	if err != nil {
-		return &YAMLTestResult{
-			TestCase: testCase,
-			Status:   "ERROR",
-			Message:  fmt.Sprintf("Failed to parse DSL: %v", err),
-		}, nil
-	}
-	
-	// Run validation
-	validationErrors := ValidateDSL(model, testCase.DSL, DefaultEngineOptions())
-	
-	// Compare results
-	result := runner.compareResults(testCase, validationErrors)
-	return result, nil
-}
-
-// YAMLTestResult represents the result of running a YAML test case
+// YAMLTestResult is the outcome of one corpus case.
 type YAMLTestResult struct {
-	TestCase       YAMLTestCase
-	Status         string   // "PASS", "FAIL", "SKIPPED", "ERROR"
-	Message        string
-	ActualErrors   []*ValidationError
-	ExpectedErrors []YAMLExpectedError
-	ErrorDetails   []string
+	Status string
+
+	// Problems lists every divergence from the case, one per line, and is empty for
+	// a case that passed.
+	Problems []string
 }
 
-// compareResults compares actual validation results with expected results from YAML
-func (runner *YAMLTestRunner) compareResults(testCase YAMLTestCase, validationErrors *ValidationErrors) *YAMLTestResult {
-	result := &YAMLTestResult{
-		TestCase:       testCase,
-		ActualErrors:   validationErrors.GetErrors(),
-		ExpectedErrors: testCase.ExpectedErrors,
+// RunTestCase validates a case's DSL and compares the findings with what the case
+// expects.
+func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) *YAMLTestResult {
+	if testCase.Skip {
+		return &YAMLTestResult{Status: corpusSkipped}
 	}
-	
-	actualCount := validationErrors.Count()
-	expectedCount := len(testCase.ExpectedErrors)
-	
-	// Check error count match
-	if actualCount != expectedCount {
-		result.Status = "FAIL"
-		result.Message = fmt.Sprintf("Error count mismatch: expected %d, got %d", expectedCount, actualCount)
-		result.ErrorDetails = append(result.ErrorDetails, result.Message)
+
+	model, err := transformer.TransformDSLToProto(testCase.DSL)
+	if err != nil {
+		return &YAMLTestResult{
+			Status:   corpusError,
+			Problems: []string{fmt.Sprintf("DSL does not parse: %v", err)},
+		}
 	}
-	
-	// If no errors expected and none found, test passes
-	if expectedCount == 0 && actualCount == 0 {
-		result.Status = "PASS"
-		result.Message = "No errors expected and none found"
-		return result
-	}
-	
-	// Compare individual errors
-	errorMatches := make([]bool, len(testCase.ExpectedErrors))
-	for i, expectedError := range testCase.ExpectedErrors {
-		matched := false
-		for _, actualError := range validationErrors.GetErrors() {
-			if runner.errorsMatch(expectedError, actualError) {
-				matched = true
+
+	return compareWithCorpus(testCase.ExpectedErrors, findingsFrom(ValidateDSL(model, testCase.DSL, DefaultEngineOptions())))
+}
+
+// compareWithCorpus pairs each expected error with a distinct finding, so a case
+// expecting two errors is not satisfied by one finding that matches both.
+//
+// The blocking findings are what take part: the corpus states the errors that make a
+// model invalid and carries no severity of its own, so a warning is neither expected
+// nor unexpected here.
+func compareWithCorpus(expectedErrors []YAMLExpectedError, findings *ValidationErrors) *YAMLTestResult {
+	result := &YAMLTestResult{}
+	blocking := findings.GetErrors()
+	claimed := make([]bool, len(blocking))
+	matched := make([]bool, len(expectedErrors))
+
+	// Whole matches are paired first. Pairing on the message alone up front would let
+	// one expectation take the finding that another one matches outright.
+	for i, expected := range expectedErrors {
+		for j, finding := range blocking {
+			if !claimed[j] && describeMismatch(expected, finding) == "" {
+				claimed[j], matched[i] = true, true
+
 				break
 			}
 		}
-		errorMatches[i] = matched
-		if !matched {
-			detail := fmt.Sprintf("Expected error not found: %s", expectedError.Message)
-			result.ErrorDetails = append(result.ErrorDetails, detail)
-		}
 	}
-	
-	// Check for unexpected errors
-	for _, actualError := range validationErrors.GetErrors() {
-		matched := false
-		for _, expectedError := range testCase.ExpectedErrors {
-			if runner.errorsMatch(expectedError, actualError) {
-				matched = true
+
+	// What is left pairs on the message alone, so a finding that resolved to the wrong
+	// line is reported as that one field rather than as an expectation with nothing
+	// behind it plus an unexplained extra finding.
+	for i, expected := range expectedErrors {
+		if matched[i] {
+			continue
+		}
+
+		paired := false
+
+		for j, finding := range blocking {
+			if !claimed[j] && finding.Message == expected.Message {
+				claimed[j], paired = true, true
+				result.Problems = append(result.Problems,
+					fmt.Sprintf("expected %s: %s", describeExpected(expected), describeMismatch(expected, finding)))
+
 				break
 			}
 		}
-		if !matched {
-			detail := fmt.Sprintf("Unexpected error found: %s", actualError.Message)
-			result.ErrorDetails = append(result.ErrorDetails, detail)
+
+		if !paired {
+			result.Problems = append(result.Problems,
+				fmt.Sprintf("no finding matches expected %s", describeExpected(expected)))
 		}
 	}
-	
-	// Determine overall status
-	if len(result.ErrorDetails) == 0 {
-		result.Status = "PASS"
-		result.Message = fmt.Sprintf("All %d errors matched correctly", expectedCount)
+
+	for j, finding := range blocking {
+		if !claimed[j] {
+			result.Problems = append(result.Problems, fmt.Sprintf("unexpected finding %s", describeFinding(finding)))
+		}
+	}
+
+	if len(result.Problems) > 0 {
+		result.Status = corpusFail
 	} else {
-		result.Status = "FAIL"
-		result.Message = fmt.Sprintf("Found %d error mismatches", len(result.ErrorDetails))
+		result.Status = corpusPass
 	}
-	
+
 	return result
 }
 
-// errorsMatch checks if an expected error matches an actual validation error
-func (runner *YAMLTestRunner) errorsMatch(expected YAMLExpectedError, actual *ValidationError) bool {
-	// Check message content (allow partial matches for flexibility)
-	if !strings.Contains(strings.ToLower(actual.Message), strings.ToLower(expected.Message)) {
-		return false
+// describeMismatch returns what keeps finding from satisfying expected, or "" when
+// nothing does.
+//
+// The message has to be equal rather than merely contain the expected text: the corpus
+// is the contract between the implementations, so a message that only starts with the
+// reference's is a divergence, not a pass.
+func describeMismatch(expected YAMLExpectedError, finding *ValidationError) string {
+	if finding.Message != expected.Message {
+		return fmt.Sprintf("message %q, want %q", finding.Message, expected.Message)
 	}
-	
-	// Check error type if specified
-	if expected.Metadata.ErrorType != "" {
-		expectedType := ValidationErrorType(expected.Metadata.ErrorType)
-		if actual.Metadata.ErrorType != expectedType {
-			return false
-		}
+
+	if finding.Metadata == nil {
+		return "no metadata"
 	}
-	
-	// Check line numbers if specified
-	if expected.Line.Start > 0 && actual.Line != nil {
-		if actual.Line.Start != expected.Line.Start {
-			return false
-		}
+
+	if expected.Metadata.ErrorType != "" &&
+		string(finding.Metadata.ErrorType) != expected.Metadata.ErrorType {
+		return fmt.Sprintf("errorType %q, want %q", finding.Metadata.ErrorType, expected.Metadata.ErrorType)
 	}
-	
-	// Check column numbers if specified
-	if expected.Column.Start > 0 && actual.Column != nil {
-		if actual.Column.Start != expected.Column.Start {
-			return false
-		}
+
+	if expected.Metadata.Symbol != "" && finding.Metadata.Symbol != expected.Metadata.Symbol {
+		return fmt.Sprintf("symbol %q, want %q", finding.Metadata.Symbol, expected.Metadata.Symbol)
 	}
-	
-	return true
+
+	// A position the corpus states has to be reached, both ends of it. Letting a
+	// finding without one through would pass a finding that resolved to nowhere in the
+	// source, which is how the schema line lookup went unnoticed.
+	if problem := describeRangeMismatch("line", expected.Line, finding.Line); problem != "" {
+		return problem
+	}
+
+	return describeRangeMismatch("column", expected.Column, finding.Column)
 }
 
-// parseDSLToModel converts DSL content to an AuthorizationModel
-func (runner *YAMLTestRunner) parseDSLToModel(dsl string) (*openfgav1.AuthorizationModel, error) {
-	model, err := transformer.TransformDSLToProto(dsl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse DSL: %w", err)
+func describeRangeMismatch(name string, expected *YAMLRange, actual *Range) string {
+	if expected == nil {
+		return ""
 	}
-	if model == nil {
-		return nil, fmt.Errorf("failed to parse DSL")
+
+	if actual == nil {
+		return "no " + name
 	}
-	return model, nil
+
+	if actual.Start != expected.Start || actual.End != expected.End {
+		return fmt.Sprintf("%s %d-%d, want %d-%d", name, actual.Start, actual.End, expected.Start, expected.End)
+	}
+
+	return ""
 }
 
-// RunAllTestSuites runs all available YAML test suites
-func (runner *YAMLTestRunner) RunAllTestSuites() (map[string][]*YAMLTestResult, error) {
-	suiteFiles, err := runner.GetAvailableTestSuites()
-	if err != nil {
-		return nil, err
-	}
-	
-	results := make(map[string][]*YAMLTestResult)
-	
-	for _, suiteFile := range suiteFiles {
-		suite, err := runner.LoadTestSuite(suiteFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load test suite %s: %w", suiteFile, err)
-		}
-		
-		var suiteResults []*YAMLTestResult
-		for _, testCase := range suite.TestCases {
-			result, err := runner.RunTestCase(testCase)
-			if err != nil {
-				result = &YAMLTestResult{
-					TestCase: testCase,
-					Status:   "ERROR",
-					Message:  err.Error(),
-				}
-			}
-			suiteResults = append(suiteResults, result)
-		}
-		
-		results[suiteFile] = suiteResults
-	}
-	
-	return results, nil
+func describeExpected(expected YAMLExpectedError) string {
+	return fmt.Sprintf("%q [%s]%s", expected.Message, expected.Metadata.ErrorType,
+		describePosition(rangeOf(expected.Line), rangeOf(expected.Column)))
 }
 
-// GenerateTestReport generates a comprehensive test report
-func (runner *YAMLTestRunner) GenerateTestReport(results map[string][]*YAMLTestResult) *YAMLTestReport {
-	report := &YAMLTestReport{
-		SuiteResults: results,
-		Summary:      make(map[string]int),
+func describeFinding(finding *ValidationError) string {
+	errorType := ValidationErrorType("")
+	if finding.Metadata != nil {
+		errorType = finding.Metadata.ErrorType
 	}
-	
-	totalTests := 0
-	for _, suiteResults := range results {
-		for _, result := range suiteResults {
-			totalTests++
-			report.Summary[result.Status]++
-		}
-	}
-	
-	report.Summary["TOTAL"] = totalTests
-	
-	// Calculate pass rate
-	if totalTests > 0 {
-		passCount := report.Summary["PASS"]
-		report.PassRate = float64(passCount) / float64(totalTests) * 100.0
-	}
-	
-	return report
+
+	return fmt.Sprintf("%q [%s]%s", finding.Message, errorType, describePosition(finding.Line, finding.Column))
 }
 
-// YAMLTestReport represents a comprehensive test report
-type YAMLTestReport struct {
-	SuiteResults map[string][]*YAMLTestResult
-	Summary      map[string]int
-	PassRate     float64
+func describePosition(line, column *Range) string {
+	described := ""
+	if line != nil {
+		described += fmt.Sprintf(" line %d-%d", line.Start, line.End)
+	}
+
+	if column != nil {
+		described += fmt.Sprintf(" column %d-%d", column.Start, column.End)
+	}
+
+	return described
 }
 
-// PrintReport prints a formatted test report
-func (report *YAMLTestReport) PrintReport() {
-	fmt.Printf("YAML Test Integration Report\n")
-	fmt.Printf("================================\n\n")
-	
-	fmt.Printf("Summary:\n")
-	fmt.Printf("  Total Tests: %d\n", report.Summary["TOTAL"])
-	fmt.Printf("  Passed: %d\n", report.Summary["PASS"])
-	fmt.Printf("  Failed: %d\n", report.Summary["FAIL"])
-	fmt.Printf("  Skipped: %d\n", report.Summary["SKIPPED"])
-	fmt.Printf("  Errors: %d\n", report.Summary["ERROR"])
-	fmt.Printf("  Pass Rate: %.1f%%\n\n", report.PassRate)
-	
-	// Print detailed results for each suite
-	for suiteName, results := range report.SuiteResults {
-		fmt.Printf("Test Suite: %s\n", suiteName)
-		fmt.Printf("  Tests: %d\n", len(results))
-		
-		passed := 0
-		failed := 0
-		skipped := 0
-		errors := 0
-		
-		for _, result := range results {
-			switch result.Status {
-			case "PASS":
-				passed++
-			case "FAIL":
-				failed++
-			case "SKIPPED":
-				skipped++
-			case "ERROR":
-				errors++
-			}
-		}
-		
-		fmt.Printf("  Passed: %d, Failed: %d, Skipped: %d, Errors: %d\n", passed, failed, skipped, errors)
-		
-		// Show failed tests
-		if failed > 0 || errors > 0 {
-			fmt.Printf("  Failed/Error Tests:\n")
-			for _, result := range results {
-				if result.Status == "FAIL" || result.Status == "ERROR" {
-					fmt.Printf("    - %s: %s\n", result.TestCase.Name, result.Message)
-					for _, detail := range result.ErrorDetails {
-						fmt.Printf("      • %s\n", detail)
-					}
-				}
-			}
-		}
-		
-		fmt.Printf("\n")
+func rangeOf(yamlRange *YAMLRange) *Range {
+	if yamlRange == nil {
+		return nil
 	}
+
+	return &Range{Start: yamlRange.Start, End: yamlRange.End}
 }

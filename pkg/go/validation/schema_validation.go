@@ -29,7 +29,12 @@ func GetSchemaLineNumber(schemaVersion string, lines []string) *int {
 	if len(lines) == 0 {
 		return nil
 	}
-	pattern := `^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `\s*$`
+	// A trailing comment may follow the version, as in `schema 1.1 # note`. The `#`
+	// has to be preceded by whitespace, so one written against the version is part of
+	// the version and does not match here. This mirrors the reference's
+	// getSchemaLineNumber; without it a commented schema line resolves to no
+	// position and the finding reaches the caller with no line or column.
+	pattern := `^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `(\s+#.*)?\s*$`
 	regex := regexp.MustCompile(pattern)
 	for i, line := range lines {
 		normalizedLine := strings.TrimSpace(line)
@@ -64,23 +69,25 @@ func ValidateSchemaVersion(collector *ErrorCollector, model *openfgav1.Authoriza
 	}
 }
 
-// ValidateMultipleModulesInFile checks for multiple modules defined in single files.
-func ValidateMultipleModulesInFile(collector *ErrorCollector, fileToModuleMap map[string]map[string]bool) {
-	for file, moduleMap := range fileToModuleMap {
-		if len(moduleMap) <= 1 {
+// ValidateMultipleModulesInFile reports every file that declares more than one
+// module.
+//
+// It reports the files, and each file's modules, in the order they were collected
+// from the model, which is the order the reference reports them in and the order the
+// shared corpus expects.
+func ValidateMultipleModulesInFile(collector *ErrorCollector, files []FileInfo) {
+	for _, file := range files {
+		if len(file.Modules) <= 1 {
 			continue
 		}
-		modules := make([]string, 0, len(moduleMap))
-		for module := range moduleMap {
-			modules = append(modules, module)
-		}
-		collector.RaiseMultipleModulesInSingleFile(file, modules)
+
+		collector.RaiseMultipleModulesInSingleFile(file.Path, file.Modules)
 	}
 }
 
 // ValidateBasicModelStructure performs basic model structure validation.
 func ValidateBasicModelStructure(collector *ErrorCollector, model *openfgav1.AuthorizationModel,
-	fileToModuleMap map[string]map[string]bool, lines []string) {
+	files []FileInfo, lines []string) {
 	ValidateSchemaVersion(collector, model, lines)
-	ValidateMultipleModulesInFile(collector, fileToModuleMap)
+	ValidateMultipleModulesInFile(collector, files)
 }

@@ -2,14 +2,16 @@ package validation
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// ValidationRegexRules contains the regex rules for validation
-// These match the Rules from the JS implementation
+// ValidationRegexRules contains the regex rules for validation.
+// These match the Rules from the JS implementation.
 var ValidationRegexRules = struct {
 	Type      string
 	Relation  string
@@ -24,10 +26,10 @@ var ValidationRegexRules = struct {
 	Object:    "[^\\s]{2,256}",
 }
 
-// The anchored type, relation, and condition name rules are fixed, so compile
-// them once. compiledNameRules caches them by their anchored rule string, which
-// is also the clause reported in the error, so validateFieldValue can look up
-// the compiled pattern without recompiling on every name.
+// The anchored type, relation, and condition name rules are fixed, so compile them
+// once. The compiledNameRules map is keyed by the anchored rule string, which is also
+// the clause reported in the error, so validateFieldValue can look up the compiled
+// pattern without recompiling on every name.
 var (
 	typeNameRule      = fmt.Sprintf("^%s$", ValidationRegexRules.Type)
 	relationNameRule  = fmt.Sprintf("^%s$", ValidationRegexRules.Relation)
@@ -40,8 +42,8 @@ var (
 	}
 )
 
-// ValidateTypeName validates a type name with both regex and reserved keyword checking
-// This enhances the basic regex validation with semantic checks
+// ValidateTypeName validates a type name with both regex and reserved keyword checking.
+// This enhances the basic regex validation with semantic checks.
 func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedTypeName(typeName) {
@@ -59,12 +61,12 @@ func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int
 	return true
 }
 
-// ValidateRelationName validates a relation name with both regex and reserved keyword checking
-// This enhances the basic regex validation with semantic checks
+// ValidateRelationName validates a relation name with both regex and reserved keyword
+// checking. This enhances the basic regex validation with semantic checks.
 func ValidateRelationName(relationName, typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedRelationName(relationName) {
-		collector.RaiseReservedRelationName(relationName, lineIndex, meta)
+		collector.RaiseReservedRelationName(relationName, typeName, lineIndex, meta)
 		return false
 	}
 
@@ -81,7 +83,7 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 // ValidateConditionName validates a condition name with regex pattern.
 func ValidateConditionName(conditionName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
 	if !validateFieldValue(conditionNameRule, conditionName) {
-		collector.RaiseInvalidName(conditionName, conditionNameRule, nil, lineIndex, meta)
+		collector.RaiseInvalidConditionName(conditionName, conditionNameRule, lineIndex, meta)
 		return false
 	}
 
@@ -101,8 +103,8 @@ func validateFieldValue(rule, value string) bool {
 	return regex.MatchString(value)
 }
 
-// GetTypeLineNumber finds the line number where a type is defined
-// This is equivalent to the getTypeLineNumber function in JS
+// GetTypeLineNumber finds the line number where a type is defined.
+// This is equivalent to the getTypeLineNumber function in JS.
 func GetTypeLineNumber(typeName string, lines []string, skipIndex *int) *int {
 	if len(lines) == 0 {
 		return nil
@@ -128,7 +130,7 @@ func GetTypeLineNumber(typeName string, lines []string, skipIndex *int) *int {
 }
 
 // GetRelationLineNumber finds the line number where a relation is defined.
-// skipIndex, when provided, is the index to begin searching from (inclusive) —
+// The skipIndex argument, when provided, is the index to begin searching from (inclusive) —
 // matching the reference implementation's getRelationLineNumber, which slices
 // the lines from skipIndex onward. This lets callers anchor the search to a
 // specific type block so the correct occurrence is found when several types
@@ -162,8 +164,8 @@ func GetRelationLineNumber(relationName string, lines []string, skipIndex *int) 
 	return nil
 }
 
-// GetConditionLineNumber finds the line number where a condition is defined
-// This is equivalent to the geConditionLineNumber function in JS
+// GetConditionLineNumber finds the line number where a condition is defined.
+// This is equivalent to the geConditionLineNumber function in JS.
 func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int) *int {
 	if len(lines) == 0 {
 		return nil
@@ -193,8 +195,8 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 	return nil
 }
 
-// ValidateNameRules validates naming rules for types and relations in a model
-// This is equivalent to the populateRelations function's naming validation in JS
+// ValidateNameRules validates naming rules for types and relations in a model.
+// This is equivalent to the populateRelations function's naming validation in JS.
 func ValidateNameRules(collector *ErrorCollector, typeName string, relationNames []string,
 	typeLineIndex *int, meta *Meta, lines []string) {
 	// Validate type name
@@ -228,13 +230,15 @@ func ValidateNames(collector *ErrorCollector, model *openfgav1.AuthorizationMode
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 		ValidateTypeName(typeName, collector, typeLineIndex, meta)
 
-		for relationName := range typeDef.GetRelations() {
+		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 			ValidateRelationName(relationName, typeName, collector, relationLineIndex, meta)
 		}
 	}
 
-	for conditionName, condition := range model.GetConditions() {
+	conditions := model.GetConditions()
+	for _, conditionName := range slices.Sorted(maps.Keys(conditions)) {
+		condition := conditions[conditionName]
 		conditionLineIndex := GetConditionLineNumber(conditionName, lines, nil)
 		meta := &Meta{
 			File:   condition.GetMetadata().GetSourceInfo().GetFile(),

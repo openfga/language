@@ -1,4 +1,16 @@
 ---
+# Semantic validation cases shared by pkg/go, pkg/js and pkg/java, so a case may only
+# use the fields all three read: name, dsl, skip, expected_errors, and within each
+# expected error msg, line, column and metadata (symbol, errorType).
+#
+# A field only one language has does not belong here. pkg/java deserialises this file
+# with a plain YAMLMapper onto case classes with no @JsonIgnoreProperties, so an
+# unrecognised key fails its build, and pkg/js asserts each expected error with
+# toMatchObject, which fails on an expected key the error object does not carry.
+#
+# pkg/go attaches severity, category and criticality to each finding. Those
+# expectations live in pkg/go/validation/testdata/severity-category-cases.yaml until
+# the other implementations have the fields, and a test keeps them out of this file.
 - name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
   dsl: |
     model

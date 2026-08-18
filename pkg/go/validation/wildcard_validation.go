@@ -2,6 +2,8 @@ package validation
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
@@ -23,8 +25,10 @@ func validateWildcardUsage(collector *ErrorCollector, validator *SemanticValidat
 		if typeDef.GetMetadata() == nil {
 			continue
 		}
-		for relationName, relationMetadata := range typeDef.GetMetadata().GetRelations() {
-			validateWildcardInRelation(collector, validator, typeDef.GetType(), relationName, relationMetadata, lines)
+		relationsMetadata := typeDef.GetMetadata().GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
+			validateWildcardInRelation(collector, validator, typeDef.GetType(), relationName,
+				relationsMetadata[relationName], lines)
 		}
 	}
 }
@@ -79,8 +83,10 @@ func validateTupleToUsersetRequirements(collector *ErrorCollector, validator *Se
 		return
 	}
 	for _, typeDef := range model.GetTypeDefinitions() {
-		for relationName, userset := range typeDef.GetRelations() {
-			validateTupleToUsersetInUserset(collector, validator, typeDef.GetType(), relationName, userset, lines)
+		relations := typeDef.GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			validateTupleToUsersetInUserset(collector, validator, typeDef.GetType(), relationName,
+				relations[relationName], lines)
 		}
 	}
 }
@@ -149,11 +155,19 @@ func validateTuplesetDirectAssignment(collector *ErrorCollector, validator *Sema
 func (c *ErrorCollector) RaiseInvalidWildcardUsage(typeName, relationName, parentTypeName, reason string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Invalid wildcard usage for type '%s' in relation '%s' of type '%s': %s",
 		typeName, relationName, parentTypeName, reason)
-	c.addError(message, InvalidWildcardError, typeName, lineIndex, meta, nil)
+	// The wildcard is written in a relation of parentTypeName; typeName is the
+	// restriction it appears in, which the symbol already records.
+	c.addScopedError(message, InvalidWildcardError, typeName, lineIndex, meta, nil, scope{
+		objectType: parentTypeName,
+		relation:   relationName,
+	})
 }
 
 func (c *ErrorCollector) RaiseTuplesetNotDirect(tuplesetRelation, typeName, parentRelation string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Tupleset relation '%s' on type '%s' must allow direct assignment (used in relation '%s')",
 		tuplesetRelation, typeName, parentRelation)
-	c.addError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil)
+	c.addScopedError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil, scope{
+		objectType: typeName,
+		relation:   tuplesetRelation,
+	})
 }

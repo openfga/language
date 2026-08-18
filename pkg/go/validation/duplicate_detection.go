@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -165,8 +168,9 @@ func ValidateDuplicates(collector *ErrorCollector, model *openfgav1.Authorizatio
 		typeTracker.CheckAndAddType(typeName, collector, meta, lines)
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 		if metaProto := typeDef.GetMetadata(); metaProto != nil {
-			for relationName, relationMetadata := range metaProto.GetRelations() {
-				CheckForDuplicateTypeNamesInRelation(collector, relationMetadata, relationName, typeName, meta, typeLineIndex, lines)
+			relationsMetadata := metaProto.GetRelations()
+			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
+				CheckForDuplicateTypeNamesInRelation(collector, relationsMetadata[relationName], relationName, typeName, meta, typeLineIndex, lines)
 				CheckForDuplicatesInRelation(collector, typeDef, relationName, typeLineIndex, lines)
 			}
 		}

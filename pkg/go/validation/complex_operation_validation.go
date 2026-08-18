@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -36,8 +39,10 @@ func validateComplexOperations(collector *ErrorCollector, validator *SemanticVal
 	}
 	opValidator := newComplexOperationValidator(validator)
 	for _, typeDef := range model.GetTypeDefinitions() {
-		for relationName, userset := range typeDef.GetRelations() {
-			opValidator.validateUsersetOperations(collector, typeDef.GetType(), relationName, userset, lines)
+		relations := typeDef.GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			opValidator.validateUsersetOperations(collector, typeDef.GetType(), relationName,
+				relations[relationName], lines)
 		}
 	}
 }

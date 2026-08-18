@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -60,16 +63,6 @@ func (sv *SemanticValidator) GetRelationUserset(typeName, relationName string) *
 	return nil
 }
 
-// GetRelationNames returns the names of every relation defined on a type.
-func (sv *SemanticValidator) GetRelationNames(typeName string) []string {
-	relations := sv.relationMap[typeName]
-	names := make([]string, 0, len(relations))
-	for name := range relations {
-		names = append(names, name)
-	}
-	return names
-}
-
 // GetDirectlyAssignableTypes returns the type restrictions a relation is
 // directly assignable to, but only when that relation is a single direct
 // assignment (i.e. `define r: [a, b]` rather than a rewrite). The bool reports
@@ -121,13 +114,21 @@ func validateRelationReferences(collector *ErrorCollector, validator *SemanticVa
 		// `define` occurrence is found when several types share a relation name.
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 
+		// Relations are walked in name order here and in every other phase: they
+		// reach us in a proto map, which has no order, so ranging it directly would
+		// report the same model's findings in a different order each run.
 		if meta := typeDef.GetMetadata(); meta != nil {
-			for relationName, relationMetadata := range meta.GetRelations() {
-				validateTypeRestrictions(collector, validator, typeName, relationName, relationMetadata, typeLineIndex, lines)
+			relationsMetadata := meta.GetRelations()
+			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
+				validateTypeRestrictions(collector, validator, typeName, relationName,
+					relationsMetadata[relationName], typeLineIndex, lines)
 			}
 		}
-		for relationName, userset := range typeDef.GetRelations() {
-			validateUsersetReferences(collector, validator, typeName, relationName, userset, typeLineIndex, lines)
+
+		relations := typeDef.GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			validateUsersetReferences(collector, validator, typeName, relationName,
+				relations[relationName], typeLineIndex, lines)
 		}
 	}
 }
@@ -158,7 +159,8 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 			if !validator.RelationDefined(restrictedType, rel) {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				symbol := restrictedType + "#" + rel
-				collector.RaiseInvalidTypeRelation(symbol, restrictedType, relationName, rel, restrictedType, lineIndex, meta)
+				// offendingType is the enclosing type the restriction was written in.
+				collector.RaiseInvalidTypeRelation(symbol, restrictedType, relationName, rel, typeName, lineIndex, meta)
 			}
 		}
 	}
@@ -181,8 +183,7 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 		if targetRelation := cu.GetRelation(); targetRelation != "" {
 			if !validator.RelationDefined(typeName, targetRelation) {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				validRelations := validator.GetRelationNames(typeName)
-				collector.RaiseInvalidRelationError(targetRelation, typeName, relationName, validRelations, lineIndex, meta)
+				collector.RaiseInvalidRelationError(targetRelation, typeName, relationName, lineIndex, meta)
 			}
 		}
 	}

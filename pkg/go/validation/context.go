@@ -4,7 +4,7 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// ValidationContext holds the state during model validation
+// ValidationContext holds the state during model validation.
 type ValidationContext struct {
 	TypeMap            map[string]*openfgav1.TypeDefinition
 	VisitedRelations   map[string]map[string]bool

@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -50,9 +53,10 @@ func validateCyclesAndEntryPoints(collector *ErrorCollector, validator *Semantic
 		}
 		typeName := typeDef.GetType()
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
-		for relationName, userset := range relations {
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
 			meta := relationMeta(typeDef, relationName)
-			result := detector.hasEntryPointOrLoop(typeName, relationName, userset, map[string]map[string]bool{})
+			result := detector.hasEntryPointOrLoop(typeName, relationName, relations[relationName],
+				map[string]map[string]bool{})
 			if !result.hasEntry {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				if result.loop {
@@ -85,8 +89,12 @@ func relationMeta(typeDef *openfgav1.TypeDefinition, relationName string) *Meta 
 }
 
 // hasEntryPointOrLoop determines whether a rewrite reaches a concrete entry point.
-// visited tracks type#relation pairs already on the current traversal so that a
-// rewrite referencing a relation already being resolved is reported as a loop.
+// The visited map tracks type#relation pairs already on the current traversal.
+//
+// Only the computed-userset branch turns a revisit into a reported loop. The direct
+// type-relation and tuple-to-userset branches skip a reference already being resolved
+// and answer loop: false, matching validate-dsl.ts, which reads hasEntry off those two
+// recursive calls and discards their loop.
 //
 // Sibling branches (the this/ttu type loops, union/intersection children, and a
 // difference's base/subtract) each get an isolated copy of visited so one

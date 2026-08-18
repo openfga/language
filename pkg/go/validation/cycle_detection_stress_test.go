@@ -60,7 +60,7 @@ func TestCycleDetection_DeepChainTerminatesWithEntry(t *testing.T) {
 
 	if collector.HasErrors() {
 		t.Fatalf("deep computed-userset chain ending in a direct assignment should "+
-			"have an entry point, got %d errors: %v", collector.Count(), collector.GetErrors())
+			"have an entry point, got %d errors: %v", collector.Count(), collector.AllFindings())
 	}
 }
 
@@ -80,7 +80,7 @@ func TestCycleDetection_WideUnionTerminatesWithEntry(t *testing.T) {
 
 	if collector.HasErrors() {
 		t.Fatalf("wide union of resolvable members should have an entry point, "+
-			"got %d errors: %v", collector.Count(), collector.GetErrors())
+			"got %d errors: %v", collector.Count(), collector.AllFindings())
 	}
 }
 
@@ -135,7 +135,7 @@ type doc
 
 	// `loops` and `selfref` legitimately have no entry point and are reported.
 	// `mixed` and `direct` must NOT be reported.
-	for _, e := range collector.GetErrors() {
+	for _, e := range collector.AllFindings() {
 		if strings.Contains(e.Message, "mixed") || strings.Contains(e.Message, "`direct`") {
 			t.Fatalf("relation with a resolvable union branch should have an entry "+
 				"point, but got error: %s", e.Message)
@@ -170,6 +170,6 @@ func TestCycleDetection_DeepChainCountStable(t *testing.T) {
 	// base + r0..r49 = depth+1 relations, all with no entry point.
 	if collector.Count() != depth+1 {
 		t.Fatalf("expected %d no-entry-point errors, got %d: %v",
-			depth+1, collector.Count(), collector.GetErrors())
+			depth+1, collector.Count(), collector.AllFindings())
 	}
 }

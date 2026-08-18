@@ -1,14 +1,31 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	fgaerrors "github.com/openfga/language/pkg/go/errors"
+	"github.com/openfga/language/pkg/go/transformer"
 )
 
-// TestValidationEngine_BasicIntegration tests the basic integration of all validation components
+// findingsFrom recovers the collection behind an error returned by a validation entry
+// point. A nil error becomes an empty collection, so a test can read Count and
+// GetErrors off the result either way.
+func findingsFrom(err error) *ValidationErrors {
+	var validationErrors *ValidationErrors
+	if errors.As(err, &validationErrors) {
+		return validationErrors
+	}
+
+	return NewValidationErrors(nil)
+}
+
+// TestValidationEngine_BasicIntegration tests the basic integration of all validation components.
 func TestValidationEngine_BasicIntegration(t *testing.T) {
 	t.Run("Valid model passes all validations", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
@@ -62,24 +79,11 @@ type document
     define editor: [user] or viewer
 `
 
-		// Test ValidateDSL
-		errors := ValidateDSL(model, dslContent, DefaultEngineOptions())
-		assert.NotNil(t, errors)
-		assert.Equal(t, 0, errors.Count())
-
-		// Test ValidateJSON
-		jsonErrors := ValidateJSON(model, DefaultEngineOptions())
-		assert.NotNil(t, jsonErrors)
-		assert.Equal(t, 0, jsonErrors.Count())
-
-		// Test convenience functions
-		modelErrors := ValidateModel(model, dslContent)
-		assert.NotNil(t, modelErrors)
-		assert.Equal(t, 0, modelErrors.Count())
-
-		jsonModelErrors := ValidateModelJSON(model)
-		assert.NotNil(t, jsonModelErrors)
-		assert.Equal(t, 0, jsonModelErrors.Count())
+		// A valid model reports nothing, from every entry point.
+		assert.NoError(t, ValidateDSL(model, dslContent, DefaultEngineOptions()))
+		assert.NoError(t, ValidateJSON(model, DefaultEngineOptions()))
+		assert.NoError(t, ValidateModel(model, dslContent))
+		assert.NoError(t, ValidateModelJSON(model))
 	})
 
 	t.Run("Model with validation errors", func(t *testing.T) {
@@ -120,23 +124,22 @@ type document
     define admin: [user]
 `
 
-		errors := ValidateDSL(model, dslContent, DefaultEngineOptions())
-		assert.NotNil(t, errors)
-		assert.Greater(t, errors.Count(), 0)
+		findings := findingsFrom(ValidateDSL(model, dslContent, DefaultEngineOptions()))
+		assert.Positive(t, findings.Count())
 
 		// Check that we have various types of errors
-		errorList := errors.GetErrors()
+		errorList := findings.GetErrors()
 		errorTypes := make(map[ValidationErrorType]bool)
 		for _, err := range errorList {
 			errorTypes[err.Metadata.ErrorType] = true
 		}
 
 		// Should have duplicate errors
-		assert.True(t, len(errorTypes) > 0, "Should have validation errors")
+		assert.NotEmpty(t, errorTypes, "Should have validation errors")
 	})
 }
 
-// TestValidationEngine_OptionsConfiguration tests different validation options
+// TestValidationEngine_OptionsConfiguration tests different validation options.
 func TestValidationEngine_OptionsConfiguration(t *testing.T) {
 	t.Run("Skip semantic validation", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
@@ -154,18 +157,16 @@ func TestValidationEngine_OptionsConfiguration(t *testing.T) {
 		}
 
 		// With semantic validation (default)
-		normalErrors := ValidateDSL(model, "", DefaultEngineOptions())
-		normalErrorCount := normalErrors.Count()
+		normalErrorCount := findingsFrom(ValidateDSL(model, "", DefaultEngineOptions())).Count()
 
 		// Skip semantic validation
 		options := &EngineOptions{
 			SkipSemanticValidation: true,
 		}
-		skippedErrors := ValidateDSL(model, "", options)
-		skippedErrorCount := skippedErrors.Count()
+		skippedErrorCount := findingsFrom(ValidateDSL(model, "", options)).Count()
 
 		// Should have fewer errors when semantic validation is skipped
-		assert.True(t, skippedErrorCount <= normalErrorCount, "Skipping semantic validation should reduce or maintain error count")
+		assert.LessOrEqual(t, skippedErrorCount, normalErrorCount, "Skipping semantic validation should reduce or maintain error count")
 	})
 
 	t.Run("Skip complex operation validation", func(t *testing.T) {
@@ -191,13 +192,18 @@ func TestValidationEngine_OptionsConfiguration(t *testing.T) {
 		options := &EngineOptions{
 			SkipComplexOperationValidation: true,
 		}
-		errors := ValidateDSL(model, "", options)
-		assert.NotNil(t, errors)
-		// Complex operation validation should be skipped
+
+		// Skipping complex-operation validation drops findings, never adds them, and
+		// leaves the surrounding phases running.
+		normalErrorCount := findingsFrom(ValidateDSL(model, "", DefaultEngineOptions())).Count()
+		skippedErrorCount := findingsFrom(ValidateDSL(model, "", options)).Count()
+
+		assert.LessOrEqual(t, skippedErrorCount, normalErrorCount,
+			"Skipping complex operation validation should reduce or maintain error count")
 	})
 }
 
-// TestValidationReport tests the comprehensive validation report functionality
+// TestValidationReport tests the comprehensive validation report functionality.
 func TestValidationReport(t *testing.T) {
 	t.Run("Complete validation report", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
@@ -275,20 +281,20 @@ type document
 
 		if report.ValidationErrors.Count() > 0 {
 			assert.False(t, report.IsValid(), "Invalid model should fail IsValid()")
-			
+
 			summary := report.Summary
-			assert.Greater(t, summary.TotalErrors, 0)
-			
+			assert.Positive(t, summary.TotalErrors)
+
 			// Test GetErrorsByType functionality
 			for errorType := range summary.ErrorsByType {
 				errorsOfType := report.GetErrorsByType(errorType)
-				assert.Greater(t, len(errorsOfType), 0, "Should find errors of type %s", errorType)
+				assert.NotEmpty(t, errorsOfType, "Should find errors of type %s", errorType)
 			}
 		}
 	})
 }
 
-// TestValidationEngine_RealWorldScenarios tests realistic authorization model scenarios
+// TestValidationEngine_RealWorldScenarios tests realistic authorization model scenarios.
 func TestValidationEngine_RealWorldScenarios(t *testing.T) {
 	t.Run("GitHub-like authorization model", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
@@ -330,7 +336,7 @@ func TestValidationEngine_RealWorldScenarios(t *testing.T) {
 								Child: []*openfgav1.Userset{
 									{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
 									{Userset: &openfgav1.Userset_TupleToUserset{TupleToUserset: &openfgav1.TupleToUserset{
-										Tupleset: &openfgav1.ObjectRelation{Relation: "owner"},
+										Tupleset:        &openfgav1.ObjectRelation{Relation: "owner"},
 										ComputedUserset: &openfgav1.ObjectRelation{Relation: "member"},
 									}}},
 								},
@@ -349,7 +355,7 @@ func TestValidationEngine_RealWorldScenarios(t *testing.T) {
 								Child: []*openfgav1.Userset{
 									{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
 									{Userset: &openfgav1.Userset_TupleToUserset{TupleToUserset: &openfgav1.TupleToUserset{
-										Tupleset: &openfgav1.ObjectRelation{Relation: "owner"},
+										Tupleset:        &openfgav1.ObjectRelation{Relation: "owner"},
 										ComputedUserset: &openfgav1.ObjectRelation{Relation: "owner"},
 									}}},
 								},
@@ -407,13 +413,12 @@ type repository
     define reader: [user] or writer from owner
 `
 
-		errors := ValidateDSL(model, dslContent, DefaultEngineOptions())
-		assert.NotNil(t, errors)
+		findings := findingsFrom(ValidateDSL(model, dslContent, DefaultEngineOptions()))
 
 		// This complex model should pass validation
-		if errors.Count() > 0 {
-			t.Logf("Validation errors found: %d", errors.Count())
-			for _, err := range errors.GetErrors() {
+		if findings.Count() > 0 {
+			t.Logf("Validation errors found: %d", findings.Count())
+			for _, err := range findings.GetErrors() {
 				t.Logf("Error: %s (Type: %s)", err.Message, err.Metadata.ErrorType)
 			}
 		}
@@ -429,21 +434,21 @@ type repository
 	})
 }
 
-// TestValidationEngine_PerformanceBasics tests basic performance characteristics
+// TestValidationEngine_PerformanceBasics tests basic performance characteristics.
 func TestValidationEngine_PerformanceBasics(t *testing.T) {
 	t.Run("Large model validation performance", func(t *testing.T) {
 		// Create a moderately large model
 		typeDefs := make([]*openfgav1.TypeDefinition, 0, 50)
-		
+
 		// Add user type
 		typeDefs = append(typeDefs, &openfgav1.TypeDefinition{Type: "user"})
-		
+
 		// Add many document types with relations
 		for i := 0; i < 49; i++ {
 			typeName := fmt.Sprintf("document%d", i)
 			relations := make(map[string]*openfgav1.Userset)
 			relationMetadata := make(map[string]*openfgav1.RelationMetadata)
-			
+
 			// Add viewer relation
 			relations["viewer"] = &openfgav1.Userset{
 				Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}},
@@ -453,7 +458,7 @@ func TestValidationEngine_PerformanceBasics(t *testing.T) {
 					{Type: "user"},
 				},
 			}
-			
+
 			// Add editor relation with union
 			relations["editor"] = &openfgav1.Userset{
 				Userset: &openfgav1.Userset_Union{Union: &openfgav1.Usersets{
@@ -468,7 +473,7 @@ func TestValidationEngine_PerformanceBasics(t *testing.T) {
 					{Type: "user"},
 				},
 			}
-			
+
 			typeDefs = append(typeDefs, &openfgav1.TypeDefinition{
 				Type:      typeName,
 				Relations: relations,
@@ -484,15 +489,130 @@ func TestValidationEngine_PerformanceBasics(t *testing.T) {
 		}
 
 		// Test validation performance
-		errors := ValidateDSL(model, "", DefaultEngineOptions())
-		assert.NotNil(t, errors)
+		findings := findingsFrom(ValidateDSL(model, "", DefaultEngineOptions()))
 
 		// Should complete validation in reasonable time
-		t.Logf("Large model validation completed with %d errors", errors.Count())
-		
+		t.Logf("Large model validation completed with %d errors", findings.Count())
+
 		// Test JSON validation performance
-		jsonErrors := ValidateJSON(model, DefaultEngineOptions())
-		assert.NotNil(t, jsonErrors)
-		t.Logf("Large model JSON validation completed with %d errors", jsonErrors.Count())
+		jsonFindings := findingsFrom(ValidateJSON(model, DefaultEngineOptions()))
+		t.Logf("Large model JSON validation completed with %d errors", jsonFindings.Count())
 	})
+}
+
+// TestEntryPointsReportFindingsThroughTheError pins what the four entry points
+// return: nil for a valid model, and otherwise an error carrying every finding with
+// its sentinel and its scope still reachable, which is what findingsFrom relies on.
+func TestEntryPointsReportFindingsThroughTheError(t *testing.T) {
+	t.Parallel()
+
+	const dsl = `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user, group]
+`
+
+	model, err := transformer.TransformDSLToProto(dsl)
+	require.NoError(t, err)
+
+	validationErr := ValidateDSL(model, dsl, DefaultEngineOptions())
+	require.Error(t, validationErr, "group is not defined, so this model must not validate")
+
+	// errors.Is reaches each finding's sentinel through Unwrap() []error.
+	require.ErrorIs(t, validationErr, fgaerrors.ErrInvalidType)
+
+	// errors.As reaches the scope by the same path.
+	var scoped *fgaerrors.ErrObjectType
+	require.ErrorAs(t, validationErr, &scoped)
+	assert.Equal(t, "group", scoped.ObjectType)
+
+	// errors.As also recovers the collection itself, which is how a caller lists every
+	// finding rather than the first one errors.As stops at.
+	var collection *ValidationErrors
+	require.ErrorAs(t, validationErr, &collection)
+	assert.NotEmpty(t, collection.AllFindings())
+}
+
+// TestFindingOrderIsDeterministic checks that validating one model twice reports its
+// findings in the same order.
+//
+// Relations and conditions reach every validation phase in a proto map, which has no
+// order of its own. Ranging one directly ordered the findings by whatever the runtime
+// handed back, so the same model produced four different orders across runs, and a
+// caller printing the list or comparing it against a fixture saw it change under them.
+func TestFindingOrderIsDeterministic(t *testing.T) {
+	t.Parallel()
+
+	// The relation names sort in a different order than the symbols they report, so a
+	// run that happened to sort by message would not pass this.
+	const dsl = `model
+  schema 1.1
+type user
+type document
+  relations
+    define alpha: missing_a
+    define beta: missing_b
+    define gamma: missing_c
+    define delta: missing_d
+`
+
+	model, err := transformer.TransformDSLToProto(dsl)
+	require.NoError(t, err)
+
+	want := []string{
+		"the relation `missing_a` does not exist.",
+		"the relation `missing_b` does not exist.",
+		"the relation `missing_d` does not exist.",
+		"the relation `missing_c` does not exist.",
+	}
+
+	// Map iteration is randomized per range, so one passing run proves nothing; four
+	// keys admit four orders, which 100 runs would not agree on by chance.
+	for i := 0; i < 100; i++ {
+		messages := make([]string, 0, len(want))
+		for _, finding := range findingsFrom(ValidateDSL(model, dsl, nil)).AllFindings() {
+			messages = append(messages, finding.Message)
+		}
+
+		require.Equal(t, want, messages, "run %d reported the findings in a different order", i)
+	}
+}
+
+// TestValidateJSONDiffersFromValidateDSLOnlyInPosition checks the two entry points
+// take the same parsed proto and report the same findings, and that position is the
+// only difference: ValidateDSL resolves line and column from the source text, and
+// ValidateJSON leaves both nil.
+func TestValidateJSONDiffersFromValidateDSLOnlyInPosition(t *testing.T) {
+	t.Parallel()
+
+	const dsl = `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user, group]
+`
+
+	model, err := transformer.TransformDSLToProto(dsl)
+	require.NoError(t, err)
+
+	fromDSL := findingsFrom(ValidateDSL(model, dsl, nil)).AllFindings()
+	fromJSON := findingsFrom(ValidateJSON(model, nil)).AllFindings()
+
+	require.NotEmpty(t, fromDSL, "the model must produce a finding, or this compares two empty lists")
+	require.Len(t, fromJSON, len(fromDSL), "the two entry points must find the same problems")
+
+	for i := range fromDSL {
+		assert.Equal(t, fromDSL[i].Message, fromJSON[i].Message)
+		assert.Equal(t, fromDSL[i].Severity, fromJSON[i].Severity)
+		assert.Equal(t, fromDSL[i].Category, fromJSON[i].Category)
+		assert.Equal(t, fromDSL[i].Metadata, fromJSON[i].Metadata)
+
+		assert.NotNil(t, fromDSL[i].Line, "ValidateDSL has the source text, so it must resolve the line")
+		assert.NotNil(t, fromDSL[i].Column)
+		assert.Nil(t, fromJSON[i].Line, "ValidateJSON has no source text to resolve a line against")
+		assert.Nil(t, fromJSON[i].Column)
+	}
 }

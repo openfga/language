@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/require"
 
 	language "github.com/openfga/language/pkg/go/transformer"
@@ -2984,4 +2985,171 @@ func TestRecursionWithTwoIndependentTTUBranches(t *testing.T) {
 	require.Equal(t, Infinite, unionEdges[2].weights["user"])
 	require.Equal(t, "group#member", unionEdges[2].recursiveRelation)
 	require.True(t, unionEdges[2].tupleCycle)
+}
+
+// TestWeightedParseThisMalformedRelationReference verifies that the weighted builder's
+// parseThis handles degenerate RelationReference shapes correctly, matching the regular
+// builder's behavior after the fix.
+func TestWeightedParseThisMalformedRelationReference(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		model                  *openfgav1.AuthorizationModel
+		expectUserNode         bool
+		expectGroupNode        bool
+		expectBogusUserHashNode bool // whether a "user#" node exists
+		userInDirectAssigns    bool
+		groupInDirectAssigns   bool
+	}{
+		`empty_relation_in_oneof_creates_concrete_type_not_bogus_userset`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true,
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false, // Must not create bogus "user#" node; default case is concrete type
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
+		`degenerate_entry_does_not_inherit_previous_node_in_weighted`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "group",
+						Relations: map[string]*openfgav1.Userset{
+							"member": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"member": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"},
+										{
+											Type:      "group",
+											Condition: "cond1",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Conditions: map[string]*openfgav1.Condition{
+					"cond1": {
+						Name:       "cond1",
+						Expression: "x == 1",
+						Parameters: map[string]*openfgav1.ConditionParamTypeRef{
+							"x": {TypeName: openfgav1.ConditionParamTypeRef_TYPE_NAME_INT},
+						},
+					},
+				},
+			},
+			expectUserNode:          true,
+			expectGroupNode:         true, // group node must exist; curNode must not leak across iterations
+			expectBogusUserHashNode: false,
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    true, // group must be in directAssigns; not inherited from user
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(testCase.model)
+			require.NoError(t, err)
+			require.NotNil(t, graph)
+
+			// Verify expected nodes exist or don't exist
+			userNode, userExists := graph.GetNodeByID("user")
+			if testCase.expectUserNode {
+				require.True(t, userExists, "user node should exist")
+				require.NotNil(t, userNode)
+			} else {
+				require.False(t, userExists, "user node should not exist")
+			}
+
+			groupNode, groupExists := graph.GetNodeByID("group")
+			if testCase.expectGroupNode {
+				require.True(t, groupExists, "group node should exist")
+				require.NotNil(t, groupNode)
+			} else {
+				require.False(t, groupExists, "group node should not exist")
+			}
+
+			// Verify the bogus "user#" node doesn't exist
+			bogusUserHashNode, bogusExists := graph.GetNodeByID("user#")
+			if testCase.expectBogusUserHashNode {
+				require.True(t, bogusExists, "bogus user# node should exist (before fix)")
+				require.NotNil(t, bogusUserHashNode)
+			} else {
+				require.False(t, bogusExists, "bogus user# node should not exist (after fix)")
+			}
+
+			// Verify directAssigns on document#viewer
+			viewerNode, viewerExists := graph.GetNodeByID("document#viewer")
+			require.True(t, viewerExists, "document#viewer node should exist")
+			require.NotNil(t, viewerNode)
+
+			if testCase.userInDirectAssigns {
+				require.Contains(t, viewerNode.directAssigns, "user",
+					"user should be in document#viewer directAssigns")
+			} else {
+				require.NotContains(t, viewerNode.directAssigns, "user",
+					"user should not be in document#viewer directAssigns")
+			}
+
+			if testCase.groupInDirectAssigns {
+				require.Contains(t, viewerNode.directAssigns, "group",
+					"group should be in document#viewer directAssigns")
+			} else {
+				require.NotContains(t, viewerNode.directAssigns, "group",
+					"group should not be in document#viewer directAssigns")
+			}
+		})
+	}
 }

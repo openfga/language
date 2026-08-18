@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"gonum.org/v1/gonum/graph"
@@ -188,7 +189,6 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseComputed(wg *WeightedAut
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, typeDef *openfgav1.TypeDefinition, relation string, parentRelationName string) error {
 	var directlyRelated []*openfgav1.RelationReference
-	var curNode *WeightedAuthorizationModelNode
 
 	if relationMetadata, ok := typeDef.GetMetadata().GetRelations()[relation]; ok {
 		directlyRelated = relationMetadata.GetDirectlyRelatedUserTypes()
@@ -207,19 +207,30 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) parseThis(wg *WeightedAuthori
 		return fmt.Errorf("%w: parent relation node %s not found", ErrInvalidModel, parentRelationName)
 	}
 	for _, directlyRelatedDef := range directlyRelated {
+		typeName := directlyRelatedDef.GetType()
+		// Skip entries with invalid Type field: empty, or containing special characters
+		// that would break node label format.
+		if typeName == "" || strings.ContainsAny(typeName, ":#") {
+			continue
+		}
+
+		var curNode *WeightedAuthorizationModelNode
+
 		switch {
-		case directlyRelatedDef.GetRelationOrWildcard() == nil:
-			// direct assignment to concrete type
-			assignableType := directlyRelatedDef.GetType()
-			curNode = wg.GetOrAddNode(assignableType, assignableType, SpecificType)
 		case directlyRelatedDef.GetWildcard() != nil:
 			// direct assignment to wildcard
-			assignableWildcard := directlyRelatedDef.GetType() + ":*"
+			assignableWildcard := typeName + ":*"
 			curNode = wg.GetOrAddNode(assignableWildcard, assignableWildcard, SpecificTypeWildcard)
-		default:
+		case directlyRelatedDef.GetRelation() != "":
 			// direct assignment to userset
-			assignableUserset := directlyRelatedDef.GetType() + "#" + directlyRelatedDef.GetRelation()
+			assignableUserset := typeName + "#" + directlyRelatedDef.GetRelation()
 			curNode = wg.GetOrAddNode(assignableUserset, assignableUserset, SpecificTypeAndRelation)
+		default:
+			// Direct assignment to concrete type.
+			// Covers both: (1) relation_or_wildcard unset, and (2) the oneof-set-but-empty shape.
+			// Matches graph_builder.go parseThis default case. A relation named "" cannot exist
+			// (relation names are {1,50} chars), so the reference degrades to the concrete type.
+			curNode = wg.GetOrAddNode(typeName, typeName, SpecificType)
 		}
 
 		parentRelationNode.directAssigns = append(parentRelationNode.directAssigns, curNode.uniqueLabel)

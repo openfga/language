@@ -34,7 +34,7 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `invalid-type` | Semantic | Invalid type in relation definition | [invalid-type.md](./invalid-type.md) |
 | `relation-no-entry-point` | Semantic | Relation has no entry point for assignment | [relation-no-entry-point.md](./relation-no-entry-point.md) |
 | `cyclic-error` | Semantic | Circular dependency in relations | [cyclic-error.md](./cyclic-error.md) |
-| `cyclic-relation` | Semantic | Circular relation dependency detected | [cyclic-relation.md](./cyclic-relation.md) |
+| `cyclic-relation` | Semantic | Relation takes part in a cycle that cannot be resolved | [cyclic-relation.md](./cyclic-relation.md) |
 | `invalid-relation-on-tupleset` | Structure | Invalid relation in tuple-to-userset | [invalid-relation-on-tupleset.md](./invalid-relation-on-tupleset.md) |
 | `tupleuserset-not-direct` | Structure | Tuple-to-userset must have direct assignment | [tupleuserset-not-direct.md](./tupleuserset-not-direct.md) |
 | `invalid-wildcard-error` | Wildcard | Invalid wildcard usage in relation | [invalid-wildcard-error.md](./invalid-wildcard-error.md) |
@@ -46,16 +46,17 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
 | `invalid-schema` | Schema | Unrecognised schema version | [invalid-schema.md](./invalid-schema.md) |
 | `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
-| `graph-model-unbuildable` | Semantic | Model cannot be built into a weighted graph | [graph-model-unbuildable.md](./graph-model-unbuildable.md) |
+| `graph-model-unbuildable` | Semantic | Model cannot be built into a weighted graph, and no per-relation check accounts for it | [graph-model-unbuildable.md](./graph-model-unbuildable.md) |
 
-Five of the codes above are declared but never emitted, so no validation output
-carries them: `invalid-schema-version`, `self-error`, `invalid-syntax`, `cyclic-error`
-and `cyclic-relation`. An unrecognised schema version reports `invalid-schema`, and a
-cycle with no entrypoint reports `relation-no-entry-point`. Their pages are kept
-because each is a published URL.
+Four of the codes above are declared but never emitted, so no validation output
+carries them: `invalid-schema-version`, `self-error`, `invalid-syntax` and
+`cyclic-error`. An unrecognised schema version reports `invalid-schema`, and a cycle
+with no entrypoint reports `relation-no-entry-point`. Their pages are kept because each
+is a published URL.
 
-`graph-model-unbuildable` is emitted only when graph-backed validation is enabled,
-which is not the default. Every other code above is reported whatever the options.
+`cyclic-relation` and `graph-model-unbuildable` are emitted only when graph-backed
+validation is enabled, which is not the default. Every other code above is reported
+whatever the options.
 
 ## Usage
 

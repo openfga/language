@@ -621,6 +621,128 @@
         end: 18
       metadata:
         errorType: relation-no-entry-point
+- name: no entry point alongside relations that have one
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define parent: [document]
+        define broken: [user] and broken from parent
+        define ok1: [user]
+        define ok2: [user]
+  expected_errors:
+    - msg: "`broken` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "broken"
+        errorType: relation-no-entry-point
+- name: no entry point in exclusion alongside a relation that has one
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define parent: [document]
+        define broken: [user] but not broken from parent
+        define ok1: [user]
+  expected_errors:
+    - msg: "`broken` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "broken"
+        errorType: relation-no-entry-point
+- name: no entry point reported for every relation that lacks one
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define parent: [document]
+        define brokenA: [user] and brokenA from parent
+        define brokenB: [user] and brokenB from parent
+        define ok1: [user]
+  expected_errors:
+    - msg: "`brokenA` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "brokenA"
+        errorType: relation-no-entry-point
+    - msg: "`brokenB` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "brokenB"
+        errorType: relation-no-entry-point
+- name: no entry point on one type does not affect another type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder
+      relations
+        define fparent: [folder]
+        define fbroken: [user] and fbroken from fparent
+    type document
+      relations
+        define parent: [document]
+        define ok1: [user]
+  expected_errors:
+    - msg: "`fbroken` is an impossible relation for `folder` (no entrypoint)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "fbroken"
+        errorType: relation-no-entry-point
+- name: rewrite chain keeps its entry point beside a relation that has none
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define parent: [document]
+        define c3: [user]
+        define c2: c3
+        define c1: c2
+        define broken: c1 and broken from parent
+  expected_errors:
+    - msg: "`broken` is an impossible relation for `document` (no entrypoint)."
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "broken"
+        errorType: relation-no-entry-point
 - name: intersection child not allow to reference itself in TTU
   dsl: |
     model

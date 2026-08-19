@@ -74,12 +74,11 @@ func TestCriticalityOfEveryEmittedCode(t *testing.T) {
 		InvalidSchema:         true,
 		MultipleModulesInFile: true,
 		GraphModelUnbuildable: true,
+		CyclicRelation:        true,
 	}
 
-	// Nothing raises these two, so they are held at not-critical rather than listed
-	// above.
+	// Nothing raises this one, so it is held at not-critical rather than listed above.
 	neverRaised := map[ValidationErrorType]struct{}{
-		CyclicRelation:       {},
 		InvalidSchemaVersion: {},
 	}
 

@@ -174,6 +174,12 @@ var errorInfoByType = map[ValidationErrorType]errorInfo{
 		Cause:    fgaerrors.ErrModelNotBuildable,
 		Critical: true,
 	},
+	CyclicRelation: {
+		Severity: fgaerrors.SeverityError,
+		Category: fgaerrors.ErrorKindRelation,
+		Cause:    fgaerrors.ErrRelationInUnresolvableCycle,
+		Critical: true,
+	},
 }
 
 // unemittedErrorTypes are declared ValidationErrorType values that no validation
@@ -182,9 +188,9 @@ var errorInfoByType = map[ValidationErrorType]errorInfo{
 // They are kept rather than deleted because each has a published documentation
 // page, and because SelfError and InvalidSyntax are equally unemitted in
 // pkg/js/errors.ts. A cycle with no entrypoint surfaces as RelationNoEntrypoint,
-// leaving CyclicError and CyclicRelation nothing to report. InvalidSchemaVersion is
-// unreachable because RaiseInvalidSchemaVersion emits InvalidSchema, which is what
-// the shared corpus expects.
+// leaving CyclicError nothing to report. InvalidSchemaVersion is unreachable
+// because RaiseInvalidSchemaVersion emits InvalidSchema, which is what the shared
+// corpus expects.
 //
 // None get an errorInfoByType entry, so lookupErrorInfo treats them as blocking
 // with no cause. Anything that starts emitting one must add it to the table in the
@@ -193,7 +199,6 @@ var unemittedErrorTypes = map[ValidationErrorType]struct{}{
 	SelfError:            {},
 	InvalidSyntax:        {},
 	CyclicError:          {},
-	CyclicRelation:       {},
 	InvalidSchemaVersion: {},
 }
 

@@ -6,31 +6,41 @@
 
 ## Summary
 
-The model could not be built into a weighted authorization model graph, so the checks
-that read that graph had nothing to read. The message carries the reason the graph
-builder gave.
+The model could not be built into a weighted authorization model graph, and nothing else
+had a finding for it either. This is the last resort finding: it names the class of
+problem and no relation, so it appears only when no other check could say something more
+useful.
 
 ## Description
 
 Entrypoint and cycle validation can be answered two ways: by walking the model's
 rewrite tree, or by building the same weighted graph the server builds and reading it.
 The second route needs a graph, and the builder refuses to produce one for some
-models. This code reports that refusal.
+models.
+
+A refused build is not reported as this code straight away. Three things are tried
+first, and this code is what is left when all three come up empty:
+
+1. The rewrite-tree walk runs, which reports
+   [`relation-no-entry-point`](./relation-no-entry-point.md) per relation with a line
+   and column. Most refused models are answered here.
+2. If the walk finds nothing, relations taking part in a cycle the resolver cannot work
+   through are reported as [`cyclic-relation`](./cyclic-relation.md), again per relation
+   with a position.
+3. Only if neither has anything to say is the refusal itself reported, as this code.
 
 It is raised only when graph-backed validation is enabled, which is not the default.
-With the default options the models below report
-[`relation-no-entry-point`](./relation-no-entry-point.md) instead, one finding per
-affected relation, each carrying a line and column.
 
-The builder refuses a model for reasons of its own, and the message ends with the one
-it gave:
+The message ends with the sentinel the graph builder returned, one of `model cycle`,
+`tuple cycle`, `tuple cycle: operands AND or BUT NOT cannot be involved in a cycle`, or
+`invalid model`.
 
-- `model cycle`, when relations refer to each other in a loop that admits no
-  assignment
-- `tuple cycle: ...`, when a cycle cannot be resolved, most often because it runs
-  through an intersection or an exclusion
-- `invalid model: ...`, when the graph cannot be constructed from the definitions
-  given, with the specific reason following the colon
+That is the sentinel's own text and nothing more. The builder's own message often goes
+on to name a type or a relation, and that part is deliberately left out: the builder
+stops at the first problem it meets and picks which one that is by ranging over a map,
+so on a model with several independent problems it names one of them and names a
+different one on the next run. Every such message is true, and none is stable enough to
+put in a finding. The builder's full text stays reachable by unwrapping.
 
 A finding with this code wraps two errors. `errors.Is` matches
 `errors.ErrModelNotBuildable` for the refusal itself, and it also matches whichever
@@ -47,13 +57,42 @@ if errors.As(err, &findings) {
         if errors.Is(f, graph.ErrTupleCycle) {
             // and this is why
         }
+        // f.Unwrap() reaches the builder's own message, first problem and all
     }
 }
 ```
 
 ## Example
 
-The following model would trigger this error:
+The following model reports this error:
+
+```
+model
+  schema 1.1
+
+type user
+
+type folder
+  relations
+    define viewer: [user]
+
+type team
+
+type document
+  relations
+    define parent: [folder, team]
+    define viewer: viewer from parent
+```
+
+**Error Message:** `the model cannot be built into a weighted graph: invalid model`
+
+`parent` accepts a `folder` or a `team`, and `viewer from parent` needs a `viewer`
+relation on both. `folder` has one and `team` does not. Every relation here has a way in,
+so the rewrite-tree walk reports nothing, and there is no cycle, so nothing names a
+relation. The refusal is all there is to report.
+
+Cycles do not reach this code. Both of the following are refused by the builder, and both
+are reported per relation with a position instead:
 
 ```
 model
@@ -68,36 +107,8 @@ type document
     define editor: viewer
 ```
 
-**Error Message:** `the model cannot be built into a weighted graph: model cycle`
-
-`viewer` requires `editor`, `editor` is `viewer`, and neither can be entered. The
-builder stops there.
-
-A cycle that runs through an exclusion is refused with a different reason:
-
-```
-model
-  schema 1.1
-
-type user
-
-type folder
-  relations
-    define parent: [folder]
-    define viewer: [user] but not banned
-    define banned: viewer from parent
-```
-
-**Error Message:** `the model cannot be built into a weighted graph: tuple cycle: operands AND or BUT NOT cannot be involved in a cycle`
-
-## Resolution
-
-The model is invalid, and the fix is the same fix the reason calls for. Read the
-message after the colon and treat it as the finding.
-
-For a cycle, break the loop, so that one relation in it stops depending on the rest.
-Giving a relation in the loop a way to be entered is not enough on its own, because the
-loop still resolves to itself:
+reports `relation-no-entry-point` for `viewer` and `editor`, because neither can be
+entered.
 
 ```
 model
@@ -107,12 +118,22 @@ type user
 
 type document
   relations
-    define admin: [user]
-    define viewer: admin and editor
-    define editor: [user]
+    define a: [user] or b
+    define b: [user] or a
 ```
 
-For a cycle through `and` or `but not`, take the cyclic relation out of the operand:
+reports `cyclic-relation` for `a` and `b`. Both hold a plain `[user]`, so both can be
+entered and the walk is silent, but going round the cycle reads no tuple, so resolving
+either one never terminates.
+
+## Resolution
+
+The model is invalid and the sentinel names the class of problem. Unwrap the finding for
+the builder's own message if you want the first specific instance it hit, remembering it
+is one of possibly several.
+
+For `invalid model` on a tupleset, give the computed relation to every type the tupleset
+accepts:
 
 ```
 model
@@ -122,36 +143,60 @@ type user
 
 type folder
   relations
+    define viewer: [user]
+
+type team
+  relations
+    define viewer: [user]
+
+type document
+  relations
+    define parent: [folder, team]
+    define viewer: viewer from parent
+```
+
+or narrow the tupleset to the types that have it:
+
+```
+model
+  schema 1.1
+
+type user
+
+type folder
+  relations
+    define viewer: [user]
+
+type team
+
+type document
+  relations
     define parent: [folder]
-    define banned: [user]
-    define viewer: [user] but not banned
+    define viewer: viewer from parent
 ```
 
 ### Steps to fix:
 
-1. **Read the reason:** the text after the colon is the graph builder's own error, and
-   it names the class of problem.
+1. **Read the sentinel:** the text after the last colon names the class of problem.
 
-2. **Find the relations involved:** this finding is model-level and carries no
-   position, because the builder stops at the first problem and returns no graph to
-   locate it in. Running validation with the default options reports the same model as
-   `relation-no-entry-point`, once per affected relation, with a line and column for
-   each.
+2. **Unwrap for the detail:** the builder's own message names the first problem it met.
+   Treat it as one instance rather than the whole list, and re-validate after fixing it.
 
-3. **Fix the model, not the finding:** every reason the builder gives is a model that
-   cannot answer a check. There is no configuration that makes one of these models
-   valid.
+3. **Expect no position:** this finding is model-level. The builder stops at the first
+   problem and returns no graph to locate it in, and anything that could have been
+   located has already been reported as `relation-no-entry-point` or `cyclic-relation`.
 
-4. **Re-validate:** a model the builder accepts still gets the graph-backed
-   entrypoint checks run over it, so a clean build is not on its own a clean model.
+4. **Re-validate:** a model the builder accepts still gets the graph-backed entrypoint
+   checks run over it, so a clean build is not on its own a clean model.
 
 ## Related Errors
 
-- [`relation-no-entry-point`](./relation-no-entry-point.md) - what the default
-  validation path reports for these models, per relation and with positions
-- [`cyclic-error`](./cyclic-error.md) - circular dependency between relations
-- [`invalid-relation-type`](./invalid-relation-type.md) - a relation that is not valid
-  for the type it is used with
+- [`cyclic-relation`](./cyclic-relation.md) - a relation in a cycle the resolver cannot
+  work through, reported per relation with a position
+- [`relation-no-entry-point`](./relation-no-entry-point.md) - what most refused models
+  report instead, per relation and with positions
+- [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - a tupleset whose
+  computed relation is missing everywhere, rather than on some types only
 
 ## Implementation Notes
 

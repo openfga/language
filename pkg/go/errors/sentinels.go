@@ -87,6 +87,12 @@ var (
 	// module.
 	ErrMultipleModulesInFile = errors.New("file contains multiple modules")
 
+	// ErrModelNotBuildable is reported when a model cannot be built into a
+	// weighted graph. It says only that the build was refused; the reason is the
+	// error the builder returned, which a finding carries underneath this one, so
+	// errors.Is reaches either.
+	ErrModelNotBuildable = errors.New("model cannot be built into a weighted graph")
+
 	// ErrUnknownModelErrorKind is returned when a ModelErrorKind has no wire
 	// name, either marshalling a value this package does not declare or reading
 	// a name it does not recognise. It is not a validation finding.

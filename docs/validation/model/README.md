@@ -46,12 +46,16 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
 | `invalid-schema` | Schema | Unrecognised schema version | [invalid-schema.md](./invalid-schema.md) |
 | `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
+| `graph-model-unbuildable` | Semantic | Model cannot be built into a weighted graph | [graph-model-unbuildable.md](./graph-model-unbuildable.md) |
 
 Five of the codes above are declared but never emitted, so no validation output
 carries them: `invalid-schema-version`, `self-error`, `invalid-syntax`, `cyclic-error`
 and `cyclic-relation`. An unrecognised schema version reports `invalid-schema`, and a
 cycle with no entrypoint reports `relation-no-entry-point`. Their pages are kept
 because each is a published URL.
+
+`graph-model-unbuildable` is emitted only when graph-backed validation is enabled,
+which is not the default. Every other code above is reported whatever the options.
 
 ## Usage
 

@@ -73,6 +73,7 @@ func TestCriticalityOfEveryEmittedCode(t *testing.T) {
 		DuplicatedError:       true,
 		InvalidSchema:         true,
 		MultipleModulesInFile: true,
+		GraphModelUnbuildable: true,
 	}
 
 	// Nothing raises these two, so they are held at not-critical rather than listed

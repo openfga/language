@@ -26,6 +26,18 @@ type EngineOptions struct {
 	SkipWildcardValidation         bool
 	SkipMultiFileValidation        bool
 	SkipConditionValidation        bool
+
+	// UseGraphValidation resolves entrypoints and cycles from the weighted graph
+	// instead of by walking the rewrite tree. The two are alternatives, never layers:
+	// they answer the same question by different means, so running both would report
+	// one problem twice and disagree wherever they diverge.
+	//
+	// It is not a Skip field because the graph path is not the source of truth yet,
+	// which is also why it is off by default. Two things it does less well today: a
+	// model the graph refuses to build yields one finding rather than one per relation,
+	// and that finding carries no line or column. Both come from the builder returning
+	// on the first problem and returning no graph with it.
+	UseGraphValidation bool
 }
 
 func DefaultEngineOptions() *EngineOptions {
@@ -102,7 +114,14 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 
 	if !ve.collector.HasErrors() {
 		if !options.SkipSemanticValidation {
-			validateCyclesAndEntryPoints(ve.collector, ve.semantic, ve.lines)
+			// One of these resolves entrypoints and cycles, never both. See
+			// EngineOptions.UseGraphValidation.
+			if options.UseGraphValidation {
+				validateWithGraph(ve.collector, ve.model, ve.lines)
+			} else {
+				validateCyclesAndEntryPoints(ve.collector, ve.semantic, ve.lines)
+			}
+
 			validateTupleToUsersetRequirements(ve.collector, ve.semantic, ve.lines)
 		}
 		if !options.SkipComplexOperationValidation {

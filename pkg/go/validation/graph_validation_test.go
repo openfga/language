@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -268,7 +269,39 @@ type document
 	assert.Equal(t, fromTraversal[0].Metadata, finding.Metadata)
 }
 
-// TestRaiseModelUnbuildableReachesBothSentinels covers the one code this path adds.
+// modelRefusedWithNothingToSay is the model the positionless backstop exists for: the
+// builder refuses it, the rewrite-tree walk finds nothing, and the cycle-shape check finds
+// nothing either.
+//
+// The walk requires the computed relation on at least one assignable type of the tupleset;
+// the builder requires it on every one. Here folder has viewer and team does not. No cycle
+// is involved, so naming a relation would take a rule this branch does not have, and the
+// refusal is all there is to report.
+var modelRefusedWithNothingToSay = struct {
+	dsl         string
+	wantMessage string
+	wantCause   error
+}{
+	dsl: `model
+  schema 1.1
+type user
+type folder
+  relations
+    define viewer: [user]
+type team
+type document
+  relations
+    define parent: [folder, team]
+    define viewer: viewer from parent
+`,
+	// The sentinel's own text. The builder's message goes on to name the type and relation
+	// it stopped at, which is a detail this deliberately drops: it is the first of possibly
+	// several and which one it is changes between runs.
+	wantMessage: "the model cannot be built into a weighted graph: invalid model",
+	wantCause:   graph.ErrInvalidModel,
+}
+
+// TestRaiseModelUnbuildableReachesBothSentinels covers the code the backstop raises.
 //
 // A caller has two questions about a refused build, whether it was refused and why, and
 // the finding has to answer both through errors.Is. Chaining is the only reason the raise
@@ -276,61 +309,171 @@ type document
 func TestRaiseModelUnbuildableReachesBothSentinels(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]struct {
-		dsl         string
-		wantMessage string
-		wantCause   error
-	}{
-		"cycle through an intersection": {
-			dsl: `model
-  schema 1.1
-type user
-type document
-  relations
-    define admin: [user]
-    define viewer: admin and editor
-    define editor: viewer
-`,
-			wantMessage: "the model cannot be built into a weighted graph: model cycle",
-			wantCause:   graph.ErrModelCycle,
-		},
-		"cycle through an exclusion": {
-			dsl: `model
+	dsl := modelRefusedWithNothingToSay.dsl
+
+	require.Empty(t, findingsFrom(ValidateDSL(modelFromDSL(t, dsl), dsl,
+		DefaultEngineOptions())).GetErrors(),
+		"the walk has to be silent here or the refusal is not what is being tested")
+
+	findings := graphFindings(t, dsl)
+	require.Len(t, findings, 1, "nothing else found anything, so the refusal is the only finding")
+
+	finding := findings[0]
+	require.NotNil(t, finding.Metadata)
+
+	assert.Equal(t, GraphModelUnbuildable, finding.Metadata.ErrorType)
+	assert.Equal(t, modelRefusedWithNothingToSay.wantMessage, finding.Message)
+
+	require.ErrorIs(t, finding, fgaerrors.ErrModelNotBuildable, "the refusal itself")
+	require.ErrorIs(t, finding, modelRefusedWithNothingToSay.wantCause, "the reason the builder gave")
+
+	// The builder answers a refusal with an error and no graph, so there is nothing to
+	// resolve a position against and no relation named.
+	assert.Nil(t, finding.Line)
+	assert.Nil(t, finding.Column)
+}
+
+// TestRaiseModelUnbuildableChainsEveryGraphSentinel covers the raise site over every
+// sentinel the builder can refuse with, rather than only the one that still reaches the
+// backstop end to end.
+//
+// The cycle-shape check answers the other two before the backstop does, so without this
+// the chaining would only ever be exercised for ErrInvalidModel and a caller matching on
+// either cycle sentinel would have no test behind it.
+func TestRaiseModelUnbuildableChainsEveryGraphSentinel(t *testing.T) {
+	t.Parallel()
+
+	for _, sentinel := range []error{graph.ErrModelCycle, graph.ErrTupleCycle, graph.ErrInvalidModel} {
+		t.Run(sentinel.Error(), func(t *testing.T) {
+			t.Parallel()
+
+			cause := fmt.Errorf("%w: from the builder", sentinel)
+
+			collector := NewErrorCollector(nil)
+			collector.RaiseModelUnbuildable(describeRefusal(cause), cause)
+
+			findings := collector.AllFindings()
+			require.Len(t, findings, 1)
+
+			require.ErrorIs(t, findings[0], fgaerrors.ErrModelNotBuildable, "the refusal itself")
+			require.ErrorIs(t, findings[0], sentinel, "the reason the builder gave")
+
+			assert.NotContains(t, findings[0].Message, "from the builder",
+				"the builder's own text reached the message, which is what varies between runs")
+		})
+	}
+}
+
+// TestEveryGraphSentinelHasAWording keeps graphRefusalReasons exhaustive over what the
+// builder can refuse with.
+//
+// A sentinel missing from the table falls back to wording that says nothing about the model,
+// which is a worse finding than the one it replaced. Adding a sentinel to pkg/go/graph should
+// fail here rather than quietly degrade a message.
+func TestEveryGraphSentinelHasAWording(t *testing.T) {
+	t.Parallel()
+
+	// Every error value pkg/go/graph declares, read off its source rather than inferred, so
+	// this list going stale is a compile failure.
+	declared := map[string]error{
+		"ErrModelCycle":           graph.ErrModelCycle,
+		"ErrInvalidModel":         graph.ErrInvalidModel,
+		"ErrTupleCycle":           graph.ErrTupleCycle,
+		"ErrContrainstTupleCycle": graph.ErrContrainstTupleCycle,
+	}
+
+	for name, sentinel := range declared {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			reason := describeRefusal(fmt.Errorf("%w: detail the builder added", sentinel))
+
+			assert.NotEqual(t, unrecognisedRefusal, reason, "no wording for %s", name)
+			assert.NotContains(t, reason, "detail the builder added")
+
+			// The sentinel's own text, not that of something it wraps. Checking only
+			// that the fallback was avoided would pass on ErrContrainstTupleCycle
+			// resolving to the plain tuple cycle it wraps, which says less.
+			assert.Equalf(t, sentinel.Error(), reason,
+				"%s resolved to the wording of a less specific sentinel", name)
+		})
+	}
+
+	assert.Equal(t, unrecognisedRefusal, describeRefusal(errors.New("something else entirely")),
+		"an error carrying no graph sentinel has to fall through rather than match one")
+}
+
+// TestRefusalWordingIsTheSentinelNotTheBuilderMessage pins the substitution itself.
+//
+// The builder's message for this model names the type and relation it stopped at. That text
+// is what varies between runs on a model with several problems, so it has to be absent from
+// the finding and reachable through the chain.
+func TestRefusalWordingIsTheSentinelNotTheBuilderMessage(t *testing.T) {
+	t.Parallel()
+
+	dsl := modelRefusedWithNothingToSay.dsl
+	model := modelFromDSL(t, dsl)
+
+	_, buildErr := graph.NewWeightedAuthorizationModelGraphBuilder().Build(model)
+	require.Error(t, buildErr)
+	require.Contains(t, buildErr.Error(), "team type does not have defined viewer relation",
+		"the builder stopped naming a relation, so there is a detail to drop")
+
+	findings := graphFindings(t, dsl)
+	require.Len(t, findings, 1)
+
+	assert.NotContains(t, findings[0].Message, "team type does not have defined viewer relation",
+		"the builder's first-problem detail reached the finding")
+	assert.Contains(t, findings[0].Message, graph.ErrInvalidModel.Error())
+
+	// Dropped from the message, not lost. A caller that wants it unwraps.
+	require.ErrorIs(t, findings[0], graph.ErrInvalidModel)
+	assert.Contains(t, findings[0].Unwrap().Error(), "team type does not have defined viewer relation",
+		"the builder's text has to stay reachable through the chain")
+}
+
+// TestGraphPathOutputIsStableAcrossRuns is the guarantee all of the sorting in this package
+// exists for, asserted end to end rather than per pass.
+//
+// Whatever the builder's map iteration does, the same model has to produce the same findings
+// in the same order every run, or a corpus comparison is flaky and an editor redraws
+// diagnostics in a different order on every keystroke.
+func TestGraphPathOutputIsStableAcrossRuns(t *testing.T) {
+	t.Parallel()
+
+	// A model with two independent problems, which is the shape the builder picks between.
+	// Both tuplesets are missing the computed relation on one of their assignable types, so
+	// the rewrite-tree walk is silent and the refusal is what gets reported.
+	dsl := `model
   schema 1.1
 type user
 type folder
   relations
-    define parent: [folder]
-    define viewer: [user] but not banned
-    define banned: viewer from parent
-`,
-			wantMessage: "the model cannot be built into a weighted graph: tuple cycle: " +
-				"operands AND or BUT NOT cannot be involved in a cycle",
-			wantCause: graph.ErrTupleCycle,
-		},
-	}
+    define viewer: [user]
+    define editor: [user]
+type team
+type squad
+type document
+  relations
+    define parent: [folder, team]
+    define viewer: viewer from parent
+type file
+  relations
+    define owner: [folder, squad]
+    define editor: editor from owner
+`
+	model := modelFromDSL(t, dsl)
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+	_, buildErr := graph.NewWeightedAuthorizationModelGraphBuilder().Build(model)
+	require.Error(t, buildErr, "the model has to be one the builder refuses")
 
-			findings := graphFindings(t, test.dsl)
-			require.Len(t, findings, 1, "a refused build yields one finding, there being no graph to enumerate")
+	first := describeFindings(findingsFrom(
+		ValidateDSL(model, dsl, &EngineOptions{UseGraphValidation: true})).GetErrors())
+	require.NotEmpty(t, first)
 
-			finding := findings[0]
-			require.NotNil(t, finding.Metadata)
-
-			assert.Equal(t, GraphModelUnbuildable, finding.Metadata.ErrorType)
-			assert.Equal(t, test.wantMessage, finding.Message)
-
-			require.ErrorIs(t, finding, fgaerrors.ErrModelNotBuildable, "the refusal itself")
-			require.ErrorIs(t, finding, test.wantCause, "the reason the builder gave")
-
-			// The builder stops at the first problem and returns no graph with its error,
-			// so there is nothing to resolve a position against.
-			assert.Nil(t, finding.Line)
-			assert.Nil(t, finding.Column)
-		})
+	for range 50 {
+		assert.Equal(t, first, describeFindings(findingsFrom(
+			ValidateDSL(model, dsl, &EngineOptions{UseGraphValidation: true})).GetErrors()))
 	}
 }
 
@@ -340,7 +483,28 @@ type folder
 func TestUnbuildableFindingDoesNotClaimTheWrongSentinel(t *testing.T) {
 	t.Parallel()
 
-	findings := graphFindings(t, `model
+	findings := graphFindings(t, modelRefusedWithNothingToSay.dsl)
+	require.Len(t, findings, 1)
+
+	require.ErrorIs(t, findings[0], graph.ErrInvalidModel)
+	require.NotErrorIs(t, findings[0], graph.ErrModelCycle)
+	require.NotErrorIs(t, findings[0], graph.ErrTupleCycle)
+	require.NotErrorIs(t, findings[0], fgaerrors.ErrNoEntrypoints,
+		"a refused build is not an entrypoint finding, and a caller filtering on one must not see the other")
+	require.NotErrorIs(t, findings[0], fgaerrors.ErrRelationInUnresolvableCycle,
+		"the refusal is not a cycle finding, and the two share this branch")
+}
+
+// TestRefusedModelKeepsThePerRelationFindingsTheWalkHas pins what a refusal costs a
+// caller, which is a position and a relation name rather than a finding.
+//
+// The relations here are impossible as well as caught in a cycle, so the walk names them
+// and the refusal adds nothing. Reporting the refusal instead would replace two findings a
+// consumer can put on a line with one it cannot.
+func TestRefusedModelKeepsThePerRelationFindingsTheWalkHas(t *testing.T) {
+	t.Parallel()
+
+	dsl := `model
   schema 1.1
 type user
 type document
@@ -348,14 +512,20 @@ type document
     define admin: [user]
     define viewer: admin and editor
     define editor: viewer
-`)
-	require.Len(t, findings, 1)
+`
 
-	require.ErrorIs(t, findings[0], graph.ErrModelCycle)
-	require.NotErrorIs(t, findings[0], graph.ErrTupleCycle)
-	require.NotErrorIs(t, findings[0], graph.ErrInvalidModel)
-	require.NotErrorIs(t, findings[0], fgaerrors.ErrNoEntrypoints,
-		"a refused build is not an entrypoint finding, and a caller filtering on one must not see the other")
+	_, buildErr := graph.NewWeightedAuthorizationModelGraphBuilder().Build(modelFromDSL(t, dsl))
+	require.Error(t, buildErr, "the model has to be one the builder refuses")
+
+	assert.Equal(t, describeFindings(findingsFrom(ValidateDSL(modelFromDSL(t, dsl), dsl,
+		DefaultEngineOptions())).GetErrors()), describeFindings(graphFindings(t, dsl)),
+		"a refused build reports what the walk reports, down to the position")
+
+	for _, finding := range graphFindings(t, dsl) {
+		require.NotNil(t, finding.Metadata)
+		assert.Equal(t, RelationNoEntrypoint, finding.Metadata.ErrorType)
+		assert.NotNil(t, finding.Line, "a consumer needs somewhere to put this")
+	}
 }
 
 // TestGraphValidationIsOffByDefault pins the switch. The graph path is not the source of
@@ -441,7 +611,8 @@ type document
 }
 
 // TestValidateWithGraphOnNilModel checks the guard. RunAllValidations returns before the
-// phases on a nil model, so this reaches the function directly.
+// phases on a nil model, so this reaches the function directly, both with no validator at
+// all and with one built over a nil model, which is the shape the engine would hold.
 func TestValidateWithGraphOnNilModel(t *testing.T) {
 	t.Parallel()
 
@@ -449,6 +620,10 @@ func TestValidateWithGraphOnNilModel(t *testing.T) {
 	validateWithGraph(collector, nil, nil)
 
 	assert.Equal(t, 0, collector.CountAll(), "a nil model has nothing to build and nothing to report")
+
+	validateWithGraph(collector, NewSemanticValidator(nil), nil)
+
+	assert.Equal(t, 0, collector.CountAll(), "a validator over a nil model has nothing to report either")
 }
 
 // TestGraphRuleRegistryIsWellFormed keeps the registry usable as the place rules are
@@ -626,9 +801,9 @@ type document
 	}
 }
 
-// TestReachesOnlyRewritesPicksTheMessageVariant covers the discriminator on its own, so a
+// TestCyclesThroughRewritesPicksTheMessageVariant covers the discriminator on its own, so a
 // change to it is a failure here rather than a message that reads oddly in the corpus.
-func TestReachesOnlyRewritesPicksTheMessageVariant(t *testing.T) {
+func TestCyclesThroughRewritesPicksTheMessageVariant(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -636,7 +811,7 @@ func TestReachesOnlyRewritesPicksTheMessageVariant(t *testing.T) {
 		nodeID   string
 		wantOnly bool
 	}{
-		"self rewrite reaches only rewrites": {
+		"self rewrite cycles through rewrites": {
 			dsl: `model
   schema 1.1
 type user
@@ -698,19 +873,19 @@ type document
 			require.Truef(t, ok, "node %q is not in the graph, so this case tests nothing", test.nodeID)
 
 			scope := &graphScope{weighted: weighted, model: model}
-			assert.Equal(t, test.wantOnly, scope.reachesOnlyRewrites(test.nodeID))
+			assert.Equal(t, test.wantOnly, scope.cyclesThroughRewrites(test.nodeID))
 		})
 	}
 }
 
-// TestReachesOnlyRewritesTerminatesOnACycle checks the visited set. A relation that
+// TestCyclesThroughRewritesTerminatesOnACycle checks the visited set. A relation that
 // rewrites itself has an edge back to the node the walk started at, so without the visited
 // set the queue would never empty.
 //
 // A self-rewrite is the only cycle this can reach. The walk stops at the first edge that
 // is not a rewrite, so a longer cycle would have to be a chain of rewrites, and the
 // builder refuses every one of those with a model cycle before a rule sees it.
-func TestReachesOnlyRewritesTerminatesOnACycle(t *testing.T) {
+func TestCyclesThroughRewritesTerminatesOnACycle(t *testing.T) {
 	t.Parallel()
 
 	model := modelFromDSL(t, `model
@@ -739,7 +914,7 @@ type document
 	require.True(t, closesOnItself, "the node does not reach itself, so this case tests nothing")
 
 	scope := &graphScope{weighted: weighted, model: model}
-	assert.True(t, scope.reachesOnlyRewrites("document#viewer"))
+	assert.True(t, scope.cyclesThroughRewrites("document#viewer"))
 }
 
 // TestGraphValidationRunsBehindTheCascadeGate pins where the phase sits. A model with an
@@ -796,15 +971,7 @@ type document
 func TestUnbuildableFindingIsRecoverableThroughTheEntryPoints(t *testing.T) {
 	t.Parallel()
 
-	dsl := `model
-  schema 1.1
-type user
-type document
-  relations
-    define admin: [user]
-    define viewer: admin and editor
-    define editor: viewer
-`
+	dsl := modelRefusedWithNothingToSay.dsl
 
 	err := ValidateDSL(modelFromDSL(t, dsl), dsl, &EngineOptions{UseGraphValidation: true})
 	require.Error(t, err)
@@ -814,5 +981,5 @@ type document
 	require.Len(t, collection.GetErrors(), 1)
 
 	require.ErrorIs(t, err, fgaerrors.ErrModelNotBuildable, "the collection carries the sentinel through")
-	require.ErrorIs(t, err, graph.ErrModelCycle)
+	require.ErrorIs(t, err, graph.ErrInvalidModel)
 }

@@ -91,43 +91,19 @@ func TestGraphAgreesWithTraversalOnWhichModelsAreInvalid(t *testing.T) {
 	assert.Emptyf(t, graphOnlyNames,
 		"the graph refuses a model validation calls valid, so the two paths disagree on validity")
 
-	assert.Len(t, cases, 84, "non-skipped corpus cases")
-	assert.Equal(t, 33, bothFlag, "cases both paths reject")
+	assert.Len(t, cases, 89, "non-skipped corpus cases")
+	assert.Equal(t, 38, bothFlag, "cases both paths reject")
 	assert.Equal(t, 47, validationOnly, "cases validation rejects and the graph builds")
 	assert.Equal(t, 0, graphOnly, "cases the graph rejects and validation accepts")
 	assert.Equal(t, 4, bothClean, "cases both paths accept")
 }
 
-// graphDivergentCorpusCases are the corpus cases that do not pass under
-// UseGraphValidation, and every one of them diverges the same way: the case expects one
-// relation-no-entry-point per unreachable relation, and the graph path reports a single
-// graph-model-unbuildable for the model.
-//
-// The cause is the builder, which stops at the first problem and returns no graph with
-// its error, so there is nothing left to enumerate relations from. Twenty-three
-// positioned findings across these eleven cases become eleven positionless ones.
-//
-// Every other case whose build is refused is stopped by the cascade gate before the
-// entrypoint phase runs, so its refusal is never reported and the case still passes.
-var graphDivergentCorpusCases = []string{
-	"cycle 1 should fail",
-	"cycle 2 should fail",
-	"cyclic loop",
-	"exclusion base not allow to reference itself in TTU",
-	"intersection child not allow to reference itself in TTU",
-	"no entry point exclusion that relates to itself",
-	"no entry point intersection that relates to itself",
-	"no_entrypoint_1 should fail",
-	"no_entrypoint_2 should fail",
-	"no_entrypoint_3a should fail",
-	"no_entrypoint_3b should fail",
-}
-
 // TestCorpusUnderGraphValidation runs the whole corpus with the graph path selected and
-// pins the divergence to exactly the cases above, by name.
+// requires every case to pass, which is what makes the option safe to offer.
 //
-// Naming them is the point. A count alone would stay green if one case started failing
-// as another started passing, which is the shape a rule-parity regression takes.
+// Failures are named rather than counted. A count alone would stay green if one case
+// started failing as another started passing, which is the shape a rule-parity regression
+// takes.
 func TestCorpusUnderGraphValidation(t *testing.T) {
 	t.Parallel()
 
@@ -144,53 +120,65 @@ func TestCorpusUnderGraphValidation(t *testing.T) {
 
 	sort.Strings(diverged)
 
-	assert.Equal(t, graphDivergentCorpusCases, diverged,
-		"the set of corpus cases the graph path does not satisfy has changed")
+	assert.Empty(t, diverged, "corpus cases the graph path does not satisfy")
 }
 
-// TestGraphDivergenceIsOnlyTheUnbuildableSubstitution checks what the divergence above
-// consists of, so the test names a behaviour rather than a list.
+// TestRefusedCorpusModelsReportWhatTheWalkReports covers the cases the graph is never read
+// for, which is 38 of the 89.
 //
-// For each divergent case: the case expects nothing but entrypoint findings, and the
-// graph path reports exactly one finding, the unbuildable one. Anything else, a second
-// finding or a different code, is a different problem than fail-fast Build.
-func TestGraphDivergenceIsOnlyTheUnbuildableSubstitution(t *testing.T) {
+// Weight assignment stops at the first node it cannot weight, and it marks a node visited
+// before walking that node's edges, so a graph it refused holds relations left unweighted
+// because the walk had not reached them yet. Nothing distinguishes those from the relations
+// nothing can satisfy, so a refused build is answered by the rewrite-tree walk and the
+// findings have to be identical to what the traversal path gives.
+//
+// The count is asserted so the comparison cannot pass by covering nothing.
+func TestRefusedCorpusModelsReportWhatTheWalkReports(t *testing.T) {
 	t.Parallel()
 
-	divergent := make(map[string]struct{}, len(graphDivergentCorpusCases))
-	for _, name := range graphDivergentCorpusCases {
-		divergent[name] = struct{}{}
-	}
-
-	var expectedEntrypointFindings, checked int
+	var refused int
 
 	for _, entry := range corpusModels(t) {
-		if _, ok := divergent[entry.Case.Name]; !ok {
+		if _, err := graph.NewWeightedAuthorizationModelGraphBuilder().Build(entry.Model); err == nil {
 			continue
 		}
 
-		checked++
+		refused++
 
-		for _, expected := range entry.Case.ExpectedErrors {
-			require.Equalf(t, string(RelationNoEntrypoint), expected.Metadata.ErrorType,
-				"case %q expects a code other than the entrypoint one, so it is not this divergence",
-				entry.Case.Name)
-
-			expectedEntrypointFindings++
-		}
-
-		findings := findingsFrom(
+		fromWalk := findingsFrom(ValidateDSL(entry.Model, entry.Case.DSL, DefaultEngineOptions())).GetErrors()
+		viaGraph := findingsFrom(
 			ValidateDSL(entry.Model, entry.Case.DSL, &EngineOptions{UseGraphValidation: true})).GetErrors()
 
-		require.Lenf(t, findings, 1, "case %q reports more than the unbuildable finding", entry.Case.Name)
-		require.NotNil(t, findings[0].Metadata)
-		assert.Equalf(t, GraphModelUnbuildable, findings[0].Metadata.ErrorType,
-			"case %q diverges by reporting something other than the unbuildable finding", entry.Case.Name)
+		assert.Equalf(t, describeFindings(fromWalk), describeFindings(viaGraph),
+			"the graph path reports something other than the walk for refused case %q", entry.Case.Name)
 	}
 
-	assert.Len(t, graphDivergentCorpusCases, checked, "every named case was found in the corpus")
-	assert.Equal(t, 23, expectedEntrypointFindings,
-		"positioned entrypoint findings the graph path gives up, one per unreachable relation")
+	assert.Equal(t, 38, refused, "corpus cases the builder refuses")
+}
+
+// TestNoCorpusModelIsRefusedWithNothingToSay pins the gap this path leaves.
+//
+// A model the builder refuses and the walk has no finding for is reported as the refusal
+// itself, which names a pattern but no relation and carries no position. No corpus case is
+// in that state; the models that are have unit tests instead. A case arriving here means
+// the corpus grew a model whose only finding a consumer cannot put on a line.
+func TestNoCorpusModelIsRefusedWithNothingToSay(t *testing.T) {
+	t.Parallel()
+
+	var positionless []string
+
+	for _, entry := range corpusModels(t) {
+		for _, finding := range findingsFrom(
+			ValidateDSL(entry.Model, entry.Case.DSL, &EngineOptions{UseGraphValidation: true})).GetErrors() {
+			if finding.Metadata != nil && finding.Metadata.ErrorType == GraphModelUnbuildable {
+				positionless = append(positionless, fmt.Sprintf("%s: %s", entry.Case.Name, finding.Message))
+			}
+		}
+	}
+
+	sort.Strings(positionless)
+
+	assert.Empty(t, positionless, "corpus cases reporting a refusal with no relation and no position")
 }
 
 // TestEntrypointRuleMatchesTraversalWhereTheGraphBuilds is the parity guarantee behind

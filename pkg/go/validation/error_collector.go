@@ -416,6 +416,21 @@ func (c *ErrorCollector) RaiseNoEntryPoint(symbol, typeName string, meta *Meta, 
 	})
 }
 
+// RaiseCyclicRelation raises an error for a relation that takes part in a cycle the
+// resolver cannot work through.
+//
+// The through argument names what makes the cycle unresolvable, and it is the whole
+// difference between this and RaiseNoEntryPoint: the relation may well be satisfiable, and
+// what is wrong is the cycle it sits in.
+func (c *ErrorCollector) RaiseCyclicRelation(symbol, typeName, through string, meta *Meta, lineIndex *int) {
+	message := fmt.Sprintf("`%s` on `%s` takes part in a cycle that cannot be resolved: %s.",
+		symbol, typeName, through)
+	c.addScopedError(message, CyclicRelation, symbol, lineIndex, meta, nil, scope{
+		objectType: typeName,
+		relation:   symbol,
+	})
+}
+
 // RaiseInvalidRelationOnTupleset raises an error for invalid relation on tupleset.
 func (c *ErrorCollector) RaiseInvalidRelationOnTupleset(symbol, typeName, typeDef, relationName,
 	offendingRelation, parent string, lineIndex *int, meta *Meta) {
@@ -593,14 +608,20 @@ func (c *ErrorCollector) RaiseEmptyDifference(relationName, typeName, operation 
 // RaiseModelUnbuildable raises an error for a model the weighted graph refuses to build.
 //
 // The finding carries no position, and one refused model raises one finding however many
-// problems it has. Both follow from the builder returning on the first problem it meets
-// and returning no graph with it: there is nothing left to walk for the rest, and the
-// error it returns names a count rather than the relations responsible.
+// problems it has. Both follow from the builder returning on the first problem it meets and
+// returning no graph with it: there is nothing left to walk for the rest.
 //
-// The builder's error is chained under ErrModelNotBuildable, so errors.Is matches the
-// build being refused and the specific reason alike.
-func (c *ErrorCollector) RaiseModelUnbuildable(cause error) {
-	message := fmt.Sprintf("the model cannot be built into a weighted graph: %s", cause)
+// The reason is worded by the caller from the sentinel the refusal carries, not taken from
+// the builder's message. The builder picks which problem to report by ranging over a map, so
+// a model with several independent problems gets a message naming whichever one came out
+// first, and that is not the same one on the next run. Every statement it makes is true, but
+// none of them is stable enough to word a finding from.
+//
+// The builder's error is chained under ErrModelNotBuildable, so errors.Is matches the build
+// being refused and the specific reason alike, and a caller that wants the builder's own text
+// can still reach it through the chain.
+func (c *ErrorCollector) RaiseModelUnbuildable(reason string, cause error) {
+	message := fmt.Sprintf("the model cannot be built into a weighted graph: %s", reason)
 	chained := fmt.Errorf("%w: %w", fgaerrors.ErrModelNotBuildable, cause)
 	c.addScopedError(message, GraphModelUnbuildable, "", nil, nil, nil, scope{cause: chained})
 }

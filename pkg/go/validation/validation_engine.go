@@ -117,7 +117,7 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 			// One of these resolves entrypoints and cycles, never both. See
 			// EngineOptions.UseGraphValidation.
 			if options.UseGraphValidation {
-				validateWithGraph(ve.collector, ve.model, ve.lines)
+				validateWithGraph(ve.collector, ve.semantic, ve.lines)
 			} else {
 				validateCyclesAndEntryPoints(ve.collector, ve.semantic, ve.lines)
 			}

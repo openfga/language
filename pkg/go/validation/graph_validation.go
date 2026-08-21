@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"slices"
 	"strings"
 
@@ -16,19 +17,39 @@ import (
 // reimplementing the walk, so what validation reports and what anything else reading that
 // graph concludes cannot drift apart the way two implementations of one question would.
 //
-// The graph reports in two ways and only one of them can carry a position. Build either
-// returns a graph or refuses the model, and on refusal it returns no graph, so there is
-// nothing left to enumerate: a model with three broken relations yields one error naming
-// none of them. Every rule therefore runs only on a model that built, and a refused model
-// produces the single finding RaiseModelUnbuildable writes.
-func validateWithGraph(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
-	if model == nil {
+// Only a graph Build accepted is read. Weight assignment marks a node visited before it walks
+// that node's edges and stops at the first node it cannot weight, so in a graph it refused the
+// relations left without weights are the ones the walk had not reached yet as much as the ones
+// nothing can satisfy. An accepted graph has no such ambiguity: every node was weighted, and a
+// relation node with no weights reaches no terminal type, which is what the rewrite-tree walk
+// calls an impossible relation.
+//
+// A refused model is answered by the rewrite-tree walk, which resolves the same relations as
+// this rule does for every model in the shared corpus the graph accepts. Where the walk finds
+// nothing the refusal is reported as itself: the model holds a pattern the walk does not look
+// for, and the refusal names that pattern without naming a relation.
+func validateWithGraph(collector *ErrorCollector, semantic *SemanticValidator, lines []string) {
+	if semantic == nil || semantic.model == nil {
 		return
 	}
 
+	model := semantic.model
+
 	weighted, err := graph.NewWeightedAuthorizationModelGraphBuilder().Build(model)
 	if err != nil {
-		collector.RaiseModelUnbuildable(err)
+		validateCyclesAndEntryPoints(collector, semantic, lines)
+
+		// Only where the walk found nothing, because the relations it names are the same
+		// relations an unresolvable cycle runs through and one finding per relation is
+		// enough. Where it found nothing the refusal is about a cycle shape it does not
+		// look for, which is what this names.
+		if !collector.HasErrors() {
+			checkRelationCycleShapes(collector, semantic, lines)
+		}
+
+		if !collector.HasErrors() {
+			collector.RaiseModelUnbuildable(describeRefusal(err), err)
+		}
 
 		return
 	}
@@ -37,6 +58,45 @@ func validateWithGraph(collector *ErrorCollector, model *openfgav1.Authorization
 	for _, rule := range graphRules {
 		rule.check(scope)
 	}
+}
+
+// graphRefusalReasons words a build refusal from the sentinel it carries.
+//
+// The wording is each sentinel's own text, which is a fixed string, rather than the message
+// the builder returned. The builder reports the first problem it meets and chooses that
+// problem by ranging over a map, so the message names one of possibly several broken
+// relations and names a different one on the next run. Reading the sentinel instead gives the
+// same finding every run for the same model, which is what lets a consumer cache it, diff it,
+// or compare it against a corpus.
+//
+// Ordered most specific first, because the constrained tuple cycle wraps the plain one and
+// its text says more. TestEveryGraphSentinelHasAWording keeps this exhaustive.
+var graphRefusalReasons = []struct {
+	sentinel error
+	reason   string
+}{
+	{sentinel: graph.ErrContrainstTupleCycle, reason: graph.ErrContrainstTupleCycle.Error()},
+	{sentinel: graph.ErrTupleCycle, reason: graph.ErrTupleCycle.Error()},
+	{sentinel: graph.ErrModelCycle, reason: graph.ErrModelCycle.Error()},
+	{sentinel: graph.ErrInvalidModel, reason: graph.ErrInvalidModel.Error()},
+}
+
+// unrecognisedRefusal is the wording for a refusal carrying no sentinel this package knows.
+//
+// It says nothing about the model on purpose. The alternative is falling back to the
+// builder's message, which is the text this exists to keep out of a finding, and a sentinel
+// missing from the table is a gap to close rather than a case to paper over.
+const unrecognisedRefusal = "a reason this version does not recognise"
+
+// describeRefusal returns the wording for the sentinel a refusal carries.
+func describeRefusal(err error) string {
+	for _, refusal := range graphRefusalReasons {
+		if errors.Is(err, refusal.sentinel) {
+			return refusal.reason
+		}
+	}
+
+	return unrecognisedRefusal
 }
 
 // graphRule is one check over a built graph. Every rule collects all of its hits rather
@@ -98,7 +158,7 @@ func checkRelationEntrypoints(scope *graphScope) {
 		meta := scope.metaFor(objectType, relation)
 		lineIndex := scope.relationLine(objectType, relation)
 
-		if scope.reachesOnlyRewrites(nodeID) {
+		if scope.cyclesThroughRewrites(nodeID) {
 			scope.collector.RaiseNoEntryPointLoop(relation, objectType, meta, lineIndex)
 
 			continue
@@ -108,17 +168,19 @@ func checkRelationEntrypoints(scope *graphScope) {
 	}
 }
 
-// reachesOnlyRewrites reports whether every edge reachable from nodeID rewrites another
-// relation, with no direct assignment or tupleset anywhere.
+// cyclesThroughRewrites reports whether nodeID reaches itself following only the edges that
+// rewrite one relation into another.
 //
-// That separates the two things the traversal words differently. `define viewer: viewer`
-// closes on itself through a computed rewrite and nothing else, which it calls a potential
-// loop. `define viewer: viewer from parent` reaches a tupleset it can never satisfy, which
-// it calls a missing entrypoint.
-func (s *graphScope) reachesOnlyRewrites(nodeID string) bool {
-	visited := map[string]bool{nodeID: true}
+// That is what separates the two wordings the traversal uses. A relation that comes back to
+// itself through rewrites is a potential loop; one that cannot be satisfied for any other
+// reason has no entrypoint. Edges that are not rewrites are skipped rather than treated as
+// disqualifying, because a relation can hold both a rewrite that loops and a direct
+// assignment that does not, and the loop is still what makes it impossible. That mirrors how
+// the rewrite-tree walk propagates a loop out of an operator if any one child loops, while
+// reading only reachability off its direct and tupleset children.
+func (s *graphScope) cyclesThroughRewrites(nodeID string) bool {
+	visited := map[string]bool{}
 	queue := []string{nodeID}
-	sawEdge := false
 
 	for len(queue) > 0 {
 		current := queue[0]
@@ -126,15 +188,15 @@ func (s *graphScope) reachesOnlyRewrites(nodeID string) bool {
 
 		edges, _ := s.weighted.GetEdgesFromNodeID(current)
 		for _, edge := range edges {
-			sawEdge = true
-
-			if edge.GetEdgeType() != graph.ComputedEdge && edge.GetEdgeType() != graph.RewriteEdge {
-				// A direct, tupleset or grouping edge means something outside this
-				// relation feeds it, so the problem is a missing entrypoint.
-				return false
+			if !rewritesAnotherRelation(edge.GetEdgeType()) {
+				continue
 			}
 
 			next := edge.GetTo().GetUniqueLabel()
+			if next == nodeID {
+				return true
+			}
+
 			if !visited[next] {
 				visited[next] = true
 				queue = append(queue, next)
@@ -142,7 +204,13 @@ func (s *graphScope) reachesOnlyRewrites(nodeID string) bool {
 		}
 	}
 
-	return sawEdge
+	return false
+}
+
+// rewritesAnotherRelation reports whether an edge kind stands for one relation being
+// rewritten as another, as against a tuple being read or a set of edges being grouped.
+func rewritesAnotherRelation(kind graph.EdgeType) bool {
+	return kind == graph.ComputedEdge || kind == graph.RewriteEdge
 }
 
 // relationLine resolves the source line a relation is declared on, through the same

@@ -93,6 +93,14 @@ var (
 	// errors.Is reaches either.
 	ErrModelNotBuildable = errors.New("model cannot be built into a weighted graph")
 
+	// ErrRelationInUnresolvableCycle is reported when a relation takes part in a
+	// cycle that cannot be resolved, either because no step in it reads a tuple or
+	// because a step is an operand of an intersection or an exclusion.
+	//
+	// It is distinct from ErrNoEntrypoints: a relation reported here can be
+	// satisfiable on its own and is reported for the company it keeps.
+	ErrRelationInUnresolvableCycle = errors.New("relation takes part in a cycle that cannot be resolved")
+
 	// ErrUnknownModelErrorKind is returned when a ModelErrorKind has no wire
 	// name, either marshalling a value this package does not declare or reading
 	// a name it does not recognise. It is not a validation finding.

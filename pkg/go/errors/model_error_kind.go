@@ -35,30 +35,51 @@ const (
 	ErrorKindInvalidModel
 )
 
-// modelErrorKindNames maps each category to its wire name. A category missing
-// from here fails to marshal, so a constant added without a name is caught.
-var modelErrorKindNames = map[ModelErrorKind]string{
-	ErrorKindObjectType:        "object-type",
-	ErrorKindRelation:          "relation",
-	ErrorKindRelationCondition: "relation-condition",
-	ErrorKindCondition:         "condition",
-	ErrorKindInvalidModel:      "invalid-model",
+// wireName returns the name a category serialises as, and an empty string for a
+// value with no name. It is the only place the mapping lives, so String, IsValid
+// and MarshalText cannot disagree about which values have one.
+func (m ModelErrorKind) wireName() string {
+	switch m {
+	case ErrorKindObjectType:
+		return "object-type"
+	case ErrorKindRelation:
+		return "relation"
+	case ErrorKindRelationCondition:
+		return "relation-condition"
+	case ErrorKindCondition:
+		return "condition"
+	case ErrorKindInvalidModel:
+		return "invalid-model"
+	default:
+		// ModelErrorKindUnspecified lands here too: the zero value has no name by
+		// design, so it marshals as a failure rather than as a category.
+		return ""
+	}
 }
 
-// modelErrorKindValues is the reverse of modelErrorKindNames, built from it so
-// the two cannot disagree.
-var modelErrorKindValues = func() map[string]ModelErrorKind {
-	values := make(map[string]ModelErrorKind, len(modelErrorKindNames))
-	for errorType, name := range modelErrorKindNames {
-		values[name] = errorType
+// modelErrorKindFromName is the reverse of wireName. The two are written out
+// separately rather than derived from one another, so TestModelErrorKindWireNames
+// round trips every declared category to keep them in step.
+func modelErrorKindFromName(name string) (ModelErrorKind, bool) {
+	switch name {
+	case "object-type":
+		return ErrorKindObjectType, true
+	case "relation":
+		return ErrorKindRelation, true
+	case "relation-condition":
+		return ErrorKindRelationCondition, true
+	case "condition":
+		return ErrorKindCondition, true
+	case "invalid-model":
+		return ErrorKindInvalidModel, true
+	default:
+		return ModelErrorKindUnspecified, false
 	}
-
-	return values
-}()
+}
 
 // String returns the wire name, or a diagnostic form for a value with none.
 func (m ModelErrorKind) String() string {
-	if name, ok := modelErrorKindNames[m]; ok {
+	if name := m.wireName(); name != "" {
 		return name
 	}
 
@@ -71,15 +92,17 @@ func (m ModelErrorKind) String() string {
 
 // IsValid reports whether m is a declared category with a wire name.
 func (m ModelErrorKind) IsValid() bool {
-	_, ok := modelErrorKindNames[m]
-
-	return ok
+	return m.wireName() != ""
 }
 
 // MarshalText emits the wire name, so the JSON carries "object-type".
+//
+// It does not go through String, because String has a diagnostic form for an
+// undeclared number and this has to have none: a category that cannot be named
+// must fail to marshal rather than ship as ModelErrorKind(99).
 func (m ModelErrorKind) MarshalText() ([]byte, error) {
-	name, ok := modelErrorKindNames[m]
-	if !ok {
+	name := m.wireName()
+	if name == "" {
 		return nil, fmt.Errorf("%w: %d", ErrUnknownModelErrorKind, int(m))
 	}
 
@@ -89,7 +112,7 @@ func (m ModelErrorKind) MarshalText() ([]byte, error) {
 // UnmarshalText resolves a wire name back to its category, rejecting any name
 // this package does not declare.
 func (m *ModelErrorKind) UnmarshalText(text []byte) error {
-	errorType, ok := modelErrorKindValues[string(text)]
+	errorType, ok := modelErrorKindFromName(string(text))
 	if !ok {
 		return fmt.Errorf("%w: %q", ErrUnknownModelErrorKind, text)
 	}

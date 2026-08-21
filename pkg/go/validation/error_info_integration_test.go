@@ -158,6 +158,18 @@ condition inRegion(x: string) {
 	}
 }
 
+// findingScope reads the scope off a finding the way a consumer does: errors.As from
+// the outer error, rather than off the Cause field. A finding carrying no scoped
+// cause yields an empty scope.
+func findingScope(finding *ValidationError) fgaerrors.ModelErrorScope {
+	var modelErr fgaerrors.ModelError
+	if !errors.As(error(finding), &modelErr) {
+		return fgaerrors.ModelErrorScope{}
+	}
+
+	return modelErr.Scope()
+}
+
 // TestMetadataIsDerivedFromCause checks the serialised metadata and the errors.As
 // payload describe the same scope, so the two cannot drift.
 func TestMetadataIsDerivedFromCause(t *testing.T) {
@@ -180,13 +192,13 @@ type document
 			continue
 		}
 
-		objectType, relation, condition := causeScope(error(validationErr))
+		causeScope := findingScope(validationErr)
 
 		require.NotNil(t, validationErr.Metadata)
-		assert.Equal(t, objectType, validationErr.Metadata.Type,
+		assert.Equal(t, causeScope.ObjectType, validationErr.Metadata.Type,
 			"metadata type must match the cause it was derived from")
-		assert.Equal(t, relation, validationErr.Metadata.Relation)
-		assert.Equal(t, condition, validationErr.Metadata.Condition)
+		assert.Equal(t, causeScope.Relation, validationErr.Metadata.Relation)
+		assert.Equal(t, causeScope.Condition, validationErr.Metadata.Condition)
 
 		checked++
 	}
@@ -262,6 +274,12 @@ type document
 
 			assert.NotEmptyf(t, validationErr.Severity,
 				"model %d: %q has no severity", index, errorType)
+
+			// The category comes off the cause the raise site built, so a finding
+			// with none has a raise site that named no part of the model.
+			assert.Truef(t, validationErr.Category.IsValid(),
+				"model %d: %q has no category, so its raise site named no part of the model",
+				index, errorType)
 
 			if _, classified := errorInfoByType[errorType]; classified {
 				require.Errorf(t, validationErr.Unwrap(),

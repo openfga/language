@@ -7,6 +7,9 @@
 // errors.As: ErrObjectType, ErrRelation, ErrRelationCondition, ErrCondition, or
 // ErrModel when no single part is responsible.
 //
+// Those five are the implementations of ModelError, so a caller that does not care
+// which one it holds can read Kind and Scope off the interface instead.
+//
 // For a consumer that sees only serialised output, ModelErrorKind is the scope as
 // a name and Severity is whether the finding blocks. Both reserve zero for "not
 // set" and serialise as their name, so the names are API and the numbers are not.

@@ -6,6 +6,8 @@ import (
 	"slices"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+
+	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
 
 // ValidateWildcardUsage validates wildcard relation usage rules.
@@ -158,8 +160,7 @@ func (c *ErrorCollector) RaiseInvalidWildcardUsage(typeName, relationName, paren
 	// The wildcard is written in a relation of parentTypeName; typeName is the
 	// restriction it appears in, which the symbol already records.
 	c.addScopedError(message, InvalidWildcardError, typeName, lineIndex, meta, nil, scope{
-		objectType: parentTypeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: parentTypeName, Relation: relationName},
 	})
 }
 
@@ -167,7 +168,6 @@ func (c *ErrorCollector) RaiseTuplesetNotDirect(tuplesetRelation, typeName, pare
 	message := fmt.Sprintf("Tupleset relation '%s' on type '%s' must allow direct assignment (used in relation '%s')",
 		tuplesetRelation, typeName, parentRelation)
 	c.addScopedError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   tuplesetRelation,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: tuplesetRelation},
 	})
 }

@@ -16,6 +16,65 @@ import (
 	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
 
+// unemittedErrorTypes are declared ValidationErrorType values that no validation
+// produces. The other side is read out of the source by emittedErrorTypes below, and
+// TestEveryErrorTypeIsClassified requires every declared code to be in one or the
+// other.
+//
+// They are kept rather than deleted because each has a published documentation
+// page, and because SelfError and InvalidSyntax are equally unemitted in
+// pkg/js/errors.ts. A cycle with no entrypoint surfaces as RelationNoEntrypoint,
+// leaving CyclicError and CyclicRelation nothing to report. InvalidSchemaVersion is
+// unreachable because RaiseInvalidSchemaVersion emits InvalidSchema, which is what
+// the shared corpus expects.
+//
+// None get an errorInfoByType entry, so lookupErrorInfo treats them as blocking
+// with no cause. Anything that starts emitting one must add it to that table in the
+// same change.
+var unemittedErrorTypes = map[ValidationErrorType]struct{}{
+	SelfError:            {},
+	InvalidSyntax:        {},
+	CyclicError:          {},
+	CyclicRelation:       {},
+	InvalidSchemaVersion: {},
+}
+
+// allErrorTypes lists every declared ValidationErrorType. A Go const block of a
+// string type cannot be enumerated at runtime, so exhaustiveness checks need it
+// written out.
+//
+// Keep in sync with the const block in errors.go. TestAllErrorTypesIsComplete reads
+// that block and fails if the two disagree.
+var allErrorTypes = []ValidationErrorType{
+	SchemaVersionRequired,
+	SchemaVersionUnsupported,
+	ReservedTypeKeywords,
+	ReservedRelationKeywords,
+	SelfError,
+	InvalidName,
+	MissingDefinition,
+	InvalidRelationType,
+	InvalidRelationOnTupleset,
+	InvalidType,
+	RelationNoEntrypoint,
+	TuplesetNotDirect,
+	DuplicatedError,
+	UndefinedType,
+	UndefinedRelation,
+	CyclicError,
+	InvalidWildcardError,
+	AssignableRelationsMustHaveType,
+	InvalidSchema,
+	InvalidSyntax,
+	TypeRestrictionCannotHaveWildcardAndRelation,
+	ConditionNotDefined,
+	ConditionNotUsed,
+	DifferentNestedConditionName,
+	MultipleModulesInFile,
+	CyclicRelation,
+	InvalidSchemaVersion,
+}
+
 // emittedErrorTypes parses this package's non-test sources and returns the name of
 // every ValidationErrorType passed as the errorType argument of an addError call. It
 // reads the source rather than a hand-written list, which would go stale in the same
@@ -166,7 +225,9 @@ func TestAllErrorTypesIsComplete(t *testing.T) {
 }
 
 // TestErrorInfoEntriesAreWellFormed checks each entry says something usable: a
-// severity that exists, a category that serialises, and a non-nil cause.
+// severity that exists and a non-nil cause. Which part of the model a code is about
+// is not in the table, so it is checked on the findings themselves, in
+// TestEverySemanticFindingCarriesErrorInfo.
 func TestErrorInfoEntriesAreWellFormed(t *testing.T) {
 	t.Parallel()
 
@@ -176,24 +237,12 @@ func TestErrorInfoEntriesAreWellFormed(t *testing.T) {
 		fgaerrors.SeverityAdvisory: {},
 	}
 
-	validCategories := map[fgaerrors.ModelErrorKind]struct{}{
-		fgaerrors.ErrorKindObjectType:        {},
-		fgaerrors.ErrorKindRelation:          {},
-		fgaerrors.ErrorKindRelationCondition: {},
-		fgaerrors.ErrorKindCondition:         {},
-		fgaerrors.ErrorKindInvalidModel:      {},
-	}
-
 	for errorType, entry := range errorInfoByType {
 		t.Run(string(errorType), func(t *testing.T) {
 			t.Parallel()
 
 			_, ok := validSeverities[entry.Severity]
 			assert.Truef(t, ok, "severity %q is not one of error/warning/advisory", entry.Severity)
-
-			// A typo here would silently mint a new wire name.
-			_, ok = validCategories[entry.Category]
-			assert.Truef(t, ok, "category %q is not a declared ModelErrorKind", entry.Category)
 
 			assert.Error(t, entry.Cause, "no cause: errors.Is has nothing to match against")
 		})

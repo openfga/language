@@ -85,12 +85,14 @@ type ValidationError struct {
 	Metadata *ErrorMetadata `json:"metadata,omitempty"`
 
 	// Cause is the scoped error this finding wraps, and what Unwrap returns:
-	// errors.Is identifies the condition, errors.As the part of the model.
+	// errors.Is identifies the condition, errors.As or Kind the part of the model.
+	// It is nil for a finding whose code has no sentinel, and for one built directly
+	// rather than through the collector.
 	//
 	// It stays off the wire because an error field has no concrete type to decode
 	// into, which would leave ValidationError unable to round-trip. The message,
 	// severity and metadata carry the same information in JSON.
-	Cause error `json:"-"`
+	Cause fgaerrors.ModelError `json:"-"`
 }
 
 // Error implements the error interface.

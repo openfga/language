@@ -28,28 +28,43 @@ const (
 	SeverityAdvisory
 )
 
-// severityNames maps each severity to its wire name. A severity missing from here
-// fails to marshal, so a constant added without a name is caught.
-var severityNames = map[Severity]string{
-	SeverityError:    "error",
-	SeverityWarning:  "warning",
-	SeverityAdvisory: "advisory",
+// wireName returns the name a severity serialises as, and an empty string for a
+// value with no name. It is the only place the mapping lives, so String, IsValid
+// and MarshalText cannot disagree about which values have one.
+func (s Severity) wireName() string {
+	switch s {
+	case SeverityError:
+		return "error"
+	case SeverityWarning:
+		return "warning"
+	case SeverityAdvisory:
+		return "advisory"
+	default:
+		// SeverityUnspecified lands here too: the zero value has no name by design,
+		// so it marshals as a failure rather than as a severity.
+		return ""
+	}
 }
 
-// severityValues is the reverse of severityNames, built from it so the two
-// cannot disagree.
-var severityValues = func() map[string]Severity {
-	values := make(map[string]Severity, len(severityNames))
-	for severity, name := range severityNames {
-		values[name] = severity
+// severityFromName is the reverse of wireName. The two are written out separately
+// rather than derived from one another, so TestSeverityWireNames round trips every
+// declared severity to keep them in step.
+func severityFromName(name string) (Severity, bool) {
+	switch name {
+	case "error":
+		return SeverityError, true
+	case "warning":
+		return SeverityWarning, true
+	case "advisory":
+		return SeverityAdvisory, true
+	default:
+		return SeverityUnspecified, false
 	}
-
-	return values
-}()
+}
 
 // String returns the wire name, or a diagnostic form for a value with none.
 func (s Severity) String() string {
-	if name, ok := severityNames[s]; ok {
+	if name := s.wireName(); name != "" {
 		return name
 	}
 
@@ -62,9 +77,7 @@ func (s Severity) String() string {
 
 // IsValid reports whether s is a declared severity with a wire name.
 func (s Severity) IsValid() bool {
-	_, ok := severityNames[s]
-
-	return ok
+	return s.wireName() != ""
 }
 
 // Blocks reports whether a finding of this severity makes validation fail.
@@ -77,9 +90,13 @@ func (s Severity) Blocks() bool {
 }
 
 // MarshalText emits the wire name, so the JSON carries "warning".
+//
+// It does not go through String, because String has a diagnostic form for an
+// undeclared number and this has to have none: a severity that cannot be named must
+// fail to marshal rather than ship as Severity(99).
 func (s Severity) MarshalText() ([]byte, error) {
-	name, ok := severityNames[s]
-	if !ok {
+	name := s.wireName()
+	if name == "" {
 		return nil, fmt.Errorf("%w: %d", ErrUnknownSeverity, int(s))
 	}
 
@@ -89,7 +106,7 @@ func (s Severity) MarshalText() ([]byte, error) {
 // UnmarshalText resolves a wire name back to its severity, rejecting any name
 // this package does not declare.
 func (s *Severity) UnmarshalText(text []byte) error {
-	severity, ok := severityValues[string(text)]
+	severity, ok := severityFromName(string(text))
 	if !ok {
 		return fmt.Errorf("%w: %q", ErrUnknownSeverity, text)
 	}

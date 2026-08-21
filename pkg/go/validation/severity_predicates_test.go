@@ -166,6 +166,29 @@ func TestUnwrapReachesEveryFinding(t *testing.T) {
 	assert.Equal(t, "viewer", scoped.Relation)
 }
 
+// TestUnwrapOfAnUnsetCauseIsNil checks a finding with no cause unwraps to a nil error
+// rather than to a non-nil error holding nothing.
+//
+// Cause is an interface, so Unwrap converts one interface value to another. An unset
+// Cause is a nil interface and converts to a nil error; a scope wrapping a nil
+// sentinel would not, which is why WithSentinel yields nothing rather than building
+// one.
+func TestUnwrapOfAnUnsetCauseIsNil(t *testing.T) {
+	t.Parallel()
+
+	unset := finding(fgaerrors.SeverityError, "no cause")
+
+	require.Nil(t, unset.Cause)
+	require.NoError(t, unset.Unwrap())
+
+	// The path a code missing from errorInfoByType takes: no sentinel to wrap, so the
+	// collector stores nothing rather than a scope wrapping nil.
+	assert.Nil(t, fgaerrors.WithSentinel(&fgaerrors.ErrRelation{Relation: "viewer"}, nil))
+
+	collection := NewValidationErrors([]*ValidationError{unset})
+	assert.NotErrorIs(t, collection, fgaerrors.ErrNoEntrypoints)
+}
+
 // TestUnwrapSkipsNilFindings checks a directly-constructed collection holding a nil
 // entry does not panic: a nil *ValidationError handed to errors.Is as a non-nil
 // error would dereference nil on Unwrap.

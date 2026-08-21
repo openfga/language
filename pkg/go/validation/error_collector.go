@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -106,79 +105,57 @@ func (c *ErrorCollector) CountAll() int {
 	return len(c.errors)
 }
 
-// scope names the model entity a finding is about, so addScopedError can build the
-// cause and derive the metadata from one description. A zero scope means the raise
-// site has nothing to add beyond the symbol, and the table's category stands alone.
+// scope is what a raise site knows that the collector cannot work out: which part of
+// the model is at fault, and the enclosing type for the metadata.
 type scope struct {
-	objectType string
-	relation   string
-	condition  string
+	// part names the part of the model at fault. The raise site builds it, because
+	// the code alone does not say which part: duplicated-error is raised about a type
+	// from one place and a relation from another, and invalid-name about all three.
+	// The sentinel is filled in from the code's table entry, so at this point it
+	// wraps nothing.
+	part fgaerrors.ModelError
 
 	// offendingType is the enclosing type a finding about another type was written
-	// in, matching JS's wire field of the same name. Metadata only: no scoped error
-	// type has a slot for it.
+	// in, matching JS's wire field of the same name. Metadata only: none of the
+	// scope types has a slot for it.
 	offendingType string
-
-	// category overrides the table default when set, for codes raised from places
-	// with different scopes: a duplicate type and a duplicate type restriction share
-	// one code without being the same kind of finding.
-	category fgaerrors.ModelErrorKind
 }
 
-// addError is a helper to add an error to the collection.
+// addError adds a finding that names no part of the model, so it is about the model as
+// a whole. A raise site that names one, carries file or module metadata, or resolves
+// its own column goes through addScopedError instead; none of the codes raised through
+// here does any of those.
 func (c *ErrorCollector) addError(message string, errorType ValidationErrorType, symbol string,
-	lineIndex *int, meta *Meta, customResolver ErrorCustomResolver) {
-	c.addScopedError(message, errorType, symbol, lineIndex, meta, customResolver, scope{})
+	lineIndex *int) {
+	c.addScopedError(message, errorType, symbol, lineIndex, nil, nil, scope{
+		part: &fgaerrors.ErrModel{},
+	})
 }
 
-// addScopedError adds an error that knows which type, relation or condition it
-// concerns. Callers with nothing to add beyond the symbol use addError instead.
+// addScopedError resolves where a finding points and records it. The code decides its
+// severity and the sentinel it wraps; the raise site's scope decides which part of the
+// model it names, and both the category and the metadata are read back off that.
 func (c *ErrorCollector) addScopedError(message string, errorType ValidationErrorType, symbol string,
 	lineIndex *int, meta *Meta, customResolver ErrorCustomResolver, errorScope scope) {
-	var line *Range
-	var column *Range
+	line, column := c.position(symbol, lineIndex, customResolver)
 
-	// Calculate line and column positions if lineIndex is provided
-	if lineIndex != nil && *lineIndex >= 0 && *lineIndex < len(c.lines) {
-		line = &Range{Start: *lineIndex, End: *lineIndex}
-
-		// Find symbol position in line for column calculation, matching on word
-		// boundaries as the reference does.
-		rawLine := c.lines[*lineIndex]
-		symbolPos := wordIndex(rawLine, symbol)
-
-		if customResolver != nil {
-			symbolPos = customResolver(symbolPos, rawLine, symbol)
-		}
-
-		if symbolPos >= 0 {
-			column = &Range{
-				Start: symbolPos,
-				End:   symbolPos + len(symbol),
-			}
-		}
+	part := errorScope.part
+	if part == nil {
+		// A raise site that named nothing. Treat it as being about the model as a
+		// whole, which is what a code with no scope means.
+		part = &fgaerrors.ErrModel{}
 	}
 
 	entry := lookupErrorInfo(errorType)
-
-	category := entry.Category
-	if errorScope.category != fgaerrors.ModelErrorKindUnspecified {
-		category = errorScope.category
-	}
-
-	// The cause carries the scope and the metadata is derived from it, so the JSON
-	// and the errors.As payload cannot disagree. offendingType is metadata only, so
-	// it comes straight off the scope.
-	cause := newScopedCause(category, errorScope, entry.Cause)
-	objectType, relation, condition := causeScope(cause)
+	partScope := part.Scope()
 
 	metadata := &ErrorMetadata{
 		Symbol:        symbol,
 		ErrorType:     errorType,
 		OffendingType: errorScope.offendingType,
-		Type:          objectType,
-		Relation:      relation,
-		Condition:     condition,
+		Type:          partScope.ObjectType,
+		Relation:      partScope.Relation,
+		Condition:     partScope.Condition,
 	}
 
 	if meta != nil {
@@ -190,11 +167,15 @@ func (c *ErrorCollector) addScopedError(message string, errorType ValidationErro
 	validationErr := &ValidationError{
 		Message:  message,
 		Severity: entry.Severity,
-		Category: category,
+		Category: part.Kind(),
 		Line:     line,
 		Column:   column,
 		Metadata: metadata,
-		Cause:    cause,
+
+		// A code missing from the table has no sentinel, so there is nothing for
+		// errors.Is to match and this is nil. The category and metadata above still
+		// report what the raise site named.
+		Cause: fgaerrors.WithSentinel(part, entry.Cause),
 	}
 
 	if meta != nil {
@@ -204,68 +185,33 @@ func (c *ErrorCollector) addScopedError(message string, errorType ValidationErro
 	c.errors = append(c.errors, validationErr)
 }
 
-// newScopedCause wraps sentinel in the error type matching category, carrying
-// whichever scope fields that type declares. Returns nil when there is no sentinel,
-// which is the case for codes absent from the table.
-func newScopedCause(category fgaerrors.ModelErrorKind, errorScope scope, sentinel error) error {
-	if sentinel == nil {
-		return nil
+// position resolves the line and column a finding points at, both nil when the raise
+// site gave no line or the line is outside the source.
+func (c *ErrorCollector) position(symbol string, lineIndex *int,
+	customResolver ErrorCustomResolver) (line, column *Range) {
+	if lineIndex == nil || *lineIndex < 0 || *lineIndex >= len(c.lines) {
+		return nil, nil
 	}
 
-	switch category {
-	case fgaerrors.ErrorKindObjectType:
-		return &fgaerrors.ErrObjectType{
-			ObjectType: errorScope.objectType,
-			Cause:      sentinel,
-		}
-	case fgaerrors.ErrorKindRelation:
-		return &fgaerrors.ErrRelation{
-			ObjectType: errorScope.objectType,
-			Relation:   errorScope.relation,
-			Cause:      sentinel,
-		}
-	case fgaerrors.ErrorKindRelationCondition:
-		return &fgaerrors.ErrRelationCondition{
-			ObjectType: errorScope.objectType,
-			Relation:   errorScope.relation,
-			Condition:  errorScope.condition,
-			Cause:      sentinel,
-		}
-	case fgaerrors.ErrorKindCondition:
-		return &fgaerrors.ErrCondition{
-			Condition: errorScope.condition,
-			Cause:     sentinel,
-		}
-	default:
-		// ErrorKindInvalidModel, and anything unrecognised: a finding no part of the
-		// model owns.
-		return &fgaerrors.ErrModel{Cause: sentinel}
-	}
-}
+	line = &Range{Start: *lineIndex, End: *lineIndex}
 
-// causeScope reads the scope off whichever error type cause is, so the metadata
-// carries exactly the fields that type declares. A cause with no scope to report,
-// *ErrModel or nil, yields three empty strings, which omitempty drops.
-func causeScope(cause error) (objectType, relation, condition string) {
-	var (
-		objectTypeErr        *fgaerrors.ErrObjectType
-		relationErr          *fgaerrors.ErrRelation
-		relationConditionErr *fgaerrors.ErrRelationCondition
-		conditionErr         *fgaerrors.ErrCondition
-	)
+	// Find symbol position in line for column calculation, matching on word
+	// boundaries as the reference does.
+	rawLine := c.lines[*lineIndex]
+	symbolPos := wordIndex(rawLine, symbol)
 
-	switch {
-	case errors.As(cause, &objectTypeErr):
-		return objectTypeErr.ObjectType, "", ""
-	case errors.As(cause, &relationErr):
-		return relationErr.ObjectType, relationErr.Relation, ""
-	case errors.As(cause, &relationConditionErr):
-		return relationConditionErr.ObjectType, relationConditionErr.Relation, relationConditionErr.Condition
-	case errors.As(cause, &conditionErr):
-		return "", "", conditionErr.Condition
-	default:
-		return "", "", ""
+	if customResolver != nil {
+		symbolPos = customResolver(symbolPos, rawLine, symbol)
 	}
+
+	if symbolPos >= 0 {
+		column = &Range{
+			Start: symbolPos,
+			End:   symbolPos + len(symbol),
+		}
+	}
+
+	return line, column
 }
 
 // RaiseInvalidName raises an invalid name error.
@@ -273,11 +219,11 @@ func (c *ErrorCollector) RaiseInvalidName(symbol, clause string, typeName *strin
 	var message string
 	// A nil typeName means the offending name is a type rather than a relation on
 	// one, which changes both the message and the scope of the finding.
-	errorScope := scope{objectType: symbol, category: fgaerrors.ErrorKindObjectType}
+	errorScope := scope{part: &fgaerrors.ErrObjectType{ObjectType: symbol}}
 
 	if typeName != nil {
 		message = fmt.Sprintf("relation '%s' of type '%s' does not match naming rule: '%s'.", symbol, *typeName, clause)
-		errorScope = scope{objectType: *typeName, relation: symbol}
+		errorScope = scope{part: &fgaerrors.ErrRelation{ObjectType: *typeName, Relation: symbol}}
 	} else {
 		message = fmt.Sprintf("type '%s' does not match naming rule: '%s'.", symbol, clause)
 	}
@@ -290,8 +236,7 @@ func (c *ErrorCollector) RaiseInvalidName(symbol, clause string, typeName *strin
 func (c *ErrorCollector) RaiseInvalidConditionName(symbol, clause string, lineIndex *int, meta *Meta) {
 	message := fmt.Sprintf("condition '%s' does not match naming rule: '%s'.", symbol, clause)
 	c.addScopedError(message, InvalidName, symbol, lineIndex, meta, nil, scope{
-		condition: symbol,
-		category:  fgaerrors.ErrorKindCondition,
+		part: &fgaerrors.ErrCondition{Condition: symbol},
 	})
 }
 
@@ -299,7 +244,7 @@ func (c *ErrorCollector) RaiseInvalidConditionName(symbol, clause string, lineIn
 func (c *ErrorCollector) RaiseReservedTypeName(symbol string, lineIndex *int, meta *Meta) {
 	message := "a type cannot be named 'self' or 'this'."
 	c.addScopedError(message, ReservedTypeKeywords, symbol, lineIndex, meta, nil, scope{
-		objectType: symbol,
+		part: &fgaerrors.ErrObjectType{ObjectType: symbol},
 	})
 }
 
@@ -307,8 +252,7 @@ func (c *ErrorCollector) RaiseReservedTypeName(symbol string, lineIndex *int, me
 func (c *ErrorCollector) RaiseReservedRelationName(symbol, typeName string, lineIndex *int, meta *Meta) {
 	message := "a relation cannot be named 'self' or 'this'."
 	c.addScopedError(message, ReservedRelationKeywords, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   symbol,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: symbol},
 	})
 }
 
@@ -326,8 +270,7 @@ func (c *ErrorCollector) RaiseTupleUsersetRequiresDirect(symbol, typeName, relat
 	}
 
 	c.addScopedError(message, TuplesetNotDirect, symbol, lineIndex, meta, customResolver, scope{
-		objectType: typeName,
-		relation:   relation,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relation},
 	})
 }
 
@@ -337,8 +280,7 @@ func (c *ErrorCollector) RaiseDuplicateTypeName(symbol string, meta *Meta, lineI
 	// A duplicate type is about the type, not a relation on it, so this overrides
 	// DuplicatedError's relation-scoped default.
 	c.addScopedError(message, DuplicatedError, symbol, lineIndex, meta, nil, scope{
-		objectType: symbol,
-		category:   fgaerrors.ErrorKindObjectType,
+		part: &fgaerrors.ErrObjectType{ObjectType: symbol},
 	})
 }
 
@@ -346,8 +288,7 @@ func (c *ErrorCollector) RaiseDuplicateTypeName(symbol string, meta *Meta, lineI
 func (c *ErrorCollector) RaiseDuplicateTypeRestriction(symbol, relationName, typeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("the type restriction `%s` is a duplicate in the relation `%s`.", symbol, relationName)
 	c.addScopedError(message, DuplicatedError, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }
 
@@ -357,7 +298,7 @@ func (c *ErrorCollector) RaiseUndefinedType(typeName, relationName, parentTypeNa
 	// The undefined type is the subject; parentTypeName is only where it was
 	// referenced from, so the scope names the type that does not exist.
 	c.addScopedError(message, UndefinedType, typeName, lineIndex, meta, nil, scope{
-		objectType: typeName,
+		part: &fgaerrors.ErrObjectType{ObjectType: typeName},
 	})
 }
 
@@ -365,8 +306,7 @@ func (c *ErrorCollector) RaiseUndefinedType(typeName, relationName, parentTypeNa
 func (c *ErrorCollector) RaiseUndefinedRelation(relationName, typeName, parentRelation, parentTypeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Relation '%s' is not defined on type '%s' (referenced in relation '%s' of type '%s')", relationName, typeName, parentRelation, parentTypeName)
 	c.addScopedError(message, UndefinedRelation, relationName, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }
 
@@ -375,8 +315,7 @@ func (c *ErrorCollector) RaiseDuplicateType(symbol, relationName, typeName strin
 	message := fmt.Sprintf("the partial relation definition `%s` is a duplicate in the relation `%s`.",
 		symbol, relationName)
 	c.addScopedError(message, DuplicatedError, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }
 
@@ -384,7 +323,7 @@ func (c *ErrorCollector) RaiseDuplicateType(symbol, relationName, typeName strin
 func (c *ErrorCollector) RaiseDuplicateRelationshipDefinition(symbol string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("the relation '%s' is defined more than once.", symbol)
 	c.addScopedError(message, DuplicatedError, symbol, lineIndex, meta, nil, scope{
-		relation: symbol,
+		part: &fgaerrors.ErrRelation{Relation: symbol},
 	})
 }
 
@@ -392,8 +331,7 @@ func (c *ErrorCollector) RaiseDuplicateRelationshipDefinition(symbol string, met
 func (c *ErrorCollector) RaiseNoEntryPointLoop(symbol, typeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("`%s` is an impossible relation for `%s` (potential loop).", symbol, typeName)
 	c.addScopedError(message, RelationNoEntrypoint, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   symbol,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: symbol},
 	})
 }
 
@@ -401,8 +339,7 @@ func (c *ErrorCollector) RaiseNoEntryPointLoop(symbol, typeName string, meta *Me
 func (c *ErrorCollector) RaiseNoEntryPoint(symbol, typeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("`%s` is an impossible relation for `%s` (no entrypoint).", symbol, typeName)
 	c.addScopedError(message, RelationNoEntrypoint, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   symbol,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: symbol},
 	})
 }
 
@@ -412,8 +349,7 @@ func (c *ErrorCollector) RaiseInvalidRelationOnTupleset(symbol, typeName, typeDe
 	message := fmt.Sprintf("the `%s` relation definition on type `%s` is not valid: `%s` does not exist on `%s`, which is of type `%s`.",
 		offendingRelation, typeDef, offendingRelation, parent, typeName)
 	c.addScopedError(message, InvalidRelationOnTupleset, symbol, lineIndex, meta, nil, scope{
-		objectType: typeDef,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeDef, Relation: relationName},
 	})
 }
 
@@ -422,8 +358,7 @@ func (c *ErrorCollector) RaiseInvalidTypeRelation(symbol, typeName, relationName
 	offendingType string, lineIndex *int, meta *Meta) {
 	message := fmt.Sprintf("`%s` is not a valid relation for `%s`.", offendingRelation, typeName)
 	c.addScopedError(message, InvalidRelationType, symbol, lineIndex, meta, nil, scope{
-		objectType:    typeName,
-		relation:      relationName,
+		part:          &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 		offendingType: offendingType,
 	})
 }
@@ -445,7 +380,7 @@ func (c *ErrorCollector) RaiseInvalidType(symbol, typeName, relation string, met
 		return colon + 1 + idx
 	}
 	c.addScopedError(message, InvalidType, symbol, lineIndex, meta, resolver, scope{
-		objectType: symbol,
+		part: &fgaerrors.ErrObjectType{ObjectType: symbol},
 	})
 }
 
@@ -453,7 +388,7 @@ func (c *ErrorCollector) RaiseInvalidType(symbol, typeName, relation string, met
 func (c *ErrorCollector) RaiseAssignableRelationMustHaveTypes(symbol string, lineIndex *int) {
 	message := fmt.Sprintf("the assignable relation '%s' must have at least one assignable type.", symbol)
 	c.addScopedError(message, AssignableRelationsMustHaveType, symbol, lineIndex, nil, nil, scope{
-		relation: symbol,
+		part: &fgaerrors.ErrRelation{Relation: symbol},
 	})
 }
 
@@ -462,8 +397,7 @@ func (c *ErrorCollector) RaiseAssignableTypeWildcardRelation(symbol, typeName, r
 	message := fmt.Sprintf("the type restriction '%s' on relation '%s' of type '%s' is not allowed to have both a wildcard and a relation.",
 		symbol, relation, typeName)
 	c.addScopedError(message, TypeRestrictionCannotHaveWildcardAndRelation, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relation,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relation},
 	})
 }
 
@@ -474,8 +408,7 @@ func (c *ErrorCollector) RaiseInvalidRelationError(symbol, typeName, relation st
 	lineIndex *int, meta *Meta) {
 	message := fmt.Sprintf("the relation `%s` does not exist.", symbol)
 	c.addScopedError(message, MissingDefinition, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relation,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relation},
 	})
 }
 
@@ -484,27 +417,27 @@ func (c *ErrorCollector) RaiseInvalidRelationError(symbol, typeName, relation st
 // but no longer supported (see RaiseSchemaVersionUnsupported).
 func (c *ErrorCollector) RaiseInvalidSchemaVersion(symbol string, lineIndex *int) {
 	message := fmt.Sprintf("invalid schema %s", symbol)
-	c.addError(message, InvalidSchema, symbol, lineIndex, nil, nil)
+	c.addError(message, InvalidSchema, symbol, lineIndex)
 }
 
 // RaiseSchemaVersionUnsupported raises an error for a recognized but retired
 // schema version (e.g. "1.0").
 func (c *ErrorCollector) RaiseSchemaVersionUnsupported(symbol string, lineIndex *int) {
 	message := "schema version no longer supported"
-	c.addError(message, SchemaVersionUnsupported, symbol, lineIndex, nil, nil)
+	c.addError(message, SchemaVersionUnsupported, symbol, lineIndex)
 }
 
 // RaiseSchemaVersionRequired raises an error for missing schema version.
 func (c *ErrorCollector) RaiseSchemaVersionRequired(symbol string, lineIndex *int) {
 	message := "schema version required"
-	c.addError(message, SchemaVersionRequired, symbol, lineIndex, nil, nil)
+	c.addError(message, SchemaVersionRequired, symbol, lineIndex)
 }
 
 // RaiseMaximumOneDirectRelationship raises an error for multiple direct relationships.
 func (c *ErrorCollector) RaiseMaximumOneDirectRelationship(symbol string, lineIndex *int) {
 	message := fmt.Sprintf("the relation '%s' can have at most one direct relationship.", symbol)
 	c.addScopedError(message, DuplicatedError, symbol, lineIndex, nil, nil, scope{
-		relation: symbol,
+		part: &fgaerrors.ErrRelation{Relation: symbol},
 	})
 }
 
@@ -515,9 +448,7 @@ func (c *ErrorCollector) RaiseInvalidConditionNameInParameter(symbol, typeName, 
 	// Scoped to the relation the condition is applied to, not the condition's own
 	// definition: the condition does not exist to have a definition.
 	c.addScopedError(message, ConditionNotDefined, symbol, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
-		condition:  conditionName,
+		part: &fgaerrors.ErrRelationCondition{ObjectType: typeName, Relation: relationName, Condition: conditionName},
 	})
 }
 
@@ -525,7 +456,7 @@ func (c *ErrorCollector) RaiseInvalidConditionNameInParameter(symbol, typeName, 
 func (c *ErrorCollector) RaiseUnusedCondition(symbol string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("`%s` condition is not used in the model.", symbol)
 	c.addScopedError(message, ConditionNotUsed, symbol, lineIndex, meta, nil, scope{
-		condition: symbol,
+		part: &fgaerrors.ErrCondition{Condition: symbol},
 	})
 }
 
@@ -534,7 +465,7 @@ func (c *ErrorCollector) RaiseUnusedCondition(symbol string, meta *Meta, lineInd
 func (c *ErrorCollector) RaiseDifferentNestedConditionName(condition, nestedConditionName string) {
 	message := fmt.Sprintf("condition key is `%s` but nested name property is %s", condition, nestedConditionName)
 	c.addScopedError(message, DifferentNestedConditionName, nestedConditionName, nil, nil, nil, scope{
-		condition: condition,
+		part: &fgaerrors.ErrCondition{Condition: condition},
 	})
 }
 
@@ -545,7 +476,7 @@ func (c *ErrorCollector) RaiseMultipleModulesInSingleFile(file string, modules [
 	moduleList := strings.Join(modules, ", ")
 	message := fmt.Sprintf("file %s would contain multiple module definitions (%s) when transforming to DSL. "+
 		"Only one module can be defined per file.", file, moduleList)
-	c.addError(message, MultipleModulesInFile, file, nil, nil, nil)
+	c.addError(message, MultipleModulesInFile, file, nil)
 }
 
 // Complex operation validation error methods
@@ -554,8 +485,7 @@ func (c *ErrorCollector) RaiseMultipleModulesInSingleFile(file string, modules [
 func (c *ErrorCollector) RaiseRedundantUnionMember(operation, relationName, typeName string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Redundant operation '%s' found in union for relation '%s' of type '%s'", operation, relationName, typeName)
 	c.addScopedError(message, DuplicatedError, operation, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }
 
@@ -564,8 +494,7 @@ func (c *ErrorCollector) RaiseImpossibleIntersection(relationName, typeName stri
 	typeList := strings.Join(conflictingTypes, ", ")
 	message := fmt.Sprintf("Impossible intersection in relation '%s' of type '%s': conflicting types [%s]", relationName, typeName, typeList)
 	c.addScopedError(message, InvalidRelationType, relationName, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }
 
@@ -573,7 +502,6 @@ func (c *ErrorCollector) RaiseImpossibleIntersection(relationName, typeName stri
 func (c *ErrorCollector) RaiseEmptyDifference(relationName, typeName, operation string, meta *Meta, lineIndex *int) {
 	message := fmt.Sprintf("Empty difference operation in relation '%s' of type '%s': subtracting '%s' from itself", relationName, typeName, operation)
 	c.addScopedError(message, RelationNoEntrypoint, relationName, lineIndex, meta, nil, scope{
-		objectType: typeName,
-		relation:   relationName,
+		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
 	})
 }

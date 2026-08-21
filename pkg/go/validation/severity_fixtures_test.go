@@ -131,10 +131,10 @@ func findSeverityFixtureMatch(
 			continue
 		}
 
-		objectType, relation, condition := causeScope(error(finding))
-		if objectType == want.Scope.ObjectType &&
-			relation == want.Scope.Relation &&
-			condition == want.Scope.Condition {
+		causeScope := findingScope(finding)
+		if causeScope.ObjectType == want.Scope.ObjectType &&
+			causeScope.Relation == want.Scope.Relation &&
+			causeScope.Condition == want.Scope.Condition {
 			return finding
 		}
 	}

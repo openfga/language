@@ -163,6 +163,17 @@ var errorInfoByType = map[ValidationErrorType]errorInfo{
 		Cause:    fgaerrors.ErrMultipleModulesInFile,
 		Critical: true,
 	},
+
+	// Weighted graph. The raise site chains the error the builder returned underneath
+	// this sentinel, so a caller can match on the build being refused without knowing
+	// which of the graph's own sentinels fired. Critical, because a model the graph
+	// refuses has no graph, so nothing further can be reported about it.
+	GraphModelUnbuildable: {
+		Severity: fgaerrors.SeverityError,
+		Category: fgaerrors.ErrorKindInvalidModel,
+		Cause:    fgaerrors.ErrModelNotBuildable,
+		Critical: true,
+	},
 }
 
 // unemittedErrorTypes are declared ValidationErrorType values that no validation
@@ -219,6 +230,7 @@ var allErrorTypes = []ValidationErrorType{
 	MultipleModulesInFile,
 	CyclicRelation,
 	InvalidSchemaVersion,
+	GraphModelUnbuildable,
 }
 
 // isCriticalErrorType reports whether a code invalidates the model as a whole.

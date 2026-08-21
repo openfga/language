@@ -44,6 +44,9 @@ const (
 	MultipleModulesInFile                        ValidationErrorType = "multiple-modules-in-file"
 	CyclicRelation                               ValidationErrorType = "cyclic-relation"
 	InvalidSchemaVersion                         ValidationErrorType = "invalid-schema-version"
+
+	// Weighted graph errors.
+	GraphModelUnbuildable ValidationErrorType = "graph-model-unbuildable"
 )
 
 // Range is a start and end position in the source text, used for both the line and

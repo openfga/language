@@ -123,6 +123,11 @@ type scope struct {
 	// with different scopes: a duplicate type and a duplicate type restriction share
 	// one code without being the same kind of finding.
 	category fgaerrors.ModelErrorKind
+
+	// cause overrides the table's sentinel when set, for a finding that carries an
+	// error it did not raise itself. It is wrapped in the scoped type as any sentinel
+	// would be, so errors.Is still reaches whatever the original error wrapped.
+	cause error
 }
 
 // addError is a helper to add an error to the collection.
@@ -166,10 +171,15 @@ func (c *ErrorCollector) addScopedError(message string, errorType ValidationErro
 		category = errorScope.category
 	}
 
+	sentinel := entry.Cause
+	if errorScope.cause != nil {
+		sentinel = errorScope.cause
+	}
+
 	// The cause carries the scope and the metadata is derived from it, so the JSON
 	// and the errors.As payload cannot disagree. offendingType is metadata only, so
 	// it comes straight off the scope.
-	cause := newScopedCause(category, errorScope, entry.Cause)
+	cause := newScopedCause(category, errorScope, sentinel)
 	objectType, relation, condition := causeScope(cause)
 
 	metadata := &ErrorMetadata{
@@ -576,4 +586,21 @@ func (c *ErrorCollector) RaiseEmptyDifference(relationName, typeName, operation 
 		objectType: typeName,
 		relation:   relationName,
 	})
+}
+
+// Graph validation error methods
+
+// RaiseModelUnbuildable raises an error for a model the weighted graph refuses to build.
+//
+// The finding carries no position, and one refused model raises one finding however many
+// problems it has. Both follow from the builder returning on the first problem it meets
+// and returning no graph with it: there is nothing left to walk for the rest, and the
+// error it returns names a count rather than the relations responsible.
+//
+// The builder's error is chained under ErrModelNotBuildable, so errors.Is matches the
+// build being refused and the specific reason alike.
+func (c *ErrorCollector) RaiseModelUnbuildable(cause error) {
+	message := fmt.Sprintf("the model cannot be built into a weighted graph: %s", cause)
+	chained := fmt.Errorf("%w: %w", fgaerrors.ErrModelNotBuildable, cause)
+	c.addScopedError(message, GraphModelUnbuildable, "", nil, nil, nil, scope{cause: chained})
 }

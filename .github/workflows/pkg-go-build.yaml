@@ -16,9 +16,12 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: ">=1.25.0"
+          # golangci-lint v1 cannot read export data emitted by Go 1.27 or later,
+          # so the lint job tracks the newest Go the linter supports rather than
+          # the newest Go available. Raise this together with the linter version
+          # in pkg/go/Makefile.
+          go-version: "1.26"
           cache-dependency-path: "./pkg/go/go.sum"
-          check-latest: true
 
       - name: Audit dependencies
         run: make audit-go

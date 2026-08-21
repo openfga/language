@@ -1,6 +1,7 @@
 BINARY_NAME=openfga-language
 DOCKER_BINARY=docker
 GO_BIN ?= $(shell go env GOPATH)/bin
+GOLANGCI_LINT_VERSION ?= v1.64.8
 .DEFAULT_GOAL := help
 
 help: ## Show this help
@@ -12,7 +13,7 @@ help: ## Show this help
 #-----------------------------------------------------------------------------------------------------------------------
 $(GO_BIN)/golangci-lint:
 	@echo "==> Installing golangci-lint within "${GO_BIN}""
-	@go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 $(GO_BIN)/govulncheck:
 	@echo "==> Installing govulncheck within "${GO_BIN}""

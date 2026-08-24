@@ -1,0 +1,14 @@
+[
+  {
+    "msg": "relation owner already exists on type document",
+    "file": "dup.fga",
+    "line": {
+      "start": 4,
+      "end": 4
+    },
+    "column": {
+      "start": 11,
+      "end": 16
+    }
+  }
+]

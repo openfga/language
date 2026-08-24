@@ -2275,3 +2275,85 @@
       metadata:
         symbol: "less"
         errorType: condition-not-used
+
+# The four cases below contain literal tab characters (shown as \t in the names)
+# between a declaration keyword and its name. Tabs and form feeds are valid
+# separators per the lexer's WHITESPACE rule, so every SDK must fold them when
+# locating declaration lines. Keep the tabs when editing: replacing them with
+# spaces would stop these cases from guarding that behaviour.
+- name: tab separator in define\treader is folded when locating the error line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define	member: [user]
+        define	reader: member but not allowed
+  expected_errors:
+    - msg: "the relation `allowed` does not exist."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 34
+        end: 41
+      metadata:
+        symbol: "allowed"
+        errorType: missing-definition
+- name: tab separator in type\tself is folded when locating the error line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type	self
+      relations
+        define member: [user]
+  expected_errors:
+    - msg: "a type cannot be named 'self' or 'this'."
+      line:
+        start: 3
+        end: 3
+      column:
+        start: 5
+        end: 9
+      metadata:
+        symbol: "self"
+        errorType: reserved-type-keywords
+- name: tab separator in condition\tallowed_ip is folded when locating the error line
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user]
+    condition	allowed_ip(current_ip: ipaddress) {
+      current_ip.in_cidr("192.168.0.0/24")
+    }
+  expected_errors:
+    - msg: "`allowed_ip` condition is not used in the model."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 10
+        end: 20
+      metadata:
+        symbol: "allowed_ip"
+        errorType: condition-not-used
+- name: tab separator in schema\t1.5 is folded when locating the error line
+  dsl: |
+    model
+      schema	1.5
+    type user
+  expected_errors:
+    - msg: "invalid schema 1.5"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 9
+        end: 12
+      metadata:
+        errorType: invalid-schema

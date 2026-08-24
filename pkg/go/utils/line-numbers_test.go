@@ -28,6 +28,35 @@ func TestIsNameByte(t *testing.T) {
 	}
 }
 
+func TestNormalizeWhitespace(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "already normal returns unchanged", in: "define owner: [user]", want: "define owner: [user]"},
+		{name: "collapses repeated spaces", in: "define  owner:", want: "define owner:"},
+		{name: "folds a tab", in: "define\towner:", want: "define owner:"},
+		{name: "folds a form feed", in: "define\fowner:", want: "define owner:"},
+		{name: "folds a mixed run", in: "extend \t type\f\forg", want: "extend type org"},
+		{name: "folds leading and trailing runs", in: "\t define owner \f", want: " define owner "},
+		{name: "leaves other bytes alone", in: "a\vb", want: "a\vb"},
+		{name: "empty line", in: "", want: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := NormalizeWhitespace(tt.in); got != tt.want {
+				t.Errorf("NormalizeWhitespace(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetTypeLineNumber(t *testing.T) {
 	t.Parallel()
 
@@ -101,6 +130,26 @@ func TestGetTypeLineNumber(t *testing.T) {
 			want:     1,
 		},
 		{
+			// WHITESPACE is ('\t' | ' ' | '\u000C')+, so any of the three can
+			// separate `type` from the name.
+			name:     "allows a tab between type and the name",
+			typeName: "user",
+			lines:    []string{"model", "type\tuser"},
+			want:     1,
+		},
+		{
+			name:     "allows a form feed between type and the name",
+			typeName: "user",
+			lines:    []string{"model", "type\fuser"},
+			want:     1,
+		},
+		{
+			name:     "collapses a mixed run of whitespace between type and the name",
+			typeName: "user",
+			lines:    []string{"model", "type \t user"},
+			want:     1,
+		},
+		{
 			name:     "returns -1 when absent",
 			typeName: "missing",
 			lines:    []string{"type user", "type org"},
@@ -157,6 +206,12 @@ func TestGetExtendedTypeLineNumber(t *testing.T) {
 			typeName: "org",
 			lines:    []string{"extend type org\f# module: org, file: org.fga"},
 			want:     0,
+		},
+		{
+			name:     "allows tabs between extend, type and the name",
+			typeName: "org",
+			lines:    []string{"type org", "extend\ttype\torg"},
+			want:     1,
 		},
 		{
 			name:     "returns -1 when absent",
@@ -218,6 +273,26 @@ func TestGetRelationLineNumber(t *testing.T) {
 			want:     0,
 		},
 		{
+			// `define\towner: [user]` parses — WHITESPACE admits tabs — so the
+			// definition must be findable.
+			name:     "allows a tab between define and the name",
+			relation: "owner",
+			lines:    []string{"    define\towner: [user]"},
+			want:     0,
+		},
+		{
+			name:     "allows a form feed between define and the name",
+			relation: "owner",
+			lines:    []string{"    define\fowner: [user]"},
+			want:     0,
+		},
+		{
+			name:     "collapses a mixed run of whitespace between define and the name",
+			relation: "owner",
+			lines:    []string{"    define \t owner: [user]"},
+			want:     0,
+		},
+		{
 			name:     "returns -1 when absent",
 			relation: "missing",
 			lines:    []string{"    define owner: [user]"},
@@ -274,6 +349,18 @@ func TestGetConditionLineNumber(t *testing.T) {
 			name:          "allows a form feed before the parameter list",
 			conditionName: "less",
 			lines:         []string{"condition less\f(x: int) {"},
+			want:          0,
+		},
+		{
+			name:          "allows a tab between condition and the name",
+			conditionName: "less",
+			lines:         []string{"condition\tless(x: int) {"},
+			want:          0,
+		},
+		{
+			name:          "collapses a mixed run of whitespace between condition and the name",
+			conditionName: "less",
+			lines:         []string{"condition \t less(x: int) {"},
 			want:          0,
 		},
 		{

@@ -28,13 +28,12 @@ func IsNameByte(b byte) bool {
 	return nameBytes[b]
 }
 
-// declarationIndex returns the index of the first line beginning with prefix whose
-// name ends there, or -1. prefix always spans whole words (`type <name>`, `define
+// name ends there, or -1. Prefix always spans whole words (`type <name>`, `define
 // <name>`, `condition <name>`), so requiring the next byte to end the name is what
 // stops `document` matching a declaration of `documentation`.
-func declarationIndex(lines []string, prefix string, normalize func(string) string) int {
+func declarationIndex(lines []string, prefix string) int {
 	return slices.IndexFunc(lines, func(line string) bool {
-		trimmed := normalize(strings.TrimSpace(line))
+		trimmed := NormalizeWhitespace(strings.TrimSpace(line))
 		if !strings.HasPrefix(trimmed, prefix) {
 			return false
 		}
@@ -45,42 +44,78 @@ func declarationIndex(lines []string, prefix string, normalize func(string) stri
 	})
 }
 
-// keepSpaces leaves a line as-is. Only the relation helper collapses repeated
-// spaces, matching the reference, where ` {2,}` normalization is applied in
-// getRelationLineNumber alone.
-func keepSpaces(line string) string { return line }
+// isInlineWhitespace reports whether b is a byte the lexer's WHITESPACE rule
+// accepts between tokens on a line: space, tab or form feed (OpenFGALexer.g4).
+func isInlineWhitespace(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\f'
+}
 
-// normalizeSpaces collapses runs of spaces into one, mirroring the reference's
-// ` {2,}` normalization, so `define  owner:` is matched the same as `define owner:`.
-func normalizeSpaces(line string) string {
-	for strings.Contains(line, "  ") {
-		line = strings.ReplaceAll(line, "  ", " ")
+// NormalizeWhitespace collapses every run of inline whitespace into one space, so
+// `define\towner:` and `define  owner:` are matched the same as `define owner:`.
+// Only space, tab and form feed are folded — exactly the lexer's WHITESPACE
+// alphabet; anything else (nbsp, vertical tab) fails to lex and can never reach a
+// line lookup. Lines that are already normal are returned unchanged.
+func NormalizeWhitespace(line string) string {
+	for i := range len(line) {
+		if b := line[i]; b == '\t' || b == '\f' || (b == ' ' && i > 0 && line[i-1] == ' ') {
+			return foldInlineWhitespace(line)
+		}
 	}
 
 	return line
 }
 
+func foldInlineWhitespace(line string) string {
+	var sb strings.Builder
+
+	sb.Grow(len(line))
+
+	inRun := false
+
+	for i := range len(line) {
+		if isInlineWhitespace(line[i]) {
+			inRun = true
+
+			continue
+		}
+
+		if inRun {
+			sb.WriteByte(' ')
+
+			inRun = false
+		}
+
+		sb.WriteByte(line[i])
+	}
+
+	if inRun {
+		sb.WriteByte(' ')
+	}
+
+	return sb.String()
+}
+
 // GetConditionLineNumber returns the index of the line declaring conditionName, or
 // -1. `less` does not match a declaration of `less_than`.
 func GetConditionLineNumber(conditionName string, lines []string) int {
-	return declarationIndex(lines, "condition "+conditionName, keepSpaces)
+	return declarationIndex(lines, "condition "+conditionName)
 }
 
 // GetTypeLineNumber returns the index of the line declaring typeName, or -1.
 // `document` does not match a declaration of `documentation`.
 func GetTypeLineNumber(typeName string, lines []string) int {
-	return declarationIndex(lines, "type "+typeName, keepSpaces)
+	return declarationIndex(lines, "type "+typeName)
 }
 
 // GetExtendedTypeLineNumber returns the index of the line extending typeName, or -1.
 func GetExtendedTypeLineNumber(typeName string, lines []string) int {
-	return declarationIndex(lines, "extend type "+typeName, keepSpaces)
+	return declarationIndex(lines, "extend type "+typeName)
 }
 
 // GetRelationLineNumber returns the index of the line defining relation, or -1.
 // `owner` does not match a definition of `owner_group`.
 func GetRelationLineNumber(relation string, lines []string) int {
-	return declarationIndex(lines, "define "+relation, normalizeSpaces)
+	return declarationIndex(lines, "define "+relation)
 }
 
 type StartEnd struct {

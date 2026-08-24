@@ -1,0 +1,7 @@
+module core
+
+type user
+
+type document
+  relations
+    define owner: [user]

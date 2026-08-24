@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestValidationRegexRules(t *testing.T) {
 	// Test that regex rules match the JS implementation
 	assert.Equal(t, "[^:#@\\*\\s]{1,254}", ValidationRegexRules.Type)
@@ -342,6 +341,17 @@ func TestGetTypeLineNumber(t *testing.T) {
 			expected:  ptrInt(2),
 		},
 		{
+			// Tabs are folded before the `type ` prefix gate, so a tab after
+			// `type` works.
+			name:     "finds type separated by a tab",
+			typeName: "user",
+			lines: []string{
+				"model",
+				"type\tuser",
+			},
+			expected: ptrInt(1),
+		},
+		{
 			name:     "empty lines",
 			typeName: "document",
 			lines:    []string{},
@@ -422,6 +432,28 @@ func TestGetRelationLineNumber(t *testing.T) {
 			expected:  ptrInt(2),
 		},
 		{
+			// WHITESPACE is ('\t' | ' ' | '\u000C')+, so `define\tviewer:` parses
+			// and must be findable.
+			name:         "finds relation separated by a tab",
+			relationName: "viewer",
+			lines: []string{
+				"type document",
+				"  relations",
+				"    define\tviewer: [user]",
+			},
+			expected: ptrInt(2),
+		},
+		{
+			name:         "finds relation separated by a mixed whitespace run",
+			relationName: "viewer",
+			lines: []string{
+				"type document",
+				"  relations",
+				"    define \t viewer: [user]",
+			},
+			expected: ptrInt(2),
+		},
+		{
 			name:         "empty lines",
 			relationName: "viewer",
 			lines:        []string{},
@@ -488,6 +520,15 @@ func TestGetConditionLineNumber(t *testing.T) {
 			// skipIndex is a start offset: from index 1 the next declaration is at 2.
 			skipIndex: ptrInt(1),
 			expected:  ptrInt(2),
+		},
+		{
+			name:          "finds condition separated by a tab",
+			conditionName: "is_owner",
+			lines: []string{
+				"type document",
+				"condition\tis_owner(x: int) {",
+			},
+			expected: ptrInt(1),
 		},
 		{
 			name:          "empty lines",

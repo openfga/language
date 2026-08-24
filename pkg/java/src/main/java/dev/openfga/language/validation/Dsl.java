@@ -31,6 +31,14 @@ class Dsl {
                 .orElse(-1);
     }
 
+    // Collapse every run of inline whitespace into one space — space, tab and form
+    // feed are exactly what the lexer's WHITESPACE rule admits between tokens
+    // (OpenFGALexer.g4), so `define\towner:` must be found like `define owner:`.
+    // Anything else (nbsp, vertical tab) fails to lex and can never reach a lookup.
+    private static String normalizeWhitespace(String line) {
+        return line.trim().replaceAll("[ \\t\\f]+", " ");
+    }
+
     public int getConditionLineNumber(String conditionName) {
         return getConditionLineNumber(conditionName, 0);
     }
@@ -39,16 +47,15 @@ class Dsl {
         // Require `(` after the name so a condition name that is a prefix of
         // another (e.g. `less` vs `less_than`) cannot match the wrong line.
         return findLine(
-                line -> line.trim().matches("condition " + Pattern.quote(conditionName) + "\\s*\\(.*"), skipIndex);
+                line -> normalizeWhitespace(line).matches("condition " + Pattern.quote(conditionName) + "\\s*\\(.*"),
+                skipIndex);
     }
 
     public int getRelationLineNumber(String relationName, int skipIndex) {
         // Require `:` after the name so a relation name that is a prefix of
         // another (e.g. `writer` vs `writers`) cannot match the wrong line.
         return findLine(
-                line -> line.trim()
-                        .replaceAll(" {2,}", " ")
-                        .matches("define " + Pattern.quote(relationName) + "\\s*:.*"),
+                line -> normalizeWhitespace(line).matches("define " + Pattern.quote(relationName) + "\\s*:.*"),
                 skipIndex);
     }
 
@@ -57,10 +64,7 @@ class Dsl {
         // e.g. `1.1` cannot match `schema 1.10`. A comment must be preceded by
         // whitespace so a `#` glued to the version isn't treated as a comment.
         return findLine(
-                line -> line.trim()
-                        .replaceAll(" {2,}", " ")
-                        .matches("schema " + Pattern.quote(schemaVersion) + "(\\s+#.*)?"),
-                0);
+                line -> normalizeWhitespace(line).matches("schema " + Pattern.quote(schemaVersion) + "(\\s+#.*)?"), 0);
     }
 
     public int getTypeLineNumber(String typeName) {
@@ -71,7 +75,8 @@ class Dsl {
         // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
         // The comment must be preceded by whitespace so a `#` glued to the name isn't treated as a comment.
         // Quote the type name so regex metacharacters (e.g. `.`) are matched literally.
-        return findLine(line -> line.trim().matches("type " + Pattern.quote(typeName) + "(\\s+#.*)?"), skipIndex);
+        return findLine(
+                line -> normalizeWhitespace(line).matches("type " + Pattern.quote(typeName) + "(\\s+#.*)?"), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

@@ -10,6 +10,7 @@ import (
 	"github.com/openfga/language/pkg/go/utils"
 )
 
+// ValidationRegexRules contains the regex rules for validation.
 // These match the Rules from the JS implementation.
 var ValidationRegexRules = struct {
 	Type      string
@@ -25,7 +26,8 @@ var ValidationRegexRules = struct {
 	Object:    "[^\\s]{2,256}",
 }
 
-// them once. CompiledNameRules caches them by their anchored rule string, which
+// The anchored type, relation, and condition name rules are fixed, so compile
+// them once. compiledNameRules caches them by their anchored rule string, which
 // is also the clause reported in the error, so validateFieldValue can look up
 // the compiled pattern without recompiling on every name.
 var (
@@ -40,7 +42,8 @@ var (
 	}
 )
 
-// This enhances the basic regex validation with semantic checks.
+// ValidateTypeName validates a type name with both regex and reserved keyword
+// checking. This enhances the basic regex validation with semantic checks.
 func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedTypeName(typeName) {
@@ -58,7 +61,8 @@ func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int
 	return true
 }
 
-// This enhances the basic regex validation with semantic checks.
+// ValidateRelationName validates a relation name with both regex and reserved
+// keyword checking. This enhances the basic regex validation with semantic checks.
 func ValidateRelationName(relationName, typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedRelationName(relationName) {
@@ -99,6 +103,7 @@ func validateFieldValue(rule, value string) bool {
 	return regex.MatchString(value)
 }
 
+// GetTypeLineNumber finds the line number where a type is defined.
 // This is equivalent to the getTypeLineNumber function in JS.
 func GetTypeLineNumber(typeName string, lines []string, skipIndex *int) *int {
 	if len(lines) == 0 {
@@ -125,7 +130,8 @@ func GetTypeLineNumber(typeName string, lines []string, skipIndex *int) *int {
 	return nil
 }
 
-// SkipIndex, when provided, is the index to begin searching from (inclusive) —
+// GetRelationLineNumber finds the line number where a relation is defined.
+// skipIndex, when provided, is the index to begin searching from (inclusive) —
 // matching the reference implementation's getRelationLineNumber, which slices
 // the lines from skipIndex onward. This lets callers anchor the search to a
 // specific type block so the correct occurrence is found when several types
@@ -160,6 +166,7 @@ func GetRelationLineNumber(relationName string, lines []string, skipIndex *int) 
 	return nil
 }
 
+// GetConditionLineNumber finds the line number where a condition is defined.
 // This is equivalent to the geConditionLineNumber function in JS.
 func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int) *int {
 	if len(lines) == 0 {
@@ -190,6 +197,7 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 	return nil
 }
 
+// ValidateNameRules validates naming rules for types and relations in a model.
 // This is equivalent to the populateRelations function's naming validation in JS.
 func ValidateNameRules(collector *ErrorCollector, typeName string, relationNames []string,
 	typeLineIndex *int, meta *Meta, lines []string) {

@@ -28,7 +28,8 @@ func IsNameByte(b byte) bool {
 	return nameBytes[b]
 }
 
-// name ends there, or -1. Prefix always spans whole words (`type <name>`, `define
+// declarationIndex returns the index of the first line beginning with prefix whose
+// name ends there, or -1. prefix always spans whole words (`type <name>`, `define
 // <name>`, `condition <name>`), so requiring the next byte to end the name is what
 // stops `document` matching a declaration of `documentation`.
 func declarationIndex(lines []string, prefix string) int {

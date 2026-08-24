@@ -291,6 +291,12 @@ function hasEntryPointOrLoop(
   return { hasEntry: false, loop: false };
 }
 
+// Collapse every run of inline whitespace into one space — space, tab and form
+// feed are exactly what the lexer's WHITESPACE rule admits between tokens
+// (OpenFGALexer.g4), so `define\towner:` must be found like `define owner:`.
+// Anything else (nbsp, vertical tab) fails to lex and can never reach a lookup.
+const normalizeWhitespace = (line: string) => line.trim().replace(/[ \t\f]+/g, " ");
+
 const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {
   if (!skipIndex || skipIndex < 0) {
     skipIndex = 0;
@@ -302,8 +308,8 @@ const geConditionLineNumber = (conditionName: string, lines?: string[], skipInde
   // (e.g. `less` vs `less_than`) cannot match the wrong line.
   const conditionPrefix = `condition ${conditionName}`;
   const index = lines.slice(skipIndex).findIndex((line: string) => {
-    const trimmed = line.trim();
-    return trimmed.startsWith(conditionPrefix) && /^\s*\(/.test(trimmed.slice(conditionPrefix.length));
+    const normalized = normalizeWhitespace(line);
+    return normalized.startsWith(conditionPrefix) && /^\s*\(/.test(normalized.slice(conditionPrefix.length));
   });
   return index === -1 ? -1 : index + skipIndex;
 };
@@ -320,8 +326,8 @@ const getTypeLineNumber = (typeName: string, lines?: string[], skipIndex?: numbe
   // Match the type name literally (it may contain regex metacharacters like `.`).
   const typePrefix = `type ${typeName}`;
   const index = lines.slice(skipIndex).findIndex((line: string) => {
-    const trimmed = line.trim();
-    return trimmed.startsWith(typePrefix) && /^(\s+#.*)?$/.test(trimmed.slice(typePrefix.length));
+    const normalized = normalizeWhitespace(line);
+    return normalized.startsWith(typePrefix) && /^(\s+#.*)?$/.test(normalized.slice(typePrefix.length));
   });
   return index === -1 ? -1 : index + skipIndex;
 };
@@ -336,7 +342,7 @@ const getRelationLineNumber = (relation: string, lines?: string[], skipIndex?: n
   // Match the relation name literally (it may contain regex metacharacters like `.`).
   const relationPrefix = `define ${relation}`;
   const index = lines.slice(skipIndex).findIndex((line: string) => {
-    const normalized = line.trim().replace(/ {2,}/g, " ");
+    const normalized = normalizeWhitespace(line);
     return normalized.startsWith(relationPrefix) && /^\s*:/.test(normalized.slice(relationPrefix.length));
   });
   return index === -1 ? -1 : index + skipIndex;
@@ -352,7 +358,7 @@ const getSchemaLineNumber = (schema: string, lines?: string[]) => {
   // Match the schema version literally (it contains `.`).
   const schemaPrefix = `schema ${schema}`;
   const index = lines.slice(0).findIndex((line: string) => {
-    const normalized = line.trim().replace(/ {2,}/g, " ");
+    const normalized = normalizeWhitespace(line);
     return normalized.startsWith(schemaPrefix) && /^(\s+#.*)?$/.test(normalized.slice(schemaPrefix.length));
   });
 

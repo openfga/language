@@ -28,27 +28,7 @@ const (
 	SeverityAdvisory
 )
 
-// wireName returns the name a severity serialises as, and an empty string for a
-// value with no name. It is the only place the mapping lives, so String, IsValid
-// and MarshalText cannot disagree about which values have one.
-func (s Severity) wireName() string {
-	switch s {
-	case SeverityError:
-		return "error"
-	case SeverityWarning:
-		return "warning"
-	case SeverityAdvisory:
-		return "advisory"
-	default:
-		// SeverityUnspecified lands here too: the zero value has no name by design,
-		// so it marshals as a failure rather than as a severity.
-		return ""
-	}
-}
-
-// severityFromName is the reverse of wireName. The two are written out separately
-// rather than derived from one another, so TestSeverityWireNames round trips every
-// declared severity to keep them in step.
+// severityFromName maps a wire name back to its severity.
 func severityFromName(name string) (Severity, bool) {
 	switch name {
 	case "error":
@@ -62,22 +42,31 @@ func severityFromName(name string) (Severity, bool) {
 	}
 }
 
-// String returns the wire name, or a diagnostic form for a value with none.
+// String returns the wire name of a declared severity, an empty string for the
+// zero value, and a diagnostic form for any other number.
 func (s Severity) String() string {
-	if name := s.wireName(); name != "" {
-		return name
-	}
-
-	if s == SeverityUnspecified {
+	switch s {
+	case SeverityError:
+		return "error"
+	case SeverityWarning:
+		return "warning"
+	case SeverityAdvisory:
+		return "advisory"
+	case SeverityUnspecified:
 		return ""
+	default:
+		return fmt.Sprintf("Severity(%d)", int(s))
 	}
-
-	return fmt.Sprintf("Severity(%d)", int(s))
 }
 
-// IsValid reports whether s is a declared severity with a wire name.
+// IsValid reports whether s is a declared severity.
 func (s Severity) IsValid() bool {
-	return s.wireName() != ""
+	switch s {
+	case SeverityError, SeverityWarning, SeverityAdvisory:
+		return true
+	default:
+		return false
+	}
 }
 
 // Blocks reports whether a finding of this severity makes validation fail.
@@ -89,18 +78,14 @@ func (s Severity) Blocks() bool {
 	return s != SeverityWarning && s != SeverityAdvisory
 }
 
-// MarshalText emits the wire name, so the JSON carries "warning".
-//
-// It does not go through String, because String has a diagnostic form for an
-// undeclared number and this has to have none: a severity that cannot be named must
-// fail to marshal rather than ship as Severity(99).
+// MarshalText emits the wire name, so the JSON carries "warning". An undeclared
+// value must fail to marshal rather than ship String's diagnostic form.
 func (s Severity) MarshalText() ([]byte, error) {
-	name := s.wireName()
-	if name == "" {
+	if !s.IsValid() {
 		return nil, fmt.Errorf("%w: %d", ErrUnknownSeverity, int(s))
 	}
 
-	return []byte(name), nil
+	return []byte(s.String()), nil
 }
 
 // UnmarshalText resolves a wire name back to its severity, rejecting any name

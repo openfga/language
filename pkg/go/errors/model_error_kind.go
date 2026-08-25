@@ -35,31 +35,7 @@ const (
 	ErrorKindInvalidModel
 )
 
-// wireName returns the name a category serialises as, and an empty string for a
-// value with no name. It is the only place the mapping lives, so String, IsValid
-// and MarshalText cannot disagree about which values have one.
-func (m ModelErrorKind) wireName() string {
-	switch m {
-	case ErrorKindObjectType:
-		return "object-type"
-	case ErrorKindRelation:
-		return "relation"
-	case ErrorKindRelationCondition:
-		return "relation-condition"
-	case ErrorKindCondition:
-		return "condition"
-	case ErrorKindInvalidModel:
-		return "invalid-model"
-	default:
-		// ModelErrorKindUnspecified lands here too: the zero value has no name by
-		// design, so it marshals as a failure rather than as a category.
-		return ""
-	}
-}
-
-// modelErrorKindFromName is the reverse of wireName. The two are written out
-// separately rather than derived from one another, so TestModelErrorKindWireNames
-// round trips every declared category to keep them in step.
+// modelErrorKindFromName maps a wire name back to its category.
 func modelErrorKindFromName(name string) (ModelErrorKind, bool) {
 	switch name {
 	case "object-type":
@@ -77,36 +53,49 @@ func modelErrorKindFromName(name string) (ModelErrorKind, bool) {
 	}
 }
 
-// String returns the wire name, or a diagnostic form for a value with none.
+// String returns the wire name of a declared category, an empty string for the
+// zero value, and a diagnostic form for any other number.
 func (m ModelErrorKind) String() string {
-	if name := m.wireName(); name != "" {
-		return name
-	}
-
-	if m == ModelErrorKindUnspecified {
+	switch m {
+	case ErrorKindObjectType:
+		return "object-type"
+	case ErrorKindRelation:
+		return "relation"
+	case ErrorKindRelationCondition:
+		return "relation-condition"
+	case ErrorKindCondition:
+		return "condition"
+	case ErrorKindInvalidModel:
+		return "invalid-model"
+	case ModelErrorKindUnspecified:
 		return ""
+	default:
+		return fmt.Sprintf("ModelErrorKind(%d)", int(m))
 	}
-
-	return fmt.Sprintf("ModelErrorKind(%d)", int(m))
 }
 
-// IsValid reports whether m is a declared category with a wire name.
+// IsValid reports whether m is a declared category.
 func (m ModelErrorKind) IsValid() bool {
-	return m.wireName() != ""
+	switch m {
+	case ErrorKindObjectType,
+		ErrorKindRelation,
+		ErrorKindRelationCondition,
+		ErrorKindCondition,
+		ErrorKindInvalidModel:
+		return true
+	default:
+		return false
+	}
 }
 
-// MarshalText emits the wire name, so the JSON carries "object-type".
-//
-// It does not go through String, because String has a diagnostic form for an
-// undeclared number and this has to have none: a category that cannot be named
-// must fail to marshal rather than ship as ModelErrorKind(99).
+// MarshalText emits the wire name, so the JSON carries "object-type". An
+// undeclared value must fail to marshal rather than ship String's diagnostic form.
 func (m ModelErrorKind) MarshalText() ([]byte, error) {
-	name := m.wireName()
-	if name == "" {
+	if !m.IsValid() {
 		return nil, fmt.Errorf("%w: %d", ErrUnknownModelErrorKind, int(m))
 	}
 
-	return []byte(name), nil
+	return []byte(m.String()), nil
 }
 
 // UnmarshalText resolves a wire name back to its category, rejecting any name

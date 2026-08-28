@@ -47,14 +47,14 @@ var (
 func ValidateTypeName(typeName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedTypeName(typeName) {
-		errs.Add(newReservedTypeNameError(lines, typeName, lineIndex, meta))
+		errs.Add(newReservedTypeNameError(lines, typeName, meta, lineIndex))
 		return false
 	}
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
 	if !validateFieldValue(typeNameRule, typeName) {
-		errs.Add(newInvalidNameError(lines, typeName, typeNameRule, nil, lineIndex, meta))
+		errs.Add(newInvalidNameError(lines, typeName, typeNameRule, nil, meta, lineIndex))
 		return false
 	}
 
@@ -66,14 +66,14 @@ func ValidateTypeName(typeName string, errs *ValidationErrors, lines []string, l
 func ValidateRelationName(relationName, typeName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedRelationName(relationName) {
-		errs.Add(newReservedRelationNameError(lines, relationName, typeName, lineIndex, meta))
+		errs.Add(newReservedRelationNameError(lines, relationName, typeName, meta, lineIndex))
 		return false
 	}
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
 	if !validateFieldValue(relationNameRule, relationName) {
-		errs.Add(newInvalidNameError(lines, relationName, relationNameRule, &typeName, lineIndex, meta))
+		errs.Add(newInvalidNameError(lines, relationName, relationNameRule, &typeName, meta, lineIndex))
 		return false
 	}
 
@@ -83,7 +83,7 @@ func ValidateRelationName(relationName, typeName string, errs *ValidationErrors,
 // ValidateConditionName validates a condition name with regex pattern.
 func ValidateConditionName(conditionName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	if !validateFieldValue(conditionNameRule, conditionName) {
-		errs.Add(newInvalidConditionNameError(lines, conditionName, conditionNameRule, lineIndex, meta))
+		errs.Add(newInvalidConditionNameError(lines, conditionName, conditionNameRule, meta, lineIndex))
 		return false
 	}
 

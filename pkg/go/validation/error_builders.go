@@ -10,7 +10,7 @@ import (
 // newInvalidNameError reports a name that breaks a naming rule. A nil typeName means the
 // offending name is a type rather than a relation on one, which changes the message and
 // the scope.
-func newInvalidNameError(lines []string, symbol, clause string, typeName *string, lineIndex *int, meta *Meta) *ValidationError {
+func newInvalidNameError(lines []string, symbol, clause string, typeName *string, meta *Meta, lineIndex *int) *ValidationError {
 	var message string
 	errorScope := scope{part: &fgaerrors.ErrObjectType{ObjectType: symbol}}
 
@@ -27,20 +27,20 @@ func newInvalidNameError(lines []string, symbol, clause string, typeName *string
 
 // newInvalidConditionNameError reports a condition name that breaks a naming rule,
 // scoped to the condition rather than a type or relation.
-func newInvalidConditionNameError(lines []string, symbol, clause string, lineIndex *int, meta *Meta) *ValidationError {
+func newInvalidConditionNameError(lines []string, symbol, clause string, meta *Meta, lineIndex *int) *ValidationError {
 	message := fmt.Sprintf("condition '%s' does not match naming rule: '%s'.", symbol, clause)
 	line, column := resolvePosition(lines, symbol, lineIndex, nil)
 	return newValidationError(message, InvalidName, symbol, line, column, scope{part: &fgaerrors.ErrCondition{Condition: symbol}}, meta)
 }
 
 // newReservedTypeNameError reports a type named with a reserved keyword.
-func newReservedTypeNameError(lines []string, symbol string, lineIndex *int, meta *Meta) *ValidationError {
+func newReservedTypeNameError(lines []string, symbol string, meta *Meta, lineIndex *int) *ValidationError {
 	line, column := resolvePosition(lines, symbol, lineIndex, nil)
 	return newValidationError("a type cannot be named 'self' or 'this'.", ReservedTypeKeywords, symbol, line, column, scope{part: &fgaerrors.ErrObjectType{ObjectType: symbol}}, meta)
 }
 
 // newReservedRelationNameError reports a relation named with a reserved keyword.
-func newReservedRelationNameError(lines []string, symbol, typeName string, lineIndex *int, meta *Meta) *ValidationError {
+func newReservedRelationNameError(lines []string, symbol, typeName string, meta *Meta, lineIndex *int) *ValidationError {
 	line, column := resolvePosition(lines, symbol, lineIndex, nil)
 	return newValidationError("a relation cannot be named 'self' or 'this'.", ReservedRelationKeywords, symbol, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: symbol}}, meta)
 }
@@ -122,27 +122,48 @@ func newNoEntryPointError(lines []string, symbol, typeName string, meta *Meta, l
 	return newValidationError(message, RelationNoEntrypoint, symbol, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: symbol}}, meta)
 }
 
+// invalidRelationOnTuplesetArgs names the parts of an invalid-relation-on-tupleset
+// finding, which would otherwise be six same-typed positional arguments.
+type invalidRelationOnTuplesetArgs struct {
+	symbol            string
+	typeName          string
+	typeDef           string
+	relationName      string
+	offendingRelation string
+	parent            string
+	meta              *Meta
+	lineIndex         *int
+}
+
 // newInvalidRelationOnTuplesetError reports a tupleset relation whose target does not
 // exist on the referenced type.
-func newInvalidRelationOnTuplesetError(lines []string, symbol, typeName, typeDef, relationName,
-	offendingRelation, parent string, lineIndex *int, meta *Meta) *ValidationError {
+func newInvalidRelationOnTuplesetError(lines []string, a invalidRelationOnTuplesetArgs) *ValidationError {
 	message := fmt.Sprintf("the `%s` relation definition on type `%s` is not valid: `%s` does not exist on `%s`, which is of type `%s`.",
-		offendingRelation, typeDef, offendingRelation, parent, typeName)
-	line, column := resolvePosition(lines, symbol, lineIndex, nil)
-	return newValidationError(message, InvalidRelationOnTupleset, symbol, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: typeDef, Relation: relationName}}, meta)
+		a.offendingRelation, a.typeDef, a.offendingRelation, a.parent, a.typeName)
+	line, column := resolvePosition(lines, a.symbol, a.lineIndex, nil)
+	return newValidationError(message, InvalidRelationOnTupleset, a.symbol, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: a.typeDef, Relation: a.relationName}}, a.meta)
+}
+
+// invalidTypeRelationArgs names the parts of an invalid-relation-type finding. Its
+// offendingType is the enclosing type the reference was written in, kept as metadata.
+type invalidTypeRelationArgs struct {
+	symbol            string
+	typeName          string
+	relationName      string
+	offendingRelation string
+	offendingType     string
+	meta              *Meta
+	lineIndex         *int
 }
 
 // newInvalidTypeRelationError reports a relation reference that is not valid for a type.
-// Its offendingType argument is the enclosing type the reference was written in, kept as
-// metadata.
-func newInvalidTypeRelationError(lines []string, symbol, typeName, relationName, offendingRelation,
-	offendingType string, lineIndex *int, meta *Meta) *ValidationError {
-	message := fmt.Sprintf("`%s` is not a valid relation for `%s`.", offendingRelation, typeName)
-	line, column := resolvePosition(lines, symbol, lineIndex, nil)
-	return newValidationError(message, InvalidRelationType, symbol, line, column, scope{
-		part:          &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName},
-		offendingType: offendingType,
-	}, meta)
+func newInvalidTypeRelationError(lines []string, a invalidTypeRelationArgs) *ValidationError {
+	message := fmt.Sprintf("`%s` is not a valid relation for `%s`.", a.offendingRelation, a.typeName)
+	line, column := resolvePosition(lines, a.symbol, a.lineIndex, nil)
+	return newValidationError(message, InvalidRelationType, a.symbol, line, column, scope{
+		part:          &fgaerrors.ErrRelation{ObjectType: a.typeName, Relation: a.relationName},
+		offendingType: a.offendingType,
+	}, a.meta)
 }
 
 // newInvalidTypeError reports an invalid type in an assignable-types list. Its column is
@@ -183,7 +204,7 @@ func newAssignableTypeWildcardRelationError(lines []string, symbol, typeName, re
 // newInvalidRelationError reports a rewrite that names a relation the type does not
 // define. The message names the missing relation only, as the reference's does.
 func newInvalidRelationError(lines []string, symbol, typeName, relation string,
-	lineIndex *int, meta *Meta) *ValidationError {
+	meta *Meta, lineIndex *int) *ValidationError {
 	message := fmt.Sprintf("the relation `%s` does not exist.", symbol)
 	line, column := resolvePosition(lines, symbol, lineIndex, nil)
 	return newValidationError(message, MissingDefinition, symbol, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relation}}, meta)
@@ -273,14 +294,23 @@ func newEmptyDifferenceError(lines []string, relationName, typeName, operation s
 	return newValidationError(message, RelationNoEntrypoint, relationName, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: relationName}}, meta)
 }
 
-// newInvalidWildcardUsageError reports a wildcard used where it is not allowed. The
-// wildcard is written in a relation of parentTypeName; typeName is the restriction it
-// appears in, which the symbol already records.
-func newInvalidWildcardUsageError(lines []string, typeName, relationName, parentTypeName, reason string, meta *Meta, lineIndex *int) *ValidationError {
+// invalidWildcardUsageArgs names the parts of an invalid-wildcard finding. The wildcard
+// is written in a relation of parentTypeName; typeName is the restriction it appears in.
+type invalidWildcardUsageArgs struct {
+	typeName       string
+	relationName   string
+	parentTypeName string
+	reason         string
+	meta           *Meta
+	lineIndex      *int
+}
+
+// newInvalidWildcardUsageError reports a wildcard used where it is not allowed.
+func newInvalidWildcardUsageError(lines []string, a invalidWildcardUsageArgs) *ValidationError {
 	message := fmt.Sprintf("Invalid wildcard usage for type '%s' in relation '%s' of type '%s': %s",
-		typeName, relationName, parentTypeName, reason)
-	line, column := resolvePosition(lines, typeName, lineIndex, nil)
-	return newValidationError(message, InvalidWildcardError, typeName, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: parentTypeName, Relation: relationName}}, meta)
+		a.typeName, a.relationName, a.parentTypeName, a.reason)
+	line, column := resolvePosition(lines, a.typeName, a.lineIndex, nil)
+	return newValidationError(message, InvalidWildcardError, a.typeName, line, column, scope{part: &fgaerrors.ErrRelation{ObjectType: a.parentTypeName, Relation: a.relationName}}, a.meta)
 }
 
 // newTuplesetNotDirectError reports a tupleset relation that does not allow direct

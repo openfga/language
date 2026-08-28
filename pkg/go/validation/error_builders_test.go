@@ -100,7 +100,7 @@ func TestNewInvalidNameError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errs := NewValidationErrors(nil)
-			errs.Add(newInvalidNameError(nil, tt.symbol, tt.clause, tt.typeName, tt.lineIndex, tt.meta))
+			errs.Add(newInvalidNameError(nil, tt.symbol, tt.clause, tt.typeName, tt.meta, tt.lineIndex))
 
 			findings := errs.AllFindings()
 			assert.Len(t, findings, 1)
@@ -115,7 +115,7 @@ func TestNewInvalidConditionNameError(t *testing.T) {
 	lineIndex := 5
 	meta := &Meta{File: "test.fga", Module: "test"}
 
-	err := newInvalidConditionNameError(nil, "bad name", "[a-zA-Z]+", &lineIndex, meta)
+	err := newInvalidConditionNameError(nil, "bad name", "[a-zA-Z]+", meta, &lineIndex)
 
 	assert.Equal(t, "condition 'bad name' does not match naming rule: '[a-zA-Z]+'.", err.Message)
 	assert.Equal(t, InvalidName, err.Metadata.ErrorType)
@@ -133,7 +133,7 @@ func TestNewReservedTypeNameError(t *testing.T) {
 	lineIndex := 5
 	meta := &Meta{File: "test.fga", Module: "test"}
 
-	err := newReservedTypeNameError(nil, "self", &lineIndex, meta)
+	err := newReservedTypeNameError(nil, "self", meta, &lineIndex)
 
 	assert.Equal(t, "a type cannot be named 'self' or 'this'.", err.Message)
 	assert.Equal(t, ReservedTypeKeywords, err.Metadata.ErrorType)
@@ -145,7 +145,7 @@ func TestNewReservedRelationNameError(t *testing.T) {
 	lineIndex := 3
 	meta := &Meta{File: "test.fga", Module: "test"}
 
-	err := newReservedRelationNameError(nil, "this", "document", &lineIndex, meta)
+	err := newReservedRelationNameError(nil, "this", "document", meta, &lineIndex)
 
 	assert.Equal(t, "a relation cannot be named 'self' or 'this'.", err.Message)
 	assert.Equal(t, ReservedRelationKeywords, err.Metadata.ErrorType)
@@ -239,7 +239,7 @@ func TestNewInvalidRelationError(t *testing.T) {
 	meta := &Meta{File: "test.fga", Module: "test"}
 	lineIndex := 4
 
-	err := newInvalidRelationError(nil, "unknown", "document", "relation", &lineIndex, meta)
+	err := newInvalidRelationError(nil, "unknown", "document", "relation", meta, &lineIndex)
 
 	assert.Equal(t, "the relation `unknown` does not exist.", err.Message)
 	assert.Equal(t, MissingDefinition, err.Metadata.ErrorType)
@@ -315,7 +315,7 @@ func TestLineAndColumnResolution(t *testing.T) {
 	}
 	lineIndex := 4
 
-	err := newInvalidNameError(lines, "viewer", "rule", nil, &lineIndex, nil)
+	err := newInvalidNameError(lines, "viewer", "rule", nil, nil, &lineIndex)
 
 	// Check line information
 	assert.NotNil(t, err.Line)

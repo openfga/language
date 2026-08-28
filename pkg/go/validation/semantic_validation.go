@@ -160,7 +160,15 @@ func validateTypeRestrictions(errs *ValidationErrors, validator *SemanticValidat
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				symbol := restrictedType + "#" + rel
 				// offendingType is the enclosing type the restriction was written in.
-				errs.Add(newInvalidTypeRelationError(lines, symbol, restrictedType, relationName, rel, typeName, lineIndex, meta))
+				errs.Add(newInvalidTypeRelationError(lines, invalidTypeRelationArgs{
+					symbol:            symbol,
+					typeName:          restrictedType,
+					relationName:      relationName,
+					offendingRelation: rel,
+					offendingType:     typeName,
+					meta:              meta,
+					lineIndex:         lineIndex,
+				}))
 			}
 		}
 	}
@@ -183,7 +191,7 @@ func validateUsersetReferences(errs *ValidationErrors, validator *SemanticValida
 		if targetRelation := cu.GetRelation(); targetRelation != "" {
 			if !validator.RelationDefined(typeName, targetRelation) {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				errs.Add(newInvalidRelationError(lines, targetRelation, typeName, relationName, lineIndex, meta))
+				errs.Add(newInvalidRelationError(lines, targetRelation, typeName, relationName, meta, lineIndex))
 			}
 		}
 	}
@@ -227,7 +235,15 @@ func validateTupleToUsersetReferences(errs *ValidationErrors, validator *Semanti
 
 	// 1. The `from` relation must exist on the current type.
 	if !validator.RelationDefined(typeName, fromRelation) {
-		errs.Add(newInvalidTypeRelationError(lines, symbol, typeName, relationName, fromRelation, typeName, lineIndex, meta))
+		errs.Add(newInvalidTypeRelationError(lines, invalidTypeRelationArgs{
+			symbol:            symbol,
+			typeName:          typeName,
+			relationName:      relationName,
+			offendingRelation: fromRelation,
+			offendingType:     typeName,
+			meta:              meta,
+			lineIndex:         lineIndex,
+		}))
 		return
 	}
 
@@ -256,7 +272,16 @@ func validateTupleToUsersetReferences(errs *ValidationErrors, validator *Semanti
 	// If the target is missing on every assignable type, report it per type.
 	if len(notValid) == len(fromTypes) {
 		for _, tr := range notValid {
-			errs.Add(newInvalidRelationOnTuplesetError(lines, symbol, tr.GetType(), typeName, relationName, targetRelation, fromRelation, lineIndex, meta))
+			errs.Add(newInvalidRelationOnTuplesetError(lines, invalidRelationOnTuplesetArgs{
+				symbol:            symbol,
+				typeName:          tr.GetType(),
+				typeDef:           typeName,
+				relationName:      relationName,
+				offendingRelation: targetRelation,
+				parent:            fromRelation,
+				meta:              meta,
+				lineIndex:         lineIndex,
+			}))
 		}
 	}
 }

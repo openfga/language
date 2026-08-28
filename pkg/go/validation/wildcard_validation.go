@@ -53,8 +53,14 @@ func validateWildcardInRelation(errs *ValidationErrors, validator *SemanticValid
 			// wildcard and explicit relation together is invalid
 			if typeRestriction.GetRelation() != "" {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				errs.Add(newInvalidWildcardUsageError(lines, typeRestriction.GetType(), relationName, typeName,
-					"wildcard cannot be used with specific relation", meta, lineIndex))
+				errs.Add(newInvalidWildcardUsageError(lines, invalidWildcardUsageArgs{
+					typeName:       typeRestriction.GetType(),
+					relationName:   relationName,
+					parentTypeName: typeName,
+					reason:         "wildcard cannot be used with specific relation",
+					meta:           meta,
+					lineIndex:      lineIndex,
+				}))
 			}
 		}
 	}

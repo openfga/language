@@ -203,7 +203,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(tt.lines)
+			collector := NewValidationErrors(nil)
 
 			ValidateSchemaVersion(collector, tt.model, tt.lines)
 
@@ -278,7 +278,7 @@ func TestValidateMultipleModulesInFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 
 			ValidateMultipleModulesInFile(collector, tt.files)
 
@@ -348,7 +348,7 @@ func TestValidateBasicModelStructure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(tt.lines)
+			collector := NewValidationErrors(nil)
 
 			ValidateBasicModelStructure(collector, tt.model, tt.files, tt.lines)
 
@@ -374,7 +374,7 @@ func TestSchemaVersionConstants(t *testing.T) {
 }
 
 func TestSchemaVersionValidation(t *testing.T) {
-	collector := NewErrorCollector(nil)
+	collector := NewValidationErrors(nil)
 
 	// Test valid schema version
 	validModel := &openfgav1.AuthorizationModel{
@@ -384,7 +384,7 @@ func TestSchemaVersionValidation(t *testing.T) {
 	assert.Empty(t, collector.AllFindings())
 
 	// Test invalid schema version
-	collector = NewErrorCollector(nil)
+	collector = NewValidationErrors(nil)
 	invalidModel := &openfgav1.AuthorizationModel{
 		SchemaVersion: "2.0",
 	}

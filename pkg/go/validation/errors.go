@@ -87,7 +87,7 @@ type ValidationError struct {
 	// Cause is the scoped error this finding wraps, and what Unwrap returns:
 	// errors.Is identifies the condition, errors.As or Kind the part of the model.
 	// It is nil for a finding whose code has no sentinel, and for one built directly
-	// rather than through the collector.
+	// rather than through a constructor.
 	//
 	// It stays off the wire because an error field has no concrete type to decode
 	// into, which would leave ValidationError unable to round-trip. The message,
@@ -105,7 +105,7 @@ func (e *ValidationError) Error() string {
 }
 
 // Unwrap returns Cause, which is nil for an error built directly rather than
-// through the collector.
+// through a constructor.
 func (e *ValidationError) Unwrap() error {
 	return e.Cause
 }
@@ -143,7 +143,7 @@ type ValidationErrors struct {
 // A nil *ValidationError is dropped, because it is not a finding: counting one would
 // have CountAll and HasFindings disagree with Blocks and Unwrap, and would put an
 // entry in the slice AllFindings hands out that dereferences nil on Severity or
-// String. The collector never appends one; a collection built through
+// String. No constructor returns one; a collection built through
 // NewValidationErrors, Add or the exported Errors field can hold one.
 //
 // The scan returns the slice untouched when there is nothing to drop, so the usual

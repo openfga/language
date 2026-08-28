@@ -74,14 +74,14 @@ func (cv *ConditionValidator) scanRelationMetadataForConditions(typeName, relati
 }
 
 // ValidateUnusedConditions detects and reports unused condition definitions.
-func ValidateUnusedConditions(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateUnusedConditions(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateUnusedConditions(collector, NewConditionValidator(model), lines)
+	validateUnusedConditions(errs, NewConditionValidator(model), lines)
 }
 
-func validateUnusedConditions(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
+func validateUnusedConditions(errs *ValidationErrors, validator *ConditionValidator, lines []string) {
 	for _, conditionName := range slices.Sorted(maps.Keys(validator.definedConds)) {
 		if !validator.usedConds[conditionName] {
 			condition := validator.definedConds[conditionName]
@@ -90,20 +90,20 @@ func validateUnusedConditions(collector *ErrorCollector, validator *ConditionVal
 				File:   condition.GetMetadata().GetSourceInfo().GetFile(),
 				Module: condition.GetMetadata().GetModule(),
 			}
-			collector.RaiseUnusedCondition(conditionName, meta, lineIndex)
+			errs.Add(newUnusedConditionError(lines, conditionName, meta, lineIndex))
 		}
 	}
 }
 
 // ValidateConditionReferences validates that all referenced conditions are defined.
-func ValidateConditionReferences(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateConditionReferences(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateConditionReferences(collector, NewConditionValidator(model), lines)
+	validateConditionReferences(errs, NewConditionValidator(model), lines)
 }
 
-func validateConditionReferences(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
+func validateConditionReferences(errs *ValidationErrors, validator *ConditionValidator, lines []string) {
 	model := validator.model
 	for _, conditionName := range slices.Sorted(maps.Keys(validator.usedConds)) {
 		if _, exists := validator.definedConds[conditionName]; !exists {
@@ -122,7 +122,7 @@ func validateConditionReferences(collector *ErrorCollector, validator *Condition
 					}
 				}
 				meta := &Meta{File: file, Module: module}
-				collector.RaiseInvalidConditionNameInParameter(conditionName, ref.TypeName, ref.RelationName, conditionName, meta, lineIndex)
+				errs.Add(newInvalidConditionNameInParameterError(lines, conditionName, ref.TypeName, ref.RelationName, conditionName, meta, lineIndex))
 			}
 		}
 	}
@@ -131,7 +131,7 @@ func validateConditionReferences(collector *ErrorCollector, validator *Condition
 // ValidateConditionConsistency checks that each condition's nested name property
 // matches its map key, mirroring the reference (validate-dsl.ts): the nested name
 // is compared to the key and any difference is reported.
-func ValidateConditionConsistency(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateConditionConsistency(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
@@ -142,7 +142,7 @@ func ValidateConditionConsistency(collector *ErrorCollector, model *openfgav1.Au
 			continue
 		}
 		if condition.GetName() != conditionKey {
-			collector.RaiseDifferentNestedConditionName(conditionKey, condition.GetName())
+			errs.Add(newDifferentNestedConditionNameError(conditionKey, condition.GetName()))
 		}
 	}
 }

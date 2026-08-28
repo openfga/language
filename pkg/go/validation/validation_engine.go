@@ -10,9 +10,9 @@ import (
 
 // ValidationEngine is the main entry point for all validation operations.
 type ValidationEngine struct {
-	model     *openfgav1.AuthorizationModel
-	lines     []string
-	collector *ErrorCollector
+	model *openfgav1.AuthorizationModel
+	lines []string
+	errs  *ValidationErrors
 	// semantic and condition index the model once and are shared across every
 	// phase that needs them, rather than each phase rebuilding its own.
 	semantic  *SemanticValidator
@@ -34,8 +34,7 @@ func DefaultEngineOptions() *EngineOptions {
 
 func NewValidationEngine(model *openfgav1.AuthorizationModel, dslContent string) *ValidationEngine {
 	lines := strings.Split(dslContent, "\n")
-	collector := NewErrorCollector(lines)
-	ve := &ValidationEngine{model: model, lines: lines, collector: collector}
+	ve := &ValidationEngine{model: model, lines: lines, errs: NewValidationErrors(nil)}
 	if model != nil {
 		ve.semantic = NewSemanticValidator(model)
 		ve.condition = NewConditionValidator(model)
@@ -80,8 +79,8 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 	}
 
 	// Schema and name validation run first and unconditionally.
-	ValidateSchemaVersion(ve.collector, ve.model, ve.lines)
-	ValidateNames(ve.collector, ve.model, ve.lines)
+	ValidateSchemaVersion(ve.errs, ve.model, ve.lines)
+	ValidateNames(ve.errs, ve.model, ve.lines)
 
 	// Relation-reference validation always runs. The phases that follow are
 	// gated on there being no blocking error yet: a model with bad references or
@@ -93,38 +92,38 @@ func (ve *ValidationEngine) RunAllValidations(options *EngineOptions) *Validatio
 	// The gate counts blocking findings only, so a warning or advisory does not stop
 	// the later passes from finding an error that would invalidate the model.
 	if !options.SkipSemanticValidation {
-		validateRelationReferences(ve.collector, ve.semantic, ve.lines)
+		validateRelationReferences(ve.errs, ve.semantic, ve.lines)
 	}
 
-	if !ve.collector.HasErrors() {
-		ValidateDuplicates(ve.collector, ve.model, ve.lines)
+	if !ve.errs.HasErrors() {
+		ValidateDuplicates(ve.errs, ve.model, ve.lines)
 	}
 
-	if !ve.collector.HasErrors() {
+	if !ve.errs.HasErrors() {
 		if !options.SkipSemanticValidation {
-			validateCyclesAndEntryPoints(ve.collector, ve.semantic, ve.lines)
-			validateTupleToUsersetRequirements(ve.collector, ve.semantic, ve.lines)
+			validateCyclesAndEntryPoints(ve.errs, ve.semantic, ve.lines)
+			validateTupleToUsersetRequirements(ve.errs, ve.semantic, ve.lines)
 		}
 		if !options.SkipComplexOperationValidation {
-			validateComplexOperations(ve.collector, ve.semantic, ve.lines)
+			validateComplexOperations(ve.errs, ve.semantic, ve.lines)
 		}
 		if !options.SkipWildcardValidation {
-			validateWildcardUsage(ve.collector, ve.semantic, ve.lines)
+			validateWildcardUsage(ve.errs, ve.semantic, ve.lines)
 		}
 	}
 
 	// Multi-file and condition checks are independent of the cascade and always
 	// run, matching the reference's handling of conditions.
 	if !options.SkipMultiFileValidation {
-		ValidateMultiFileConsistency(ve.collector, ve.model, ve.lines)
+		ValidateMultiFileConsistency(ve.errs, ve.model, ve.lines)
 	}
 	if !options.SkipConditionValidation {
-		validateConditionReferences(ve.collector, ve.condition, ve.lines)
-		ValidateConditionConsistency(ve.collector, ve.model, ve.lines)
-		validateUnusedConditions(ve.collector, ve.condition, ve.lines)
+		validateConditionReferences(ve.errs, ve.condition, ve.lines)
+		ValidateConditionConsistency(ve.errs, ve.model, ve.lines)
+		validateUnusedConditions(ve.errs, ve.condition, ve.lines)
 	}
 
-	return NewValidationErrors(ve.collector.AllFindings())
+	return ve.errs
 }
 
 // ValidateModel is ValidateDSL with the default options, which skip no phase.
@@ -138,10 +137,10 @@ func ValidateModelJSON(model *openfgav1.AuthorizationModel) error {
 }
 
 func (ve *ValidationEngine) GetValidationSummary() ValidationSummary {
-	errors := ve.collector.AllFindings()
+	errors := ve.errs.AllFindings()
 	summary := ValidationSummary{
-		TotalErrors:        ve.collector.Count(),
-		TotalFindings:      ve.collector.CountAll(),
+		TotalErrors:        ve.errs.Count(),
+		TotalFindings:      ve.errs.CountAll(),
 		ErrorsByType:       make(map[ValidationErrorType]int),
 		ErrorsByFile:       make(map[string]int),
 		FindingsBySeverity: make(map[fgaerrors.Severity]int),
@@ -149,7 +148,7 @@ func (ve *ValidationEngine) GetValidationSummary() ValidationSummary {
 	}
 	for _, err := range errors {
 		if err == nil || err.Metadata == nil {
-			// Metadata is always set by the collector, but a directly-constructed
+			// The constructors always set metadata, but a directly-constructed
 			// error (e.g. in a consumer or test) could omit it; don't panic.
 			continue
 		}
@@ -217,7 +216,7 @@ func (vr *ValidationReport) HasCriticalErrors() bool { return vr.Summary.HasCrit
 func (vr *ValidationReport) GetErrorsByType(errorType ValidationErrorType) []*ValidationError {
 	var matchingErrors []*ValidationError
 	for _, err := range vr.ValidationErrors.AllFindings() {
-		// The collector always sets metadata, but a directly-constructed finding
+		// The constructors always set metadata, but a directly-constructed finding
 		// need not have, and a code is only readable off metadata.
 		if err == nil || err.Metadata == nil {
 			continue

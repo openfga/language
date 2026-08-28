@@ -18,7 +18,7 @@ type errorInfo struct {
 
 // errorInfoByType maps every code the validator emits to its severity, cause and
 // criticality. It is the only place those are decided, so a code cannot mean one
-// thing in the collector and another in a report.
+// thing at a raise site and another in a report.
 //
 // Which part of the model a finding is about is not here, because it does not follow
 // from the code. DuplicatedError covers a duplicate type and a duplicate type

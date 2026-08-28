@@ -44,17 +44,17 @@ var (
 
 // ValidateTypeName validates a type name with both regex and reserved keyword checking.
 // This enhances the basic regex validation with semantic checks.
-func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
+func ValidateTypeName(typeName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedTypeName(typeName) {
-		collector.RaiseReservedTypeName(typeName, lineIndex, meta)
+		errs.Add(newReservedTypeNameError(lines, typeName, lineIndex, meta))
 		return false
 	}
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
 	if !validateFieldValue(typeNameRule, typeName) {
-		collector.RaiseInvalidName(typeName, typeNameRule, nil, lineIndex, meta)
+		errs.Add(newInvalidNameError(lines, typeName, typeNameRule, nil, lineIndex, meta))
 		return false
 	}
 
@@ -63,17 +63,17 @@ func ValidateTypeName(typeName string, collector *ErrorCollector, lineIndex *int
 
 // ValidateRelationName validates a relation name with both regex and reserved keyword
 // checking. This enhances the basic regex validation with semantic checks.
-func ValidateRelationName(relationName, typeName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
+func ValidateRelationName(relationName, typeName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	// First check if it's a reserved keyword
 	if IsReservedRelationName(relationName) {
-		collector.RaiseReservedRelationName(relationName, typeName, lineIndex, meta)
+		errs.Add(newReservedRelationNameError(lines, relationName, typeName, lineIndex, meta))
 		return false
 	}
 
 	// Then check regex pattern. The clause passed to the error is the full
 	// anchored rule, matching the reference implementation's reported rule.
 	if !validateFieldValue(relationNameRule, relationName) {
-		collector.RaiseInvalidName(relationName, relationNameRule, &typeName, lineIndex, meta)
+		errs.Add(newInvalidNameError(lines, relationName, relationNameRule, &typeName, lineIndex, meta))
 		return false
 	}
 
@@ -81,9 +81,9 @@ func ValidateRelationName(relationName, typeName string, collector *ErrorCollect
 }
 
 // ValidateConditionName validates a condition name with regex pattern.
-func ValidateConditionName(conditionName string, collector *ErrorCollector, lineIndex *int, meta *Meta) bool {
+func ValidateConditionName(conditionName string, errs *ValidationErrors, lines []string, lineIndex *int, meta *Meta) bool {
 	if !validateFieldValue(conditionNameRule, conditionName) {
-		collector.RaiseInvalidConditionName(conditionName, conditionNameRule, lineIndex, meta)
+		errs.Add(newInvalidConditionNameError(lines, conditionName, conditionNameRule, lineIndex, meta))
 		return false
 	}
 
@@ -197,22 +197,22 @@ func GetConditionLineNumber(conditionName string, lines []string, skipIndex *int
 
 // ValidateNameRules validates naming rules for types and relations in a model.
 // This is equivalent to the populateRelations function's naming validation in JS.
-func ValidateNameRules(collector *ErrorCollector, typeName string, relationNames []string,
+func ValidateNameRules(errs *ValidationErrors, typeName string, relationNames []string,
 	typeLineIndex *int, meta *Meta, lines []string) {
 	// Validate type name
-	ValidateTypeName(typeName, collector, typeLineIndex, meta)
+	ValidateTypeName(typeName, errs, lines, typeLineIndex, meta)
 
 	// Validate relation names
 	for _, relationName := range relationNames {
 		relationLineIndex := GetRelationLineNumber(relationName, lines, nil)
-		ValidateRelationName(relationName, typeName, collector, relationLineIndex, meta)
+		ValidateRelationName(relationName, typeName, errs, lines, relationLineIndex, meta)
 	}
 }
 
 // ValidateNames checks every type, relation, and condition name in the model
 // against the reserved-keyword and naming-rule constraints. It mirrors the name
 // validation performed in the JS reference implementation's populateRelations.
-func ValidateNames(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateNames(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
@@ -228,11 +228,11 @@ func ValidateNames(collector *ErrorCollector, model *openfgav1.AuthorizationMode
 		}
 
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
-		ValidateTypeName(typeName, collector, typeLineIndex, meta)
+		ValidateTypeName(typeName, errs, lines, typeLineIndex, meta)
 
 		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-			ValidateRelationName(relationName, typeName, collector, relationLineIndex, meta)
+			ValidateRelationName(relationName, typeName, errs, lines, relationLineIndex, meta)
 		}
 	}
 
@@ -244,6 +244,6 @@ func ValidateNames(collector *ErrorCollector, model *openfgav1.AuthorizationMode
 			File:   condition.GetMetadata().GetSourceInfo().GetFile(),
 			Module: condition.GetMetadata().GetModule(),
 		}
-		ValidateConditionName(conditionName, collector, conditionLineIndex, meta)
+		ValidateConditionName(conditionName, errs, lines, conditionLineIndex, meta)
 	}
 }

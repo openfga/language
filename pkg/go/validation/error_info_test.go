@@ -25,7 +25,7 @@ import (
 // page, and because SelfError and InvalidSyntax are equally unemitted in
 // pkg/js/errors.ts. A cycle with no entrypoint surfaces as RelationNoEntrypoint,
 // leaving CyclicError and CyclicRelation nothing to report. InvalidSchemaVersion is
-// unreachable because RaiseInvalidSchemaVersion emits InvalidSchema, which is what
+// unreachable because newInvalidSchemaVersionError emits InvalidSchema, which is what
 // the shared corpus expects.
 //
 // None get an errorInfoByType entry, so lookupErrorInfo treats them as blocking
@@ -76,9 +76,9 @@ var allErrorTypes = []ValidationErrorType{
 }
 
 // emittedErrorTypes parses this package's non-test sources and returns the name of
-// every ValidationErrorType passed as the errorType argument of an addError call. It
-// reads the source rather than a hand-written list, which would go stale in the same
-// edit that leaves a code out of the table.
+// every ValidationErrorType passed as the errorType argument of a newValidationError
+// call. It reads the source rather than a hand-written list, which would go stale in
+// the same edit that leaves a code out of the table.
 func emittedErrorTypes(t *testing.T) map[string]string {
 	t.Helper()
 
@@ -103,30 +103,20 @@ func emittedErrorTypes(t *testing.T) map[string]string {
 				return true
 			}
 
-			// Looking for c.addError(message, <ErrorType>, ...) and its scoped
-			// variant. Both, because a raise site that gains scope moves from one
-			// to the other.
-			selector, ok := call.Fun.(*ast.SelectorExpr)
-			if !ok || len(call.Args) < 2 {
-				return true
-			}
-
-			if selector.Sel.Name != "addError" && selector.Sel.Name != "addScopedError" {
+			// Every constructor names the finding's code as the second argument to
+			// newValidationError(message, <ErrorType>, ...). That is the one place a
+			// code reaches a finding, so reading it here reports exactly the set a
+			// raise site can produce.
+			identFun, ok := call.Fun.(*ast.Ident)
+			if !ok || identFun.Name != "newValidationError" || len(call.Args) < 2 {
 				return true
 			}
 
 			identifier, ok := call.Args[1].(*ast.Ident)
-
-			// addError forwards its own errorType parameter to addScopedError:
-			// plumbing, not a raise site.
-			if ok && identifier.Name == "errorType" {
-				return true
-			}
-
 			if !ok {
 				// A non-identifier errorType means the emitted set can't be
 				// determined statically, and this test would silently under-report.
-				t.Errorf("%s: addError called with a non-constant errorType at %s; "+
+				t.Errorf("%s: newValidationError called with a non-constant errorType at %s; "+
 					"emittedErrorTypes can no longer see what this emits",
 					name, fileSet.Position(call.Args[1].Pos()))
 
@@ -142,14 +132,14 @@ func emittedErrorTypes(t *testing.T) map[string]string {
 	return emitted
 }
 
-// TestErrorInfoCoversEveryEmittedErrorType checks every code a Raise* method can
+// TestErrorInfoCoversEveryEmittedErrorType checks every code a constructor can
 // emit has a table entry, so any finding that reaches a caller has a cause to
-// match. It fails when a new Raise* method is added without one.
+// match. It fails when a new constructor is added without one.
 func TestErrorInfoCoversEveryEmittedErrorType(t *testing.T) {
 	t.Parallel()
 
 	emitted := emittedErrorTypes(t)
-	require.NotEmpty(t, emitted, "found no addError calls — the AST walk is broken, not the errorInfoByType")
+	require.NotEmpty(t, emitted, "found no newValidationError calls — the AST walk is broken, not the errorInfoByType")
 
 	// Names, because the AST gives us identifiers and the table is keyed by value.
 	classifiedNames := make(map[string]struct{}, len(errorInfoByType))
@@ -176,7 +166,7 @@ func TestErrorInfoHasNoUnemittedEntries(t *testing.T) {
 		name := errorTypeConstantName(t, errorType)
 		if _, ok := emitted[name]; !ok {
 			t.Errorf("errorInfoByType has an entry for %s (%q) but nothing emits it — "+
-				"either wire up the Raise* method or move it to unemittedErrorTypes",
+				"either wire up the constructor or move it to unemittedErrorTypes",
 				name, errorType)
 		}
 	}

@@ -86,14 +86,14 @@ func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName s
 }
 
 // ValidateRelationReferences validates that all relation references in the model are valid.
-func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateRelationReferences(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateRelationReferences(collector, NewSemanticValidator(model), lines)
+	validateRelationReferences(errs, NewSemanticValidator(model), lines)
 }
 
-func validateRelationReferences(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+func validateRelationReferences(errs *ValidationErrors, validator *SemanticValidator, lines []string) {
 	model := validator.model
 	if model == nil {
 		return
@@ -120,20 +120,20 @@ func validateRelationReferences(collector *ErrorCollector, validator *SemanticVa
 		if meta := typeDef.GetMetadata(); meta != nil {
 			relationsMetadata := meta.GetRelations()
 			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-				validateTypeRestrictions(collector, validator, typeName, relationName,
+				validateTypeRestrictions(errs, validator, typeName, relationName,
 					relationsMetadata[relationName], typeLineIndex, lines)
 			}
 		}
 
 		relations := typeDef.GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
-			validateUsersetReferences(collector, validator, typeName, relationName,
+			validateUsersetReferences(errs, validator, typeName, relationName,
 				relations[relationName], typeLineIndex, lines)
 		}
 	}
 }
 
-func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticValidator,
+func validateTypeRestrictions(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, typeLineIndex *int, lines []string) {
 	if relationMetadata == nil {
 		return
@@ -150,7 +150,7 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 		// A directly-related type that doesn't exist: `X` is not a valid type.
 		if !validator.TypeDefined(restrictedType) {
 			lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-			collector.RaiseInvalidType(restrictedType, typeName, relationName, meta, lineIndex)
+			errs.Add(newInvalidTypeError(lines, restrictedType, meta, lineIndex))
 			continue
 		}
 		// A type#relation restriction whose relation doesn't exist on that type:
@@ -160,13 +160,13 @@ func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticVali
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				symbol := restrictedType + "#" + rel
 				// offendingType is the enclosing type the restriction was written in.
-				collector.RaiseInvalidTypeRelation(symbol, restrictedType, relationName, rel, typeName, lineIndex, meta)
+				errs.Add(newInvalidTypeRelationError(lines, symbol, restrictedType, relationName, rel, typeName, lineIndex, meta))
 			}
 		}
 	}
 }
 
-func validateUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
+func validateUsersetReferences(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, userset *openfgav1.Userset, typeLineIndex *int, lines []string) {
 	if userset == nil {
 		return
@@ -183,28 +183,28 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 		if targetRelation := cu.GetRelation(); targetRelation != "" {
 			if !validator.RelationDefined(typeName, targetRelation) {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				collector.RaiseInvalidRelationError(targetRelation, typeName, relationName, lineIndex, meta)
+				errs.Add(newInvalidRelationError(lines, targetRelation, typeName, relationName, lineIndex, meta))
 			}
 		}
 	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		validateTupleToUsersetReferences(collector, validator, typeName, relationName, ttu, meta, typeLineIndex, lines)
+		validateTupleToUsersetReferences(errs, validator, typeName, relationName, ttu, meta, typeLineIndex, lines)
 	}
 
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
+			validateUsersetReferences(errs, validator, typeName, relationName, child, typeLineIndex, lines)
 		}
 	}
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
+			validateUsersetReferences(errs, validator, typeName, relationName, child, typeLineIndex, lines)
 		}
 	}
 	if diff := userset.GetDifference(); diff != nil {
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetBase(), typeLineIndex, lines)
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetSubtract(), typeLineIndex, lines)
+		validateUsersetReferences(errs, validator, typeName, relationName, diff.GetBase(), typeLineIndex, lines)
+		validateUsersetReferences(errs, validator, typeName, relationName, diff.GetSubtract(), typeLineIndex, lines)
 	}
 }
 
@@ -215,7 +215,7 @@ func validateUsersetReferences(collector *ErrorCollector, validator *SemanticVal
 //     types are concrete (no wildcard, no type#relation);
 //   - the computed `target` relation must exist on at least one of the types the
 //     `from` relation is assignable to.
-func validateTupleToUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
+func validateTupleToUsersetReferences(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, ttu *openfgav1.TupleToUserset, meta *Meta, typeLineIndex *int, lines []string) {
 	fromRelation := ttu.GetTupleset().GetRelation()
 	targetRelation := ttu.GetComputedUserset().GetRelation()
@@ -227,14 +227,14 @@ func validateTupleToUsersetReferences(collector *ErrorCollector, validator *Sema
 
 	// 1. The `from` relation must exist on the current type.
 	if !validator.RelationDefined(typeName, fromRelation) {
-		collector.RaiseInvalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName, lineIndex, meta)
+		errs.Add(newInvalidTypeRelationError(lines, symbol, typeName, relationName, fromRelation, typeName, lineIndex, meta))
 		return
 	}
 
 	// 2. The `from` relation must be a single direct assignment.
 	fromTypes, isValid := validator.GetDirectlyAssignableTypes(typeName, fromRelation)
 	if !isValid || len(fromTypes) == 0 {
-		collector.RaiseTupleUsersetRequiresDirect(fromRelation, typeName, relationName, meta, lineIndex)
+		errs.Add(newTupleUsersetRequiresDirectError(lines, fromRelation, typeName, relationName, meta, lineIndex))
 		return
 	}
 
@@ -246,7 +246,7 @@ func validateTupleToUsersetReferences(collector *ErrorCollector, validator *Sema
 		decodedType := tr.GetType()
 		if tr.GetWildcard() != nil || tr.GetRelation() != "" {
 			// A wildcard or type#relation cannot be used as a tupleset target.
-			collector.RaiseTupleUsersetRequiresDirect(fromRelation, typeName, relationName, meta, lineIndex)
+			errs.Add(newTupleUsersetRequiresDirectError(lines, fromRelation, typeName, relationName, meta, lineIndex))
 			continue
 		}
 		if !validator.TypeDefined(decodedType) || !validator.RelationDefined(decodedType, targetRelation) {
@@ -256,7 +256,7 @@ func validateTupleToUsersetReferences(collector *ErrorCollector, validator *Sema
 	// If the target is missing on every assignable type, report it per type.
 	if len(notValid) == len(fromTypes) {
 		for _, tr := range notValid {
-			collector.RaiseInvalidRelationOnTupleset(symbol, tr.GetType(), typeName, relationName, targetRelation, fromRelation, lineIndex, meta)
+			errs.Add(newInvalidRelationOnTuplesetError(lines, symbol, tr.GetType(), typeName, relationName, targetRelation, fromRelation, lineIndex, meta))
 		}
 	}
 }

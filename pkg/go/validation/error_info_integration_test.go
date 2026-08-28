@@ -294,7 +294,7 @@ type document
 // TestNonBlockingTableEntryReachesTheCaller closes the gap the other severity tests
 // leave: they assert what errorInfoByType holds, or build findings by hand, and every
 // entry is SeverityError today, so nothing follows a non-blocking severity from the
-// table through addScopedError and out of an entry point. This downgrades one entry and
+// table through a constructor and out of an entry point. This downgrades one entry and
 // does exactly that.
 //
 // It must not call t.Parallel: it mutates errorInfoByType, and Go runs a sequential

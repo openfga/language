@@ -1,24 +1,21 @@
 package validation
 
 import (
-	"fmt"
 	"maps"
 	"slices"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-
-	fgaerrors "github.com/openfga/language/pkg/go/errors"
 )
 
 // ValidateWildcardUsage validates wildcard relation usage rules.
-func ValidateWildcardUsage(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateWildcardUsage(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateWildcardUsage(collector, NewSemanticValidator(model), lines)
+	validateWildcardUsage(errs, NewSemanticValidator(model), lines)
 }
 
-func validateWildcardUsage(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+func validateWildcardUsage(errs *ValidationErrors, validator *SemanticValidator, lines []string) {
 	model := validator.model
 	if model == nil {
 		return
@@ -29,13 +26,13 @@ func validateWildcardUsage(collector *ErrorCollector, validator *SemanticValidat
 		}
 		relationsMetadata := typeDef.GetMetadata().GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-			validateWildcardInRelation(collector, validator, typeDef.GetType(), relationName,
+			validateWildcardInRelation(errs, validator, typeDef.GetType(), relationName,
 				relationsMetadata[relationName], lines)
 		}
 	}
 }
 
-func validateWildcardInRelation(collector *ErrorCollector, validator *SemanticValidator,
+func validateWildcardInRelation(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, lines []string) {
 	if relationMetadata == nil {
 		return
@@ -52,34 +49,34 @@ func validateWildcardInRelation(collector *ErrorCollector, validator *SemanticVa
 			continue
 		}
 		if typeRestriction.GetWildcard() != nil {
-			validateWildcardRestriction(collector, validator, typeRestriction, relationName, typeName, meta, lines, typeLineIndex)
+			validateWildcardRestriction(errs, validator, typeRestriction, relationName, typeName, meta, lines, typeLineIndex)
 			// wildcard and explicit relation together is invalid
 			if typeRestriction.GetRelation() != "" {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				collector.RaiseInvalidWildcardUsage(typeRestriction.GetType(), relationName, typeName,
-					"wildcard cannot be used with specific relation", meta, lineIndex)
+				errs.Add(newInvalidWildcardUsageError(lines, typeRestriction.GetType(), relationName, typeName,
+					"wildcard cannot be used with specific relation", meta, lineIndex))
 			}
 		}
 	}
 }
 
-func validateWildcardRestriction(collector *ErrorCollector, validator *SemanticValidator,
+func validateWildcardRestriction(errs *ValidationErrors, validator *SemanticValidator,
 	typeRestriction *openfgav1.RelationReference, relationName, typeName string, meta *Meta, lines []string, typeLineIndex *int) {
 	if !validator.TypeDefined(typeRestriction.GetType()) {
 		lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-		collector.RaiseUndefinedType(typeRestriction.GetType(), relationName, typeName, meta, lineIndex)
+		errs.Add(newUndefinedTypeError(lines, typeRestriction.GetType(), relationName, typeName, meta, lineIndex))
 	}
 }
 
 // ValidateTupleToUsersetRequirements validates tuple-to-userset usage requirements.
-func ValidateTupleToUsersetRequirements(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateTupleToUsersetRequirements(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateTupleToUsersetRequirements(collector, NewSemanticValidator(model), lines)
+	validateTupleToUsersetRequirements(errs, NewSemanticValidator(model), lines)
 }
 
-func validateTupleToUsersetRequirements(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+func validateTupleToUsersetRequirements(errs *ValidationErrors, validator *SemanticValidator, lines []string) {
 	model := validator.model
 	if model == nil {
 		return
@@ -87,13 +84,13 @@ func validateTupleToUsersetRequirements(collector *ErrorCollector, validator *Se
 	for _, typeDef := range model.GetTypeDefinitions() {
 		relations := typeDef.GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
-			validateTupleToUsersetInUserset(collector, validator, typeDef.GetType(), relationName,
+			validateTupleToUsersetInUserset(errs, validator, typeDef.GetType(), relationName,
 				relations[relationName], lines)
 		}
 	}
 }
 
-func validateTupleToUsersetInUserset(collector *ErrorCollector, validator *SemanticValidator,
+func validateTupleToUsersetInUserset(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, userset *openfgav1.Userset, lines []string) {
 	if userset == nil {
 		return
@@ -105,25 +102,25 @@ func validateTupleToUsersetInUserset(collector *ErrorCollector, validator *Seman
 			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
 			Module: typeDef.GetMetadata().GetModule(),
 		}
-		validateTupleToUsersetOperation(collector, validator, typeName, relationName, ttu, meta, lines)
+		validateTupleToUsersetOperation(errs, validator, typeName, relationName, ttu, meta, lines)
 	}
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			validateTupleToUsersetInUserset(collector, validator, typeName, relationName, child, lines)
+			validateTupleToUsersetInUserset(errs, validator, typeName, relationName, child, lines)
 		}
 	}
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			validateTupleToUsersetInUserset(collector, validator, typeName, relationName, child, lines)
+			validateTupleToUsersetInUserset(errs, validator, typeName, relationName, child, lines)
 		}
 	}
 	if diff := userset.GetDifference(); diff != nil {
-		validateTupleToUsersetInUserset(collector, validator, typeName, relationName, diff.GetBase(), lines)
-		validateTupleToUsersetInUserset(collector, validator, typeName, relationName, diff.GetSubtract(), lines)
+		validateTupleToUsersetInUserset(errs, validator, typeName, relationName, diff.GetBase(), lines)
+		validateTupleToUsersetInUserset(errs, validator, typeName, relationName, diff.GetSubtract(), lines)
 	}
 }
 
-func validateTupleToUsersetOperation(collector *ErrorCollector, validator *SemanticValidator,
+func validateTupleToUsersetOperation(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, relationName string, ttu *openfgav1.TupleToUserset, meta *Meta, lines []string) {
 	tuplesetRelation := ttu.GetTupleset().GetRelation()
 	if tuplesetRelation == "" {
@@ -135,10 +132,10 @@ func validateTupleToUsersetOperation(collector *ErrorCollector, validator *Seman
 	if !validator.RelationDefined(typeName, tuplesetRelation) {
 		return
 	}
-	validateTuplesetDirectAssignment(collector, validator, typeName, tuplesetRelation, relationName, meta, lines)
+	validateTuplesetDirectAssignment(errs, validator, typeName, tuplesetRelation, relationName, meta, lines)
 }
 
-func validateTuplesetDirectAssignment(collector *ErrorCollector, validator *SemanticValidator,
+func validateTuplesetDirectAssignment(errs *ValidationErrors, validator *SemanticValidator,
 	typeName, tuplesetRelation, parentRelation string, meta *Meta, lines []string) {
 	typeDef := validator.GetTypeDefinition(typeName)
 	if typeDef == nil {
@@ -148,26 +145,8 @@ func validateTuplesetDirectAssignment(collector *ErrorCollector, validator *Sema
 		if rm, ok := metaProto.GetRelations()[tuplesetRelation]; ok {
 			if len(rm.GetDirectlyRelatedUserTypes()) == 0 {
 				lineIndex := GetRelationLineNumber(parentRelation, lines, nil)
-				collector.RaiseTuplesetNotDirect(tuplesetRelation, typeName, parentRelation, meta, lineIndex)
+				errs.Add(newTuplesetNotDirectError(lines, tuplesetRelation, typeName, parentRelation, meta, lineIndex))
 			}
 		}
 	}
-}
-
-func (c *ErrorCollector) RaiseInvalidWildcardUsage(typeName, relationName, parentTypeName, reason string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("Invalid wildcard usage for type '%s' in relation '%s' of type '%s': %s",
-		typeName, relationName, parentTypeName, reason)
-	// The wildcard is written in a relation of parentTypeName; typeName is the
-	// restriction it appears in, which the symbol already records.
-	c.addScopedError(message, InvalidWildcardError, typeName, lineIndex, meta, nil, scope{
-		part: &fgaerrors.ErrRelation{ObjectType: parentTypeName, Relation: relationName},
-	})
-}
-
-func (c *ErrorCollector) RaiseTuplesetNotDirect(tuplesetRelation, typeName, parentRelation string, meta *Meta, lineIndex *int) {
-	message := fmt.Sprintf("Tupleset relation '%s' on type '%s' must allow direct assignment (used in relation '%s')",
-		tuplesetRelation, typeName, parentRelation)
-	c.addScopedError(message, TuplesetNotDirect, tuplesetRelation, lineIndex, meta, nil, scope{
-		part: &fgaerrors.ErrRelation{ObjectType: typeName, Relation: tuplesetRelation},
-	})
 }

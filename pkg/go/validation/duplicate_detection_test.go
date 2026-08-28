@@ -48,7 +48,7 @@ func TestDuplicateTypeTracker_CheckAndAddType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tracker := NewDuplicateTypeTracker()
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
 			for _, typeName := range tt.typeNames {
@@ -165,7 +165,7 @@ func TestCheckForDuplicateTypeNamesInRelation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
 			CheckForDuplicateTypeNamesInRelation(collector, tt.relationMetadata, tt.relationName, tt.typeName, meta, nil, nil)
@@ -373,7 +373,7 @@ func TestCheckForDuplicatesInRelation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 
 			CheckForDuplicatesInRelation(collector, tt.typeDef, tt.relationName, nil, nil)
 
@@ -495,7 +495,7 @@ func TestValidateDuplicates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 
 			ValidateDuplicates(collector, tt.model, nil)
 
@@ -577,7 +577,7 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
 			checkDuplicatesInOperands(collector, tt.union, "test_relation", "test_type", meta, nil, nil)
@@ -594,7 +594,7 @@ func TestCheckDuplicatesInUnion(t *testing.T) {
 
 func TestValidateDuplicates_Integration(t *testing.T) {
 	t.Run("Duplicate Type Detection", func(t *testing.T) {
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 
 		// Model with duplicate type names
 		model := &openfgav1.AuthorizationModel{
@@ -612,7 +612,7 @@ func TestValidateDuplicates_Integration(t *testing.T) {
 	})
 
 	t.Run("Duplicate Type Restriction Detection", func(t *testing.T) {
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 
 		// Model with duplicate type restrictions in relation
 		model := &openfgav1.AuthorizationModel{

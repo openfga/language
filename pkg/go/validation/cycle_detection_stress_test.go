@@ -54,7 +54,7 @@ func TestCycleDetection_DeepChainTerminatesWithEntry(t *testing.T) {
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 	lines := strings.Split(dsl, "\n")
-	collector := NewErrorCollector(lines)
+	collector := NewValidationErrors(nil)
 
 	ValidateCyclesAndEntryPoints(collector, model, lines)
 
@@ -74,7 +74,7 @@ func TestCycleDetection_WideUnionTerminatesWithEntry(t *testing.T) {
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 	lines := strings.Split(dsl, "\n")
-	collector := NewErrorCollector(lines)
+	collector := NewValidationErrors(nil)
 
 	ValidateCyclesAndEntryPoints(collector, model, lines)
 
@@ -101,7 +101,7 @@ type doc
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 	lines := strings.Split(dsl, "\n")
-	collector := NewErrorCollector(lines)
+	collector := NewValidationErrors(nil)
 
 	ValidateCyclesAndEntryPoints(collector, model, lines)
 
@@ -129,7 +129,7 @@ type doc
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 	lines := strings.Split(dsl, "\n")
-	collector := NewErrorCollector(lines)
+	collector := NewValidationErrors(nil)
 
 	ValidateCyclesAndEntryPoints(collector, model, lines)
 
@@ -163,7 +163,7 @@ func TestCycleDetection_DeepChainCountStable(t *testing.T) {
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 	lines := strings.Split(dsl, "\n")
-	collector := NewErrorCollector(lines)
+	collector := NewValidationErrors(nil)
 
 	ValidateCyclesAndEntryPoints(collector, model, lines)
 

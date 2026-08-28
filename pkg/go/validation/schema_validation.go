@@ -47,14 +47,14 @@ func GetSchemaLineNumber(schemaVersion string, lines []string) *int {
 }
 
 // ValidateSchemaVersion validates the schema version of an authorization model.
-func ValidateSchemaVersion(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateSchemaVersion(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
 	schemaVersion := model.GetSchemaVersion()
 	if schemaVersion == "" {
 		lineIndex := 0
-		collector.RaiseSchemaVersionRequired("", &lineIndex)
+		errs.Add(newSchemaVersionRequiredError(lines, &lineIndex))
 		return
 	}
 	switch schemaVersion {
@@ -62,10 +62,10 @@ func ValidateSchemaVersion(collector *ErrorCollector, model *openfgav1.Authoriza
 		// Supported — nothing to report.
 	case "1.0":
 		// Recognized but retired.
-		collector.RaiseSchemaVersionUnsupported(schemaVersion, GetSchemaLineNumber(schemaVersion, lines))
+		errs.Add(newSchemaVersionUnsupportedError(lines, schemaVersion, GetSchemaLineNumber(schemaVersion, lines)))
 	default:
 		// Never a valid schema version.
-		collector.RaiseInvalidSchemaVersion(schemaVersion, GetSchemaLineNumber(schemaVersion, lines))
+		errs.Add(newInvalidSchemaVersionError(lines, schemaVersion, GetSchemaLineNumber(schemaVersion, lines)))
 	}
 }
 
@@ -75,19 +75,19 @@ func ValidateSchemaVersion(collector *ErrorCollector, model *openfgav1.Authoriza
 // It reports the files, and each file's modules, in the order they were collected
 // from the model, which is the order the reference reports them in and the order the
 // shared corpus expects.
-func ValidateMultipleModulesInFile(collector *ErrorCollector, files []FileInfo) {
+func ValidateMultipleModulesInFile(errs *ValidationErrors, files []FileInfo) {
 	for _, file := range files {
 		if len(file.Modules) <= 1 {
 			continue
 		}
 
-		collector.RaiseMultipleModulesInSingleFile(file.Path, file.Modules)
+		errs.Add(newMultipleModulesInSingleFileError(file.Path, file.Modules))
 	}
 }
 
 // ValidateBasicModelStructure performs basic model structure validation.
-func ValidateBasicModelStructure(collector *ErrorCollector, model *openfgav1.AuthorizationModel,
+func ValidateBasicModelStructure(errs *ValidationErrors, model *openfgav1.AuthorizationModel,
 	files []FileInfo, lines []string) {
-	ValidateSchemaVersion(collector, model, lines)
-	ValidateMultipleModulesInFile(collector, files)
+	ValidateSchemaVersion(errs, model, lines)
+	ValidateMultipleModulesInFile(errs, files)
 }

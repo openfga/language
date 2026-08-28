@@ -51,7 +51,7 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -93,7 +93,7 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 		assert.Empty(t, collector.AllFindings())
 	})
@@ -118,7 +118,7 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateCyclesAndEntryPoints(collector, model, nil)
 		// All three relations resolve to owner's direct assignment.
 		assert.Empty(t, collector.AllFindings())

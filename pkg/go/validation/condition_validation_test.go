@@ -188,7 +188,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -220,7 +220,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -257,7 +257,7 @@ func TestValidateUnusedConditions(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateUnusedConditions(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -299,7 +299,7 @@ func TestValidateConditionReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -327,7 +327,7 @@ func TestValidateConditionReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -366,7 +366,7 @@ func TestValidateConditionReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -391,7 +391,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -405,7 +405,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -421,7 +421,7 @@ func TestValidateConditionConsistency(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateConditionConsistency(collector, model, nil)
 
 		assert.Empty(t, collector.AllFindings())

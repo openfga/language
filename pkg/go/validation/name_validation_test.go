@@ -121,11 +121,11 @@ func TestValidateTypeName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			lineIndex := 5
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			result := ValidateTypeName(tt.typeName, collector, &lineIndex, meta)
+			result := ValidateTypeName(tt.typeName, collector, nil, &lineIndex, meta)
 
 			assert.Equal(t, tt.expectedValid, result)
 
@@ -207,11 +207,11 @@ func TestValidateRelationName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			lineIndex := 8
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			result := ValidateRelationName(tt.relationName, tt.typeName, collector, &lineIndex, meta)
+			result := ValidateRelationName(tt.relationName, tt.typeName, collector, nil, &lineIndex, meta)
 
 			assert.Equal(t, tt.expectedValid, result)
 
@@ -272,11 +272,11 @@ func TestValidateConditionName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(nil)
+			collector := NewValidationErrors(nil)
 			lineIndex := 10
 			meta := &Meta{File: "test.fga", Module: "test"}
 
-			result := ValidateConditionName(tt.conditionName, collector, &lineIndex, meta)
+			result := ValidateConditionName(tt.conditionName, collector, nil, &lineIndex, meta)
 
 			assert.Equal(t, tt.expectedValid, result)
 
@@ -589,7 +589,7 @@ func TestValidateNameRules(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector := NewErrorCollector(tt.lines)
+			collector := NewValidationErrors(nil)
 			typeLineIndex := GetTypeLineNumber(tt.typeName, tt.lines, nil)
 			meta := &Meta{File: "test.fga", Module: "test"}
 
@@ -607,12 +607,12 @@ func TestNameValidationIntegration(t *testing.T) {
 		validNames := []string{"document", "user", "group", "viewer", "editor", "admin"}
 
 		for _, name := range validNames {
-			collector := NewErrorCollector(nil)
-			typeValid := ValidateTypeName(name, collector, nil, nil)
+			collector := NewValidationErrors(nil)
+			typeValid := ValidateTypeName(name, collector, nil, nil, nil)
 			assert.True(t, typeValid, "Expected %s to be valid type name", name)
 
-			collector = NewErrorCollector(nil)
-			relationValid := ValidateRelationName(name, "parent_type", collector, nil, nil)
+			collector = NewValidationErrors(nil)
+			relationValid := ValidateRelationName(name, "parent_type", collector, nil, nil, nil)
 			assert.True(t, relationValid, "Expected %s to be valid relation name", name)
 		}
 	})
@@ -621,12 +621,12 @@ func TestNameValidationIntegration(t *testing.T) {
 		reservedKeywords := []string{"this", "self"}
 
 		for _, keyword := range reservedKeywords {
-			collector := NewErrorCollector(nil)
-			typeValid := ValidateTypeName(keyword, collector, nil, nil)
+			collector := NewValidationErrors(nil)
+			typeValid := ValidateTypeName(keyword, collector, nil, nil, nil)
 			assert.False(t, typeValid, "Expected %s to be invalid type name", keyword)
 
-			collector = NewErrorCollector(nil)
-			relationValid := ValidateRelationName(keyword, "parent_type", collector, nil, nil)
+			collector = NewValidationErrors(nil)
+			relationValid := ValidateRelationName(keyword, "parent_type", collector, nil, nil, nil)
 			assert.False(t, relationValid, "Expected %s to be invalid relation name", keyword)
 		}
 	})

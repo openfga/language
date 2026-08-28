@@ -111,7 +111,7 @@ func TestMultiFileCollectionFollowsTheModelOrder(t *testing.T) {
 func TestValidateMultiFileConsistencyReportsEveryModuleInTheFile(t *testing.T) {
 	t.Parallel()
 
-	collector := NewErrorCollector(nil)
+	collector := NewValidationErrors(nil)
 	ValidateMultiFileConsistency(collector, multiModuleModel(), nil)
 
 	findings := collector.AllFindings()
@@ -163,7 +163,7 @@ func TestRelationInheritsItsTypesFileAndModule(t *testing.T) {
 	assert.False(t, validator.IsMultiModuleProject(), "both files hold the same module")
 	assert.Equal(t, []string{"core.fga", "extra.fga"}, validator.GetFilesForModule("core"))
 
-	collector := NewErrorCollector(nil)
+	collector := NewValidationErrors(nil)
 	ValidateMultiFileConsistency(collector, model, nil)
 	assert.Empty(t, collector.AllFindings(), "neither file holds more than one module")
 }
@@ -275,13 +275,13 @@ func TestMultiFileValidatorWithoutModules(t *testing.T) {
 	assert.False(t, validator.IsMultiFileProject())
 	assert.False(t, validator.IsMultiModuleProject())
 
-	collector := NewErrorCollector(nil)
+	collector := NewValidationErrors(nil)
 	ValidateMultiFileConsistency(collector, model, nil)
 	assert.Empty(t, collector.AllFindings())
 
 	// A nil model reaches the same entry point through the engine, and reports nothing
 	// rather than panicking.
-	nilCollector := NewErrorCollector(nil)
+	nilCollector := NewValidationErrors(nil)
 	ValidateMultiFileConsistency(nilCollector, nil, nil)
 	assert.Empty(t, nilCollector.AllFindings())
 	assert.Empty(t, NewMultiFileValidator(nil).GetFileInfo())

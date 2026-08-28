@@ -240,10 +240,10 @@ func TestMeta(t *testing.T) {
 func TestCategorySerialisesForEveryCategory(t *testing.T) {
 	t.Parallel()
 
-	collector := NewErrorCollector(nil)
-	collector.RaiseInvalidType("user", "document", "viewer", nil, nil)              // object-type
-	collector.RaiseDuplicateTypeRestriction("user", "viewer", "document", nil, nil) // relation
-	collector.RaiseUnusedCondition("unused_cond", nil, nil)                         // condition
+	collector := NewValidationErrors(nil)
+	collector.Add(newInvalidTypeError(nil, "user", nil, nil))                                    // object-type
+	collector.Add(newDuplicateTypeRestrictionError(nil, "user", "viewer", "document", nil, nil)) // relation
+	collector.Add(newUnusedConditionError(nil, "unused_cond", nil, nil))                         // condition
 
 	wantCategories := []string{`"category":"object-type"`, `"category":"relation"`, `"category":"condition"`}
 
@@ -263,8 +263,8 @@ func TestCategorySerialisesForEveryCategory(t *testing.T) {
 func TestSeveritySerialisesUnderItsName(t *testing.T) {
 	t.Parallel()
 
-	collector := NewErrorCollector(nil)
-	collector.RaiseInvalidType("user", "document", "viewer", nil, nil)
+	collector := NewValidationErrors(nil)
+	collector.Add(newInvalidTypeError(nil, "user", nil, nil))
 
 	findings := collector.AllFindings()
 	require.Len(t, findings, 1)

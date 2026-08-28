@@ -223,20 +223,20 @@ func TestBlockingFindingMakesModelInvalid(t *testing.T) {
 func TestCascadeGateIgnoresNonBlockingFindings(t *testing.T) {
 	t.Parallel()
 
-	collector := NewErrorCollector(nil)
-	collector.errors = append(collector.errors,
+	collector := NewValidationErrors(nil)
+	collector.Errors = append(collector.Errors,
 		finding(fgaerrors.SeverityAdvisory, "advisory"),
 		finding(fgaerrors.SeverityWarning, "warning"),
 	)
 
 	require.False(t, collector.HasErrors(),
-		"a collector holding only non-blocking findings must not close the cascade gate")
+		"a collection holding only non-blocking findings must not close the cascade gate")
 	assert.Equal(t, 0, collector.Count())
 	assert.Equal(t, 2, collector.CountAll())
 	assert.Len(t, collector.AllFindings(), 2,
-		"the collector is the raw record and filters nothing")
+		"the collection is the raw record and filters nothing")
 
-	collector.errors = append(collector.errors, finding(fgaerrors.SeverityError, "real error"))
+	collector.Errors = append(collector.Errors, finding(fgaerrors.SeverityError, "real error"))
 	assert.True(t, collector.HasErrors(), "a blocking finding must close the gate")
 }
 
@@ -245,8 +245,8 @@ func TestCascadeGateIgnoresNonBlockingFindings(t *testing.T) {
 func TestSummarySplitsBySeverity(t *testing.T) {
 	t.Parallel()
 
-	engine := &ValidationEngine{collector: NewErrorCollector(nil)}
-	engine.collector.errors = append(engine.collector.errors,
+	engine := &ValidationEngine{errs: NewValidationErrors(nil)}
+	engine.errs.Errors = append(engine.errs.Errors,
 		finding(fgaerrors.SeverityError, "error"),
 		finding(fgaerrors.SeverityWarning, "warning"),
 		finding(fgaerrors.SeverityAdvisory, "advisory"),

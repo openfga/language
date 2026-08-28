@@ -16,11 +16,11 @@ func NewDuplicateTypeTracker() *DuplicateTypeTracker {
 	return &DuplicateTypeTracker{typeNames: make(map[string]bool)}
 }
 
-func (dt *DuplicateTypeTracker) CheckAndAddType(typeName string, collector *ErrorCollector,
+func (dt *DuplicateTypeTracker) CheckAndAddType(typeName string, errs *ValidationErrors,
 	meta *Meta, lines []string) bool {
 	if dt.typeNames[typeName] {
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
-		collector.RaiseDuplicateTypeName(typeName, meta, typeLineIndex)
+		errs.Add(newDuplicateTypeNameError(lines, typeName, meta, typeLineIndex))
 		return false
 	}
 	dt.typeNames[typeName] = true
@@ -28,7 +28,7 @@ func (dt *DuplicateTypeTracker) CheckAndAddType(typeName string, collector *Erro
 }
 
 // CheckForDuplicateTypeNamesInRelation checks for duplicate type restrictions within a relation.
-func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMetadata *openfgav1.RelationMetadata,
+func CheckForDuplicateTypeNamesInRelation(errs *ValidationErrors, relationMetadata *openfgav1.RelationMetadata,
 	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if relationMetadata == nil {
 		return
@@ -49,7 +49,7 @@ func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMet
 		}
 		if typeRestrictions[typeRestrictionString] {
 			lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-			collector.RaiseDuplicateTypeRestriction(typeRestrictionString, relationName, typeName, meta, lineIndex)
+			errs.Add(newDuplicateTypeRestrictionError(lines, typeRestrictionString, relationName, typeName, meta, lineIndex))
 		} else {
 			typeRestrictions[typeRestrictionString] = true
 		}
@@ -57,7 +57,7 @@ func CheckForDuplicateTypeNamesInRelation(collector *ErrorCollector, relationMet
 }
 
 // CheckForDuplicatesInRelation checks for duplicate relations in type definitions.
-func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.TypeDefinition,
+func CheckForDuplicatesInRelation(errs *ValidationErrors, typeDef *openfgav1.TypeDefinition,
 	relationName string, typeLineIndex *int, lines []string) {
 	if typeDef == nil {
 		return
@@ -84,20 +84,20 @@ func CheckForDuplicatesInRelation(collector *ErrorCollector, typeDef *openfgav1.
 	meta := &Meta{File: file, Module: module}
 
 	if union := relation.GetUnion(); union != nil {
-		checkDuplicatesInOperands(collector, union, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
+		checkDuplicatesInOperands(errs, union, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if intersection := relation.GetIntersection(); intersection != nil {
-		checkDuplicatesInOperands(collector, intersection, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
+		checkDuplicatesInOperands(errs, intersection, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 	if diff := relation.GetDifference(); diff != nil {
-		checkDuplicatesInDifference(collector, diff, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
+		checkDuplicatesInDifference(errs, diff, relationName, typeDef.GetType(), meta, typeLineIndex, lines)
 	}
 }
 
 // checkDuplicatesInOperands flags duplicate operands within a union or
 // intersection. Both operators store their members as a *openfgav1.Usersets and
 // treat a repeated member as redundant, so they share this check.
-func checkDuplicatesInOperands(collector *ErrorCollector, operands *openfgav1.Usersets,
+func checkDuplicatesInOperands(errs *ValidationErrors, operands *openfgav1.Usersets,
 	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if operands == nil {
 		return
@@ -107,7 +107,7 @@ func checkDuplicatesInOperands(collector *ErrorCollector, operands *openfgav1.Us
 		if relationDef := getRelationDefName(child); relationDef != "" {
 			if relationDefs[relationDef] {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				collector.RaiseDuplicateType(relationDef, relationName, typeName, meta, lineIndex)
+				errs.Add(newDuplicateTypeError(lines, relationDef, relationName, typeName, meta, lineIndex))
 			} else {
 				relationDefs[relationDef] = true
 			}
@@ -115,7 +115,7 @@ func checkDuplicatesInOperands(collector *ErrorCollector, operands *openfgav1.Us
 	}
 }
 
-func checkDuplicatesInDifference(collector *ErrorCollector, difference *openfgav1.Difference,
+func checkDuplicatesInDifference(errs *ValidationErrors, difference *openfgav1.Difference,
 	relationName, typeName string, meta *Meta, typeLineIndex *int, lines []string) {
 	if difference == nil {
 		return
@@ -124,7 +124,7 @@ func checkDuplicatesInDifference(collector *ErrorCollector, difference *openfgav
 	subtractName := getRelationDefName(difference.GetSubtract())
 	if baseName != "" && baseName == subtractName {
 		lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-		collector.RaiseDuplicateType(baseName, relationName, typeName, meta, lineIndex)
+		errs.Add(newDuplicateTypeError(lines, baseName, relationName, typeName, meta, lineIndex))
 	}
 }
 
@@ -151,7 +151,7 @@ func getRelationDefName(userset *openfgav1.Userset) string {
 }
 
 // ValidateDuplicates performs comprehensive duplicate detection on a model.
-func ValidateDuplicates(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateDuplicates(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
@@ -165,13 +165,13 @@ func ValidateDuplicates(collector *ErrorCollector, model *openfgav1.Authorizatio
 			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
 			Module: typeDef.GetMetadata().GetModule(),
 		}
-		typeTracker.CheckAndAddType(typeName, collector, meta, lines)
+		typeTracker.CheckAndAddType(typeName, errs, meta, lines)
 		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
 		if metaProto := typeDef.GetMetadata(); metaProto != nil {
 			relationsMetadata := metaProto.GetRelations()
 			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-				CheckForDuplicateTypeNamesInRelation(collector, relationsMetadata[relationName], relationName, typeName, meta, typeLineIndex, lines)
-				CheckForDuplicatesInRelation(collector, typeDef, relationName, typeLineIndex, lines)
+				CheckForDuplicateTypeNamesInRelation(errs, relationsMetadata[relationName], relationName, typeName, meta, typeLineIndex, lines)
+				CheckForDuplicatesInRelation(errs, typeDef, relationName, typeLineIndex, lines)
 			}
 		}
 	}

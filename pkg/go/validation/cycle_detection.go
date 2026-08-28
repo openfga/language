@@ -32,14 +32,14 @@ func NewCycleDetector(validator *SemanticValidator) *CycleDetector {
 // ValidateCyclesAndEntryPoints reports relations that have no entry point. A
 // relation with no entry point is impossible: either it never reaches a concrete
 // assignable type (no entrypoint) or it forms a rewrite loop (potential loop).
-func ValidateCyclesAndEntryPoints(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateCyclesAndEntryPoints(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
-	validateCyclesAndEntryPoints(collector, NewSemanticValidator(model), lines)
+	validateCyclesAndEntryPoints(errs, NewSemanticValidator(model), lines)
 }
 
-func validateCyclesAndEntryPoints(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
+func validateCyclesAndEntryPoints(errs *ValidationErrors, validator *SemanticValidator, lines []string) {
 	model := validator.model
 	if model == nil {
 		return
@@ -60,9 +60,9 @@ func validateCyclesAndEntryPoints(collector *ErrorCollector, validator *Semantic
 			if !result.hasEntry {
 				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
 				if result.loop {
-					collector.RaiseNoEntryPointLoop(relationName, typeName, meta, lineIndex)
+					errs.Add(newNoEntryPointLoopError(lines, relationName, typeName, meta, lineIndex))
 				} else {
-					collector.RaiseNoEntryPoint(relationName, typeName, meta, lineIndex)
+					errs.Add(newNoEntryPointError(lines, relationName, typeName, meta, lineIndex))
 				}
 			}
 		}

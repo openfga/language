@@ -271,28 +271,28 @@ func TestReservedKeywordsMatchJSImplementation(t *testing.T) {
 }
 
 func TestReservedKeywordsValidation(t *testing.T) {
-	collector := NewErrorCollector(nil)
+	collector := NewValidationErrors(nil)
 
 	// Test type name validation - should pass for valid names
-	isValid := ValidateTypeName("document", collector, nil, nil)
+	isValid := ValidateTypeName("document", collector, nil, nil, nil)
 	assert.True(t, isValid)
 	assert.Empty(t, collector.AllFindings())
 
 	// Test type name validation - should fail for reserved keywords
-	collector = NewErrorCollector(nil)
-	isValid = ValidateTypeName("this", collector, nil, nil)
+	collector = NewValidationErrors(nil)
+	isValid = ValidateTypeName("this", collector, nil, nil, nil)
 	assert.False(t, isValid)
 	assert.NotEmpty(t, collector.AllFindings())
 
 	// Test relation name validation - should pass for valid names
-	collector = NewErrorCollector(nil)
-	isValid = ValidateRelationName("viewer", "document", collector, nil, nil)
+	collector = NewValidationErrors(nil)
+	isValid = ValidateRelationName("viewer", "document", collector, nil, nil, nil)
 	assert.True(t, isValid)
 	assert.Empty(t, collector.AllFindings())
 
 	// Test relation name validation - should fail for reserved keywords
-	collector = NewErrorCollector(nil)
-	isValid = ValidateRelationName("self", "document", collector, nil, nil)
+	collector = NewValidationErrors(nil)
+	isValid = ValidateRelationName("self", "document", collector, nil, nil, nil)
 	assert.False(t, isValid)
 	assert.NotEmpty(t, collector.AllFindings())
 }

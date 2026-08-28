@@ -147,13 +147,13 @@ func (mfv *MultiFileValidator) addFileModuleMapping(file, module string) {
 }
 
 // ValidateMultiFileConsistency validates consistency across multiple files.
-func ValidateMultiFileConsistency(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
+func ValidateMultiFileConsistency(errs *ValidationErrors, model *openfgav1.AuthorizationModel, lines []string) {
 	if model == nil {
 		return
 	}
 	// The rule itself lives in ValidateMultipleModulesInFile, which takes the files
 	// this validator collected; the two must not drift.
-	ValidateMultipleModulesInFile(collector, NewMultiFileValidator(model).GetFileInfo())
+	ValidateMultipleModulesInFile(errs, NewMultiFileValidator(model).GetFileInfo())
 }
 
 func (mfv *MultiFileValidator) GetModuleInfo() []ModuleInfo {

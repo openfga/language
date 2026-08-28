@@ -139,7 +139,7 @@ func TestValidateRelationReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateRelationReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -164,7 +164,7 @@ func TestValidateRelationReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateRelationReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -194,7 +194,7 @@ func TestValidateRelationReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateRelationReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -234,7 +234,7 @@ func TestValidateRelationReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateRelationReferences(collector, model, nil)
 
 		errors := collector.AllFindings()
@@ -287,7 +287,7 @@ func TestValidateRelationReferences(t *testing.T) {
 			},
 		}
 
-		collector := NewErrorCollector(nil)
+		collector := NewValidationErrors(nil)
 		ValidateRelationReferences(collector, model, nil)
 
 		errors := collector.AllFindings()

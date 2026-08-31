@@ -11,6 +11,11 @@ enum RelationDefOperator {
   Difference = "difference",
 }
 
+// Reserved condition name for inline expressions on a type restriction. Unlike
+// named conditions it is not declared in the model's `conditions` block, so it
+// is exempt from the "condition must be defined" validation.
+const RESERVED_INLINE_EXPRESSION = "$expression";
+
 interface ValidationRegex {
   rule: string;
   regex: RegExp;
@@ -480,7 +485,11 @@ function childDefDefined(
           collector.raiseInvalidType(decodedType, type, relation, { file, module }, lineIndex);
         }
 
-        if (decodedConditionName && !conditions[decodedConditionName]) {
+        if (
+          decodedConditionName &&
+          decodedConditionName !== RESERVED_INLINE_EXPRESSION &&
+          !conditions[decodedConditionName]
+        ) {
           // condition name is not defined
           const typeIndex = getTypeLineNumber(type, lines);
           const lineIndex = getRelationLineNumber(relation, lines, typeIndex);

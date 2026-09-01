@@ -7,10 +7,6 @@
 # with a plain YAMLMapper onto case classes with no @JsonIgnoreProperties, so an
 # unrecognised key fails its build, and pkg/js asserts each expected error with
 # toMatchObject, which fails on an expected key the error object does not carry.
-#
-# pkg/go attaches severity, category and criticality to each finding. Those
-# expectations live in pkg/go/validation/testdata/severity-category-cases.yaml until
-# the other implementations have the fields, and a test keeps them out of this file.
 - name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
   dsl: |
     model

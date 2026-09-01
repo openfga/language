@@ -4,630 +4,119 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestValidationRegexRules(t *testing.T) {
-	// Test that regex rules match the JS implementation
-	assert.Equal(t, "[^:#@\\*\\s]{1,254}", ValidationRegexRules.Type)
-	assert.Equal(t, "[^:#@\\*\\s]{1,50}", ValidationRegexRules.Relation)
-	assert.Equal(t, "[^\\*\\s]{1,50}", ValidationRegexRules.Condition)
-	assert.Equal(t, "[^#:\\s*][a-zA-Z0-9_|*@.+]*", ValidationRegexRules.ID)
-	assert.Equal(t, "[^\\s]{2,256}", ValidationRegexRules.Object)
-}
-
-func TestValidateFieldValue(t *testing.T) {
-	tests := []struct {
-		name     string
-		rule     string
-		value    string
-		expected bool
-	}{
-		{
-			name:     "valid type name",
-			rule:     "^[a-zA-Z]+$",
-			value:    "document",
-			expected: true,
-		},
-		{
-			name:     "invalid type name with numbers",
-			rule:     "^[a-zA-Z]+$",
-			value:    "document123",
-			expected: false,
-		},
-		{
-			name:     "valid relation name",
-			rule:     "^[a-zA-Z_]+$",
-			value:    "can_view",
-			expected: true,
-		},
-		{
-			name:     "empty string with appropriate rule",
-			rule:     "^$",
-			value:    "",
-			expected: true,
-		},
-		{
-			name:     "invalid regex pattern",
-			rule:     "[unclosed",
-			value:    "test",
-			expected: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := validateFieldValue(tt.rule, tt.value)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestValidateTypeName(t *testing.T) {
-	tests := []struct {
-		name               string
-		typeName           string
-		expectedValid      bool
-		expectedErrorType  ValidationErrorType
-		expectedErrorCount int
-	}{
-		{
-			name:               "valid type name",
-			typeName:           "document",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "reserved keyword self",
-			typeName:           "self",
-			expectedValid:      false,
-			expectedErrorType:  ReservedTypeKeywords,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "reserved keyword this",
-			typeName:           "this",
-			expectedValid:      false,
-			expectedErrorType:  ReservedTypeKeywords,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "valid type name with underscore",
-			typeName:           "user_group",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "type name with invalid characters",
-			typeName:           "document:invalid",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "type name with space",
-			typeName:           "document name",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "type name with hash",
-			typeName:           "document#tag",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-	}
+	t.Parallel()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
-			lineIndex := 5
-			meta := &Meta{File: "test.fga", Module: "test"}
+	t.Run("valid name yields nothing", func(t *testing.T) {
+		t.Parallel()
+		assert.Nil(t, validateTypeName("document"))
+	})
 
-			result := ValidateTypeName(tt.typeName, collector, nil, &lineIndex, meta)
+	t.Run("reserved keywords", func(t *testing.T) {
+		t.Parallel()
 
-			assert.Equal(t, tt.expectedValid, result)
+		for _, reserved := range []string{"self", "this"} {
+			finding := validateTypeName(reserved)
 
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
-
-			if tt.expectedErrorCount > 0 {
-				assert.Equal(t, tt.expectedErrorType, errors[0].Metadata.ErrorType)
-				assert.Equal(t, tt.typeName, errors[0].Metadata.Symbol)
-			}
-		})
-	}
-}
-
-func TestValidateRelationName(t *testing.T) {
-	tests := []struct {
-		name               string
-		relationName       string
-		typeName           string
-		expectedValid      bool
-		expectedErrorType  ValidationErrorType
-		expectedErrorCount int
-	}{
-		{
-			name:               "valid relation name",
-			relationName:       "viewer",
-			typeName:           "document",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "reserved keyword self",
-			relationName:       "self",
-			typeName:           "document",
-			expectedValid:      false,
-			expectedErrorType:  ReservedRelationKeywords,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "reserved keyword this",
-			relationName:       "this",
-			typeName:           "document",
-			expectedValid:      false,
-			expectedErrorType:  ReservedRelationKeywords,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "valid relation name with underscore",
-			relationName:       "can_view",
-			typeName:           "document",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "relation name with invalid characters",
-			relationName:       "viewer:invalid",
-			typeName:           "document",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "relation name with space",
-			relationName:       "can view",
-			typeName:           "document",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "relation name with hash",
-			relationName:       "view#tag",
-			typeName:           "document",
-			expectedValid:      false,
-			expectedErrorType:  InvalidName,
-			expectedErrorCount: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
-			lineIndex := 8
-			meta := &Meta{File: "test.fga", Module: "test"}
-
-			result := ValidateRelationName(tt.relationName, tt.typeName, collector, nil, &lineIndex, meta)
-
-			assert.Equal(t, tt.expectedValid, result)
-
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
-
-			if tt.expectedErrorCount > 0 {
-				assert.Equal(t, tt.expectedErrorType, errors[0].Metadata.ErrorType)
-				assert.Equal(t, tt.relationName, errors[0].Metadata.Symbol)
-
-				// Check that error message includes type name for relation errors
-				if tt.expectedErrorType == InvalidName {
-					assert.Contains(t, errors[0].Message, tt.typeName)
-				}
-			}
-		})
-	}
-}
-
-func TestValidateConditionName(t *testing.T) {
-	tests := []struct {
-		name               string
-		conditionName      string
-		expectedValid      bool
-		expectedErrorCount int
-	}{
-		{
-			name:               "valid condition name",
-			conditionName:      "is_owner",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "valid condition name with numbers",
-			conditionName:      "condition123",
-			expectedValid:      true,
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "condition name with space",
-			conditionName:      "is owner",
-			expectedValid:      false,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "condition name with asterisk",
-			conditionName:      "condition*",
-			expectedValid:      false,
-			expectedErrorCount: 1,
-		},
-		{
-			name:               "empty condition name",
-			conditionName:      "",
-			expectedValid:      false,
-			expectedErrorCount: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
-			lineIndex := 10
-			meta := &Meta{File: "test.fga", Module: "test"}
-
-			result := ValidateConditionName(tt.conditionName, collector, nil, &lineIndex, meta)
-
-			assert.Equal(t, tt.expectedValid, result)
-
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
-
-			if tt.expectedErrorCount > 0 {
-				assert.Equal(t, InvalidName, errors[0].Metadata.ErrorType)
-				assert.Equal(t, tt.conditionName, errors[0].Metadata.Symbol)
-				// The finding is scoped to the condition, not to a type.
-				assert.Equal(t, tt.conditionName, errors[0].Metadata.Condition)
-				assert.Empty(t, errors[0].Metadata.Type)
-			}
-		})
-	}
-}
-
-func TestGetTypeLineNumber(t *testing.T) {
-	tests := []struct {
-		name      string
-		typeName  string
-		lines     []string
-		skipIndex *int
-		expected  *int
-	}{
-		{
-			name:     "finds type on line 0",
-			typeName: "document",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-			},
-			expected: ptrInt(0),
-		},
-		{
-			name:     "finds type on line 2",
-			typeName: "user",
-			lines: []string{
-				"model",
-				"  schema 1.1",
-				"type user",
-				"type document",
-			},
-			expected: ptrInt(2),
-		},
-		{
-			name:     "type not found",
-			typeName: "nonexistent",
-			lines: []string{
-				"type document",
-				"type user",
-			},
-			expected: nil,
-		},
-		{
-			name:     "skips specified index",
-			typeName: "document",
-			lines: []string{
-				"type document",
-				"  relations",
-				"type document",
-			},
-			skipIndex: ptrInt(0),
-			expected:  ptrInt(2),
-		},
-		{
-			name:     "empty lines",
-			typeName: "document",
-			lines:    []string{},
-			expected: nil,
-		},
-		{
-			name:     "nil lines",
-			typeName: "document",
-			lines:    nil,
-			expected: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetTypeLineNumber(tt.typeName, tt.lines, tt.skipIndex)
-			if tt.expected == nil {
-				assert.Nil(t, result)
-			} else {
-				assert.NotNil(t, result)
-				assert.Equal(t, *tt.expected, *result)
-			}
-		})
-	}
-}
-
-func TestGetRelationLineNumber(t *testing.T) {
-	tests := []struct {
-		name         string
-		relationName string
-		lines        []string
-		skipIndex    *int
-		expected     *int
-	}{
-		{
-			name:         "finds relation on line 2",
-			relationName: "viewer",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-				"    define admin: [user]",
-			},
-			expected: ptrInt(2),
-		},
-		{
-			name:         "finds relation with complex definition",
-			relationName: "can_view",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-				"    define can_view: viewer or admin",
-			},
-			expected: ptrInt(3),
-		},
-		{
-			name:         "relation not found",
-			relationName: "nonexistent",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-			},
-			expected: nil,
-		},
-		{
-			name:         "searches from skipIndex onward",
-			relationName: "viewer",
-			lines: []string{
-				"    define viewer: [user]",
-				"  relations",
-				"    define viewer: [group]",
-			},
-			// skipIndex is a start offset: searching from index 1 finds the
-			// second occurrence at index 2.
-			skipIndex: ptrInt(1),
-			expected:  ptrInt(2),
-		},
-		{
-			name:         "empty lines",
-			relationName: "viewer",
-			lines:        []string{},
-			expected:     nil,
-		},
-		{
-			name:         "nil lines",
-			relationName: "viewer",
-			lines:        nil,
-			expected:     nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetRelationLineNumber(tt.relationName, tt.lines, tt.skipIndex)
-			if tt.expected == nil {
-				assert.Nil(t, result)
-			} else {
-				assert.NotNil(t, result)
-				assert.Equal(t, *tt.expected, *result)
-			}
-		})
-	}
-}
-
-func TestGetConditionLineNumber(t *testing.T) {
-	tests := []struct {
-		name          string
-		conditionName string
-		lines         []string
-		skipIndex     *int
-		expected      *int
-	}{
-		{
-			name:          "finds condition declaration",
-			conditionName: "is_owner",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user with is_owner]",
-				"condition is_owner(x: int) {",
-			},
-			expected: ptrInt(3),
-		},
-		{
-			name:          "condition not found",
-			conditionName: "nonexistent",
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-			},
-			expected: nil,
-		},
-		{
-			name:          "searches from skipIndex onward",
-			conditionName: "is_owner",
-			lines: []string{
-				"condition is_owner(x: int) {",
-				"  relations",
-				"condition is_owner(y: int) {",
-			},
-			// skipIndex is a start offset: from index 1 the next declaration is at 2.
-			skipIndex: ptrInt(1),
-			expected:  ptrInt(2),
-		},
-		{
-			name:          "empty lines",
-			conditionName: "is_owner",
-			lines:         []string{},
-			expected:      nil,
-		},
-		{
-			name:          "nil lines",
-			conditionName: "is_owner",
-			lines:         nil,
-			expected:      nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetConditionLineNumber(tt.conditionName, tt.lines, tt.skipIndex)
-			if tt.expected == nil {
-				assert.Nil(t, result)
-			} else {
-				assert.NotNil(t, result)
-				assert.Equal(t, *tt.expected, *result)
-			}
-		})
-	}
-}
-
-func TestValidateNameRules(t *testing.T) {
-	tests := []struct {
-		name               string
-		typeName           string
-		relationNames      []string
-		lines              []string
-		expectedErrorCount int
-	}{
-		{
-			name:          "valid type and relations",
-			typeName:      "document",
-			relationNames: []string{"viewer", "admin", "owner"},
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define viewer: [user]",
-				"    define admin: [user] ",
-				"    define owner: [user]",
-			},
-			expectedErrorCount: 0,
-		},
-		{
-			name:          "reserved type name",
-			typeName:      "self",
-			relationNames: []string{"viewer"},
-			lines: []string{
-				"type self",
-				"  relations",
-				"    define viewer: [user]",
-			},
-			expectedErrorCount: 1,
-		},
-		{
-			name:          "reserved relation name",
-			typeName:      "document",
-			relationNames: []string{"this", "viewer"},
-			lines: []string{
-				"type document",
-				"  relations",
-				"    define this: [user]",
-				"    define viewer: [user]",
-			},
-			expectedErrorCount: 1,
-		},
-		{
-			name:          "multiple validation errors",
-			typeName:      "self",
-			relationNames: []string{"this", "viewer"},
-			lines: []string{
-				"type self",
-				"  relations",
-				"    define this: [user]",
-				"    define viewer: [user]",
-			},
-			expectedErrorCount: 2,
-		},
-		{
-			name:          "invalid type name characters",
-			typeName:      "document:invalid",
-			relationNames: []string{"viewer"},
-			lines: []string{
-				"type document:invalid",
-				"  relations",
-				"    define viewer: [user]",
-			},
-			expectedErrorCount: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
-			typeLineIndex := GetTypeLineNumber(tt.typeName, tt.lines, nil)
-			meta := &Meta{File: "test.fga", Module: "test"}
-
-			ValidateNameRules(collector, tt.typeName, tt.relationNames, typeLineIndex, meta, tt.lines)
-
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
-		})
-	}
-}
-
-// TestNameValidationIntegration tests name validation with proto types.
-func TestNameValidationIntegration(t *testing.T) {
-	t.Run("Valid Names", func(t *testing.T) {
-		validNames := []string{"document", "user", "group", "viewer", "editor", "admin"}
-
-		for _, name := range validNames {
-			collector := NewValidationErrors(nil)
-			typeValid := ValidateTypeName(name, collector, nil, nil, nil)
-			assert.True(t, typeValid, "Expected %s to be valid type name", name)
-
-			collector = NewValidationErrors(nil)
-			relationValid := ValidateRelationName(name, "parent_type", collector, nil, nil, nil)
-			assert.True(t, relationValid, "Expected %s to be valid relation name", name)
+			require.NotNil(t, finding)
+			assert.Equal(t, ReservedTypeKeywords, finding.Metadata.Kind)
+			assert.Equal(t, "a type cannot be named 'self' or 'this'.", finding.Message)
+			assert.Equal(t, reserved, finding.Metadata.Symbol)
+			assert.Equal(t, reserved, finding.Metadata.Type)
 		}
 	})
 
-	t.Run("Reserved Keywords", func(t *testing.T) {
-		reservedKeywords := []string{"this", "self"}
+	t.Run("rule violation quotes the anchored rule", func(t *testing.T) {
+		t.Parallel()
 
-		for _, keyword := range reservedKeywords {
-			collector := NewValidationErrors(nil)
-			typeValid := ValidateTypeName(keyword, collector, nil, nil, nil)
-			assert.False(t, typeValid, "Expected %s to be invalid type name", keyword)
+		finding := validateTypeName("doc:ument")
 
-			collector = NewValidationErrors(nil)
-			relationValid := ValidateRelationName(keyword, "parent_type", collector, nil, nil, nil)
-			assert.False(t, relationValid, "Expected %s to be invalid relation name", keyword)
-		}
+		require.NotNil(t, finding)
+		assert.Equal(t, InvalidName, finding.Metadata.Kind)
+		assert.Equal(t, "type 'doc:ument' does not match naming rule: '^[^:#@\\*\\s]{1,254}$'.", finding.Message)
+	})
+}
+
+func TestValidateRelationName(t *testing.T) {
+	t.Parallel()
+
+	t.Run("valid name yields nothing", func(t *testing.T) {
+		t.Parallel()
+		assert.Nil(t, validateRelationName("viewer", "document"))
+	})
+
+	t.Run("reserved keyword", func(t *testing.T) {
+		t.Parallel()
+
+		finding := validateRelationName("self", "document")
+
+		require.NotNil(t, finding)
+		assert.Equal(t, ReservedRelationKeywords, finding.Metadata.Kind)
+		assert.Equal(t, "a relation cannot be named 'self' or 'this'.", finding.Message)
+		assert.Equal(t, "document", finding.Metadata.Type)
+		assert.Equal(t, "self", finding.Metadata.Relation)
+	})
+
+	t.Run("rule violation names the relation and its type", func(t *testing.T) {
+		t.Parallel()
+
+		finding := validateRelationName("view#er", "document")
+
+		require.NotNil(t, finding)
+		assert.Equal(t, InvalidName, finding.Metadata.Kind)
+		assert.Equal(t,
+			"relation 'view#er' of type 'document' does not match naming rule: '^[^:#@\\*\\s]{1,50}$'.",
+			finding.Message)
+	})
+}
+
+func TestValidateConditionName(t *testing.T) {
+	t.Parallel()
+
+	assert.Nil(t, validateConditionName("is_valid"))
+
+	finding := validateConditionName("has space")
+
+	require.NotNil(t, finding)
+	assert.Equal(t, InvalidName, finding.Metadata.Kind)
+	assert.Equal(t, "condition 'has space' does not match naming rule: '^[^\\*\\s]{1,50}$'.", finding.Message)
+	assert.Equal(t, "has space", finding.Metadata.Condition)
+}
+
+func TestValidateNames(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positions resolve to the declaring lines", func(t *testing.T) {
+		t.Parallel()
+
+		// The parser would reject these names; build the model directly, as the
+		// phase sees it.
+		dsl := "model\n  schema 1.1\ntype self\n  relations\n    define this: [self]"
+		model := modelWithRelations(t, "self", "this")
+
+		findings := validateNames(model, newSource(dsl))
+
+		require.Len(t, findings, 2)
+
+		assert.Equal(t, ReservedTypeKeywords, findings[0].Metadata.Kind)
+		assert.Equal(t, &Range{Start: 2, End: 2}, findings[0].Line)
+		assert.Equal(t, &Range{Start: 5, End: 9}, findings[0].Column)
+
+		assert.Equal(t, ReservedRelationKeywords, findings[1].Metadata.Kind)
+		assert.Equal(t, &Range{Start: 4, End: 4}, findings[1].Line)
+		assert.Equal(t, &Range{Start: 11, End: 15}, findings[1].Column)
+	})
+
+	t.Run("no source text means no positions", func(t *testing.T) {
+		t.Parallel()
+
+		findings := validateNames(modelWithRelations(t, "self", "viewer"), source{})
+
+		require.Len(t, findings, 1)
+		assert.Nil(t, findings[0].Line)
+		assert.Nil(t, findings[0].Column)
 	})
 }

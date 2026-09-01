@@ -5,391 +5,64 @@ import (
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestIsValidSchemaVersion(t *testing.T) {
-	tests := []struct {
-		name     string
-		version  string
-		expected bool
-	}{
-		{
-			name:     "version 1.1 is valid",
-			version:  "1.1",
-			expected: true,
-		},
-		{
-			name:     "version 1.2 is valid",
-			version:  "1.2",
-			expected: true,
-		},
-		{
-			name:     "version 1.0 is invalid",
-			version:  "1.0",
-			expected: false,
-		},
-		{
-			name:     "version 2.0 is invalid",
-			version:  "2.0",
-			expected: false,
-		},
-		{
-			name:     "empty string is invalid",
-			version:  "",
-			expected: false,
-		},
-		{
-			name:     "random string is invalid",
-			version:  "invalid",
-			expected: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := IsValidSchemaVersion(tt.version)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestGetSchemaLineNumber(t *testing.T) {
-	tests := []struct {
-		name          string
-		schemaVersion string
-		lines         []string
-		expected      *int
-	}{
-		{
-			name:          "finds schema version on line 1",
-			schemaVersion: "1.1",
-			lines: []string{
-				"model",
-				"  schema 1.1",
-				"type document",
-			},
-			expected: ptrInt(1),
-		},
-		{
-			name:          "finds schema version with extra whitespace",
-			schemaVersion: "1.2",
-			lines: []string{
-				"model",
-				"   schema   1.2   ",
-				"type document",
-			},
-			expected: ptrInt(1),
-		},
-		{
-			name:          "schema version not found",
-			schemaVersion: "1.1",
-			lines: []string{
-				"model",
-				"type document",
-			},
-			expected: nil,
-		},
-		{
-			name:          "empty lines",
-			schemaVersion: "1.1",
-			lines:         []string{},
-			expected:      nil,
-		},
-		{
-			name:          "nil lines",
-			schemaVersion: "1.1",
-			lines:         nil,
-			expected:      nil,
-		},
-		{
-			name:          "finds first occurrence when multiple matches",
-			schemaVersion: "1.1",
-			lines: []string{
-				"model",
-				"  schema 1.1",
-				"# comment about schema 1.1",
-				"type document",
-			},
-			expected: ptrInt(1),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetSchemaLineNumber(tt.schemaVersion, tt.lines)
-			if tt.expected == nil {
-				assert.Nil(t, result)
-			} else {
-				assert.NotNil(t, result)
-				assert.Equal(t, *tt.expected, *result)
-			}
-		})
-	}
-}
-
 func TestValidateSchemaVersion(t *testing.T) {
-	tests := []struct {
-		name                string
-		model               *openfgav1.AuthorizationModel
-		lines               []string
-		expectedErrorCount  int
-		expectedErrorType   ValidationErrorType
-		expectedErrorSymbol string
-	}{
-		{
-			name:               "nil model",
-			model:              nil,
-			expectedErrorCount: 0,
-		},
-		{
-			name:                "missing schema version",
-			model:               &openfgav1.AuthorizationModel{},
-			expectedErrorCount:  1,
-			expectedErrorType:   SchemaVersionRequired,
-			expectedErrorSymbol: "",
-		},
-		{
-			name: "empty schema version",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "",
-			},
-			expectedErrorCount:  1,
-			expectedErrorType:   SchemaVersionRequired,
-			expectedErrorSymbol: "",
-		},
-		{
-			name: "valid schema version 1.1",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "1.1",
-			},
-			expectedErrorCount: 0,
-		},
-		{
-			name: "valid schema version 1.2",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "1.2",
-			},
-			expectedErrorCount: 0,
-		},
-		{
-			name: "invalid schema version",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "2.0",
-			},
-			lines: []string{
-				"model",
-				"  schema 2.0",
-				"type document",
-			},
-			expectedErrorCount:  1,
-			expectedErrorType:   InvalidSchema,
-			expectedErrorSymbol: "2.0",
-		},
-		{
-			name: "retired schema version 1.0",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "1.0",
-			},
-			lines: []string{
-				"model",
-				"  schema 1.0",
-				"type document",
-			},
-			expectedErrorCount:  1,
-			expectedErrorType:   SchemaVersionUnsupported,
-			expectedErrorSymbol: "1.0",
-		},
+	t.Parallel()
+
+	model := func(version string) *openfgav1.AuthorizationModel {
+		return &openfgav1.AuthorizationModel{SchemaVersion: version}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
+	t.Run("supported versions yield nothing", func(t *testing.T) {
+		t.Parallel()
 
-			ValidateSchemaVersion(collector, tt.model, tt.lines)
+		assert.Empty(t, validateSchemaVersion(model("1.1"), source{}))
+		assert.Empty(t, validateSchemaVersion(model("1.2"), source{}))
+	})
 
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
+	t.Run("missing version is required at line zero", func(t *testing.T) {
+		t.Parallel()
 
-			if tt.expectedErrorCount > 0 {
-				assert.Equal(t, tt.expectedErrorType, errors[0].Metadata.ErrorType)
-				assert.Equal(t, tt.expectedErrorSymbol, errors[0].Metadata.Symbol)
-			}
-		})
-	}
-}
+		findings := validateSchemaVersion(model(""), newSource("model\ntype user"))
 
-func TestValidateMultipleModulesInFile(t *testing.T) {
-	tests := []struct {
-		name               string
-		files              []FileInfo
-		expectedErrorCount int
-		expectedFile       string
-		expectedMessage    string
-	}{
-		{
-			name:               "no files",
-			files:              nil,
-			expectedErrorCount: 0,
-		},
-		{
-			name: "single module per file",
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1"}},
-				{Path: "file2.fga", Modules: []string{"module2"}},
-			},
-			expectedErrorCount: 0,
-		},
-		{
-			name: "multiple modules in single file",
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1", "module2", "module3"}},
-			},
-			expectedErrorCount: 1,
-			expectedFile:       "file1.fga",
-			expectedMessage: "file file1.fga would contain multiple module definitions " +
-				"(module1, module2, module3) when transforming to DSL. Only one module can be defined per file.",
-		},
-		{
-			name: "mixed: some files with single, some with multiple modules",
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1"}},
-				{Path: "file2.fga", Modules: []string{"module2", "module3"}},
-				{Path: "file3.fga", Modules: []string{"module4"}},
-			},
-			expectedErrorCount: 1,
-			expectedFile:       "file2.fga",
-			expectedMessage: "file file2.fga would contain multiple module definitions " +
-				"(module2, module3) when transforming to DSL. Only one module can be defined per file.",
-		},
-		{
-			// The modules reach the message in the order they were collected, which is
-			// the order the reference reports them in. Sorting them here would read as
-			// harmless and would diverge from the other SDKs.
-			name: "modules are reported in the order given, not in name order",
-			files: []FileInfo{
-				{Path: "core.fga", Modules: []string{"zulu", "alpha", "mike"}},
-			},
-			expectedErrorCount: 1,
-			expectedFile:       "core.fga",
-			expectedMessage: "file core.fga would contain multiple module definitions " +
-				"(zulu, alpha, mike) when transforming to DSL. Only one module can be defined per file.",
-		},
-	}
+		require.Len(t, findings, 1)
+		assert.Equal(t, "schema version required", findings[0].Message)
+		assert.Equal(t, SchemaVersionRequired, findings[0].Metadata.Kind)
+		assert.Equal(t, &Range{Start: 0, End: 0}, findings[0].Line)
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
+	t.Run("1.0 is recognized but retired", func(t *testing.T) {
+		t.Parallel()
 
-			ValidateMultipleModulesInFile(collector, tt.files)
+		findings := validateSchemaVersion(model("1.0"), newSource("model\n  schema 1.0\ntype user"))
 
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
+		require.Len(t, findings, 1)
+		assert.Equal(t, "schema version no longer supported", findings[0].Message)
+		assert.Equal(t, SchemaVersionUnsupported, findings[0].Metadata.Kind)
+		assert.Equal(t, &Range{Start: 1, End: 1}, findings[0].Line)
+		assert.Equal(t, &Range{Start: 9, End: 12}, findings[0].Column)
+	})
 
-			if tt.expectedErrorCount > 0 {
-				assert.Equal(t, MultipleModulesInFile, errors[0].Metadata.ErrorType)
-				assert.Equal(t, tt.expectedFile, errors[0].Metadata.Symbol)
-				assert.Equal(t, tt.expectedMessage, errors[0].Message)
-			}
-		})
-	}
-}
+	t.Run("anything else was never valid", func(t *testing.T) {
+		t.Parallel()
 
-func TestValidateBasicModelStructure(t *testing.T) {
-	tests := []struct {
-		name               string
-		model              *openfgav1.AuthorizationModel
-		files              []FileInfo
-		lines              []string
-		expectedErrorCount int
-	}{
-		{
-			name: "valid model structure",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "1.1",
-			},
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1"}},
-			},
-			expectedErrorCount: 0,
-		},
-		{
-			name:               "missing schema version",
-			model:              &openfgav1.AuthorizationModel{},
-			files:              nil,
-			expectedErrorCount: 1,
-		},
-		{
-			name: "invalid schema version",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "2.0",
-			},
-			files:              nil,
-			expectedErrorCount: 1,
-		},
-		{
-			name: "multiple modules in file",
-			model: &openfgav1.AuthorizationModel{
-				SchemaVersion: "1.1",
-			},
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1", "module2"}},
-			},
-			expectedErrorCount: 1,
-		},
-		{
-			name:  "multiple errors",
-			model: &openfgav1.AuthorizationModel{},
-			files: []FileInfo{
-				{Path: "file1.fga", Modules: []string{"module1", "module2"}},
-			},
-			expectedErrorCount: 2,
-		},
-	}
+		findings := validateSchemaVersion(model("1.3"), newSource("model\n  schema 1.3\ntype user"))
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector := NewValidationErrors(nil)
+		require.Len(t, findings, 1)
+		assert.Equal(t, "invalid schema 1.3", findings[0].Message)
+		assert.Equal(t, InvalidSchema, findings[0].Metadata.Kind)
+		assert.Equal(t, "1.3", findings[0].Metadata.Symbol)
+	})
 
-			ValidateBasicModelStructure(collector, tt.model, tt.files, tt.lines)
+	t.Run("no source text means no position", func(t *testing.T) {
+		t.Parallel()
 
-			errors := collector.AllFindings()
-			assert.Len(t, errors, tt.expectedErrorCount)
-		})
-	}
-}
+		findings := validateSchemaVersion(model("1.3"), source{})
 
-func TestSupportedSchemaVersions(t *testing.T) {
-	// Test that the supported schema versions map is properly initialized
-	assert.NotNil(t, SupportedSchemaVersions)
-	assert.True(t, SupportedSchemaVersions[SchemaVersion11])
-	assert.True(t, SupportedSchemaVersions[SchemaVersion12])
-	assert.False(t, SupportedSchemaVersions["1.0"])
-	assert.False(t, SupportedSchemaVersions["2.0"])
-}
-
-func TestSchemaVersionConstants(t *testing.T) {
-	// Test that schema version constants are defined correctly
-	assert.Equal(t, "1.1", SchemaVersion11)
-	assert.Equal(t, "1.2", SchemaVersion12)
-}
-
-func TestSchemaVersionValidation(t *testing.T) {
-	collector := NewValidationErrors(nil)
-
-	// Test valid schema version
-	validModel := &openfgav1.AuthorizationModel{
-		SchemaVersion: "1.1",
-	}
-	ValidateSchemaVersion(collector, validModel, nil)
-	assert.Empty(t, collector.AllFindings())
-
-	// Test invalid schema version
-	collector = NewValidationErrors(nil)
-	invalidModel := &openfgav1.AuthorizationModel{
-		SchemaVersion: "2.0",
-	}
-	ValidateSchemaVersion(collector, invalidModel, nil)
-	errors := collector.AllFindings()
-	assert.Len(t, errors, 1)
-	assert.Equal(t, InvalidSchema, errors[0].Metadata.ErrorType)
+		require.Len(t, findings, 1)
+		assert.Nil(t, findings[0].Line)
+		assert.Nil(t, findings[0].Column)
+	})
 }

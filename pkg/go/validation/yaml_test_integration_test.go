@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +19,14 @@ const (
 	corpusSkipped = "SKIPPED"
 	corpusError   = "ERROR"
 )
+
+// findingsOf recovers the findings behind a validation error; nil in, none out.
+func findingsOf(err error) Findings {
+	var findings Findings
+	errors.As(err, &findings)
+
+	return findings
+}
 
 // YAMLTestCase is one case from the shared validation corpus under tests/data.
 type YAMLTestCase struct {
@@ -46,8 +55,7 @@ type YAMLRange struct {
 }
 
 // YAMLErrorMetadata is the metadata a corpus case pins: the offending symbol and the
-// error type. Severity and category are this package's own classification, the corpus
-// states neither, and the severity fixtures cover them instead.
+// error type.
 type YAMLErrorMetadata struct {
 	Symbol    string `yaml:"symbol,omitempty"`
 	ErrorType string `yaml:"errorType,omitempty"`
@@ -120,25 +128,20 @@ func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) *YAMLTestResult
 		}
 	}
 
-	return compareWithCorpus(testCase.ExpectedErrors, findingsFrom(ValidateDSL(model, testCase.DSL, DefaultEngineOptions())))
+	return compareWithCorpus(testCase.ExpectedErrors, findingsOf(ValidateDSL(model, testCase.DSL)))
 }
 
 // compareWithCorpus pairs each expected error with a distinct finding, so a case
 // expecting two errors is not satisfied by one finding that matches both.
-//
-// The blocking findings are what take part: the corpus states the errors that make a
-// model invalid and carries no severity of its own, so a warning is neither expected
-// nor unexpected here.
-func compareWithCorpus(expectedErrors []YAMLExpectedError, findings *ValidationErrors) *YAMLTestResult {
+func compareWithCorpus(expectedErrors []YAMLExpectedError, findings Findings) *YAMLTestResult {
 	result := &YAMLTestResult{}
-	blocking := findings.GetErrors()
-	claimed := make([]bool, len(blocking))
+	claimed := make([]bool, len(findings))
 	matched := make([]bool, len(expectedErrors))
 
 	// Whole matches are paired first. Pairing on the message alone up front would let
 	// one expectation take the finding that another one matches outright.
 	for i, expected := range expectedErrors {
-		for j, finding := range blocking {
+		for j, finding := range findings {
 			if !claimed[j] && describeMismatch(expected, finding) == "" {
 				claimed[j], matched[i] = true, true
 
@@ -157,7 +160,7 @@ func compareWithCorpus(expectedErrors []YAMLExpectedError, findings *ValidationE
 
 		paired := false
 
-		for j, finding := range blocking {
+		for j, finding := range findings {
 			if !claimed[j] && finding.Message == expected.Message {
 				claimed[j], paired = true, true
 				result.Problems = append(result.Problems,
@@ -173,7 +176,7 @@ func compareWithCorpus(expectedErrors []YAMLExpectedError, findings *ValidationE
 		}
 	}
 
-	for j, finding := range blocking {
+	for j, finding := range findings {
 		if !claimed[j] {
 			result.Problems = append(result.Problems, fmt.Sprintf("unexpected finding %s", describeFinding(finding)))
 		}
@@ -194,27 +197,24 @@ func compareWithCorpus(expectedErrors []YAMLExpectedError, findings *ValidationE
 // The message has to be equal rather than merely contain the expected text: the corpus
 // is the contract between the implementations, so a message that only starts with the
 // reference's is a divergence, not a pass.
-func describeMismatch(expected YAMLExpectedError, finding *ValidationError) string {
+func describeMismatch(expected YAMLExpectedError, finding *Finding) string {
 	if finding.Message != expected.Message {
 		return fmt.Sprintf("message %q, want %q", finding.Message, expected.Message)
 	}
 
-	if finding.Metadata == nil {
-		return "no metadata"
-	}
-
 	if expected.Metadata.ErrorType != "" &&
-		string(finding.Metadata.ErrorType) != expected.Metadata.ErrorType {
-		return fmt.Sprintf("errorType %q, want %q", finding.Metadata.ErrorType, expected.Metadata.ErrorType)
+		string(finding.Metadata.Kind) != expected.Metadata.ErrorType {
+		return fmt.Sprintf("errorType %q, want %q", finding.Metadata.Kind, expected.Metadata.ErrorType)
 	}
 
 	if expected.Metadata.Symbol != "" && finding.Metadata.Symbol != expected.Metadata.Symbol {
 		return fmt.Sprintf("symbol %q, want %q", finding.Metadata.Symbol, expected.Metadata.Symbol)
 	}
 
-	// A position the corpus states has to be reached, both ends of it. Letting a
-	// finding without one through would pass a finding that resolved to nowhere in the
-	// source, which is how the schema line lookup went unnoticed.
+	// A position the corpus states has to be reached, both ends of it. A finding
+	// with no position at all must not satisfy an expectation that states one:
+	// resolving to nowhere in the source is a failure mode of the line searches,
+	// not a match.
 	if problem := describeRangeMismatch("line", expected.Line, finding.Line); problem != "" {
 		return problem
 	}
@@ -243,13 +243,9 @@ func describeExpected(expected YAMLExpectedError) string {
 		describePosition(rangeOf(expected.Line), rangeOf(expected.Column)))
 }
 
-func describeFinding(finding *ValidationError) string {
-	errorType := ValidationErrorType("")
-	if finding.Metadata != nil {
-		errorType = finding.Metadata.ErrorType
-	}
-
-	return fmt.Sprintf("%q [%s]%s", finding.Message, errorType, describePosition(finding.Line, finding.Column))
+func describeFinding(finding *Finding) string {
+	return fmt.Sprintf("%q [%s]%s", finding.Message, finding.Metadata.Kind,
+		describePosition(finding.Line, finding.Column))
 }
 
 func describePosition(line, column *Range) string {

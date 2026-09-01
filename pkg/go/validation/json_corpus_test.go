@@ -22,8 +22,8 @@ type jsonCorpusCase struct {
 }
 
 // TestJSONValidationCorpus runs the JSON corpus against ValidateJSON. The JS and Java
-// validators both consume this file and nothing in Go read it, so a rule that only a
-// JSON model can reach was pinned in the other two SDKs and free to drift here.
+// validators consume the same file, so a rule only a JSON model can reach — no
+// position, schema checks on hand-built models — is pinned in all three SDKs.
 func TestJSONValidationCorpus(t *testing.T) {
 	t.Parallel()
 
@@ -51,8 +51,7 @@ func TestJSONValidationCorpus(t *testing.T) {
 				protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal([]byte(testCase.JSON), model),
 				"the case's JSON must parse as an authorization model")
 
-			result := compareWithCorpus(testCase.ExpectedErrors,
-				findingsFrom(ValidateJSON(model, DefaultEngineOptions())))
+			result := compareWithCorpus(testCase.ExpectedErrors, findingsOf(ValidateJSON(model)))
 
 			for _, problem := range result.Problems {
 				t.Error(problem)

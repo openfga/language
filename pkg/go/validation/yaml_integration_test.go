@@ -63,14 +63,14 @@ func TestCompareWithCorpus(t *testing.T) {
 		},
 	}
 
-	finding := func(mutate func(*ValidationError)) *ValidationError {
-		found := &ValidationError{
+	finding := func(mutate func(*Finding)) *Finding {
+		found := &Finding{
 			Message: "the relation `viewer` does not exist.",
 			Line:    &Range{Start: 4, End: 4},
 			Column:  &Range{Start: 12, End: 18},
-			Metadata: &ErrorMetadata{
-				Symbol:    "viewer",
-				ErrorType: MissingDefinition,
+			Metadata: Metadata{
+				Symbol: "viewer",
+				Kind:   MissingDefinition,
 			},
 		}
 		if mutate != nil {
@@ -83,13 +83,13 @@ func TestCompareWithCorpus(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected []YAMLExpectedError
-		findings []*ValidationError
+		findings Findings
 		problems int
 	}{
 		{
 			name:     "match",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(nil)},
+			findings: Findings{finding(nil)},
 		},
 		{
 			name:     "no errors expected and none found",
@@ -102,7 +102,7 @@ func TestCompareWithCorpus(t *testing.T) {
 			// unmatched and the finding was not expected.
 			name:     "message is longer than the corpus states",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Message += " Did you mean `view`?"
 			})},
 			problems: 2,
@@ -110,7 +110,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "wrong line",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Line = &Range{Start: 5, End: 5}
 			})},
 			problems: 1,
@@ -118,7 +118,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "line end differs",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Line = &Range{Start: 4, End: 6}
 			})},
 			problems: 1,
@@ -126,7 +126,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "no position at all",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Line, f.Column = nil, nil
 			})},
 			problems: 1,
@@ -134,7 +134,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "wrong column",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Column = &Range{Start: 12, End: 17}
 			})},
 			problems: 1,
@@ -142,7 +142,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "wrong symbol",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Metadata.Symbol = "editor"
 			})},
 			problems: 1,
@@ -150,29 +150,21 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "wrong error type",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
-				f.Metadata.ErrorType = UndefinedRelation
-			})},
-			problems: 1,
-		},
-		{
-			name:     "no metadata",
-			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
-				f.Metadata = nil
+			findings: Findings{finding(func(f *Finding) {
+				f.Metadata.Kind = UndefinedRelation
 			})},
 			problems: 1,
 		},
 		{
 			name:     "one finding does not satisfy two expectations",
 			expected: []YAMLExpectedError{expected, expected},
-			findings: []*ValidationError{finding(nil)},
+			findings: Findings{finding(nil)},
 			problems: 1,
 		},
 		{
 			name:     "finding the corpus does not expect",
 			expected: []YAMLExpectedError{expected},
-			findings: []*ValidationError{finding(nil), finding(func(f *ValidationError) {
+			findings: Findings{finding(nil), finding(func(f *Finding) {
 				f.Message = "the relation `editor` does not exist."
 			})},
 			problems: 1,
@@ -180,7 +172,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		{
 			name:     "position the corpus leaves out is not compared",
 			expected: []YAMLExpectedError{{Message: expected.Message}},
-			findings: []*ValidationError{finding(func(f *ValidationError) {
+			findings: Findings{finding(func(f *Finding) {
 				f.Line, f.Column = nil, nil
 			})},
 		},
@@ -190,7 +182,7 @@ func TestCompareWithCorpus(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := compareWithCorpus(test.expected, NewValidationErrors(test.findings))
+			result := compareWithCorpus(test.expected, test.findings)
 
 			require.Len(t, result.Problems, test.problems, "problems: %v", result.Problems)
 

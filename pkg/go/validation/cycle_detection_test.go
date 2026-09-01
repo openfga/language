@@ -7,28 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// hasEntry is a small test helper that runs the entry-point traversal for a
-// single relation from a fresh visited set.
-func (cd *CycleDetector) hasEntry(typeName, relationName string) entryPointResult {
-	return cd.hasEntryPointOrLoop(typeName, relationName,
-		cd.validator.GetRelationUserset(typeName, relationName), map[string]map[string]bool{})
+// entryOf runs the entry-point traversal for a single relation from a fresh
+// visited set.
+func entryOf(idx *index, typeName, relationName string) entryPointResult {
+	return hasEntryPointOrLoop(idx, typeName, relationName,
+		idx.userset(typeName, relationName), map[string]map[string]bool{})
 }
 
-func TestCycleDetector(t *testing.T) {
-	t.Run("NewCycleDetector", func(t *testing.T) {
-		model := &openfgav1.AuthorizationModel{
-			TypeDefinitions: []*openfgav1.TypeDefinition{
-				{Type: "document"},
-			},
-		}
-
-		validator := NewSemanticValidator(model)
-		detector := NewCycleDetector(validator)
-
-		assert.NotNil(t, detector)
-		assert.Equal(t, validator, detector.validator)
-	})
-
+func TestValidateEntryPoints(t *testing.T) {
 	t.Run("Mutual computed-userset loop has no entry point", func(t *testing.T) {
 		// viewer -> editor -> viewer, neither directly assignable.
 		model := &openfgav1.AuthorizationModel{
@@ -51,20 +37,18 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewValidationErrors(nil)
-		ValidateCyclesAndEntryPoints(collector, model, nil)
+		findings := validateEntryPoints(newIndex(model), source{})
 
-		errors := collector.AllFindings()
-		// Each relation is impossible: one error per relation, all RelationNoEntrypoint.
-		assert.Len(t, errors, 2)
-		for _, err := range errors {
-			assert.Equal(t, RelationNoEntrypoint, err.Metadata.ErrorType)
-			assert.Contains(t, err.Message, "is an impossible relation")
-			assert.Contains(t, err.Message, "(potential loop)")
+		// Each relation is impossible: one finding per relation, all RelationNoEntrypoint.
+		assert.Len(t, findings, 2)
+		for _, finding := range findings {
+			assert.Equal(t, RelationNoEntrypoint, finding.Metadata.Kind)
+			assert.Contains(t, finding.Message, "is an impossible relation")
+			assert.Contains(t, finding.Message, "(potential loop)")
 		}
 	})
 
-	t.Run("No errors when relations are reachable", func(t *testing.T) {
+	t.Run("No findings when relations are reachable", func(t *testing.T) {
 		model := &openfgav1.AuthorizationModel{
 			TypeDefinitions: []*openfgav1.TypeDefinition{
 				{
@@ -93,9 +77,7 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewValidationErrors(nil)
-		ValidateCyclesAndEntryPoints(collector, model, nil)
-		assert.Empty(t, collector.AllFindings())
+		assert.Empty(t, validateEntryPoints(newIndex(model), source{}))
 	})
 
 	t.Run("Computed chain terminating in a direct assignment is reachable", func(t *testing.T) {
@@ -118,10 +100,8 @@ func TestCycleDetector(t *testing.T) {
 			},
 		}
 
-		collector := NewValidationErrors(nil)
-		ValidateCyclesAndEntryPoints(collector, model, nil)
 		// All three relations resolve to owner's direct assignment.
-		assert.Empty(t, collector.AllFindings())
+		assert.Empty(t, validateEntryPoints(newIndex(model), source{}))
 	})
 }
 
@@ -144,8 +124,7 @@ func TestHasEntryPointOrLoop(t *testing.T) {
 			},
 		}
 
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		assert.True(t, detector.hasEntry("document", "viewer").hasEntry)
+		assert.True(t, entryOf(newIndex(model), "document", "viewer").hasEntry)
 	})
 
 	t.Run("Union with this has entry point", func(t *testing.T) {
@@ -175,8 +154,7 @@ func TestHasEntryPointOrLoop(t *testing.T) {
 			},
 		}
 
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		assert.True(t, detector.hasEntry("document", "viewer").hasEntry)
+		assert.True(t, entryOf(newIndex(model), "document", "viewer").hasEntry)
 	})
 
 	t.Run("Self-referential computed userset is a loop", func(t *testing.T) {
@@ -191,10 +169,9 @@ func TestHasEntryPointOrLoop(t *testing.T) {
 			},
 		}
 
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		res := detector.hasEntry("document", "viewer")
-		assert.False(t, res.hasEntry)
-		assert.True(t, res.loop)
+		result := entryOf(newIndex(model), "document", "viewer")
+		assert.False(t, result.hasEntry)
+		assert.True(t, result.loop)
 	})
 }
 
@@ -244,39 +221,34 @@ func TestHasEntryPointOrLoop_TupleToUserset(t *testing.T) {
 
 	t.Run("TTU resolving to a direct assignment has an entry point", func(t *testing.T) {
 		// folder#viewer is directly assignable to user, so document#viewer reaches it.
-		model := ttuModel(&openfgav1.Userset{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}})
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		res := detector.hasEntry("document", "viewer")
-		assert.True(t, res.hasEntry)
-		assert.False(t, res.loop)
+		idx := newIndex(ttuModel(&openfgav1.Userset{Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}}))
+
+		result := entryOf(idx, "document", "viewer")
+		assert.True(t, result.hasEntry)
+		assert.False(t, result.loop)
 		// folder#viewer is itself directly assignable to user, so it also has an entry point.
-		folderRes := detector.hasEntry("folder", "viewer")
-		assert.True(t, folderRes.hasEntry)
+		assert.True(t, entryOf(idx, "folder", "viewer").hasEntry)
 		// document#parent is directly assignable to folder, so it also has an entry point.
-		parentRes := detector.hasEntry("document", "parent")
-		assert.True(t, parentRes.hasEntry)
+		assert.True(t, entryOf(idx, "document", "parent").hasEntry)
 	})
 
 	t.Run("TTU whose computed relation is missing on the assignable type has no entry point", func(t *testing.T) {
 		// folder has no `viewer` relation at all, so the computed lookup is nil and
 		// the TTU branch skips it (the assignable == nil continue).
-		model := ttuModel(nil)
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		res := detector.hasEntry("document", "viewer")
-		assert.False(t, res.hasEntry)
-		assert.False(t, res.loop)
+		result := entryOf(newIndex(ttuModel(nil)), "document", "viewer")
+		assert.False(t, result.hasEntry)
+		assert.False(t, result.loop)
 	})
 
 	t.Run("TTU through a self-looping computed relation has no entry point", func(t *testing.T) {
 		// folder#viewer computes itself, so it never bottoms out at a concrete type.
 		// The TTU branch swallows the looping sub-result and reports no entry point.
-		model := ttuModel(&openfgav1.Userset{
+		idx := newIndex(ttuModel(&openfgav1.Userset{
 			Userset: &openfgav1.Userset_ComputedUserset{
 				ComputedUserset: &openfgav1.ObjectRelation{Relation: "viewer"},
 			},
-		})
-		detector := NewCycleDetector(NewSemanticValidator(model))
-		res := detector.hasEntry("document", "viewer")
-		assert.False(t, res.hasEntry)
+		}))
+
+		assert.False(t, entryOf(idx, "document", "viewer").hasEntry)
 	})
 }

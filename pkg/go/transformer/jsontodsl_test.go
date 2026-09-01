@@ -8,6 +8,33 @@ import (
 	language "github.com/openfga/language/pkg/go/transformer"
 )
 
+func TestTransformJSONProtoToDSL(t *testing.T) {
+	t.Parallel()
+
+	testCases, err := loadModuleTestCases()
+	require.NoError(t, err)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+			if len(testCase.Modules) == 0 || testCase.Skip || len(testCase.ExpectedErrors) > 0 {
+				t.Skip()
+			}
+
+			model, err := language.TransformModuleFilesToModel(testCase.Modules, "1.2")
+			require.NoError(t, err)
+
+			dsl, err := language.TransformJSONProtoToDSL(model, language.WithIncludeSourceInformation(false))
+			require.NoError(t, err)
+			require.Equal(t, testCase.DSL, dsl)
+
+			dslWithSrc, err := language.TransformJSONProtoToDSL(model, language.WithIncludeSourceInformation(true))
+			require.NoError(t, err)
+			require.Equal(t, testCase.DSLWithSourceInfo, dslWithSrc)
+		})
+
+	}
+}
 func TestJSONToDSLTransformer(t *testing.T) {
 	t.Parallel()
 

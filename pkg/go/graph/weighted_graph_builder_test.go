@@ -1931,6 +1931,68 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			_, err := wgb.Build(authorizationModel)
 			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node document#viewer:intersection:0")
 		})
+		t.Run("empty_intersection", func(t *testing.T) {
+			t.Parallel()
+			authorizationModel := &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{
+						Type: "user",
+					},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {
+								Userset: &openfgav1.Userset_Intersection{
+									Intersection: &openfgav1.Usersets{
+										Child: []*openfgav1.Userset{},
+									},
+								},
+							},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {},
+							},
+						},
+					},
+				},
+			}
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.Error(t, err)
+		})
+		t.Run("empty_union", func(t *testing.T) {
+			t.Parallel()
+			authorizationModel := &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{
+						Type: "user",
+					},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {
+								Userset: &openfgav1.Userset_Union{
+									Union: &openfgav1.Usersets{
+										Child: []*openfgav1.Userset{},
+									},
+								},
+							},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {},
+							},
+						},
+					},
+				},
+			}
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			_, err := wgb.Build(authorizationModel)
+			require.Error(t, err)
+		})
 	})
 
 	t.Run("multiple_intersections", func(t *testing.T) {

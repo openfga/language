@@ -19,9 +19,9 @@ This guide provides quick solutions to common OpenFGA validation errors. For det
 | Error | Quick Fix                                    | Link |
 |-------|----------------------------------------------|------|
 | `invalid-syntax` | Check indentation and keyword spelling       | [Details](./invalid-syntax.md) |
-| `invalid-schema` | Ensure proper `model` and `schema` structure | [Details](./invalid-schema.md) |
+| `invalid-schema` | Declare a recognised version (`1.1` or `1.2`) | [Details](./invalid-schema.md) |
 | `schema-version-unsupported` | Use supported version (`1.1` or `1.2`)           | [Details](./schema-version-unsupported.md) |
-| `invalid-schema-version` | Use format `X.Y` (e.g., `1.1`)               | [Details](./invalid-schema-version.md) |
+| `invalid-schema-version` | Not emitted; an unrecognised version arrives as `invalid-schema` above | [Details](./invalid-schema-version.md) |
 
 ### Relationship and Reference Errors
 

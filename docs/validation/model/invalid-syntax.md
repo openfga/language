@@ -147,7 +147,7 @@ define viewer [user]  # Wrong: missing colon
 
 ## Related Errors
 
-- [`invalid-schema`](./invalid-schema.md) - When schema structure is invalid
+- [`invalid-schema`](./invalid-schema.md) - When the declared version is not recognised
 - [`invalid-name`](./invalid-name.md) - When names don't follow format rules
 - [`schema-version-required`](./schema-version-required.md) - When schema declaration is missing
 

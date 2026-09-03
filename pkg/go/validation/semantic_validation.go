@@ -1,261 +1,204 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// SemanticValidator handles semantic validation of authorization models.
-type SemanticValidator struct {
-	model       *openfgav1.AuthorizationModel
-	typeMap     map[string]*openfgav1.TypeDefinition
-	relationMap map[string]map[string]*openfgav1.Userset
-}
+// validateRelationReferences checks that every type and relation a relation
+// refers to — in its type restrictions and in its rewrites — exists in the
+// model.
+func validateRelationReferences(idx *index, src source) error {
+	var fs []*Finding
 
-func NewSemanticValidator(model *openfgav1.AuthorizationModel) *SemanticValidator {
-	validator := &SemanticValidator{
-		model:       model,
-		typeMap:     make(map[string]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions())),
-		relationMap: make(map[string]map[string]*openfgav1.Userset, len(model.GetTypeDefinitions())),
-	}
-	validator.buildMaps()
-	return validator
-}
-
-func (sv *SemanticValidator) buildMaps() {
-	if sv.model == nil {
-		return
-	}
-	for _, typeDef := range sv.model.GetTypeDefinitions() {
-		sv.typeMap[typeDef.GetType()] = typeDef
-		if relations := typeDef.GetRelations(); len(relations) > 0 {
-			sv.relationMap[typeDef.GetType()] = make(map[string]*openfgav1.Userset, len(relations))
-			for relationName, userset := range relations {
-				sv.relationMap[typeDef.GetType()][relationName] = userset
-			}
-		}
-	}
-}
-
-func (sv *SemanticValidator) RelationDefined(typeName, relationName string) bool {
-	if relations, exists := sv.relationMap[typeName]; exists {
-		_, relationExists := relations[relationName]
-		return relationExists
-	}
-	return false
-}
-
-func (sv *SemanticValidator) TypeDefined(typeName string) bool {
-	_, exists := sv.typeMap[typeName]
-	return exists
-}
-
-func (sv *SemanticValidator) GetTypeDefinition(typeName string) *openfgav1.TypeDefinition {
-	return sv.typeMap[typeName]
-}
-
-func (sv *SemanticValidator) GetRelationUserset(typeName, relationName string) *openfgav1.Userset {
-	if relations, exists := sv.relationMap[typeName]; exists {
-		return relations[relationName]
-	}
-	return nil
-}
-
-// GetRelationNames returns the names of every relation defined on a type.
-func (sv *SemanticValidator) GetRelationNames(typeName string) []string {
-	relations := sv.relationMap[typeName]
-	names := make([]string, 0, len(relations))
-	for name := range relations {
-		names = append(names, name)
-	}
-	return names
-}
-
-// GetDirectlyAssignableTypes returns the type restrictions a relation is
-// directly assignable to, but only when that relation is a single direct
-// assignment (i.e. `define r: [a, b]` rather than a rewrite). The bool reports
-// whether the relation is such a single direct assignment. This mirrors the
-// reference implementation's allowableTypes helper used for tuple-to-userset
-// validation.
-func (sv *SemanticValidator) GetDirectlyAssignableTypes(typeName, relationName string) ([]*openfgav1.RelationReference, bool) {
-	userset := sv.GetRelationUserset(typeName, relationName)
-	if userset == nil {
-		return nil, false
-	}
-	if _, ok := userset.GetUserset().(*openfgav1.Userset_This); !ok {
-		return nil, false
-	}
-	typeDef := sv.typeMap[typeName]
-	if typeDef == nil {
-		return nil, false
-	}
-	relMeta := typeDef.GetMetadata().GetRelations()[relationName]
-	return relMeta.GetDirectlyRelatedUserTypes(), true
-}
-
-// ValidateRelationReferences validates that all relation references in the model are valid.
-func ValidateRelationReferences(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
-	if model == nil {
-		return
-	}
-	validateRelationReferences(collector, NewSemanticValidator(model), lines)
-}
-
-func validateRelationReferences(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
-	model := validator.model
-	if model == nil {
-		return
-	}
-	for _, typeDef := range model.GetTypeDefinitions() {
+	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
-		// When a type is declared more than once, the relation maps are built
-		// last-wins (matching the reference's typeMap). Only the winning
-		// definition is validated; a shadowed duplicate's relations are resolved
-		// against the winning type by the reference, so validating the winning
-		// definition alone avoids spurious reference errors. The duplicate-type
-		// error itself is reported by duplicate detection.
-		if winning := validator.GetTypeDefinition(typeName); winning != nil && winning != typeDef {
+
+		// When a type is declared more than once only the winning (last)
+		// definition is validated: the reference resolves a shadowed duplicate's
+		// relations against the winning type, so validating the winner alone
+		// avoids spurious reference errors. The duplicate itself is reported by
+		// the duplicates phase.
+		if winning := idx.typeDef(typeName); winning != nil && winning != typeDef {
 			continue
 		}
 
 		// Anchor relation line lookups to the type's declaration so the correct
-		// `define` occurrence is found when several types share a relation name.
-		typeLineIndex := GetTypeLineNumber(typeName, lines, nil)
+		// `define` occurrence is found when several types declare a relation of
+		// the same name.
+		typeLine := src.typeLine(typeName)
 
 		if meta := typeDef.GetMetadata(); meta != nil {
-			for relationName, relationMetadata := range meta.GetRelations() {
-				validateTypeRestrictions(collector, validator, typeName, relationName, relationMetadata, typeLineIndex, lines)
+			relationsMetadata := meta.GetRelations()
+			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
+				fs = append(fs, validateTypeRestrictions(idx, src, typeDef, relationName,
+					relationsMetadata[relationName], typeLine)...)
 			}
 		}
-		for relationName, userset := range typeDef.GetRelations() {
-			validateUsersetReferences(collector, validator, typeName, relationName, userset, typeLineIndex, lines)
+
+		relations := typeDef.GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName,
+				relations[relationName], typeLine)...)
 		}
 	}
+
+	return joinFindings(fs...)
 }
 
-func validateTypeRestrictions(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, relationMetadata *openfgav1.RelationMetadata, typeLineIndex *int, lines []string) {
+// validateTypeRestrictions checks a relation's directly-related user types:
+// each restriction must name a defined type, and a `type#relation` restriction
+// a relation defined on that type.
+func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDefinition,
+	relationName string, relationMetadata *openfgav1.RelationMetadata, typeLine int) []*Finding {
 	if relationMetadata == nil {
-		return
+		return nil
 	}
-	meta := &Meta{
-		File:   relationMetadata.GetSourceInfo().GetFile(),
-		Module: relationMetadata.GetModule(),
-	}
-	for _, typeRestriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
-		restrictedType := typeRestriction.GetType()
+
+	var fs []*Finding
+
+	typeName := typeDef.GetType()
+	file := relationMetadata.GetSourceInfo().GetFile()
+	module := relationMetadata.GetModule()
+
+	for _, restriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
+		restrictedType := restriction.GetType()
 		if restrictedType == "" {
 			continue
 		}
+
 		// A directly-related type that doesn't exist: `X` is not a valid type.
-		if !validator.TypeDefined(restrictedType) {
-			lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-			collector.RaiseInvalidType(restrictedType, typeName, relationName, meta, lineIndex)
+		if !idx.typeDefined(restrictedType) {
+			line := src.relationLine(relationName, typeLine)
+			fs = append(fs, invalidType(restrictedType).atRestriction(src, line).in(file, module))
+
 			continue
 		}
-		// A type#relation restriction whose relation doesn't exist on that type:
-		// `rel` is not a valid relation for `X`.
-		if rel := typeRestriction.GetRelation(); rel != "" {
-			if !validator.RelationDefined(restrictedType, rel) {
-				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				symbol := restrictedType + "#" + rel
-				collector.RaiseInvalidTypeRelation(symbol, restrictedType, relationName, rel, restrictedType, lineIndex, meta)
-			}
+
+		// A type#relation restriction whose relation doesn't exist on that
+		// type: `rel` is not a valid relation for `X`.
+		if rel := restriction.GetRelation(); rel != "" && !idx.relationDefined(restrictedType, rel) {
+			line := src.relationLine(relationName, typeLine)
+			fs = append(fs, invalidTypeRelation(restrictedType+"#"+rel, restrictedType, relationName, rel, typeName).
+				at(src, line).in(file, module))
 		}
 	}
+
+	return fs
 }
 
-func validateUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, userset *openfgav1.Userset, typeLineIndex *int, lines []string) {
+// validateUsersetReferences checks the relations a rewrite names: a computed
+// userset must exist on the type, and a tuple-to-userset must satisfy
+// validateTupleToUsersetReferences. Union, intersection and difference are
+// walked into.
+func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
+	relationName string, userset *openfgav1.Userset, typeLine int) []*Finding {
 	if userset == nil {
-		return
+		return nil
 	}
-	var file, module string
-	if typeDef := validator.GetTypeDefinition(typeName); typeDef != nil {
-		file = typeDef.GetMetadata().GetSourceInfo().GetFile()
-		module = typeDef.GetMetadata().GetModule()
-	}
-	meta := &Meta{File: file, Module: module}
 
-	if cu := userset.GetComputedUserset(); cu != nil {
+	var fs []*Finding
+
+	typeName := typeDef.GetType()
+	file, module := typeMeta(typeDef)
+
+	if computed := userset.GetComputedUserset(); computed != nil {
 		// `define a: b` where b is not a relation on this type.
-		if targetRelation := cu.GetRelation(); targetRelation != "" {
-			if !validator.RelationDefined(typeName, targetRelation) {
-				lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
-				validRelations := validator.GetRelationNames(typeName)
-				collector.RaiseInvalidRelationError(targetRelation, typeName, relationName, validRelations, lineIndex, meta)
-			}
+		if target := computed.GetRelation(); target != "" && !idx.relationDefined(typeName, target) {
+			line := src.relationLine(relationName, typeLine)
+			fs = append(fs, missingRelation(target, typeName, relationName).at(src, line).in(file, module))
 		}
 	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		validateTupleToUsersetReferences(collector, validator, typeName, relationName, ttu, meta, typeLineIndex, lines)
+		fs = append(fs, validateTupleToUsersetReferences(idx, src, typeDef, relationName, ttu, typeLine)...)
 	}
 
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
+			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine)...)
 		}
 	}
+
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			validateUsersetReferences(collector, validator, typeName, relationName, child, typeLineIndex, lines)
+			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine)...)
 		}
 	}
+
 	if diff := userset.GetDifference(); diff != nil {
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetBase(), typeLineIndex, lines)
-		validateUsersetReferences(collector, validator, typeName, relationName, diff.GetSubtract(), typeLineIndex, lines)
+		fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetBase(), typeLine)...)
+		fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetSubtract(), typeLine)...)
 	}
+
+	return fs
 }
 
-// validateTupleToUsersetReferences validates a `target from from` rewrite,
+// validateTupleToUsersetReferences validates a `target from tupleset` rewrite,
 // mirroring the reference implementation:
-//   - the `from` (tupleset) relation must exist on the current type;
-//   - the `from` relation must be a plain direct assignment whose assignable
+//   - the tupleset relation must exist on the current type;
+//   - the tupleset relation must be a plain direct assignment whose assignable
 //     types are concrete (no wildcard, no type#relation);
-//   - the computed `target` relation must exist on at least one of the types the
-//     `from` relation is assignable to.
-func validateTupleToUsersetReferences(collector *ErrorCollector, validator *SemanticValidator,
-	typeName, relationName string, ttu *openfgav1.TupleToUserset, meta *Meta, typeLineIndex *int, lines []string) {
+//   - the computed target relation must exist on at least one of the types the
+//     tupleset relation is assignable to.
+func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
+	relationName string, ttu *openfgav1.TupleToUserset, typeLine int) []*Finding {
 	fromRelation := ttu.GetTupleset().GetRelation()
 	targetRelation := ttu.GetComputedUserset().GetRelation()
+
 	if fromRelation == "" || targetRelation == "" {
-		return
+		return nil
 	}
-	lineIndex := GetRelationLineNumber(relationName, lines, typeLineIndex)
+
+	typeName := typeDef.GetType()
+	file, module := typeMeta(typeDef)
+	line := src.relationLine(relationName, typeLine)
 	symbol := targetRelation + " from " + fromRelation
 
-	// 1. The `from` relation must exist on the current type.
-	if !validator.RelationDefined(typeName, fromRelation) {
-		collector.RaiseInvalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName, lineIndex, meta)
-		return
+	// 1. The tupleset relation must exist on the current type.
+	if !idx.relationDefined(typeName, fromRelation) {
+		return []*Finding{invalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName).
+			at(src, line).in(file, module)}
 	}
 
-	// 2. The `from` relation must be a single direct assignment.
-	fromTypes, isValid := validator.GetDirectlyAssignableTypes(typeName, fromRelation)
-	if !isValid || len(fromTypes) == 0 {
-		collector.RaiseTupleUsersetRequiresDirect(fromRelation, typeName, relationName, meta, lineIndex)
-		return
+	// 2. The tupleset relation must be a single direct assignment.
+	fromTypes, isDirect := idx.directlyAssignableTypes(typeName, fromRelation)
+	if !isDirect || len(fromTypes) == 0 {
+		return []*Finding{tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
+			atFromClause(src, line).in(file, module)}
 	}
 
-	// 3. Each assignable type of `from` must be a concrete type (no wildcard, no
-	//    type#relation), and the computed `target` must exist on at least one of
-	//    them.
+	// 3. Each assignable type of the tupleset relation must be a concrete type
+	//    (no wildcard, no type#relation), and the computed target must exist on
+	//    at least one of them.
+	var fs []*Finding
+
 	notValid := make([]*openfgav1.RelationReference, 0, len(fromTypes))
-	for _, tr := range fromTypes {
-		decodedType := tr.GetType()
-		if tr.GetWildcard() != nil || tr.GetRelation() != "" {
+
+	for _, restriction := range fromTypes {
+		if restriction.GetWildcard() != nil || restriction.GetRelation() != "" {
 			// A wildcard or type#relation cannot be used as a tupleset target.
-			collector.RaiseTupleUsersetRequiresDirect(fromRelation, typeName, relationName, meta, lineIndex)
+			fs = append(fs, tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
+				atFromClause(src, line).in(file, module))
+
 			continue
 		}
-		if !validator.TypeDefined(decodedType) || !validator.RelationDefined(decodedType, targetRelation) {
-			notValid = append(notValid, tr)
+
+		targetType := restriction.GetType()
+		if !idx.typeDefined(targetType) || !idx.relationDefined(targetType, targetRelation) {
+			notValid = append(notValid, restriction)
 		}
 	}
+
 	// If the target is missing on every assignable type, report it per type.
 	if len(notValid) == len(fromTypes) {
-		for _, tr := range notValid {
-			collector.RaiseInvalidRelationOnTupleset(symbol, tr.GetType(), typeName, relationName, targetRelation, fromRelation, lineIndex, meta)
+		for _, restriction := range notValid {
+			fs = append(fs, invalidRelationOnTupleset(symbol, targetRelation, typeName, fromRelation,
+				restriction.GetType(), relationName).at(src, line).in(file, module))
 		}
 	}
+
+	return fs
 }

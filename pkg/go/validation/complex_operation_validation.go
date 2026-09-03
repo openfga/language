@@ -1,204 +1,168 @@
 package validation
 
 import (
+	"maps"
+	"slices"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// ComplexOperationValidator handles validation of complex userset operations.
-type ComplexOperationValidator struct {
-	model     *openfgav1.AuthorizationModel
-	validator *SemanticValidator
-}
+// validateComplexOperations walks every relation's rewrite tree and reports
+// operations that are wrong by construction: a union repeating a member, an
+// intersection of conflicting direct assignments, and a difference subtracting
+// an operand from itself.
+func validateComplexOperations(idx *index, src source) error {
+	var fs []*Finding
 
-func NewComplexOperationValidator(model *openfgav1.AuthorizationModel) *ComplexOperationValidator {
-	return newComplexOperationValidator(NewSemanticValidator(model))
-}
-
-func newComplexOperationValidator(validator *SemanticValidator) *ComplexOperationValidator {
-	return &ComplexOperationValidator{
-		model:     validator.model,
-		validator: validator,
-	}
-}
-
-// ValidateComplexOperations validates all complex operations in the model.
-func ValidateComplexOperations(collector *ErrorCollector, model *openfgav1.AuthorizationModel, lines []string) {
-	if model == nil {
-		return
-	}
-	validateComplexOperations(collector, NewSemanticValidator(model), lines)
-}
-
-func validateComplexOperations(collector *ErrorCollector, validator *SemanticValidator, lines []string) {
-	model := validator.model
-	if model == nil {
-		return
-	}
-	opValidator := newComplexOperationValidator(validator)
-	for _, typeDef := range model.GetTypeDefinitions() {
-		for relationName, userset := range typeDef.GetRelations() {
-			opValidator.validateUsersetOperations(collector, typeDef.GetType(), relationName, userset, lines)
+	for _, typeDef := range idx.model.GetTypeDefinitions() {
+		relations := typeDef.GetRelations()
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			fs = append(fs, operationsIn(idx, src, typeDef.GetType(), relationName,
+				relations[relationName], make(map[string]bool))...)
 		}
 	}
+
+	return joinFindings(fs...)
 }
 
-func (cov *ComplexOperationValidator) validateUsersetOperations(collector *ErrorCollector, typeName, relationName string, userset *openfgav1.Userset, lines []string) {
-	cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, userset, lines, make(map[string]bool))
-}
-
-func (cov *ComplexOperationValidator) validateUsersetOperationsWithVisited(collector *ErrorCollector, typeName, relationName string, userset *openfgav1.Userset, lines []string, visited map[string]bool) {
+// operationsIn checks one rewrite and recurses into its children. The visited
+// map guards the hop a tuple-to-userset makes to its computed relation, so a
+// pair of relations referring to each other terminates.
+func operationsIn(idx *index, src source, typeName, relationName string,
+	userset *openfgav1.Userset, visited map[string]bool) []*Finding {
 	if userset == nil {
-		return
+		return nil
 	}
-	if union := userset.GetUnion(); union != nil {
-		cov.validateUnionOperationWithVisited(collector, typeName, relationName, union, lines, visited)
+
+	var fs []*Finding
+
+	if union := userset.GetUnion(); union != nil && len(union.GetChild()) > 0 {
+		fs = append(fs, redundantUnionMembersIn(idx, src, typeName, relationName, union)...)
+
+		for _, child := range union.GetChild() {
+			fs = append(fs, operationsIn(idx, src, typeName, relationName, child, visited)...)
+		}
 	}
-	if intersection := userset.GetIntersection(); intersection != nil {
-		cov.validateIntersectionOperationWithVisited(collector, typeName, relationName, intersection, lines, visited)
+
+	if intersection := userset.GetIntersection(); intersection != nil && len(intersection.GetChild()) > 0 {
+		fs = append(fs, impossibleIntersectionsIn(idx, src, typeName, relationName, intersection)...)
+
+		for _, child := range intersection.GetChild() {
+			fs = append(fs, operationsIn(idx, src, typeName, relationName, child, visited)...)
+		}
 	}
+
 	if diff := userset.GetDifference(); diff != nil {
-		cov.validateDifferenceOperationWithVisited(collector, typeName, relationName, diff, lines, visited)
+		fs = append(fs, operationsIn(idx, src, typeName, relationName, diff.GetBase(), visited)...)
+		fs = append(fs, operationsIn(idx, src, typeName, relationName, diff.GetSubtract(), visited)...)
+		fs = append(fs, emptyDifferenceIn(idx, src, typeName, relationName, diff))
 	}
-	cov.validateNestedOperationsWithVisited(collector, typeName, userset, lines, visited)
+
+	if ttu := userset.GetTupleToUserset(); ttu != nil {
+		if target := ttu.GetComputedUserset().GetRelation(); target != "" {
+			key := typeName + "#" + target
+			if !visited[key] {
+				visited[key] = true
+
+				if targetUserset := idx.userset(typeName, target); targetUserset != nil {
+					fs = append(fs, operationsIn(idx, src, typeName, target, targetUserset, visited)...)
+				}
+			}
+		}
+	}
+
+	return fs
 }
 
-func (cov *ComplexOperationValidator) validateUnionOperationWithVisited(collector *ErrorCollector, typeName, relationName string, union *openfgav1.Usersets, lines []string, visited map[string]bool) {
-	if union == nil || len(union.GetChild()) == 0 {
-		return
-	}
-	cov.checkRedundantUnionMembers(collector, typeName, relationName, union, lines)
+// redundantUnionMembersIn flags a union member repeated within one union.
+func redundantUnionMembersIn(idx *index, src source, typeName, relationName string,
+	union *openfgav1.Usersets) []*Finding {
+	var fs []*Finding
+
+	seen := make(map[string]bool)
+
 	for _, child := range union.GetChild() {
-		cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, child, lines, visited)
-	}
-	cov.validateUnionSemantics(collector, typeName, relationName, union, lines)
-}
-
-func (cov *ComplexOperationValidator) validateIntersectionOperationWithVisited(collector *ErrorCollector, typeName, relationName string, intersection *openfgav1.Usersets, lines []string, visited map[string]bool) {
-	if intersection == nil || len(intersection.GetChild()) == 0 {
-		return
-	}
-	cov.checkImpossibleIntersections(collector, typeName, relationName, intersection, lines)
-	for _, child := range intersection.GetChild() {
-		cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, child, lines, visited)
-	}
-	cov.validateIntersectionSemantics(collector, typeName, relationName, intersection, lines)
-}
-
-func (cov *ComplexOperationValidator) validateDifferenceOperationWithVisited(collector *ErrorCollector, typeName, relationName string, difference *openfgav1.Difference, lines []string, visited map[string]bool) {
-	if difference == nil {
-		return
-	}
-	cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, difference.GetBase(), lines, visited)
-	cov.validateUsersetOperationsWithVisited(collector, typeName, relationName, difference.GetSubtract(), lines, visited)
-	cov.validateDifferenceSemantics(collector, typeName, relationName, difference, lines)
-}
-
-func (cov *ComplexOperationValidator) checkRedundantUnionMembers(collector *ErrorCollector, typeName, relationName string, union *openfgav1.Usersets, lines []string) {
-	seenOperations := make(map[string]bool)
-	for _, child := range union.GetChild() {
-		operationKey := cov.getUsersetOperationKey(child)
-		if operationKey == "" {
+		key := operationKey(child)
+		if key == "" {
 			continue
 		}
-		if seenOperations[operationKey] {
-			lineIndex := GetRelationLineNumber(relationName, lines, nil)
-			meta := cov.getTypeMeta(typeName)
-			collector.RaiseRedundantUnionMember(operationKey, relationName, typeName, meta, lineIndex)
+
+		if seen[key] {
+			line := src.relationLine(relationName, -1)
+			file, module := typeMeta(idx.typeDef(typeName))
+			fs = append(fs, redundantUnionMember(key, relationName, typeName).at(src, line).in(file, module))
 		}
-		seenOperations[operationKey] = true
+
+		seen[key] = true
 	}
+
+	return fs
 }
 
-func (cov *ComplexOperationValidator) checkImpossibleIntersections(collector *ErrorCollector, typeName, relationName string, intersection *openfgav1.Usersets, lines []string) {
-	typeRestrictions := make([]string, 0)
+// impossibleIntersectionsIn flags an intersection whose direct-assignment
+// members can never agree.
+func impossibleIntersectionsIn(idx *index, src source, typeName, relationName string,
+	intersection *openfgav1.Usersets) []*Finding {
+	restrictions := make([]string, 0)
+
 	for _, child := range intersection.GetChild() {
 		if child.GetThis() != nil {
-			typeRestrictions = append(typeRestrictions, "this")
+			restrictions = append(restrictions, "this")
 		}
 	}
-	if len(typeRestrictions) <= 1 {
-		return
+
+	if len(restrictions) <= 1 {
+		return nil
 	}
-	uniqueTypes := make(map[string]bool)
-	for _, t := range typeRestrictions {
-		uniqueTypes[t] = true
+
+	unique := make(map[string]bool)
+	for _, restriction := range restrictions {
+		unique[restriction] = true
 	}
-	if len(uniqueTypes) > 1 {
-		lineIndex := GetRelationLineNumber(relationName, lines, nil)
-		meta := cov.getTypeMeta(typeName)
-		collector.RaiseImpossibleIntersection(relationName, typeName, typeRestrictions, meta, lineIndex)
+
+	if len(unique) <= 1 {
+		return nil
 	}
+
+	line := src.relationLine(relationName, -1)
+	file, module := typeMeta(idx.typeDef(typeName))
+
+	return []*Finding{impossibleIntersection(relationName, typeName, restrictions).at(src, line).in(file, module)}
 }
 
-func (cov *ComplexOperationValidator) validateUnionSemantics(collector *ErrorCollector, typeName, relationName string, union *openfgav1.Usersets, lines []string) {
-	cov.checkSubsumingUnionMembers(collector, typeName, relationName, union, lines)
-}
-
-func (cov *ComplexOperationValidator) validateIntersectionSemantics(collector *ErrorCollector, typeName, relationName string, intersection *openfgav1.Usersets, lines []string) {
-	cov.checkRedundantIntersectionMembers(collector, typeName, relationName, intersection, lines)
-}
-
-func (cov *ComplexOperationValidator) validateDifferenceSemantics(collector *ErrorCollector, typeName, relationName string, difference *openfgav1.Difference, lines []string) {
-	baseKey := cov.getUsersetOperationKey(difference.GetBase())
-	subtractKey := cov.getUsersetOperationKey(difference.GetSubtract())
-	if baseKey != "" && baseKey == subtractKey {
-		lineIndex := GetRelationLineNumber(relationName, lines, nil)
-		meta := cov.getTypeMeta(typeName)
-		collector.RaiseEmptyDifference(relationName, typeName, baseKey, meta, lineIndex)
+// emptyDifferenceIn flags a difference subtracting an operand from itself,
+// which is empty by construction.
+func emptyDifferenceIn(idx *index, src source, typeName, relationName string,
+	diff *openfgav1.Difference) *Finding {
+	base := operationKey(diff.GetBase())
+	if base == "" || base != operationKey(diff.GetSubtract()) {
+		return nil
 	}
+
+	line := src.relationLine(relationName, -1)
+	file, module := typeMeta(idx.typeDef(typeName))
+
+	return emptyDifference(relationName, typeName, base).at(src, line).in(file, module)
 }
 
-func (cov *ComplexOperationValidator) validateNestedOperationsWithVisited(collector *ErrorCollector, typeName string, userset *openfgav1.Userset, lines []string, visited map[string]bool) {
-	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		if targetRelation := ttu.GetComputedUserset().GetRelation(); targetRelation != "" {
-			key := typeName + "#" + targetRelation
-			if visited[key] {
-				return
-			}
-			visited[key] = true
-			if targetUserset := cov.validator.GetRelationUserset(typeName, targetRelation); targetUserset != nil {
-				cov.validateUsersetOperationsWithVisited(collector, typeName, targetRelation, targetUserset, lines, visited)
-			}
-		}
-	}
-}
-
-func (cov *ComplexOperationValidator) getUsersetOperationKey(userset *openfgav1.Userset) string {
+// operationKey names a rewrite for comparison: direct assignment, a computed
+// relation, or a tuple-to-userset.
+func operationKey(userset *openfgav1.Userset) string {
 	if userset == nil {
 		return ""
 	}
+
 	if userset.GetThis() != nil {
 		return "this"
 	}
-	if cu := userset.GetComputedUserset(); cu != nil {
-		if rel := cu.GetRelation(); rel != "" {
-			return "computed:" + rel
-		}
+
+	if computed := userset.GetComputedUserset(); computed.GetRelation() != "" {
+		return "computed:" + computed.GetRelation()
 	}
+
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		tuplesetRel := ttu.GetTupleset().GetRelation()
-		computedRel := ttu.GetComputedUserset().GetRelation()
-		return "ttu:" + tuplesetRel + ":" + computedRel
+		return "ttu:" + ttu.GetTupleset().GetRelation() + ":" + ttu.GetComputedUserset().GetRelation()
 	}
+
 	return ""
-}
-
-func (cov *ComplexOperationValidator) getTypeMeta(typeName string) *Meta {
-	if typeDef := cov.validator.GetTypeDefinition(typeName); typeDef != nil {
-		return &Meta{
-			File:   typeDef.GetMetadata().GetSourceInfo().GetFile(),
-			Module: typeDef.GetMetadata().GetModule(),
-		}
-	}
-	return &Meta{}
-}
-
-func (cov *ComplexOperationValidator) checkSubsumingUnionMembers(_ *ErrorCollector, _, _ string, _ *openfgav1.Usersets, _ []string) {
-	// Would check for cases like [user:*, user] where the wildcard subsumes the
-	// specific relation. This requires detailed analysis of type restrictions.
-}
-
-func (cov *ComplexOperationValidator) checkRedundantIntersectionMembers(_ *ErrorCollector, _, _ string, _ *openfgav1.Usersets, _ []string) {
-	// Would check for intersection members that don't restrict the result, e.g.
-	// intersecting with `this`, which adds no restriction.
 }

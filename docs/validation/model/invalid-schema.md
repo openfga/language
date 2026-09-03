@@ -6,58 +6,44 @@
 
 ## Summary
 
-The overall schema structure is invalid or malformed, preventing proper model parsing and validation.
+The model declares a schema version the validator does not recognise.
 
 ## Description
 
-This error occurs when the authorization model's schema structure doesn't conform to OpenFGA's schema requirements. Unlike specific schema version errors, this represents fundamental structural problems with the schema that prevent basic parsing and validation.
+`1.1` and `1.2` are the supported versions. A version that parses but is neither of those is reported as `invalid-schema`, with the version itself as the symbol.
 
-Common schema structure issues include:
-- Missing required schema components
-- Malformed schema declarations
-- Invalid schema syntax or formatting
-- Structural inconsistencies that violate OpenFGA's schema rules
+Two neighbouring conditions have codes of their own. Version `1.0` is recognised and retired, so it reports [`schema-version-unsupported`](./schema-version-unsupported.md), and a model carrying no version at all reports [`schema-version-required`](./schema-version-required.md).
+
+A malformed `schema` line never reaches validation. `schema v1.1`, `schema 1.1.0`, `schema` with no version, and a file with no `model` declaration all fail during DSL transformation with a syntax error and no error code attached.
 
 ## Example
 
-The following models would trigger this error:
+### DSL
 
-### Missing model declaration:
-```
-schema 1.1  # Error: Missing 'model' declaration
-
-type user
-
-type document
-  relations
-    define viewer: [user]
-```
-
-### Malformed schema structure:
 ```
 model
-  # Error: Schema declaration without version
-  schema
+  schema 0.9
 
 type user
 ```
 
-### Invalid schema syntax:
-```
-model {  # Error: Invalid syntax for model declaration
-  schema: 1.1
+**Error Message:** `invalid schema 0.9`
+
+The position covers the version itself: line 1, columns 9 to 12.
+
+### JSON
+
+```json
+{
+  "schema_version": "1.3"
 }
-
-type user
 ```
 
-**Error Message:** `Invalid schema structure: missing required model declaration`
+**Error Message:** `invalid schema 1.3`
 
 ## Resolution
 
-Fix the schema structure to conform to OpenFGA's requirements:
-
-### Option 1: Add missing model declaration
+Declare a supported version:
 
 ```
 model
@@ -70,85 +56,18 @@ type document
     define viewer: [user]
 ```
 
-### Option 2: Fix schema syntax
-
-```
-model
-  schema 1.1  # Proper format: schema followed by version
-
-type user
-
-type document
-  relations
-    define viewer: [user]
-```
-
-### Steps to fix:
-
-1. **Identify the structural issue:**
-   - Check the error message for specific schema structure problems
-   - Review the beginning of your model file for proper format
-
-2. **Follow OpenFGA schema format:**
-   - Start with `model` declaration
-   - Follow with `schema X.Y` version specification
-   - Use proper indentation and syntax
-
-3. **Validate basic structure:**
-   - Ensure model declaration comes first
-   - Verify schema version is properly specified
-   - Check that type definitions follow schema declaration
-
-4. **Test the corrected structure:**
-   - Validate the model after fixing schema structure
-   - Ensure the model parses correctly
-
-## Valid Schema Structure
-
-### ✅ Correct schema format:
-```
-model
-  schema 1.1
-
-type user
-  relations
-    define profile_owner: [user]
-
-type document
-  relations
-    define viewer: [user]
-    define editor: [user] or viewer
-```
-
-### ❌ Invalid schema formats:
-```
-# Missing model declaration
-schema 1.1
-type user
-
-# Wrong syntax
-model {
-  schema: 1.1
-}
-type user
-
-# Missing schema version  
-model
-  schema
-type user
-```
+Use `1.2` if the model is split across files with `module` declarations, `1.1` otherwise.
 
 ## Related Errors
 
-- [`schema-version-required`](./schema-version-required.md) - When schema version is missing
-- [`invalid-schema-version`](./invalid-schema-version.md) - When version format is invalid
-- [`invalid-syntax`](./invalid-syntax.md) - General syntax issues
+- [`schema-version-required`](./schema-version-required.md) - No schema version is declared
+- [`schema-version-unsupported`](./schema-version-unsupported.md) - Version `1.0`, recognised but retired
+- [`invalid-syntax`](./invalid-syntax.md) - Syntax problems, including a malformed `schema` line
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/schema_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java schema validation package
+- Go: `ValidateSchemaVersion` in `pkg/go/validation/schema_validation.go`
+- JavaScript: `validate-dsl.ts`, through `createInvalidSchemaVersionError` in `util/exceptions.ts`
+- Java: `ModelValidator`, through `ValidationErrorsBuilder.raiseInvalidSchemaVersion`
 
-The validation performs structural checks during the initial parsing phase to ensure the model follows OpenFGA's basic schema requirements.
+All three tag the finding `invalid-schema`. The message and the code are pinned in `tests/data/dsl-semantic-validation-cases.yaml` and `tests/data/json-validation-cases.yaml`.

@@ -97,7 +97,7 @@ func TestValidateNames(t *testing.T) {
 		dsl := "model\n  schema 1.1\ntype self\n  relations\n    define this: [self]"
 		model := modelWithRelations(t, "self", "this")
 
-		findings := validateNames(model, newSource(dsl))
+		findings := ExtractAllAs[*Finding](validateNames(model, newSource(dsl)))
 
 		require.Len(t, findings, 2)
 
@@ -113,7 +113,7 @@ func TestValidateNames(t *testing.T) {
 	t.Run("no source text means no positions", func(t *testing.T) {
 		t.Parallel()
 
-		findings := validateNames(modelWithRelations(t, "self", "viewer"), source{})
+		findings := ExtractAllAs[*Finding](validateNames(modelWithRelations(t, "self", "viewer"), source{}))
 
 		require.Len(t, findings, 1)
 		assert.Nil(t, findings[0].Line)

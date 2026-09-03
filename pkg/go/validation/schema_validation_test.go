@@ -18,14 +18,14 @@ func TestValidateSchemaVersion(t *testing.T) {
 	t.Run("supported versions yield nothing", func(t *testing.T) {
 		t.Parallel()
 
-		assert.Empty(t, validateSchemaVersion(model("1.1"), source{}))
-		assert.Empty(t, validateSchemaVersion(model("1.2"), source{}))
+		assert.Empty(t, ExtractAllAs[*Finding](validateSchemaVersion(model("1.1"), source{})))
+		assert.Empty(t, ExtractAllAs[*Finding](validateSchemaVersion(model("1.2"), source{})))
 	})
 
 	t.Run("missing version is required at line zero", func(t *testing.T) {
 		t.Parallel()
 
-		findings := validateSchemaVersion(model(""), newSource("model\ntype user"))
+		findings := ExtractAllAs[*Finding](validateSchemaVersion(model(""), newSource("model\ntype user")))
 
 		require.Len(t, findings, 1)
 		assert.Equal(t, "schema version required", findings[0].Message)
@@ -36,7 +36,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 	t.Run("1.0 is recognized but retired", func(t *testing.T) {
 		t.Parallel()
 
-		findings := validateSchemaVersion(model("1.0"), newSource("model\n  schema 1.0\ntype user"))
+		findings := ExtractAllAs[*Finding](validateSchemaVersion(model("1.0"), newSource("model\n  schema 1.0\ntype user")))
 
 		require.Len(t, findings, 1)
 		assert.Equal(t, "schema version no longer supported", findings[0].Message)
@@ -48,7 +48,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 	t.Run("anything else was never valid", func(t *testing.T) {
 		t.Parallel()
 
-		findings := validateSchemaVersion(model("1.3"), newSource("model\n  schema 1.3\ntype user"))
+		findings := ExtractAllAs[*Finding](validateSchemaVersion(model("1.3"), newSource("model\n  schema 1.3\ntype user")))
 
 		require.Len(t, findings, 1)
 		assert.Equal(t, "invalid schema 1.3", findings[0].Message)
@@ -59,7 +59,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 	t.Run("no source text means no position", func(t *testing.T) {
 		t.Parallel()
 
-		findings := validateSchemaVersion(model("1.3"), source{})
+		findings := ExtractAllAs[*Finding](validateSchemaVersion(model("1.3"), source{}))
 
 		require.Len(t, findings, 1)
 		assert.Nil(t, findings[0].Line)

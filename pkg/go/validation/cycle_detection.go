@@ -16,8 +16,8 @@ type entryPointResult struct {
 // validateEntryPoints reports relations that have no entry point. Such a
 // relation is impossible: either it never reaches a concrete assignable type
 // (no entrypoint) or it forms a rewrite loop (potential loop).
-func validateEntryPoints(idx *index, src source) Findings {
-	var fs Findings
+func validateEntryPoints(idx *index, src source) error {
+	var fs []*Finding
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		relations := typeDef.GetRelations()
@@ -47,7 +47,7 @@ func validateEntryPoints(idx *index, src source) Findings {
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // hasEntryPointOrLoop determines whether a rewrite reaches a concrete entry

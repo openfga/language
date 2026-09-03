@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"errors"
+
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
@@ -8,15 +10,14 @@ import (
 // model was parsed from — to resolve each finding's position. The model is the
 // already-parsed proto; nothing here parses.
 //
-// It returns nil for a valid model. Otherwise the error is a Findings holding
-// every finding in the order raised, which errors.As recovers:
+// It returns nil for a valid model. Otherwise the error joins every finding in
+// the order raised, which ExtractAllAs recovers:
 //
-//	var findings validation.Findings
-//	if errors.As(err, &findings) {
-//	    for _, f := range findings { ... }
+//	for _, finding := range validation.ExtractAllAs[*validation.Finding](err) {
+//	    ...
 //	}
 func ValidateDSL(model *openfgav1.AuthorizationModel, dsl string) error {
-	return validate(model, newSource(dsl)).Err()
+	return validate(model, newSource(dsl))
 }
 
 // ValidateJSON runs every validation over a model that reached the caller as
@@ -24,7 +25,7 @@ func ValidateDSL(model *openfgav1.AuthorizationModel, dsl string) error {
 // Column; the messages and metadata are what ValidateDSL reports for the same
 // model. The name matches pkg/js's validateJSON and pkg/java's validateJson.
 func ValidateJSON(model *openfgav1.AuthorizationModel) error {
-	return validate(model, source{}).Err()
+	return validate(model, source{})
 }
 
 // validate runs the validation phases in the reference implementation's order.
@@ -36,30 +37,37 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 // reference's modelValidation, which skips the later passes once any error has
 // been recorded. Multi-file and condition checks are independent of the cascade
 // and always run, matching the reference's handling of conditions.
-func validate(model *openfgav1.AuthorizationModel, src source) Findings {
+func validate(model *openfgav1.AuthorizationModel, src source) error {
 	if model == nil {
 		return nil
 	}
 
 	idx := newIndex(model)
 
-	fs := validateSchemaVersion(model, src)
-	fs = append(fs, validateNames(model, src)...)
-	fs = append(fs, validateRelationReferences(idx, src)...)
-
-	if len(fs) == 0 {
-		fs = append(fs, validateDuplicates(model, src)...)
+	var errs []error
+	add := func(err error) {
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
-	if len(fs) == 0 {
-		fs = append(fs, validateEntryPoints(idx, src)...)
-		fs = append(fs, validateTupleToUsersets(idx, src)...)
-		fs = append(fs, validateComplexOperations(idx, src)...)
-		fs = append(fs, validateWildcards(idx, src)...)
+	add(validateSchemaVersion(model, src))
+	add(validateNames(model, src))
+	add(validateRelationReferences(idx, src))
+
+	if len(errs) == 0 {
+		add(validateDuplicates(model, src))
 	}
 
-	fs = append(fs, validateMultiFile(model)...)
-	fs = append(fs, validateConditions(model, src)...)
+	if len(errs) == 0 {
+		add(validateEntryPoints(idx, src))
+		add(validateTupleToUsersets(idx, src))
+		add(validateComplexOperations(idx, src))
+		add(validateWildcards(idx, src))
+	}
 
-	return fs
+	add(validateMultiFile(model))
+	add(validateConditions(model, src))
+
+	return errors.Join(errs...)
 }

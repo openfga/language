@@ -44,7 +44,7 @@ func buildWideUnionDSL(width int) string {
 }
 
 // entryPointsFor transforms the DSL and runs the entry-point phase alone.
-func entryPointsFor(t *testing.T, dsl string) Findings {
+func entryPointsFor(t *testing.T, dsl string) []*Finding {
 	t.Helper()
 
 	model, err := transformer.TransformDSLToProto(dsl)
@@ -52,7 +52,7 @@ func entryPointsFor(t *testing.T, dsl string) Findings {
 		t.Fatalf("failed to transform DSL: %v", err)
 	}
 
-	return validateEntryPoints(newIndex(model), newSource(dsl))
+	return ExtractAllAs[*Finding](validateEntryPoints(newIndex(model), newSource(dsl)))
 }
 
 // TestCycleDetection_DeepChainTerminatesWithEntry verifies a long linear chain

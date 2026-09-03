@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,11 +20,8 @@ const (
 )
 
 // findingsOf recovers the findings behind a validation error; nil in, none out.
-func findingsOf(err error) Findings {
-	var findings Findings
-	errors.As(err, &findings)
-
-	return findings
+func findingsOf(err error) []*Finding {
+	return ExtractAllAs[*Finding](err)
 }
 
 // YAMLTestCase is one case from the shared validation corpus under tests/data.
@@ -133,7 +129,7 @@ func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) *YAMLTestResult
 
 // compareWithCorpus pairs each expected error with a distinct finding, so a case
 // expecting two errors is not satisfied by one finding that matches both.
-func compareWithCorpus(expectedErrors []YAMLExpectedError, findings Findings) *YAMLTestResult {
+func compareWithCorpus(expectedErrors []YAMLExpectedError, findings []*Finding) *YAMLTestResult {
 	result := &YAMLTestResult{}
 	claimed := make([]bool, len(findings))
 	matched := make([]bool, len(expectedErrors))

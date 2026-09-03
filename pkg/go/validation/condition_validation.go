@@ -17,7 +17,7 @@ type conditionUse struct {
 // validateConditions runs the three condition checks in the reference's order:
 // every referenced condition is defined, every condition's nested name matches
 // its key, and every defined condition is referenced.
-func validateConditions(model *openfgav1.AuthorizationModel, src source) Findings {
+func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	uses := conditionUses(model)
 
 	fs := undefinedConditions(model, src, uses)
@@ -45,7 +45,7 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) Finding
 		fs = append(fs, unusedCondition(conditionName).at(src, src.conditionLine(conditionName)).in(file, module))
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // conditionUses collects where each condition is referenced, in the order the
@@ -74,8 +74,8 @@ func conditionUses(model *openfgav1.AuthorizationModel) map[string][]conditionUs
 // undefinedConditions reports, for every reference to a condition the model
 // does not define, one finding per referencing relation.
 func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
-	uses map[string][]conditionUse) Findings {
-	var fs Findings
+	uses map[string][]conditionUse) []*Finding {
+	var fs []*Finding
 
 	defined := model.GetConditions()
 

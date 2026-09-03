@@ -65,8 +65,8 @@ func validateConditionName(name string) *Finding {
 // validateNames checks every type, relation, and condition name in the model
 // against the reserved-keyword and naming-rule constraints. It mirrors the name
 // validation performed in the JS reference implementation's populateRelations.
-func validateNames(model *openfgav1.AuthorizationModel, src source) Findings {
-	var fs Findings
+func validateNames(model *openfgav1.AuthorizationModel, src source) error {
+	var fs []*Finding
 
 	for _, typeDef := range model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
@@ -78,14 +78,14 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) Findings {
 		module := typeDef.GetMetadata().GetModule()
 
 		typeLine := src.typeLine(typeName)
-		fs = fs.add(validateTypeName(typeName).at(src, typeLine).in(file, module))
+		fs = append(fs, validateTypeName(typeName).at(src, typeLine).in(file, module))
 
 		// Relations reach us in a proto map, which has no order, so they are
 		// walked in name order here and in every other phase to report the same
 		// model's findings in the same order from run to run.
 		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLine := src.relationLine(relationName, typeLine)
-			fs = fs.add(validateRelationName(relationName, typeName).at(src, relationLine).in(file, module))
+			fs = append(fs, validateRelationName(relationName, typeName).at(src, relationLine).in(file, module))
 		}
 	}
 
@@ -95,8 +95,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) Findings {
 		file := condition.GetMetadata().GetSourceInfo().GetFile()
 		module := condition.GetMetadata().GetModule()
 
-		fs = fs.add(validateConditionName(conditionName).at(src, src.conditionLine(conditionName)).in(file, module))
+		fs = append(fs, validateConditionName(conditionName).at(src, src.conditionLine(conditionName)).in(file, module))
 	}
 
-	return fs
+	return joinFindings(fs...)
 }

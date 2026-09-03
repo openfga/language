@@ -155,7 +155,7 @@ func (s source) schemaLine(schemaVersion string) int {
 // its symbol sits at on that line. No other code computes positions.
 // A no-op for a nil finding and for a line the source does not have, which
 // covers both a failed line search (-1) and a model with no source text.
-// Chainable, so a raise site reads `fs.add(invalidType(name).at(src, line))`.
+// Chainable, so a raise site reads `invalidType(name).at(src, line).in(file, module)`.
 func (f *Finding) at(src source, line int) *Finding {
 	if f == nil || line < 0 || line >= len(src.lines) {
 		return f

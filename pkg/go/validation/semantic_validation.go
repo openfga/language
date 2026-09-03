@@ -10,8 +10,8 @@ import (
 // validateRelationReferences checks that every type and relation a relation
 // refers to — in its type restrictions and in its rewrites — exists in the
 // model.
-func validateRelationReferences(idx *index, src source) Findings {
-	var fs Findings
+func validateRelationReferences(idx *index, src source) error {
+	var fs []*Finding
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
@@ -45,19 +45,19 @@ func validateRelationReferences(idx *index, src source) Findings {
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // validateTypeRestrictions checks a relation's directly-related user types:
 // each restriction must name a defined type, and a `type#relation` restriction
 // a relation defined on that type.
 func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, relationMetadata *openfgav1.RelationMetadata, typeLine int) Findings {
+	relationName string, relationMetadata *openfgav1.RelationMetadata, typeLine int) []*Finding {
 	if relationMetadata == nil {
 		return nil
 	}
 
-	var fs Findings
+	var fs []*Finding
 
 	typeName := typeDef.GetType()
 	file := relationMetadata.GetSourceInfo().GetFile()
@@ -94,12 +94,12 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 // validateTupleToUsersetReferences. Union, intersection and difference are
 // walked into.
 func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, userset *openfgav1.Userset, typeLine int) Findings {
+	relationName string, userset *openfgav1.Userset, typeLine int) []*Finding {
 	if userset == nil {
 		return nil
 	}
 
-	var fs Findings
+	var fs []*Finding
 
 	typeName := typeDef.GetType()
 	file, module := typeMeta(typeDef)
@@ -144,7 +144,7 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 //   - the computed target relation must exist on at least one of the types the
 //     tupleset relation is assignable to.
 func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, ttu *openfgav1.TupleToUserset, typeLine int) Findings {
+	relationName string, ttu *openfgav1.TupleToUserset, typeLine int) []*Finding {
 	fromRelation := ttu.GetTupleset().GetRelation()
 	targetRelation := ttu.GetComputedUserset().GetRelation()
 
@@ -159,21 +159,21 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 
 	// 1. The tupleset relation must exist on the current type.
 	if !idx.relationDefined(typeName, fromRelation) {
-		return Findings{invalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName).
+		return []*Finding{invalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName).
 			at(src, line).in(file, module)}
 	}
 
 	// 2. The tupleset relation must be a single direct assignment.
 	fromTypes, isDirect := idx.directlyAssignableTypes(typeName, fromRelation)
 	if !isDirect || len(fromTypes) == 0 {
-		return Findings{tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
+		return []*Finding{tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
 			atFromClause(src, line).in(file, module)}
 	}
 
 	// 3. Each assignable type of the tupleset relation must be a concrete type
 	//    (no wildcard, no type#relation), and the computed target must exist on
 	//    at least one of them.
-	var fs Findings
+	var fs []*Finding
 
 	notValid := make([]*openfgav1.RelationReference, 0, len(fromTypes))
 

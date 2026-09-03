@@ -10,8 +10,8 @@ import (
 // validateWildcards checks every wildcard type restriction: the type it
 // restricts must exist, and a restriction cannot carry both a wildcard and a
 // relation.
-func validateWildcards(idx *index, src source) Findings {
-	var fs Findings
+func validateWildcards(idx *index, src source) error {
+	var fs []*Finding
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		if typeDef.GetMetadata() == nil {
@@ -55,15 +55,15 @@ func validateWildcards(idx *index, src source) Findings {
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // validateTupleToUsersets checks that every tupleset relation used in a
 // `target from tupleset` rewrite allows direct assignment. Whether the tupleset
 // and computed relations exist is the reference phase's job; here an existing
 // tupleset relation with no assignable types is reported.
-func validateTupleToUsersets(idx *index, src source) Findings {
-	var fs Findings
+func validateTupleToUsersets(idx *index, src source) error {
+	var fs []*Finding
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		relations := typeDef.GetRelations()
@@ -72,20 +72,20 @@ func validateTupleToUsersets(idx *index, src source) Findings {
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // tuplesetsIn walks one relation's rewrite tree and reports each
 // tuple-to-userset whose tupleset relation is not directly assignable.
-func tuplesetsIn(idx *index, src source, typeName, relationName string, userset *openfgav1.Userset) Findings {
+func tuplesetsIn(idx *index, src source, typeName, relationName string, userset *openfgav1.Userset) []*Finding {
 	if userset == nil {
 		return nil
 	}
 
-	var fs Findings
+	var fs []*Finding
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		fs = fs.add(tuplesetNotAssignable(idx, src, typeName, relationName, ttu))
+		fs = append(fs, tuplesetNotAssignable(idx, src, typeName, relationName, ttu))
 	}
 
 	if union := userset.GetUnion(); union != nil {

@@ -64,7 +64,7 @@ type document
 		require.NoError(t, ValidateJSON(nil))
 	})
 
-	t.Run("findings are recovered with errors.As", func(t *testing.T) {
+	t.Run("findings are recovered with ExtractAllAs", func(t *testing.T) {
 		t.Parallel()
 
 		dsl := `model
@@ -77,8 +77,7 @@ type document
 		err := ValidateDSL(mustParse(t, dsl), dsl)
 		require.Error(t, err)
 
-		var findings Findings
-		require.ErrorAs(t, err, &findings)
+		findings := ExtractAllAs[*Finding](err)
 		require.Len(t, findings, 1)
 
 		finding := findings[0]
@@ -117,9 +116,9 @@ type document
     define viewer: editor`
 
 		err := ValidateJSON(mustParse(t, dsl))
+		require.Error(t, err)
 
-		var findings Findings
-		require.ErrorAs(t, err, &findings)
+		findings := ExtractAllAs[*Finding](err)
 		require.Len(t, findings, 1)
 		assert.Equal(t, "the relation `editor` does not exist.", findings[0].Message)
 		assert.Nil(t, findings[0].Line)
@@ -153,7 +152,7 @@ func TestValidateCascadeGate(t *testing.T) {
 			TypeDefinitions: []*openfgav1.TypeDefinition{typeDef(), typeDef()},
 		}
 
-		findings := validate(model, source{})
+		findings := ExtractAllAs[*Finding](validate(model, source{}))
 
 		require.Len(t, findings, 1)
 		assert.Equal(t, DuplicatedError, findings[0].Metadata.Kind)
@@ -170,8 +169,10 @@ type document
     define viewer: editor
     define editor: viewer`
 
-		var findings Findings
-		require.ErrorAs(t, ValidateDSL(mustParse(t, dsl), dsl), &findings)
+		err := ValidateDSL(mustParse(t, dsl), dsl)
+		require.Error(t, err)
+
+		findings := ExtractAllAs[*Finding](err)
 		require.Len(t, findings, 2)
 
 		for _, finding := range findings {
@@ -195,8 +196,10 @@ condition marked(x: int) {
   x > 0
 }`
 
-		var findings Findings
-		require.ErrorAs(t, ValidateDSL(mustParse(t, dsl), dsl), &findings)
+		err := ValidateDSL(mustParse(t, dsl), dsl)
+		require.Error(t, err)
+
+		findings := ExtractAllAs[*Finding](err)
 		require.Len(t, findings, 2)
 
 		assert.Equal(t, InvalidType, findings[0].Metadata.Kind)
@@ -215,7 +218,7 @@ func TestValidateFileAndModule(t *testing.T) {
 		SourceInfo: &openfgav1.SourceInfo{File: "core.fga"},
 	}
 
-	findings := validate(model, source{})
+	findings := ExtractAllAs[*Finding](validate(model, source{}))
 
 	require.Len(t, findings, 1)
 	assert.Equal(t, "core.fga", findings[0].File)
@@ -241,7 +244,7 @@ func TestValidateMultiFile(t *testing.T) {
 		},
 	}
 
-	findings := validateMultiFile(model)
+	findings := ExtractAllAs[*Finding](validateMultiFile(model))
 
 	require.Len(t, findings, 1)
 	assert.Equal(t, MultipleModulesInFile, findings[0].Metadata.Kind)

@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,84 +33,6 @@ func TestFindingError(t *testing.T) {
 	})
 }
 
-func TestFindingsError(t *testing.T) {
-	t.Parallel()
-
-	t.Run("empty", func(t *testing.T) {
-		t.Parallel()
-		assert.Equal(t, "no validation errors", Findings{}.Error())
-	})
-
-	t.Run("one finding", func(t *testing.T) {
-		t.Parallel()
-
-		findings := Findings{{Message: "first"}}
-
-		assert.Equal(t, "1 error occurred:\n\t* validation error: first\n\n", findings.Error())
-	})
-
-	t.Run("two findings pluralize", func(t *testing.T) {
-		t.Parallel()
-
-		findings := Findings{{Message: "first"}, {Message: "second"}}
-
-		assert.Equal(t, "2 errors occurred:\n\t* validation error: first\n\t* validation error: second\n\n",
-			findings.Error())
-	})
-}
-
-func TestFindingsErr(t *testing.T) {
-	t.Parallel()
-
-	t.Run("nil for no findings", func(t *testing.T) {
-		t.Parallel()
-
-		require.NoError(t, Findings(nil).Err())
-		require.NoError(t, Findings{}.Err())
-	})
-
-	t.Run("the collection itself otherwise", func(t *testing.T) {
-		t.Parallel()
-
-		findings := Findings{{Message: "boom"}}
-		err := findings.Err()
-
-		require.Error(t, err)
-
-		var recovered Findings
-		require.ErrorAs(t, err, &recovered)
-		assert.Len(t, recovered, 1)
-	})
-}
-
-func TestFindingsUnwrap(t *testing.T) {
-	t.Parallel()
-
-	first := &Finding{Message: "first", Metadata: Metadata{Kind: InvalidName}}
-	second := &Finding{Message: "second", Metadata: Metadata{Kind: DuplicatedError}}
-	err := Findings{first, second}.Err()
-
-	// errors.As walks Unwrap() []error and stops at the first finding.
-	var finding *Finding
-	require.ErrorAs(t, err, &finding)
-	assert.Same(t, first, finding)
-
-	require.ErrorIs(t, err, error(first))
-	require.ErrorIs(t, err, error(second))
-}
-
-func TestFindingsAdd(t *testing.T) {
-	t.Parallel()
-
-	var findings Findings
-
-	findings = findings.add(nil)
-	assert.Empty(t, findings, "a nil finding is nothing found")
-
-	findings = findings.add(&Finding{Message: "found"})
-	assert.Len(t, findings, 1)
-}
-
 func TestFindingIn(t *testing.T) {
 	t.Parallel()
 
@@ -129,14 +53,103 @@ func TestFindingIn(t *testing.T) {
 	})
 }
 
-// TestFindingsAsError pins the boundary contract: a validation error is always
-// a Findings, and errors.As is the documented way back to the findings.
-func TestFindingsAsError(t *testing.T) {
+func TestJoinFindings(t *testing.T) {
 	t.Parallel()
 
-	err := Findings{{Message: "boom", Metadata: Metadata{Kind: InvalidName, Symbol: "x"}}}.Err()
+	t.Run("nil when there is nothing to report", func(t *testing.T) {
+		t.Parallel()
 
-	var findings Findings
-	require.ErrorAs(t, err, &findings)
-	assert.Equal(t, InvalidName, findings[0].Metadata.Kind)
+		require.NoError(t, joinFindings())
+		require.NoError(t, joinFindings(nil, nil))
+	})
+
+	t.Run("drops nil findings", func(t *testing.T) {
+		t.Parallel()
+
+		err := joinFindings(nil, &Finding{Message: "boom"}, nil)
+		require.Error(t, err)
+
+		found := ExtractAllAs[*Finding](err)
+		require.Len(t, found, 1)
+		assert.Equal(t, "boom", found[0].Message)
+	})
+
+	t.Run("keeps the order it is given", func(t *testing.T) {
+		t.Parallel()
+
+		err := joinFindings(&Finding{Message: "first"}, &Finding{Message: "second"})
+
+		found := ExtractAllAs[*Finding](err)
+		require.Len(t, found, 2)
+		assert.Equal(t, "first", found[0].Message)
+		assert.Equal(t, "second", found[1].Message)
+	})
+}
+
+func TestExtractAllAs(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil error yields nothing", func(t *testing.T) {
+		t.Parallel()
+
+		assert.Empty(t, ExtractAllAs[*Finding](nil))
+	})
+
+	t.Run("recovers findings from a nested tree in order", func(t *testing.T) {
+		t.Parallel()
+
+		// A join of joins, the shape validate builds from its phases.
+		left := joinFindings(&Finding{Message: "1"}, &Finding{Message: "2"})
+		right := joinFindings(&Finding{Message: "3"}, &Finding{Message: "4"})
+
+		found := ExtractAllAs[*Finding](errors.Join(left, right))
+		require.Len(t, found, 4)
+		assert.Equal(t, []string{"1", "2", "3", "4"}, []string{
+			found[0].Message, found[1].Message, found[2].Message, found[3].Message,
+		})
+	})
+
+	t.Run("terminates on a leaf that is neither the target nor a wrapper", func(t *testing.T) {
+		t.Parallel()
+
+		// errors.New has neither an Unwrap() []error nor an Unwrap() error, so
+		// the walk has nothing to descend into and ends its branch there.
+		found := ExtractAllAs[*Finding](errors.Join(&Finding{Message: "boom"}, errors.New("unrelated")))
+		require.Len(t, found, 1)
+		assert.Equal(t, "boom", found[0].Message)
+	})
+
+	t.Run("descends through a single-error wrapper", func(t *testing.T) {
+		t.Parallel()
+
+		found := ExtractAllAs[*Finding](fmt.Errorf("context: %w", &Finding{Message: "wrapped"}))
+		require.Len(t, found, 1)
+		assert.Equal(t, "wrapped", found[0].Message)
+	})
+}
+
+// TestFindingErrorsInterop pins that the standard errors helpers still reach a
+// finding, so a caller that only wants the first is not forced through
+// ExtractAllAs.
+func TestFindingErrorsInterop(t *testing.T) {
+	t.Parallel()
+
+	first := &Finding{Message: "first", Metadata: Metadata{Kind: InvalidName}}
+	second := &Finding{Message: "second", Metadata: Metadata{Kind: DuplicatedError}}
+	err := joinFindings(first, second)
+
+	t.Run("errors.As reaches the first finding", func(t *testing.T) {
+		t.Parallel()
+
+		var finding *Finding
+		require.ErrorAs(t, err, &finding)
+		assert.Same(t, first, finding)
+	})
+
+	t.Run("errors.Is matches each finding", func(t *testing.T) {
+		t.Parallel()
+
+		require.ErrorIs(t, err, error(first))
+		require.ErrorIs(t, err, error(second))
+	})
 }

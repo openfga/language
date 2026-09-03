@@ -37,7 +37,7 @@ func TestValidateEntryPoints(t *testing.T) {
 			},
 		}
 
-		findings := validateEntryPoints(newIndex(model), source{})
+		findings := ExtractAllAs[*Finding](validateEntryPoints(newIndex(model), source{}))
 
 		// Each relation is impossible: one finding per relation, all RelationNoEntrypoint.
 		assert.Len(t, findings, 2)
@@ -77,7 +77,7 @@ func TestValidateEntryPoints(t *testing.T) {
 			},
 		}
 
-		assert.Empty(t, validateEntryPoints(newIndex(model), source{}))
+		assert.Empty(t, ExtractAllAs[*Finding](validateEntryPoints(newIndex(model), source{})))
 	})
 
 	t.Run("Computed chain terminating in a direct assignment is reachable", func(t *testing.T) {
@@ -101,7 +101,7 @@ func TestValidateEntryPoints(t *testing.T) {
 		}
 
 		// All three relations resolve to owner's direct assignment.
-		assert.Empty(t, validateEntryPoints(newIndex(model), source{}))
+		assert.Empty(t, ExtractAllAs[*Finding](validateEntryPoints(newIndex(model), source{})))
 	})
 }
 

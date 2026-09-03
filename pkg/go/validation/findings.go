@@ -5,8 +5,8 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 )
 
 // Kind is a finding's machine-readable code, the wire `errorType`. The string
@@ -83,8 +83,8 @@ type Finding struct {
 	Metadata Metadata `json:"metadata"`
 }
 
-// Error implements the error interface, so a single finding recovered with
-// errors.As prints like one.
+// Error implements the error interface, formatting the finding with its
+// position when it has one.
 func (f *Finding) Error() string {
 	if f.Line != nil && f.Column != nil {
 		return fmt.Sprintf("validation error at line=%d, column=%d: %s", f.Line.Start, f.Column.Start, f.Message)
@@ -104,58 +104,56 @@ func (f *Finding) in(file, module string) *Finding {
 	return f
 }
 
-// Findings is every diagnostic raised for one model, in the order raised. It
-// follows go/scanner.ErrorList: the slice is the collection and, when
-// non-empty, the error.
+// joinFindings joins findings into a single error, or nil when there are none.
+// A nil *Finding is dropped, so a check that found nothing can be appended
+// without a guard. The findings are joined in the order given, and ExtractAllAs
+// recovers them in that order.
+func joinFindings(findings ...*Finding) error {
+	errs := make([]error, 0, len(findings))
+	for _, f := range findings {
+		if f != nil {
+			errs = append(errs, f)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+// ExtractAllAs walks an error tree and returns every error of type E, in the
+// order errors.Join holds them: pre-order, left to right. It recovers the
+// findings behind a validation error:
 //
-//nolint:errname // named for what it holds, as go/scanner.ErrorList is
-type Findings []*Finding
+//	for _, finding := range validation.ExtractAllAs[*validation.Finding](err) {
+//	    ...
+//	}
+//
+// An error that is an E is collected and not descended into; anything else is
+// expanded through its Unwrap() []error or Unwrap() error.
+func ExtractAllAs[E error](err error) []E {
+	var found []E
 
-// add appends f when it is a finding; a nil *Finding means nothing was found.
-func (fs Findings) add(f *Finding) Findings {
-	if f == nil {
-		return fs
+	var collect func(error)
+	collect = func(err error) {
+		if err == nil {
+			return
+		}
+
+		if e, ok := err.(E); ok {
+			found = append(found, e)
+
+			return
+		}
+
+		switch unwrapped := err.(type) {
+		case interface{ Unwrap() []error }:
+			for _, child := range unwrapped.Unwrap() {
+				collect(child)
+			}
+		case interface{ Unwrap() error }:
+			collect(unwrapped.Unwrap())
+		}
 	}
+	collect(err)
 
-	return append(fs, f)
-}
-
-// Error implements the error interface.
-func (fs Findings) Error() string {
-	if len(fs) == 0 {
-		return "no validation errors"
-	}
-
-	plural := ""
-	if len(fs) > 1 {
-		plural = "s"
-	}
-
-	messages := make([]string, 0, len(fs))
-	for _, f := range fs {
-		messages = append(messages, f.Error())
-	}
-
-	return fmt.Sprintf("%d error%s occurred:\n\t* %s\n\n", len(fs), plural, strings.Join(messages, "\n\t* "))
-}
-
-// Unwrap returns each finding, so errors.As reaches one through the collection.
-func (fs Findings) Unwrap() []error {
-	errs := make([]error, 0, len(fs))
-	for _, f := range fs {
-		errs = append(errs, f)
-	}
-
-	return errs
-}
-
-// Err returns the collection as an error, or nil when nothing was found. It is
-// the one place a Findings becomes an error, so a caller never receives a
-// non-nil error holding an empty collection.
-func (fs Findings) Err() error {
-	if len(fs) == 0 {
-		return nil
-	}
-
-	return fs
+	return found
 }

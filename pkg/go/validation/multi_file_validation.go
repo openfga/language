@@ -11,8 +11,8 @@ import (
 // validateMultiFile reports every file that would contain more than one module
 // when transformed back to DSL. Findings carry no position: they are about
 // files, not lines.
-func validateMultiFile(model *openfgav1.AuthorizationModel) Findings {
-	var fs Findings
+func validateMultiFile(model *openfgav1.AuthorizationModel) error {
+	var fs []*Finding
 
 	files := modulesByFile(model)
 	for _, file := range files.keys {
@@ -21,7 +21,7 @@ func validateMultiFile(model *openfgav1.AuthorizationModel) Findings {
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // orderedGroups records a one-to-many mapping, keeping both the keys and each

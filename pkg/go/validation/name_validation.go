@@ -78,14 +78,20 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		module := typeDef.GetMetadata().GetModule()
 
 		typeLine := src.typeLine(typeName)
-		fs = append(fs, validateTypeName(typeName).at(src, typeLine).in(file, module))
+		if finding := validateTypeName(typeName).at(src, typeLine); finding != nil {
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
+		}
 
 		// Relations reach us in a proto map, which has no order, so they are
 		// walked in name order here and in every other phase to report the same
 		// model's findings in the same order from run to run.
 		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLine := src.relationLine(relationName, typeLine)
-			fs = append(fs, validateRelationName(relationName, typeName).at(src, relationLine).in(file, module))
+			if finding := validateRelationName(relationName, typeName).at(src, relationLine); finding != nil {
+				finding.File, finding.Metadata.Module = file, module
+				fs = append(fs, finding)
+			}
 		}
 	}
 
@@ -95,7 +101,10 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		file := condition.GetMetadata().GetSourceInfo().GetFile()
 		module := condition.GetMetadata().GetModule()
 
-		fs = append(fs, validateConditionName(conditionName).at(src, src.conditionLine(conditionName)).in(file, module))
+		if finding := validateConditionName(conditionName).at(src, src.conditionLine(conditionName)); finding != nil {
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
+		}
 	}
 
 	return joinFindings(fs...)

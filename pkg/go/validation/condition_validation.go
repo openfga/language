@@ -42,7 +42,9 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 		file := condition.GetMetadata().GetSourceInfo().GetFile()
 		module := condition.GetMetadata().GetModule()
 
-		fs = append(fs, unusedCondition(conditionName).at(src, src.conditionLine(conditionName)).in(file, module))
+		finding := unusedCondition(conditionName).at(src, src.conditionLine(conditionName))
+		finding.File, finding.Metadata.Module = file, module
+		fs = append(fs, finding)
 	}
 
 	return joinFindings(fs...)
@@ -99,8 +101,9 @@ func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
 				}
 			}
 
-			fs = append(fs, conditionNotDefined(conditionName, use.typeName, use.relationName).
-				at(src, line).in(file, module))
+			finding := conditionNotDefined(conditionName, use.typeName, use.relationName).at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 	}
 

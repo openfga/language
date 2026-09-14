@@ -24,7 +24,9 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 		file, module := typeMeta(typeDef)
 
 		if seenTypes[typeName] {
-			fs = append(fs, duplicateTypeName(typeName).at(src, src.typeLine(typeName)).in(file, module))
+			finding := duplicateTypeName(typeName).at(src, src.typeLine(typeName))
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 
 		seenTypes[typeName] = true
@@ -75,7 +77,9 @@ func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMet
 
 		if seen[written] {
 			line := src.relationLine(relationName, typeLine)
-			fs = append(fs, duplicateTypeRestriction(written, relationName, typeName).at(src, line).in(file, module))
+			finding := duplicateTypeRestriction(written, relationName, typeName).at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 
 		seen[written] = true
@@ -99,8 +103,9 @@ func duplicateOperandsIn(src source, typeDef *openfgav1.TypeDefinition,
 
 	raise := func(operand string) {
 		line := src.relationLine(relationName, typeLine)
-		fs = append(fs, duplicatePartialRelation(operand, relationName, typeDef.GetType()).
-			at(src, line).in(file, module))
+		finding := duplicatePartialRelation(operand, relationName, typeDef.GetType()).at(src, line)
+		finding.File, finding.Metadata.Module = file, module
+		fs = append(fs, finding)
 	}
 
 	// Union and intersection both store their members as a *openfgav1.Usersets

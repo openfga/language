@@ -7,6 +7,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"slices"
 )
 
 // Kind is a finding's machine-readable code, the wire `errorType`. The string
@@ -93,17 +94,6 @@ func (f *Finding) Error() string {
 	return "validation error: " + f.Message
 }
 
-// in records the file and module a finding was raised about, read off the
-// model's source info by whichever loop raised it. Chainable; nil-safe.
-func (f *Finding) in(file, module string) *Finding {
-	if f == nil {
-		return nil
-	}
-	f.File, f.Metadata.Module = file, module
-
-	return f
-}
-
 // joinFindings joins findings into a single error, or nil when there are none.
 // A nil *Finding is dropped, so a check that found nothing can be appended
 // without a guard. The findings are joined in the order given, and ExtractAllAs
@@ -132,28 +122,38 @@ func joinFindings(findings ...*Finding) error {
 func ExtractAllAs[E error](err error) []E {
 	var found []E
 
-	var collect func(error)
-	collect = func(err error) {
-		if err == nil {
-			return
+	stack := []error{err}
+	for len(stack) > 0 {
+		ndx := len(stack) - 1
+		current := stack[ndx]
+		stack = stack[:ndx]
+
+		// errors.Unwrap below yields nil for a leaf with no Unwrap() error, and
+		// the input itself may be nil; skip it so the walk terminates instead of
+		// unwrapping nil to nil forever.
+		if current == nil {
+			continue
 		}
 
-		if e, ok := err.(E); ok {
+		if e, ok := current.(E); ok {
 			found = append(found, e)
 
-			return
+			continue
 		}
 
-		switch unwrapped := err.(type) {
-		case interface{ Unwrap() []error }:
-			for _, child := range unwrapped.Unwrap() {
-				collect(child)
+		if unwrapped, ok := current.(interface{ Unwrap() []error }); ok {
+			children := unwrapped.Unwrap()
+			// Push last to first so the stack pops them left to right.
+			stack = slices.Grow(stack, len(children))
+			for _, child := range slices.Backward(children) {
+				stack = append(stack, child)
 			}
-		case interface{ Unwrap() error }:
-			collect(unwrapped.Unwrap())
+
+			continue
 		}
+
+		stack = append(stack, errors.Unwrap(current))
 	}
-	collect(err)
 
 	return found
 }

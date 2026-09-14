@@ -90,7 +90,9 @@ func redundantUnionMembersIn(idx *index, src source, typeName, relationName stri
 		if seen[key] {
 			line := src.relationLine(relationName, -1)
 			file, module := typeMeta(idx.typeDef(typeName))
-			fs = append(fs, redundantUnionMember(key, relationName, typeName).at(src, line).in(file, module))
+			finding := redundantUnionMember(key, relationName, typeName).at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 
 		seen[key] = true
@@ -126,8 +128,10 @@ func impossibleIntersectionsIn(idx *index, src source, typeName, relationName st
 
 	line := src.relationLine(relationName, -1)
 	file, module := typeMeta(idx.typeDef(typeName))
+	finding := impossibleIntersection(relationName, typeName, restrictions).at(src, line)
+	finding.File, finding.Metadata.Module = file, module
 
-	return []*Finding{impossibleIntersection(relationName, typeName, restrictions).at(src, line).in(file, module)}
+	return []*Finding{finding}
 }
 
 // emptyDifferenceIn flags a difference subtracting an operand from itself,
@@ -141,8 +145,10 @@ func emptyDifferenceIn(idx *index, src source, typeName, relationName string,
 
 	line := src.relationLine(relationName, -1)
 	file, module := typeMeta(idx.typeDef(typeName))
+	finding := emptyDifference(relationName, typeName, base).at(src, line)
+	finding.File, finding.Metadata.Module = file, module
 
-	return emptyDifference(relationName, typeName, base).at(src, line).in(file, module)
+	return finding
 }
 
 // operationKey names a rewrite for comparison: direct assignment, a computed

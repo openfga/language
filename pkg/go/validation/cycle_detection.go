@@ -43,7 +43,9 @@ func validateEntryPoints(idx *index, src source) error {
 				finding = noEntryPointLoop(relationName, typeName)
 			}
 
-			fs = append(fs, finding.at(src, line).in(file, module))
+			finding.at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 	}
 

@@ -41,15 +41,18 @@ func validateWildcards(idx *index, src source) error {
 
 				if !idx.typeDefined(restriction.GetType()) {
 					line := src.relationLine(relationName, typeLine)
-					fs = append(fs, undefinedType(restriction.GetType(), relationName, typeName).
-						at(src, line).in(file, module))
+					finding := undefinedType(restriction.GetType(), relationName, typeName).at(src, line)
+					finding.File, finding.Metadata.Module = file, module
+					fs = append(fs, finding)
 				}
 
 				// A wildcard and an explicit relation together is invalid.
 				if restriction.GetRelation() != "" {
 					line := src.relationLine(relationName, typeLine)
-					fs = append(fs, invalidWildcardUsage(restriction.GetType(), relationName, typeName,
-						"wildcard cannot be used with specific relation").at(src, line).in(file, module))
+					finding := invalidWildcardUsage(restriction.GetType(), relationName, typeName,
+						"wildcard cannot be used with specific relation").at(src, line)
+					finding.File, finding.Metadata.Module = file, module
+					fs = append(fs, finding)
 				}
 			}
 		}
@@ -126,6 +129,8 @@ func tuplesetNotAssignable(idx *index, src source, typeName, relationName string
 
 	file, module := typeMeta(typeDef)
 	line := src.relationLine(relationName, -1)
+	finding := tuplesetNotDirect(tuplesetRelation, typeName, relationName).at(src, line)
+	finding.File, finding.Metadata.Module = file, module
 
-	return tuplesetNotDirect(tuplesetRelation, typeName, relationName).at(src, line).in(file, module)
+	return finding
 }

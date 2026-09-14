@@ -72,7 +72,9 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 		// A directly-related type that doesn't exist: `X` is not a valid type.
 		if !idx.typeDefined(restrictedType) {
 			line := src.relationLine(relationName, typeLine)
-			fs = append(fs, invalidType(restrictedType).atRestriction(src, line).in(file, module))
+			finding := invalidType(restrictedType).atRestriction(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 
 			continue
 		}
@@ -81,8 +83,10 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 		// type: `rel` is not a valid relation for `X`.
 		if rel := restriction.GetRelation(); rel != "" && !idx.relationDefined(restrictedType, rel) {
 			line := src.relationLine(relationName, typeLine)
-			fs = append(fs, invalidTypeRelation(restrictedType+"#"+rel, restrictedType, relationName, rel, typeName).
-				at(src, line).in(file, module))
+			finding := invalidTypeRelation(restrictedType+"#"+rel, restrictedType, relationName, rel, typeName).
+				at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 	}
 
@@ -108,7 +112,9 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 		// `define a: b` where b is not a relation on this type.
 		if target := computed.GetRelation(); target != "" && !idx.relationDefined(typeName, target) {
 			line := src.relationLine(relationName, typeLine)
-			fs = append(fs, missingRelation(target, typeName, relationName).at(src, line).in(file, module))
+			finding := missingRelation(target, typeName, relationName).at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 	}
 
@@ -159,15 +165,21 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 
 	// 1. The tupleset relation must exist on the current type.
 	if !idx.relationDefined(typeName, fromRelation) {
-		return []*Finding{invalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName).
-			at(src, line).in(file, module)}
+		finding := invalidTypeRelation(symbol, typeName, relationName, fromRelation, typeName).
+			at(src, line)
+		finding.File, finding.Metadata.Module = file, module
+
+		return []*Finding{finding}
 	}
 
 	// 2. The tupleset relation must be a single direct assignment.
 	fromTypes, isDirect := idx.directlyAssignableTypes(typeName, fromRelation)
 	if !isDirect || len(fromTypes) == 0 {
-		return []*Finding{tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
-			atFromClause(src, line).in(file, module)}
+		finding := tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
+			atFromClause(src, line)
+		finding.File, finding.Metadata.Module = file, module
+
+		return []*Finding{finding}
 	}
 
 	// 3. Each assignable type of the tupleset relation must be a concrete type
@@ -180,8 +192,10 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 	for _, restriction := range fromTypes {
 		if restriction.GetWildcard() != nil || restriction.GetRelation() != "" {
 			// A wildcard or type#relation cannot be used as a tupleset target.
-			fs = append(fs, tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
-				atFromClause(src, line).in(file, module))
+			finding := tupleUsersetRequiresDirect(fromRelation, typeName, relationName).
+				atFromClause(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 
 			continue
 		}
@@ -195,8 +209,10 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 	// If the target is missing on every assignable type, report it per type.
 	if len(notValid) == len(fromTypes) {
 		for _, restriction := range notValid {
-			fs = append(fs, invalidRelationOnTupleset(symbol, targetRelation, typeName, fromRelation,
-				restriction.GetType(), relationName).at(src, line).in(file, module))
+			finding := invalidRelationOnTupleset(symbol, targetRelation, typeName, fromRelation,
+				restriction.GetType(), relationName).at(src, line)
+			finding.File, finding.Metadata.Module = file, module
+			fs = append(fs, finding)
 		}
 	}
 

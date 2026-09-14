@@ -33,26 +33,6 @@ func TestFindingError(t *testing.T) {
 	})
 }
 
-func TestFindingIn(t *testing.T) {
-	t.Parallel()
-
-	t.Run("stamps file and module", func(t *testing.T) {
-		t.Parallel()
-
-		finding := (&Finding{}).in("core.fga", "core")
-
-		assert.Equal(t, "core.fga", finding.File)
-		assert.Equal(t, "core", finding.Metadata.Module)
-	})
-
-	t.Run("nil finding stays nil", func(t *testing.T) {
-		t.Parallel()
-
-		var finding *Finding
-		assert.Nil(t, finding.in("core.fga", "core"))
-	})
-}
-
 func TestJoinFindings(t *testing.T) {
 	t.Parallel()
 

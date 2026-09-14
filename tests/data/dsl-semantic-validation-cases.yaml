@@ -2275,3 +2275,28 @@
       metadata:
         symbol: "less"
         errorType: condition-not-used
+- name: inline expression mixed with plain and named condition is valid
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user, user with cond1, user with $expression]
+
+    condition cond1(x: int) {
+      x < 100
+    }
+  expected_errors: []
+- name: inline expression on userset is valid
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user]
+    type document
+      relations
+        define viewer: [group#member with $expression]
+  expected_errors: []

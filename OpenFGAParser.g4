@@ -43,7 +43,7 @@ relationDefRewrite: rewriteComputedusersetName=extended_identifier (WHITESPACE F
 
 relationDefTypeRestriction: NEWLINE? (
     relationDefTypeRestrictionBase
-    | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE conditionName)
+    | (relationDefTypeRestrictionBase WHITESPACE KEYWORD_WITH WHITESPACE (conditionName | DOLLAR_EXPRESSION))
     ) NEWLINE?;
 relationDefTypeRestrictionBase: relationDefTypeRestrictionType=extended_identifier
     ((COLON relationDefTypeRestrictionWildcard=STAR)

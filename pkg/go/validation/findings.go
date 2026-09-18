@@ -45,6 +45,11 @@ const (
 	InvalidSchemaVersion                         Kind = "invalid-schema-version"
 )
 
+// GraphModelUnbuildable is reported when the weighted-graph builder refuses a
+// model. Unlike the codes above it has no pkg/js or pkg/java counterpart: the
+// weighted graph is a Go-side construct, so this code is not corpus-pinned.
+const GraphModelUnbuildable Kind = "graph-model-unbuildable"
+
 // Range is a start and end position in the source text, used for both the line
 // and the column a finding is at.
 //

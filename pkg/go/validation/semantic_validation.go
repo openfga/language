@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 
@@ -11,7 +12,7 @@ import (
 // refers to — in its type restrictions and in its rewrites — exists in the
 // model.
 func validateRelationReferences(idx *index, src source) error {
-	var fs []*Finding
+	var errs []error
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
@@ -33,26 +34,26 @@ func validateRelationReferences(idx *index, src source) error {
 		if meta := typeDef.GetMetadata(); meta != nil {
 			relationsMetadata := meta.GetRelations()
 			for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-				fs = append(fs, validateTypeRestrictions(idx, src, typeDef, relationName,
-					relationsMetadata[relationName], typeLine)...)
+				errs = append(errs, validateTypeRestrictions(idx, src, typeDef, relationName,
+					relationsMetadata[relationName], typeLine))
 			}
 		}
 
 		relations := typeDef.GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
-			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName,
-				relations[relationName], typeLine)...)
+			errs = append(errs, validateUsersetReferences(idx, src, typeDef, relationName,
+				relations[relationName], typeLine))
 		}
 	}
 
-	return joinFindings(fs...)
+	return errors.Join(errs...)
 }
 
 // validateTypeRestrictions checks a relation's directly-related user types:
 // each restriction must name a defined type, and a `type#relation` restriction
 // a relation defined on that type.
 func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, relationMetadata *openfgav1.RelationMetadata, typeLine int) []*Finding {
+	relationName string, relationMetadata *openfgav1.RelationMetadata, typeLine int) error {
 	if relationMetadata == nil {
 		return nil
 	}
@@ -90,7 +91,7 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // validateUsersetReferences checks the relations a rewrite names: a computed
@@ -98,12 +99,12 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 // validateTupleToUsersetReferences. Union, intersection and difference are
 // walked into.
 func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, userset *openfgav1.Userset, typeLine int) []*Finding {
+	relationName string, userset *openfgav1.Userset, typeLine int) error {
 	if userset == nil {
 		return nil
 	}
 
-	var fs []*Finding
+	var errs []error
 
 	typeName := typeDef.GetType()
 	file, module := typeMeta(typeDef)
@@ -114,32 +115,32 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 			line := src.relationLine(relationName, typeLine)
 			finding := missingRelation(target, typeName, relationName).at(src, line)
 			finding.File, finding.Metadata.Module = file, module
-			fs = append(fs, finding)
+			errs = append(errs, finding)
 		}
 	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		fs = append(fs, validateTupleToUsersetReferences(idx, src, typeDef, relationName, ttu, typeLine)...)
+		errs = append(errs, validateTupleToUsersetReferences(idx, src, typeDef, relationName, ttu, typeLine))
 	}
 
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine)...)
+			errs = append(errs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine))
 		}
 	}
 
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine)...)
+			errs = append(errs, validateUsersetReferences(idx, src, typeDef, relationName, child, typeLine))
 		}
 	}
 
 	if diff := userset.GetDifference(); diff != nil {
-		fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetBase(), typeLine)...)
-		fs = append(fs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetSubtract(), typeLine)...)
+		errs = append(errs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetBase(), typeLine))
+		errs = append(errs, validateUsersetReferences(idx, src, typeDef, relationName, diff.GetSubtract(), typeLine))
 	}
 
-	return fs
+	return errors.Join(errs...)
 }
 
 // validateTupleToUsersetReferences validates a `target from tupleset` rewrite,
@@ -150,7 +151,7 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 //   - the computed target relation must exist on at least one of the types the
 //     tupleset relation is assignable to.
 func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, ttu *openfgav1.TupleToUserset, typeLine int) []*Finding {
+	relationName string, ttu *openfgav1.TupleToUserset, typeLine int) error {
 	fromRelation := ttu.GetTupleset().GetRelation()
 	targetRelation := ttu.GetComputedUserset().GetRelation()
 
@@ -169,7 +170,7 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 			at(src, line)
 		finding.File, finding.Metadata.Module = file, module
 
-		return []*Finding{finding}
+		return finding
 	}
 
 	// 2. The tupleset relation must be a single direct assignment.
@@ -179,7 +180,7 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 			atFromClause(src, line)
 		finding.File, finding.Metadata.Module = file, module
 
-		return []*Finding{finding}
+		return finding
 	}
 
 	// 3. Each assignable type of the tupleset relation must be a concrete type
@@ -216,5 +217,5 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }

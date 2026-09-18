@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 
@@ -12,50 +13,50 @@ import (
 // intersection of conflicting direct assignments, and a difference subtracting
 // an operand from itself.
 func validateComplexOperations(idx *index, src source) error {
-	var fs []*Finding
+	var errs []error
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		relations := typeDef.GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
-			fs = append(fs, operationsIn(idx, src, typeDef.GetType(), relationName,
-				relations[relationName], make(map[string]bool))...)
+			errs = append(errs, operationsIn(idx, src, typeDef.GetType(), relationName,
+				relations[relationName], make(map[string]bool)))
 		}
 	}
 
-	return joinFindings(fs...)
+	return errors.Join(errs...)
 }
 
 // operationsIn checks one rewrite and recurses into its children. The visited
 // map guards the hop a tuple-to-userset makes to its computed relation, so a
 // pair of relations referring to each other terminates.
 func operationsIn(idx *index, src source, typeName, relationName string,
-	userset *openfgav1.Userset, visited map[string]bool) []*Finding {
+	userset *openfgav1.Userset, visited map[string]bool) error {
 	if userset == nil {
 		return nil
 	}
 
-	var fs []*Finding
+	var errs []error
 
 	if union := userset.GetUnion(); union != nil && len(union.GetChild()) > 0 {
-		fs = append(fs, redundantUnionMembersIn(idx, src, typeName, relationName, union)...)
+		errs = append(errs, redundantUnionMembersIn(idx, src, typeName, relationName, union))
 
 		for _, child := range union.GetChild() {
-			fs = append(fs, operationsIn(idx, src, typeName, relationName, child, visited)...)
+			errs = append(errs, operationsIn(idx, src, typeName, relationName, child, visited))
 		}
 	}
 
 	if intersection := userset.GetIntersection(); intersection != nil && len(intersection.GetChild()) > 0 {
-		fs = append(fs, impossibleIntersectionsIn(idx, src, typeName, relationName, intersection)...)
+		errs = append(errs, impossibleIntersectionsIn(idx, src, typeName, relationName, intersection))
 
 		for _, child := range intersection.GetChild() {
-			fs = append(fs, operationsIn(idx, src, typeName, relationName, child, visited)...)
+			errs = append(errs, operationsIn(idx, src, typeName, relationName, child, visited))
 		}
 	}
 
 	if diff := userset.GetDifference(); diff != nil {
-		fs = append(fs, operationsIn(idx, src, typeName, relationName, diff.GetBase(), visited)...)
-		fs = append(fs, operationsIn(idx, src, typeName, relationName, diff.GetSubtract(), visited)...)
-		fs = append(fs, emptyDifferenceIn(idx, src, typeName, relationName, diff))
+		errs = append(errs, operationsIn(idx, src, typeName, relationName, diff.GetBase(), visited))
+		errs = append(errs, operationsIn(idx, src, typeName, relationName, diff.GetSubtract(), visited))
+		errs = append(errs, emptyDifferenceIn(idx, src, typeName, relationName, diff))
 	}
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
@@ -65,18 +66,18 @@ func operationsIn(idx *index, src source, typeName, relationName string,
 				visited[key] = true
 
 				if targetUserset := idx.userset(typeName, target); targetUserset != nil {
-					fs = append(fs, operationsIn(idx, src, typeName, target, targetUserset, visited)...)
+					errs = append(errs, operationsIn(idx, src, typeName, target, targetUserset, visited))
 				}
 			}
 		}
 	}
 
-	return fs
+	return errors.Join(errs...)
 }
 
 // redundantUnionMembersIn flags a union member repeated within one union.
 func redundantUnionMembersIn(idx *index, src source, typeName, relationName string,
-	union *openfgav1.Usersets) []*Finding {
+	union *openfgav1.Usersets) error {
 	var fs []*Finding
 
 	seen := make(map[string]bool)
@@ -98,13 +99,13 @@ func redundantUnionMembersIn(idx *index, src source, typeName, relationName stri
 		seen[key] = true
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // impossibleIntersectionsIn flags an intersection whose direct-assignment
 // members can never agree.
 func impossibleIntersectionsIn(idx *index, src source, typeName, relationName string,
-	intersection *openfgav1.Usersets) []*Finding {
+	intersection *openfgav1.Usersets) error {
 	restrictions := make([]string, 0)
 
 	for _, child := range intersection.GetChild() {
@@ -131,13 +132,13 @@ func impossibleIntersectionsIn(idx *index, src source, typeName, relationName st
 	finding := impossibleIntersection(relationName, typeName, restrictions).at(src, line)
 	finding.File, finding.Metadata.Module = file, module
 
-	return []*Finding{finding}
+	return finding
 }
 
 // emptyDifferenceIn flags a difference subtracting an operand from itself,
 // which is empty by construction.
 func emptyDifferenceIn(idx *index, src source, typeName, relationName string,
-	diff *openfgav1.Difference) *Finding {
+	diff *openfgav1.Difference) error {
 	base := operationKey(diff.GetBase())
 	if base == "" || base != operationKey(diff.GetSubtract()) {
 		return nil

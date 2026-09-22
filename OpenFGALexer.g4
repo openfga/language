@@ -129,6 +129,12 @@ STRING:
 
 BYTES: ('b' | 'B') STRING;
 
+// Reserved condition name for inline expressions on a type restriction
+// (e.g. `define viewer: [user with $expression]`). It is intentionally placed
+// before IDENTIFIER so the literal wins, and `$` exists nowhere else in the
+// lexer, so this cannot collide with any existing token.
+DOLLAR_EXPRESSION: '$expression';
+
 IDENTIFIER: (LETTER | '_') (LETTER | DIGIT | '_' | MINUS)*;
 	// NOTE: MINUS is not allowed in CEL, but allowed in FGA, CEL will be revalidated after
 

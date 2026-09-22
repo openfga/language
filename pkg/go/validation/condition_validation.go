@@ -95,9 +95,16 @@ func ValidateConditionReferences(collector *ErrorCollector, model *openfgav1.Aut
 	validateConditionReferences(collector, NewConditionValidator(model), lines)
 }
 
+// reservedInlineExpression is exempt from the "condition must be defined" check
+// because it is not declared in the model's conditions block.
+const reservedInlineExpression = "$expression"
+
 func validateConditionReferences(collector *ErrorCollector, validator *ConditionValidator, lines []string) {
 	model := validator.model
 	for conditionName := range validator.usedConds {
+		if conditionName == reservedInlineExpression {
+			continue
+		}
 		if _, exists := validator.definedConds[conditionName]; !exists {
 			for _, ref := range validator.conditionRefs[conditionName] {
 				// Anchor the relation line lookup to the referencing type's

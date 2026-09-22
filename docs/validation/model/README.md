@@ -21,7 +21,7 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 |------------|------------|---------|---------------|
 | `schema-version-required` | Schema | Schema version must be specified | [schema-version-required.md](./schema-version-required.md) |
 | `schema-version-unsupported` | Schema | Unsupported schema version | [schema-version-unsupported.md](./schema-version-unsupported.md) |
-| `invalid-schema-version` | Schema | Invalid schema version format | [invalid-schema-version.md](./invalid-schema-version.md) |
+| `invalid-schema-version` | Schema | Declared but not emitted; an unrecognised version reports `invalid-schema` | [invalid-schema-version.md](./invalid-schema-version.md) |
 | `reserved-type-keywords` | Naming | Type name uses reserved keyword | [reserved-type-keywords.md](./reserved-type-keywords.md) |
 | `reserved-relation-keywords` | Naming | Relation name uses reserved keyword | [reserved-relation-keywords.md](./reserved-relation-keywords.md) |
 | `self-error` | Naming | Invalid use of 'self' or 'this' | [self-error.md](./self-error.md) |
@@ -44,8 +44,14 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `condition-not-used` | Condition | Defined condition is never used | [condition-not-used.md](./condition-not-used.md) |
 | `different-nested-condition-name` | Condition | Condition name mismatch in nested structure | [different-nested-condition-name.md](./different-nested-condition-name.md) |
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
-| `invalid-schema` | Schema | Invalid schema structure | [invalid-schema.md](./invalid-schema.md) |
+| `invalid-schema` | Schema | Unrecognised schema version | [invalid-schema.md](./invalid-schema.md) |
 | `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
+
+Five of the codes above are declared but never emitted, so no validation output
+carries them: `invalid-schema-version`, `self-error`, `invalid-syntax`, `cyclic-error`
+and `cyclic-relation`. An unrecognised schema version reports `invalid-schema`, and a
+cycle with no entrypoint reports `relation-no-entry-point`. Their pages are kept
+because each is a published URL.
 
 ## Usage
 

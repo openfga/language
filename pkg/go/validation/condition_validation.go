@@ -81,6 +81,11 @@ func conditionUses(model *openfgav1.AuthorizationModel) map[string][]conditionUs
 	return uses
 }
 
+// reservedInlineExpression is exempt from the undefined-condition check: it is
+// an inline expression, not a condition declared in the model's conditions
+// block, so it has no definition to resolve against.
+const reservedInlineExpression = "$expression"
+
 // undefinedConditions reports, for every reference to a condition the model
 // does not define, one finding per referencing relation.
 func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
@@ -90,6 +95,10 @@ func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
 	defined := model.GetConditions()
 
 	for _, conditionName := range slices.Sorted(maps.Keys(uses)) {
+		if conditionName == reservedInlineExpression {
+			continue
+		}
+
 		if _, ok := defined[conditionName]; ok {
 			continue
 		}

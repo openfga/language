@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 
@@ -20,7 +21,12 @@ type conditionUse struct {
 func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	uses := conditionUses(model)
 
-	fs := undefinedConditions(model, src, uses)
+	// The undefined-condition findings come first, matching the reference's
+	// order; the checks below append after them.
+	var errs []error
+	errs = append(errs, undefinedConditions(model, src, uses))
+
+	var fs []*Finding
 
 	// A condition whose nested name property differs from its map key. It
 	// carries no position, matching the reference.
@@ -47,7 +53,9 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 		fs = append(fs, finding)
 	}
 
-	return joinFindings(fs...)
+	errs = append(errs, joinFindings(fs...))
+
+	return errors.Join(errs...)
 }
 
 // conditionUses collects where each condition is referenced, in the order the
@@ -73,15 +81,24 @@ func conditionUses(model *openfgav1.AuthorizationModel) map[string][]conditionUs
 	return uses
 }
 
+// reservedInlineExpression is exempt from the undefined-condition check: it is
+// an inline expression, not a condition declared in the model's conditions
+// block, so it has no definition to resolve against.
+const reservedInlineExpression = "$expression"
+
 // undefinedConditions reports, for every reference to a condition the model
 // does not define, one finding per referencing relation.
 func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
-	uses map[string][]conditionUse) []*Finding {
+	uses map[string][]conditionUse) error {
 	var fs []*Finding
 
 	defined := model.GetConditions()
 
 	for _, conditionName := range slices.Sorted(maps.Keys(uses)) {
+		if conditionName == reservedInlineExpression {
+			continue
+		}
+
 		if _, ok := defined[conditionName]; ok {
 			continue
 		}
@@ -107,5 +124,5 @@ func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }

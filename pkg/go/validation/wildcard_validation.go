@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 
@@ -66,55 +67,55 @@ func validateWildcards(idx *index, src source) error {
 // and computed relations exist is the reference phase's job; here an existing
 // tupleset relation with no assignable types is reported.
 func validateTupleToUsersets(idx *index, src source) error {
-	var fs []*Finding
+	var errs []error
 
 	for _, typeDef := range idx.model.GetTypeDefinitions() {
 		relations := typeDef.GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
-			fs = append(fs, tuplesetsIn(idx, src, typeDef.GetType(), relationName, relations[relationName])...)
+			errs = append(errs, tuplesetsIn(idx, src, typeDef.GetType(), relationName, relations[relationName]))
 		}
 	}
 
-	return joinFindings(fs...)
+	return errors.Join(errs...)
 }
 
 // tuplesetsIn walks one relation's rewrite tree and reports each
 // tuple-to-userset whose tupleset relation is not directly assignable.
-func tuplesetsIn(idx *index, src source, typeName, relationName string, userset *openfgav1.Userset) []*Finding {
+func tuplesetsIn(idx *index, src source, typeName, relationName string, userset *openfgav1.Userset) error {
 	if userset == nil {
 		return nil
 	}
 
-	var fs []*Finding
+	var errs []error
 
 	if ttu := userset.GetTupleToUserset(); ttu != nil {
-		fs = append(fs, tuplesetNotAssignable(idx, src, typeName, relationName, ttu))
+		errs = append(errs, tuplesetNotAssignable(idx, src, typeName, relationName, ttu))
 	}
 
 	if union := userset.GetUnion(); union != nil {
 		for _, child := range union.GetChild() {
-			fs = append(fs, tuplesetsIn(idx, src, typeName, relationName, child)...)
+			errs = append(errs, tuplesetsIn(idx, src, typeName, relationName, child))
 		}
 	}
 
 	if intersection := userset.GetIntersection(); intersection != nil {
 		for _, child := range intersection.GetChild() {
-			fs = append(fs, tuplesetsIn(idx, src, typeName, relationName, child)...)
+			errs = append(errs, tuplesetsIn(idx, src, typeName, relationName, child))
 		}
 	}
 
 	if diff := userset.GetDifference(); diff != nil {
-		fs = append(fs, tuplesetsIn(idx, src, typeName, relationName, diff.GetBase())...)
-		fs = append(fs, tuplesetsIn(idx, src, typeName, relationName, diff.GetSubtract())...)
+		errs = append(errs, tuplesetsIn(idx, src, typeName, relationName, diff.GetBase()))
+		errs = append(errs, tuplesetsIn(idx, src, typeName, relationName, diff.GetSubtract()))
 	}
 
-	return fs
+	return errors.Join(errs...)
 }
 
 // tuplesetNotAssignable reports a defined tupleset relation that declares no
 // directly-related user types, or nil when it declares some or does not exist.
 func tuplesetNotAssignable(idx *index, src source, typeName, relationName string,
-	ttu *openfgav1.TupleToUserset) *Finding {
+	ttu *openfgav1.TupleToUserset) error {
 	tuplesetRelation := ttu.GetTupleset().GetRelation()
 	if tuplesetRelation == "" || !idx.relationDefined(typeName, tuplesetRelation) {
 		return nil

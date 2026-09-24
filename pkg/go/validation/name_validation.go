@@ -28,9 +28,9 @@ var reservedKeywords = map[string]bool{
 }
 
 // validateTypeName checks one type name against the reserved keywords and the
-// naming rule, returning the finding or nil. It knows nothing about the source
-// text; the caller stamps position.
-func validateTypeName(name string) *Finding {
+// naming rule, returning the finding as an error or nil. It knows nothing about
+// the source text; the caller recovers the finding to stamp position.
+func validateTypeName(name string) error {
 	switch {
 	case reservedKeywords[name]:
 		return reservedTypeName(name)
@@ -41,8 +41,9 @@ func validateTypeName(name string) *Finding {
 	return nil
 }
 
-// validateRelationName checks one relation name, returning the finding or nil.
-func validateRelationName(name, typeName string) *Finding {
+// validateRelationName checks one relation name, returning the finding as an
+// error or nil.
+func validateRelationName(name, typeName string) error {
 	switch {
 	case reservedKeywords[name]:
 		return reservedRelationName(name, typeName)
@@ -53,8 +54,9 @@ func validateRelationName(name, typeName string) *Finding {
 	return nil
 }
 
-// validateConditionName checks one condition name, returning the finding or nil.
-func validateConditionName(name string) *Finding {
+// validateConditionName checks one condition name, returning the finding as an
+// error or nil.
+func validateConditionName(name string) error {
 	if !conditionNameRegex.MatchString(name) {
 		return invalidConditionName(name)
 	}
@@ -78,7 +80,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		module := typeDef.GetMetadata().GetModule()
 
 		typeLine := src.typeLine(typeName)
-		if finding := validateTypeName(typeName).at(src, typeLine); finding != nil {
+		for _, finding := range ExtractAllAs[*Finding](validateTypeName(typeName)) {
+			finding.at(src, typeLine)
 			finding.File, finding.Metadata.Module = file, module
 			fs = append(fs, finding)
 		}
@@ -88,7 +91,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		// model's findings in the same order from run to run.
 		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLine := src.relationLine(relationName, typeLine)
-			if finding := validateRelationName(relationName, typeName).at(src, relationLine); finding != nil {
+			for _, finding := range ExtractAllAs[*Finding](validateRelationName(relationName, typeName)) {
+				finding.at(src, relationLine)
 				finding.File, finding.Metadata.Module = file, module
 				fs = append(fs, finding)
 			}
@@ -101,7 +105,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		file := condition.GetMetadata().GetSourceInfo().GetFile()
 		module := condition.GetMetadata().GetModule()
 
-		if finding := validateConditionName(conditionName).at(src, src.conditionLine(conditionName)); finding != nil {
+		for _, finding := range ExtractAllAs[*Finding](validateConditionName(conditionName)) {
+			finding.at(src, src.conditionLine(conditionName))
 			finding.File, finding.Metadata.Module = file, module
 			fs = append(fs, finding)
 		}

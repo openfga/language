@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"maps"
 	"slices"
 
@@ -11,7 +12,7 @@ import (
 // declared twice, a type restriction repeated in a relation, and a partial
 // relation definition repeated in a union, intersection or difference.
 func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
-	var fs []*Finding
+	var errs []error
 
 	seenTypes := make(map[string]bool)
 
@@ -26,7 +27,7 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 		if seenTypes[typeName] {
 			finding := duplicateTypeName(typeName).at(src, src.typeLine(typeName))
 			finding.File, finding.Metadata.Module = file, module
-			fs = append(fs, finding)
+			errs = append(errs, finding)
 		}
 
 		seenTypes[typeName] = true
@@ -35,20 +36,20 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 
 		relationsMetadata := typeDef.GetMetadata().GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-			fs = append(fs, duplicateRestrictionsIn(src, relationsMetadata[relationName],
-				relationName, typeDef, typeLine)...)
-			fs = append(fs, duplicateOperandsIn(src, typeDef, relationName, typeLine)...)
+			errs = append(errs, duplicateRestrictionsIn(src, relationsMetadata[relationName],
+				relationName, typeDef, typeLine))
+			errs = append(errs, duplicateOperandsIn(src, typeDef, relationName, typeLine))
 		}
 	}
 
-	return joinFindings(fs...)
+	return errors.Join(errs...)
 }
 
 // duplicateRestrictionsIn flags a type restriction repeated in one relation.
 // Restrictions are compared as written: `user`, `user:*`, `user#member` and
 // `user with cond` are all distinct.
 func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMetadata,
-	relationName string, typeDef *openfgav1.TypeDefinition, typeLine int) []*Finding {
+	relationName string, typeDef *openfgav1.TypeDefinition, typeLine int) error {
 	if relationMetadata == nil {
 		return nil
 	}
@@ -85,13 +86,13 @@ func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMet
 		seen[written] = true
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // duplicateOperandsIn flags a partial relation definition repeated in a union
 // or intersection, and a difference that subtracts an operand from itself.
 func duplicateOperandsIn(src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, typeLine int) []*Finding {
+	relationName string, typeLine int) error {
 	relation, ok := typeDef.GetRelations()[relationName]
 	if !ok {
 		return nil
@@ -138,7 +139,7 @@ func duplicateOperandsIn(src source, typeDef *openfgav1.TypeDefinition,
 		}
 	}
 
-	return fs
+	return joinFindings(fs...)
 }
 
 // operandName renders a union/intersection/difference member the way it was

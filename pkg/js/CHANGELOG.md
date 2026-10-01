@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/openfga/language/compare/pkg/js/v0.2.2...pkg/js/v0.2.3) (2026-10-01)
+
+
+### Added
+
+* support $expression reserved condition name on type restrictions ([#664](https://github.com/openfga/language/issues/664)) ([0d2ad7f](https://github.com/openfga/language/commit/0d2ad7fb7c40a9ade99ddbfaffc3cc12f5186456))
+
+
+### Fixed
+
+* correct error locations when type/schema lines have trailing comments ([#628](https://github.com/openfga/language/issues/628)) ([92d7b52](https://github.com/openfga/language/commit/92d7b5278a316ca9efa2aa38bf024191ce9cc37a))
+
 ## [0.2.2](https://github.com/openfga/language/compare/pkg/js/v0.2.1...pkg/js/v0.2.2) (2026-07-07)
 
 

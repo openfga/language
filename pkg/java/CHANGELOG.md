@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/openfga/language/compare/pkg/java/v0.2.1...pkg/java/v0.2.2) (2026-10-01)
+
+
+### Added
+
+* support $expression reserved condition name on type restrictions ([#664](https://github.com/openfga/language/issues/664)) ([0d2ad7f](https://github.com/openfga/language/commit/0d2ad7fb7c40a9ade99ddbfaffc3cc12f5186456))
+
+
+### Fixed
+
+* correct error locations when type/schema lines have trailing comments ([#628](https://github.com/openfga/language/issues/628)) ([92d7b52](https://github.com/openfga/language/commit/92d7b5278a316ca9efa2aa38bf024191ce9cc37a))
+* **java:** derive publish coordinates from project instead of hardcoded values ([67c43b7](https://github.com/openfga/language/commit/67c43b7e506ed97bc1d79d5af7e627193001111a))
+
 ## [0.2.1](https://github.com/openfga/language/compare/pkg/java/v0.2.0-beta.2...pkg/java/v0.2.1) (2026-07-06)
 
 

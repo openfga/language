@@ -26,14 +26,24 @@ func (v *DirectAssignmentValidator) occurrences() int {
 	return v.occurred
 }
 
+func isDirectAssignment(userset *openfgav1.Userset) bool {
+	if userset == nil {
+		return false
+	}
+
+	_, ok := userset.GetUserset().(*openfgav1.Userset_This)
+
+	return ok
+}
+
 func (v *DirectAssignmentValidator) isFirstPosition(userset *openfgav1.Userset) bool { //nolint:cyclop
-	if userset.GetThis() != nil {
+	if isDirectAssignment(userset) {
 		return true
 	}
 
 	switch {
 	case userset.GetDifference() != nil && userset.GetDifference().GetBase() != nil:
-		if userset.GetDifference().GetBase().GetThis() != nil {
+		if isDirectAssignment(userset.GetDifference().GetBase()) {
 			return true
 		}
 
@@ -45,7 +55,7 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *openfgav1.Userset) 
 		// so even if it is not in the first position here, we're fine
 		children := userset.GetIntersection().GetChild()
 		for _, child := range children {
-			if child.GetThis() != nil {
+			if isDirectAssignment(child) {
 				return true
 			}
 		}
@@ -56,7 +66,7 @@ func (v *DirectAssignmentValidator) isFirstPosition(userset *openfgav1.Userset) 
 		children := userset.GetUnion().GetChild()
 		if len(children) > 0 {
 			for _, child := range children {
-				if child.GetThis() != nil {
+				if isDirectAssignment(child) {
 					return true
 				}
 			}
@@ -204,7 +214,7 @@ func parseSubRelation(
 	typeRestrictions []*openfgav1.RelationReference,
 	validator *DirectAssignmentValidator,
 ) (string, error) {
-	if relationDefinition.GetThis() != nil {
+	if isDirectAssignment(relationDefinition) {
 		// Make sure we have no more than 1 reference for direct assignment in a given relation
 		validator.incr()
 
@@ -298,7 +308,7 @@ func prioritizeDirectAssignment(usersets []*openfgav1.Userset) []*openfgav1.User
 		thisPosition := -1
 
 		for index, userset := range usersets {
-			if userset.GetThis() != nil {
+			if isDirectAssignment(userset) {
 				thisPosition = index
 
 				break

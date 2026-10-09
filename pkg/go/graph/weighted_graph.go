@@ -251,7 +251,7 @@ func (wg *WeightedAuthorizationModelGraph) GetNodeWeight(node *WeightedAuthoriza
 		return 0, false
 	}
 
-	if strings.Contains(key, "#") {
+	if strings.IndexByte(key, '#') >= 0 {
 		// If the key contains a "#", it is a SpecificTypeAndRelation
 		// We need to find the base type (the part before the "#")
 		return wg.getWeightForUserset(node, key)
@@ -266,7 +266,7 @@ func (wg *WeightedAuthorizationModelGraph) GetEdgeWeight(edge *WeightedAuthoriza
 		return 0, false
 	}
 
-	if !strings.Contains(key, "#") {
+	if strings.IndexByte(key, '#') < 0 {
 		return edge.GetWeight(key)
 	}
 

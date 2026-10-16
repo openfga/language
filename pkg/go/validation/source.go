@@ -3,11 +3,17 @@ package validation
 import (
 	"regexp"
 	"strings"
+
+	"github.com/openfga/language/pkg/go/utils"
 )
 
 // source is the DSL text findings are located in. The zero value is a model
 // that arrived as JSON: there is no text, so every lookup reports absent and
 // every stamp is a no-op, and findings carry no position.
+//
+// The line lookups match against lines folded by utils.NormalizeWhitespace, so
+// `define\towner:` is found like `define owner:`. Columns are still resolved
+// against the raw line, so folding never shifts a reported position.
 type source struct {
 	lines []string
 }
@@ -16,56 +22,11 @@ func newSource(dsl string) source {
 	return source{lines: strings.Split(dsl, "\n")}
 }
 
-// foldInline collapses every run of inline whitespace into one space, so
-// `define\towner:` is matched like `define owner:`. Only space, tab and form
-// feed fold — exactly the lexer's WHITESPACE alphabet (OpenFGALexer.g4);
-// anything else fails to lex and can never reach a line lookup. Lines already
-// normal are returned unchanged. Matching only: columns are still resolved
-// against the raw line, so folding never shifts a reported position.
-//
-// TODO(SoulPancake): replace with utils.NormalizeWhitespace once #652 merges,
-// so the repo has one whitespace-folder.
-func foldInline(line string) string {
-	folded := false
-
-	for i := 0; i < len(line); i++ {
-		if b := line[i]; b == '\t' || b == '\f' || (b == ' ' && i > 0 && line[i-1] == ' ') {
-			folded = true
-
-			break
-		}
-	}
-
-	if !folded {
-		return line
-	}
-
-	var b strings.Builder
-	b.Grow(len(line))
-
-	inRun := false
-
-	for i := 0; i < len(line); i++ {
-		if c := line[i]; c == ' ' || c == '\t' || c == '\f' {
-			if !inRun {
-				b.WriteByte(' ')
-			}
-
-			inRun = true
-		} else {
-			b.WriteByte(c)
-			inRun = false
-		}
-	}
-
-	return b.String()
-}
-
 // typeLine returns the line index a type is declared on, or -1 when the source
 // does not declare it.
 func (s source) typeLine(typeName string) int {
 	for i, line := range s.lines {
-		trimmed := foldInline(strings.TrimSpace(line))
+		trimmed := utils.NormalizeWhitespace(strings.TrimSpace(line))
 		if !strings.HasPrefix(trimmed, "type ") {
 			continue
 		}
@@ -87,7 +48,7 @@ func (s source) relationLine(relationName string, from int) int {
 	}
 
 	for i := from; i < len(s.lines); i++ {
-		trimmed := foldInline(strings.TrimSpace(s.lines[i]))
+		trimmed := utils.NormalizeWhitespace(strings.TrimSpace(s.lines[i]))
 		if !strings.HasPrefix(trimmed, "define ") {
 			continue
 		}
@@ -103,31 +64,11 @@ func (s source) relationLine(relationName string, from int) int {
 	return -1
 }
 
-// conditionLine returns the line index a condition is declared on, or -1. The
-// parameter list's `(` must follow the name, so a condition whose name is a
-// prefix of another (e.g. `less` vs `less_than`) cannot match the wrong line.
+// conditionLine returns the line index a condition is declared on, or -1.
+// `less` does not match a declaration of `less_than`.
 func (s source) conditionLine(conditionName string) int {
-	prefix := "condition " + conditionName
-
-	for i, line := range s.lines {
-		trimmed := foldInline(strings.TrimSpace(line))
-		if !strings.HasPrefix(trimmed, prefix) {
-			continue
-		}
-
-		if strings.HasPrefix(strings.TrimLeft(trimmed[len(prefix):], " \t"), "(") {
-			return i
-		}
-	}
-
-	return -1
+	return utils.GetConditionLineNumber(conditionName, s.lines)
 }
-
-// multiSpaceRegex collapses runs of whitespace when normalizing a DSL line for
-// schema-version matching; foldInline is not used here because the pattern's
-// own \s+ already admits any single separator and this predates it. Hoisted so
-// it is compiled once, not per line.
-var multiSpaceRegex = regexp.MustCompile(`\s{2,}`)
 
 // schemaLine returns the line index the schema version is declared on, or -1.
 //
@@ -139,10 +80,10 @@ func (s source) schemaLine(schemaVersion string) int {
 		return -1
 	}
 
-	pattern := regexp.MustCompile(`^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `(\s+#.*)?\s*$`)
+	pattern := regexp.MustCompile(`^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `(\s+#.*)?$`)
 
 	for i, line := range s.lines {
-		normalized := multiSpaceRegex.ReplaceAllString(strings.TrimSpace(line), " ")
+		normalized := utils.NormalizeWhitespace(strings.TrimSpace(line))
 		if pattern.MatchString(normalized) {
 			return i
 		}

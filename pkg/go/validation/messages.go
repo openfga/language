@@ -110,6 +110,18 @@ func noEntryPoint(relation, typeName string) *Finding {
 	}
 }
 
+// modelUnbuildable reports a model the weighted-graph builder refuses. A
+// whole-model failure has no line, so the finding carries no position, and the
+// builder's own error is folded into the message. It is the single finding the
+// graph path emits for a refused model, standing in for the per-relation
+// findings the rewrite-tree traversal would report.
+func modelUnbuildable(cause error) *Finding {
+	return &Finding{
+		Message:  fmt.Sprintf("the model cannot be built into a weighted graph: %s", cause),
+		Metadata: Metadata{Kind: GraphModelUnbuildable},
+	}
+}
+
 // invalidRelationOnTupleset reports a tuple-to-userset whose computed relation
 // does not exist on the type the tupleset relation is assignable to. The
 // tupleset relation is parent; the finding is about relationName on typeDef.

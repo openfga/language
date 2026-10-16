@@ -235,16 +235,17 @@ func (runner *YAMLTestRunner) errorsMatch(expected YAMLExpectedError, actual *Va
 		}
 	}
 	
-	// Check line numbers if specified
-	if expected.Line.Start > 0 && actual.Line != nil {
-		if actual.Line.Start != expected.Line.Start {
+	// Check line numbers if specified. A case that pins a line requires the error
+	// to carry one, so an error with no position at all is a mismatch.
+	if expected.Line.Start > 0 {
+		if actual.Line == nil || actual.Line.Start != expected.Line.Start {
 			return false
 		}
 	}
 	
 	// Check column numbers if specified
-	if expected.Column.Start > 0 && actual.Column != nil {
-		if actual.Column.Start != expected.Column.Start {
+	if expected.Column.Start > 0 {
+		if actual.Column == nil || actual.Column.Start != expected.Column.Start {
 			return false
 		}
 	}

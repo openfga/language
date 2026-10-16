@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+
+	"github.com/openfga/language/pkg/go/utils"
 )
 
 const (
@@ -17,10 +19,6 @@ var SupportedSchemaVersions = map[string]bool{
 	SchemaVersion12: true,
 }
 
-// multiSpaceRegex collapses runs of whitespace when normalizing a DSL line for
-// schema-version matching. Hoisted so it is compiled once, not per line.
-var multiSpaceRegex = regexp.MustCompile(`\s{2,}`)
-
 func IsValidSchemaVersion(version string) bool {
 	return SupportedSchemaVersions[version]
 }
@@ -29,11 +27,14 @@ func GetSchemaLineNumber(schemaVersion string, lines []string) *int {
 	if len(lines) == 0 {
 		return nil
 	}
-	pattern := `^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `\s*$`
+	// A trailing comment may follow the version (`schema 1.5 # note`), matching the
+	// reference's `(\s+#.*)?`.
+	pattern := `^\s*schema\s+` + regexp.QuoteMeta(schemaVersion) + `(\s+#.*)?$`
 	regex := regexp.MustCompile(pattern)
 	for i, line := range lines {
-		normalizedLine := strings.TrimSpace(line)
-		normalizedLine = multiSpaceRegex.ReplaceAllString(normalizedLine, " ")
+		// Fold inline whitespace with the helper the other line-number lookups
+		// use, so `schema\t1.5` resolves like `schema 1.5`.
+		normalizedLine := utils.NormalizeWhitespace(strings.TrimSpace(line))
 		if regex.MatchString(normalizedLine) {
 			return &i
 		}

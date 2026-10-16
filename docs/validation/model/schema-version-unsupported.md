@@ -352,8 +352,8 @@ In these cases, OpenFGA will not consider those invalid tuples when evaluating q
 ## Related Errors
 
 - [`schema-version-required`](./schema-version-required.md) - When no schema version is specified
-- [`invalid-schema-version`](./invalid-schema-version.md) - When version format is invalid
-- [`invalid-schema`](./invalid-schema.md) - General schema structure issues
+- [`invalid-schema-version`](./invalid-schema-version.md) - Schema versions and how they are reported
+- [`invalid-schema`](./invalid-schema.md) - When the declared version is not recognised
 
 ## Implementation Notes
 

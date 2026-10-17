@@ -42,23 +42,17 @@ public class ModuleToModelShould {
         List<? extends ParsingError> actualErrors = error.getErrors();
         var expectedErrors = testCase.getExpectedErrors();
         assertThat(actualErrors).hasSameSizeAs(expectedErrors);
-
-        var hasSyntaxError = expectedErrors.stream().anyMatch(e -> "syntax".equals(e.getType()));
-        if (!hasSyntaxError) {
-            // ANTLR emits differing syntax-error text across Java/Go/JS, so only assert the full message when
-            // every expected error is a transformation error.
-            assertThat(thrown).hasMessage(expectedMessage(expectedErrors));
-        }
+        // The Java ANTLR runtime reports the fixture's syntax error with the same text and position as Go, so the
+        // whole message is asserted, as the Go runner does.
+        assertThat(thrown).hasMessage(expectedMessage(expectedErrors));
 
         for (int i = 0; i < actualErrors.size(); i++) {
             var expected = expectedErrors.get(i);
             var actual = actualErrors.get(i);
             assertThat(actual.getFile()).isEqualTo(expected.getFile());
-            if (!"syntax".equals(expected.getType())) {
-                assertThat(actual.getMessage()).isEqualTo(expected.getMessage());
-                assertThat(actual.getLine()).isEqualTo(expected.getLine());
-                assertThat(actual.getColumn()).isEqualTo(expected.getColumn());
-            }
+            assertThat(actual.getMessage()).isEqualTo(expected.getMessage());
+            assertThat(actual.getLine()).isEqualTo(expected.getLine());
+            assertThat(actual.getColumn()).isEqualTo(expected.getColumn());
         }
     }
 

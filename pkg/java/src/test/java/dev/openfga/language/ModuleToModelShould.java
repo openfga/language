@@ -70,6 +70,25 @@ public class ModuleToModelShould {
     }
 
     @Test
+    public void rejectModelFileWhoseTypesDeclareRelations() {
+        var core = new ModuleFile("core.fga", "module core\n\ntype user\n");
+        var legacy = new ModuleFile(
+                "legacy.fga",
+                "model\n  schema 1.1\n\ntype doc\n  relations\n    define viewer: [user with c]\n\n"
+                        + "condition c(x: int) {\n  x < 1\n}\n");
+
+        assertSingleTransformationError(List.of(core, legacy), "legacy.fga", 0, 0, "", "file is not a module");
+    }
+
+    @Test
+    public void rejectModelFileOnceWhateverItsTypeCount() {
+        var core = new ModuleFile("core.fga", "module core\n\ntype user\n");
+        var legacy = new ModuleFile("legacy.fga", "model\n  schema 1.1\n\ntype a\n\ntype b\n");
+
+        assertSingleTransformationError(List.of(core, legacy), "legacy.fga", 0, 0, "", "file is not a module");
+    }
+
+    @Test
     public void locateConditionWhoseNameIsAPrefixOfAnother() {
         var core = new ModuleFile(
                 "core.fga",

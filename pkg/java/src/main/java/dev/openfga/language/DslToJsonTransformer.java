@@ -50,7 +50,10 @@ public class DslToJsonTransformer {
     public ModularResult parseModularDsl(String dsl) {
         var listener = walk(dsl);
         return new ModularResult(
-                listener.getAuthorizationModel(), listener.errorListener.getErrors(), listener.getTypeDefExtensions());
+                listener.getAuthorizationModel(),
+                listener.errorListener.getErrors(),
+                listener.isModularModel(),
+                listener.getTypeDefExtensions());
     }
 
     private OpenFgaDslListener walk(String dsl) {
@@ -104,12 +107,17 @@ public class DslToJsonTransformer {
     public static final class ModularResult {
         private final AuthorizationModel authorizationModel;
         private final List<SyntaxError> errors;
+        private final boolean module;
         private final Set<String> typeDefExtensions;
 
         public ModularResult(
-                AuthorizationModel authorizationModel, List<SyntaxError> errors, Set<String> typeDefExtensions) {
+                AuthorizationModel authorizationModel,
+                List<SyntaxError> errors,
+                boolean module,
+                Set<String> typeDefExtensions) {
             this.authorizationModel = authorizationModel;
             this.errors = errors;
+            this.module = module;
             this.typeDefExtensions = typeDefExtensions;
         }
 
@@ -119,6 +127,11 @@ public class DslToJsonTransformer {
 
         public List<SyntaxError> getErrors() {
             return errors;
+        }
+
+        /** Whether the DSL declares a {@code module} header; a {@code model} header is not a module. */
+        public boolean isModule() {
+            return module;
         }
 
         public Set<String> getTypeDefExtensions() {

@@ -8,7 +8,6 @@ import dev.openfga.language.errors.ParsingError;
 import dev.openfga.language.errors.StartEnd;
 import dev.openfga.sdk.api.model.AuthorizationModel;
 import dev.openfga.sdk.api.model.Condition;
-import dev.openfga.sdk.api.model.ConditionMetadata;
 import dev.openfga.sdk.api.model.Metadata;
 import dev.openfga.sdk.api.model.SourceInfo;
 import dev.openfga.sdk.api.model.TypeDefinition;
@@ -64,6 +63,13 @@ public class ModulesToModelTransformer {
                 continue;
             }
 
+            // Only a file with a `module` header contributes to the model. Checking the header rather than the
+            // parsed type metadata also catches a `model` file whose types declare relations, and its conditions.
+            if (!result.isModule()) {
+                addError("file is not a module", new StartEnd(0, 0), new StartEnd(0, 0), filename);
+                continue;
+            }
+
             var extensions = result.getTypeDefExtensions();
             for (var typeDef : result.getAuthorizationModel().getTypeDefinitions()) {
                 if (extensions.contains(typeDef.getType())) {
@@ -83,11 +89,6 @@ public class ModulesToModelTransformer {
                     continue;
                 }
 
-                if (typeDef.getMetadata() == null) {
-                    addError("file is not a module", new StartEnd(0, 0), new StartEnd(0, 0), filename);
-                    continue;
-                }
-
                 typeDef.getMetadata().setSourceInfo(new SourceInfo()._file(filename));
                 types.add(typeDef.getType());
                 typeDefs.add(typeDef);
@@ -99,8 +100,7 @@ public class ModulesToModelTransformer {
                     return;
                 }
 
-                var metadata = condition.getMetadata() != null ? condition.getMetadata() : new ConditionMetadata();
-                condition.setMetadata(metadata.sourceInfo(new SourceInfo()._file(filename)));
+                condition.getMetadata().setSourceInfo(new SourceInfo()._file(filename));
                 conditions.put(name, condition);
             });
         }

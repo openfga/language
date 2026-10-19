@@ -19,7 +19,7 @@ test: init-deps
 	npm run test
 
 lint: init-deps
-	npm run lint;npm run format:check
+	npm run lint && npm run format:check
 
 audit: init-deps
 	npm audit

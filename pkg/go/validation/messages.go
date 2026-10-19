@@ -5,12 +5,11 @@ import (
 	"strings"
 )
 
-// The functions here build one finding each: the corpus-pinned message, the
-// code, and which part of the model is at fault — everything the raise site
-// knows about *what* went wrong. The raise site stamps where it is: the
-// position through at or one of its variants, and the file and module from the
-// model's metadata. A finding built from a JSON model has no source text, so it
-// goes without a position.
+// The functions here build one finding each: the message the corpus expects,
+// the code, and which part of the model is at fault. The raise site stamps
+// where it is: the position through at or one of its variants, and the file and
+// module from the model's metadata. A finding built from a JSON model has no
+// source text, so it goes without a position.
 
 // invalidTypeName reports a type name that breaks the naming rule.
 func invalidTypeName(name string) *Finding {
@@ -112,13 +111,12 @@ func noEntryPoint(relation, typeName string) *Finding {
 }
 
 // invalidRelationOnTupleset reports a tuple-to-userset whose computed relation
-// does not exist on the type the tupleset relation is assignable to. The
-// tupleset relation is parent; the finding is about relationName on typeDef.
-func invalidRelationOnTupleset(symbol, missingRelation, typeDef, parent, targetType, relationName string) *Finding {
+// does not exist on the type the tupleset relation is assignable to.
+func invalidRelationOnTupleset(symbol, missingRelation, typeName, tuplesetRelation, targetType, relationName string) *Finding {
 	return &Finding{
 		Message: fmt.Sprintf("the `%s` relation definition on type `%s` is not valid: `%s` does not exist on `%s`, which is of type `%s`.",
-			missingRelation, typeDef, missingRelation, parent, targetType),
-		Metadata: Metadata{Kind: InvalidRelationOnTupleset, Symbol: symbol, Type: typeDef, Relation: relationName},
+			missingRelation, typeName, missingRelation, tuplesetRelation, targetType),
+		Metadata: Metadata{Kind: InvalidRelationOnTupleset, Symbol: symbol, Type: typeName, Relation: relationName},
 	}
 }
 
@@ -152,7 +150,8 @@ func missingRelation(name, typeName, relation string) *Finding {
 
 // invalidSchemaVersion reports a schema version that was never valid (e.g.
 // "0.9", "2.0"), as distinct from one that is recognized but no longer
-// supported.
+// supported. Its code is InvalidSchema, as in pkg/js; InvalidSchemaVersion is
+// never emitted.
 func invalidSchemaVersion(version string) *Finding {
 	return &Finding{
 		Message:  "invalid schema " + version,

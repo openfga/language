@@ -45,7 +45,7 @@ func TestValidateSchemaVersion(t *testing.T) {
 		assert.Equal(t, &Range{Start: 9, End: 12}, findings[0].Column)
 	})
 
-	t.Run("anything else was never valid", func(t *testing.T) {
+	t.Run("an unknown version is invalid-schema", func(t *testing.T) {
 		t.Parallel()
 
 		findings := ExtractAllAs[*Finding](validateSchemaVersion(model("1.3"), newSource("model\n  schema 1.3\ntype user")))

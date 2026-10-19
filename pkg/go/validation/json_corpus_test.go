@@ -21,25 +21,25 @@ type jsonCorpusCase struct {
 	ExpectedErrors []YAMLExpectedError `yaml:"expected_errors,omitempty"`
 }
 
-// TestJSONValidationCorpus runs the JSON corpus against ValidateJSON. The JS and Java
-// validators consume the same file, so a rule only a JSON model can reach — no
-// position, schema checks on hand-built models — is pinned in all three SDKs.
+// TestJSONValidationCorpus runs the JSON corpus against ValidateJSON. The same file
+// is run by pkg/js and pkg/java, so what only a JSON model can reach, such as
+// findings with no position, is checked the same way in all three.
 func TestJSONValidationCorpus(t *testing.T) {
 	t.Parallel()
 
 	data, err := os.ReadFile(filepath.Join(corpusDir, "json-validation-cases.yaml"))
-	require.NoError(t, err, "the corpus must be readable; a missing file is not a pass")
+	require.NoError(t, err)
 
 	var cases []jsonCorpusCase
 	require.NoError(t, yaml.Unmarshal(data, &cases))
-	require.NotEmpty(t, cases, "an empty corpus would assert nothing")
+	require.NotEmpty(t, cases, "corpus loaded no cases")
 
 	for _, testCase := range cases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
 			if testCase.Skip {
-				t.Skip("the corpus marks this case skipped")
+				t.Skip("marked skip in the corpus")
 			}
 
 			model := &openfgav1.AuthorizationModel{}
@@ -51,7 +51,7 @@ func TestJSONValidationCorpus(t *testing.T) {
 				protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal([]byte(testCase.JSON), model),
 				"the case's JSON must parse as an authorization model")
 
-			result := compareWithCorpus(testCase.ExpectedErrors, findingsOf(ValidateJSON(model)))
+			result := compareWithCorpus(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateJSON(model)))
 
 			for _, problem := range result.Problems {
 				t.Error(problem)

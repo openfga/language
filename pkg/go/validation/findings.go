@@ -1,7 +1,7 @@
 // Package validation checks OpenFGA authorization models for semantic errors
-// beyond what the DSL grammar enforces, mirroring the checks in pkg/js and
-// pkg/java. The three implementations share the corpus under tests/data, which
-// pins each finding's message, code, symbol and position.
+// the DSL grammar does not catch. The corpus under tests/data, shared with
+// pkg/js and pkg/java, gives the expected message, code, symbol and position of
+// each finding.
 package validation
 
 import (
@@ -10,8 +10,15 @@ import (
 	"slices"
 )
 
-// Kind is a finding's machine-readable code, the wire `errorType`. The string
-// values are shared with pkg/js and pkg/java, so they are fixed.
+// Kind is a finding's machine-readable code, the wire `errorType`. The values
+// are part of the output and most are shared with pkg/js and pkg/java, so they
+// are fixed.
+//
+// This package never emits SelfError, UndefinedRelation, CyclicError,
+// CyclicRelation, InvalidSyntax, InvalidSchemaVersion,
+// AssignableRelationsMustHaveType or
+// TypeRestrictionCannotHaveWildcardAndRelation. The last two are emitted by
+// pkg/js and pkg/java.
 type Kind string
 
 const (
@@ -75,7 +82,7 @@ type Metadata struct {
 // Line and Column are nil when the finding could not be located in the source,
 // which is always the case for a model validated from JSON.
 //
-//nolint:errname // named for what it is, as go/scanner.Error is
+//nolint:errname // a diagnostic first; it implements error so validators can return it
 type Finding struct {
 	Message  string   `json:"msg"`
 	Line     *Range   `json:"line,omitempty"`
@@ -144,7 +151,6 @@ func ExtractAllAs[E error](err error) []E {
 		if unwrapped, ok := current.(interface{ Unwrap() []error }); ok {
 			children := unwrapped.Unwrap()
 			// Push last to first so the stack pops them left to right.
-			stack = slices.Grow(stack, len(children))
 			for _, child := range slices.Backward(children) {
 				stack = append(stack, child)
 			}

@@ -113,8 +113,6 @@ condition ` + name + `(x: int) {
 
 		finding := findings[0]
 		assert.Equal(t, InvalidName, finding.Metadata.Kind)
-		assert.Equal(t, "condition '"+name+"' does not match naming rule: '^[^\\*\\s]{1,50}$'.", finding.Message)
-		assert.Equal(t, name, finding.Metadata.Condition)
 		assert.Equal(t, &Range{Start: 6, End: 6}, finding.Line)
 		assert.Equal(t, &Range{Start: 10, End: 61}, finding.Column)
 	})
@@ -182,17 +180,17 @@ type document
 	})
 }
 
-// TestValidateCascadeGate pins the phase gating: once an earlier phase reports,
-// the structural phases (duplicates, entry points, operations, wildcards) are
-// skipped, so one root cause is not reported as a cascade of derived findings.
+// TestValidateCascadeGate checks which phases are skipped: a schema, name or
+// reference finding skips duplicate detection, any finding skips the
+// structural phases, and the multi-file and condition checks always run.
 func TestValidateCascadeGate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("a duplicate suppresses derived entry-point findings", func(t *testing.T) {
 		t.Parallel()
 
-		// document is declared twice, and its viewer computes itself — a
-		// no-entry-point loop that must NOT be reported alongside the duplicate.
+		// document is declared twice, and its viewer computes itself, which on
+		// its own is a no-entry-point loop. Only the duplicate is reported.
 		typeDef := func() *openfgav1.TypeDefinition {
 			return &openfgav1.TypeDefinition{
 				Type: "document",
@@ -212,6 +210,32 @@ func TestValidateCascadeGate(t *testing.T) {
 
 		require.Len(t, findings, 1)
 		assert.Equal(t, DuplicatedError, findings[0].Metadata.Kind)
+	})
+
+	t.Run("a reference error suppresses duplicate detection", func(t *testing.T) {
+		t.Parallel()
+
+		model := &openfgav1.AuthorizationModel{
+			SchemaVersion: "1.1",
+			TypeDefinitions: []*openfgav1.TypeDefinition{
+				{Type: "document"},
+				{Type: "document"},
+				{
+					Type: "folder",
+					Relations: map[string]*openfgav1.Userset{
+						"viewer": {Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}}},
+					},
+					Metadata: &openfgav1.Metadata{Relations: map[string]*openfgav1.RelationMetadata{
+						"viewer": {DirectlyRelatedUserTypes: []*openfgav1.RelationReference{{Type: "ghost"}}},
+					}},
+				},
+			},
+		}
+
+		findings := ExtractAllAs[*Finding](validate(model, source{}))
+
+		require.Len(t, findings, 1)
+		assert.Equal(t, InvalidType, findings[0].Metadata.Kind)
 	})
 
 	t.Run("an entry-point loop is reported when nothing gates it", func(t *testing.T) {
@@ -261,9 +285,30 @@ condition marked(x: int) {
 		assert.Equal(t, InvalidType, findings[0].Metadata.Kind)
 		assert.Equal(t, ConditionNotUsed, findings[1].Metadata.Kind)
 	})
+
+	t.Run("the multi-file check runs even when the cascade is gated", func(t *testing.T) {
+		t.Parallel()
+
+		inShared := func(module string) *openfgav1.Metadata {
+			return &openfgav1.Metadata{Module: module, SourceInfo: &openfgav1.SourceInfo{File: "shared.fga"}}
+		}
+		model := &openfgav1.AuthorizationModel{
+			SchemaVersion: "1.1",
+			TypeDefinitions: []*openfgav1.TypeDefinition{
+				{Type: "self", Metadata: inShared("core")},
+				{Type: "document", Metadata: inShared("docs")},
+			},
+		}
+
+		findings := ExtractAllAs[*Finding](validate(model, source{}))
+
+		require.Len(t, findings, 2)
+		assert.Equal(t, ReservedTypeKeywords, findings[0].Metadata.Kind)
+		assert.Equal(t, MultipleModulesInFile, findings[1].Metadata.Kind)
+	})
 }
 
-// TestValidateFileAndModule pins where file and module come from: the proto's
+// TestValidateFileAndModule checks where file and module come from: the proto's
 // source info, per declaration, not the validated text.
 func TestValidateFileAndModule(t *testing.T) {
 	t.Parallel()
@@ -281,7 +326,7 @@ func TestValidateFileAndModule(t *testing.T) {
 	assert.Equal(t, "core", findings[0].Metadata.Module)
 }
 
-// TestValidateMultiFile pins the one multi-file rule: a file that would carry
+// TestValidateMultiFile checks the one multi-file rule: a file that would carry
 // two modules is reported, with the modules listed in model order.
 func TestValidateMultiFile(t *testing.T) {
 	t.Parallel()

@@ -14,52 +14,40 @@ import (
 func validateMultiFile(model *openfgav1.AuthorizationModel) error {
 	var fs []*Finding
 
-	files := modulesByFile(model)
-	for _, file := range files.keys {
-		if modules := files.values[file]; len(modules) > 1 {
-			fs = append(fs, multipleModulesInSingleFile(file, modules))
+	files, modules := modulesByFile(model)
+	for _, file := range files {
+		if len(modules[file]) > 1 {
+			fs = append(fs, multipleModulesInSingleFile(file, modules[file]))
 		}
 	}
 
 	return joinFindings(fs...)
 }
 
-// orderedGroups records a one-to-many mapping, keeping both the keys and each
-// key's values in the order they were first added.
+// modulesByFile returns the files named in the model's metadata, in the order
+// first seen, and each file's modules, in the same order. A file's modules are
+// joined into its message, and pkg/js lists them in the order it meets them,
+// so a map's order or a sorted one would fail the shared corpus.
 //
-// A file's module names are joined into the message it reports, and the
-// reference lists them in the order they appear in the model. Collecting them
-// into a map would report the same model differently from one run to the next,
-// and sorting them would report it differently from the other SDKs, so the
-// shared corpus fails either way.
-type orderedGroups struct {
-	keys   []string
-	values map[string][]string
-}
-
-func (g *orderedGroups) add(key, value string) {
-	existing, seen := g.values[key]
-	if !seen {
-		g.keys = append(g.keys, key)
-	}
-
-	if slices.Contains(existing, value) {
-		return
-	}
-
-	g.values[key] = append(existing, value)
-}
-
-// modulesByFile walks the model in the order the reference walks it: every
-// type, then every relation, then every condition. The passes are separate
-// because a relation's module is recorded after the module of every type, not
-// after its own type's.
-func modulesByFile(model *openfgav1.AuthorizationModel) *orderedGroups {
-	files := &orderedGroups{values: make(map[string][]string)}
+// The model is walked as pkg/js walks it: every type, then every relation,
+// then every condition. The passes are separate because a relation's module is
+// recorded after the module of every type, not after its own type's.
+func modulesByFile(model *openfgav1.AuthorizationModel) ([]string, map[string][]string) {
+	var files []string
+	modules := make(map[string][]string)
 
 	record := func(file, module string) {
-		if file != "" && module != "" {
-			files.add(filepath.Clean(file), module)
+		if file == "" || module == "" {
+			return
+		}
+
+		file = filepath.Clean(file)
+		if _, seen := modules[file]; !seen {
+			files = append(files, file)
+		}
+
+		if !slices.Contains(modules[file], module) {
+			modules[file] = append(modules[file], module)
 		}
 	}
 
@@ -81,5 +69,5 @@ func modulesByFile(model *openfgav1.AuthorizationModel) *orderedGroups {
 		record(condition.GetMetadata().GetSourceInfo().GetFile(), condition.GetMetadata().GetModule())
 	}
 
-	return files
+	return files, modules
 }

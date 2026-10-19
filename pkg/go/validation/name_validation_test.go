@@ -19,10 +19,8 @@ func TestValidateTypeName(t *testing.T) {
 		t.Parallel()
 
 		for _, reserved := range []string{"self", "this"} {
-			findings := ExtractAllAs[*Finding](validateTypeName(reserved))
-
-			require.Len(t, findings, 1)
-			finding := findings[0]
+			var finding *Finding
+			require.ErrorAs(t, validateTypeName(reserved), &finding)
 			assert.Equal(t, ReservedTypeKeywords, finding.Metadata.Kind)
 			assert.Equal(t, "a type cannot be named 'self' or 'this'.", finding.Message)
 			assert.Equal(t, reserved, finding.Metadata.Symbol)
@@ -33,10 +31,8 @@ func TestValidateTypeName(t *testing.T) {
 	t.Run("rule violation quotes the anchored rule", func(t *testing.T) {
 		t.Parallel()
 
-		findings := ExtractAllAs[*Finding](validateTypeName("doc:ument"))
-
-		require.Len(t, findings, 1)
-		finding := findings[0]
+		var finding *Finding
+		require.ErrorAs(t, validateTypeName("doc:ument"), &finding)
 		assert.Equal(t, InvalidName, finding.Metadata.Kind)
 		assert.Equal(t, "type 'doc:ument' does not match naming rule: '^[^:#@\\*\\s]{1,254}$'.", finding.Message)
 	})
@@ -53,10 +49,8 @@ func TestValidateRelationName(t *testing.T) {
 	t.Run("reserved keyword", func(t *testing.T) {
 		t.Parallel()
 
-		findings := ExtractAllAs[*Finding](validateRelationName("self", "document"))
-
-		require.Len(t, findings, 1)
-		finding := findings[0]
+		var finding *Finding
+		require.ErrorAs(t, validateRelationName("self", "document"), &finding)
 		assert.Equal(t, ReservedRelationKeywords, finding.Metadata.Kind)
 		assert.Equal(t, "a relation cannot be named 'self' or 'this'.", finding.Message)
 		assert.Equal(t, "document", finding.Metadata.Type)
@@ -66,10 +60,8 @@ func TestValidateRelationName(t *testing.T) {
 	t.Run("rule violation names the relation and its type", func(t *testing.T) {
 		t.Parallel()
 
-		findings := ExtractAllAs[*Finding](validateRelationName("view#er", "document"))
-
-		require.Len(t, findings, 1)
-		finding := findings[0]
+		var finding *Finding
+		require.ErrorAs(t, validateRelationName("view#er", "document"), &finding)
 		assert.Equal(t, InvalidName, finding.Metadata.Kind)
 		assert.Equal(t,
 			"relation 'view#er' of type 'document' does not match naming rule: '^[^:#@\\*\\s]{1,50}$'.",
@@ -82,10 +74,8 @@ func TestValidateConditionName(t *testing.T) {
 
 	require.NoError(t, validateConditionName("is_valid"))
 
-	findings := ExtractAllAs[*Finding](validateConditionName("has space"))
-
-	require.Len(t, findings, 1)
-	finding := findings[0]
+	var finding *Finding
+	require.ErrorAs(t, validateConditionName("has space"), &finding)
 	assert.Equal(t, InvalidName, finding.Metadata.Kind)
 	assert.Equal(t, "condition 'has space' does not match naming rule: '^[^\\*\\s]{1,50}$'.", finding.Message)
 	assert.Equal(t, "has space", finding.Metadata.Condition)

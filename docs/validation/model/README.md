@@ -47,11 +47,12 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `invalid-schema` | Schema | Unrecognised schema version | [invalid-schema.md](./invalid-schema.md) |
 | `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
 
-Five of the codes above are declared but never emitted, so no validation output
-carries them: `invalid-schema-version`, `self-error`, `invalid-syntax`, `cyclic-error`
-and `cyclic-relation`. An unrecognised schema version reports `invalid-schema`, and a
-cycle with no entrypoint reports `relation-no-entry-point`. Their pages are kept
-because each is a published URL.
+Six of the codes above are declared but never emitted, so no validation output
+carries them: `invalid-schema-version`, `self-error`, `invalid-syntax`,
+`undefined-relation`, `cyclic-error` and `cyclic-relation`. An unrecognised schema
+version reports `invalid-schema`, a relation that does not exist reports
+`missing-definition`, and a cycle with no entrypoint reports `relation-no-entry-point`.
+Their pages are kept because each is a published URL.
 
 ## Usage
 

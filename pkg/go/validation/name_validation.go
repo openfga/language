@@ -11,7 +11,7 @@ import (
 )
 
 // The anchored name rules, compiled once. Each rule string doubles as the
-// clause quoted in the invalid-name message, so the values are corpus-pinned.
+// clause quoted in the invalid-name message, so the corpus fixes the values.
 var (
 	typeNameRule      = fmt.Sprintf("^%s$", RuleType)
 	relationNameRule  = fmt.Sprintf("^%s$", RuleRelation)
@@ -65,9 +65,9 @@ func validateConditionName(name string) error {
 	return nil
 }
 
-// validateNames checks every type, relation, and condition name in the model
-// against the reserved-keyword and naming-rule constraints. It mirrors the name
-// validation performed in the JS reference implementation's populateRelations.
+// validateNames checks every type, relation and condition name in the model
+// against the reserved keywords and the naming rules. Neither pkg/js nor
+// pkg/java checks condition names.
 func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 	var fs []*Finding
 

@@ -15,9 +15,9 @@ type conditionUse struct {
 	relationName string
 }
 
-// validateConditions runs the three condition checks in the reference's order:
-// every referenced condition is defined, every condition's nested name matches
-// its key, and every defined condition is referenced.
+// validateConditions runs the three condition checks: every referenced
+// condition is defined, every condition's nested name matches its key, and
+// every defined condition is referenced.
 func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	uses := conditionUses(model)
 
@@ -55,9 +55,8 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	return errors.Join(undefinedConditions(model, src, uses), joinFindings(fs...))
 }
 
-// conditionUses collects where each condition is referenced, in the order the
-// references appear walking types in model order and relations in name order —
-// the order the reference implementation reports them in.
+// conditionUses collects where each condition is referenced, walking types in
+// model order and each type's relations in name order.
 func conditionUses(model *openfgav1.AuthorizationModel) map[string][]conditionUse {
 	uses := make(map[string][]conditionUse)
 

@@ -107,10 +107,8 @@ func TestFindingAt(t *testing.T) {
 
 		finding := (&Finding{Metadata: Metadata{Symbol: "viewer"}}).at(src, 4)
 
-		require.NotNil(t, finding.Line)
-		require.NotNil(t, finding.Column)
-		assert.Equal(t, Range{Start: 4, End: 4}, *finding.Line)
-		assert.Equal(t, Range{Start: 11, End: 17}, *finding.Column, "column is half-open over the symbol")
+		assert.Equal(t, &Range{Start: 4, End: 4}, finding.Line)
+		assert.Equal(t, &Range{Start: 11, End: 17}, finding.Column, "column is half-open over the symbol")
 	})
 
 	t.Run("no source means no position", func(t *testing.T) {
@@ -142,7 +140,7 @@ func TestFindingAt(t *testing.T) {
 func TestFindingAtFromClause(t *testing.T) {
 	t.Parallel()
 
-	// `owner` appears both as the define target side and after `from`; the
+	// `owner` is both the computed relation and the tupleset after `from`; the
 	// from-clause stamp must mark the occurrence after `from`.
 	src := newSource("    define viewer: owner from owner")
 

@@ -29,7 +29,7 @@ type user
 
 **Error Message:** `invalid schema 0.9`
 
-The position covers the version itself: line 1, columns 9 to 12.
+The position covers the version itself. Counting from zero, that is line 1, columns 9 to 12.
 
 ### JSON
 
@@ -66,8 +66,8 @@ Use `1.2` if the model is split across files with `module` declarations, `1.1` o
 
 ## Implementation Notes
 
-- Go: `ValidateSchemaVersion` in `pkg/go/validation/schema_validation.go`
+- Go: `validateSchemaVersion` in `pkg/go/validation/schema_validation.go`
 - JavaScript: `validate-dsl.ts`, through `createInvalidSchemaVersionError` in `util/exceptions.ts`
 - Java: `ModelValidator`, through `ValidationErrorsBuilder.raiseInvalidSchemaVersion`
 
-All three tag the finding `invalid-schema`. The message and the code are pinned in `tests/data/dsl-semantic-validation-cases.yaml` and `tests/data/json-validation-cases.yaml`.
+All three tag the finding `invalid-schema`. The message and the code are checked by `tests/data/dsl-semantic-validation-cases.yaml` and `tests/data/json-validation-cases.yaml`.

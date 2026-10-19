@@ -19,11 +19,6 @@ const (
 	corpusError   = "ERROR"
 )
 
-// findingsOf recovers the findings behind a validation error; nil in, none out.
-func findingsOf(err error) []*Finding {
-	return ExtractAllAs[*Finding](err)
-}
-
 // YAMLTestCase is one case from the shared validation corpus under tests/data.
 type YAMLTestCase struct {
 	Name           string              `yaml:"name"`
@@ -50,7 +45,7 @@ type YAMLRange struct {
 	End   int `yaml:"end"`
 }
 
-// YAMLErrorMetadata is the metadata a corpus case pins: the offending symbol and the
+// YAMLErrorMetadata is the metadata a corpus case states: the offending symbol and the
 // error type.
 type YAMLErrorMetadata struct {
 	Symbol    string `yaml:"symbol,omitempty"`
@@ -124,7 +119,7 @@ func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) *YAMLTestResult
 		}
 	}
 
-	return compareWithCorpus(testCase.ExpectedErrors, findingsOf(ValidateDSL(model, testCase.DSL)))
+	return compareWithCorpus(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateDSL(model, testCase.DSL)))
 }
 
 // compareWithCorpus pairs each expected error with a distinct finding, so a case

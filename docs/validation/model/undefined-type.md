@@ -130,7 +130,7 @@ type document
 ## Implementation Notes
 
 This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/semantic_validation.go`
+- Go implementation: `pkg/go/validation/wildcard_validation.go`
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java semantic validation package
 

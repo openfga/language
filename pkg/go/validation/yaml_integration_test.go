@@ -12,11 +12,8 @@ import (
 var corpusDir = filepath.Join("..", "..", "..", "tests", "data")
 
 // TestSemanticValidationCorpus runs every case in the shared semantic validation
-// corpus.
-//
-// A corpus that cannot be loaded fails the test rather than skipping it: a corpus that
-// silently does not run looks exactly like one that passes. The cases the corpus itself
-// marks skip are skipped, so they stay visible in the output.
+// corpus. It fails if the corpus cannot be loaded or has no cases. Cases the corpus
+// marks skip are reported as skipped.
 func TestSemanticValidationCorpus(t *testing.T) {
 	t.Parallel()
 
@@ -39,17 +36,15 @@ func TestSemanticValidationCorpus(t *testing.T) {
 				t.Error(problem)
 			}
 
-			// The problems above are the readable failure; this catches a status that
-			// reported none.
+			// Catches a failed status with no problems listed.
 			require.Equal(t, corpusPass, result.Status)
 		})
 	}
 }
 
-// TestCompareWithCorpus covers the comparison itself. It is what decides whether the
-// corpus passes, so a change that loosened it — comparing a prefix of the message,
-// treating a finding with no position as a match — would take the whole corpus green
-// with it.
+// TestCompareWithCorpus tests the comparison every corpus case relies on. If it
+// accepted a prefix of the message, or a finding with no position, every corpus case
+// would still pass.
 func TestCompareWithCorpus(t *testing.T) {
 	t.Parallel()
 

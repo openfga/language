@@ -10,11 +10,7 @@ An unrecognised schema version is reported under [`invalid-schema`](./invalid-sc
 
 ## Description
 
-`1.1` and `1.2` are the versions OpenFGA accepts. A version outside that set is reported as `invalid-schema`, with the version as the symbol, so `schema 0.9` gives the message `invalid schema 0.9`.
-
-Two neighbouring conditions have codes of their own. Version `1.0` is recognised and retired, so it reports [`schema-version-unsupported`](./schema-version-unsupported.md), and a model carrying no version at all reports [`schema-version-required`](./schema-version-required.md).
-
-A `schema` line that does not parse as a version at all, such as `schema v1.1`, `schema 1.1.0`, or `schema` on its own, fails during DSL transformation and returns a syntax error with no error code attached.
+This code is declared but never emitted. A version other than `1.1` and `1.2` is reported as [`invalid-schema`](./invalid-schema.md), with the version as the symbol, so `schema 0.9` gives the message `invalid schema 0.9`. That page also covers version `1.0`, a missing version, and a `schema` line that does not parse.
 
 ## Resolution
 

@@ -9,8 +9,7 @@ import (
 )
 
 // validateRelationReferences checks that every type and relation a relation
-// refers to — in its type restrictions and in its rewrites — exists in the
-// model.
+// refers to, in its type restrictions and in its rewrites, exists in the model.
 func validateRelationReferences(idx *index, src source) error {
 	var errs []error
 

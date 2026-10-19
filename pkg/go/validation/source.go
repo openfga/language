@@ -93,10 +93,10 @@ func (s source) schemaLine(schemaVersion string) int {
 }
 
 // at stamps the position a finding points at: the given line, and the column
-// its symbol sits at on that line. No other code computes positions.
-// A no-op for a nil finding and for a line the source does not have, which
-// covers both a failed line search (-1) and a model with no source text.
-// Chainable, so a raise site reads `invalidType(name).at(src, line)`.
+// its symbol sits at on that line. It does nothing for a nil finding or for a
+// line the source does not have, which covers both a failed line search (-1)
+// and a model with no source text. It returns f, so a raise site reads
+// `unusedCondition(name).at(src, line)`.
 func (f *Finding) at(src source, line int) *Finding {
 	if f == nil || line < 0 || line >= len(src.lines) {
 		return f

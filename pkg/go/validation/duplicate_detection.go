@@ -23,16 +23,15 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 		}
 
 		file, module := typeMeta(typeDef)
+		typeLine := src.typeLine(typeName)
 
 		if seenTypes[typeName] {
-			finding := duplicateTypeName(typeName).at(src, src.typeLine(typeName))
+			finding := duplicateTypeName(typeName).at(src, typeLine)
 			finding.File, finding.Metadata.Module = file, module
 			errs = append(errs, finding)
 		}
 
 		seenTypes[typeName] = true
-
-		typeLine := src.typeLine(typeName)
 
 		relationsMetadata := typeDef.GetMetadata().GetRelations()
 		for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {

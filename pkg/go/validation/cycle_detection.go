@@ -103,8 +103,9 @@ func hasEntryPointOrLoop(idx *index, typeName, relationName string,
 			assignable := idx.userset(restrictedType, restrictedRelation)
 			if assignable == nil {
 				// Matches validate-dsl.ts: returns on the first missing
-				// reference rather than trying later types. Unreachable in
-				// practice (the reference pass + cascade gate run first).
+				// reference rather than trying later types. Unreachable through
+				// validate, which reports the missing relation and skips this
+				// phase.
 				return entryPointResult{}
 			}
 

@@ -108,7 +108,7 @@ func TestExtractAllAs(t *testing.T) {
 	})
 }
 
-// TestFindingErrorsInterop pins that the standard errors helpers still reach a
+// TestFindingErrorsInterop checks that the standard errors helpers still reach a
 // finding, so a caller that only wants the first is not forced through
 // ExtractAllAs.
 func TestFindingErrorsInterop(t *testing.T) {

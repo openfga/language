@@ -6,9 +6,8 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// ValidateDSL runs every validation over model, using dsl — the source text the
-// model was parsed from — to resolve each finding's position. The model is the
-// already-parsed proto; nothing here parses.
+// ValidateDSL validates model, which was parsed from dsl, and uses dsl only to
+// find each finding's line and column.
 //
 // It returns nil for a valid model. Otherwise the error joins every finding in
 // the order raised, which ExtractAllAs recovers:
@@ -20,25 +19,27 @@ func ValidateDSL(model *openfgav1.AuthorizationModel, dsl string) error {
 	return validate(model, newSource(dsl))
 }
 
-// ValidateJSON runs every validation over a model that reached the caller as
-// JSON, so with no DSL source text behind it. Findings carry a nil Line and
-// Column; the messages and metadata are what ValidateDSL reports for the same
-// model. The name matches pkg/js's validateJSON and pkg/java's validateJson.
+// ValidateJSON validates a model that has no DSL source, such as one received
+// as JSON. Its findings have no Line or Column but otherwise match what
+// ValidateDSL reports for the same model. The name matches pkg/js's
+// validateJSON and pkg/java's validateJson.
 func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 	return validate(model, source{})
 }
 
-// validate runs the validation phases in the reference implementation's order.
+// validate runs the validation phases over model and joins their findings.
 //
-// Schema, name and reference validation always run. Duplicate detection runs
-// only if they found nothing, and the later structural phases only if nothing
-// has been found at all: a model with bad references or duplicates would
-// otherwise produce a cascade of derived entry-point and operation errors for
-// the same root cause. Multi-file and condition checks always run.
+// Schema, name and relation-reference validation always run. Duplicate
+// detection runs only if they found nothing, and the later structural phases
+// only if nothing has been found at all: a model with bad references or
+// duplicates would otherwise produce a cascade of derived entry-point and
+// operation errors for the same root cause. Multi-file and condition checks
+// always run.
 //
-// The reference gates differently: when schema or name validation finds
-// anything it skips every later check but the multi-file one, so for such a
-// model it reports fewer findings than this does.
+// The gating in pkg/js differs: when schema or name validation finds anything
+// it skips every later check but the multi-file one, so for such a model it
+// reports fewer findings than this does. Findings are also not always in
+// pkg/js's order, which this package's corpus test does not check.
 func validate(model *openfgav1.AuthorizationModel, src source) error {
 	if model == nil {
 		return nil

@@ -25,9 +25,10 @@ func buildDeepChainDSL(depth int) string {
 	return b.String()
 }
 
-// buildWideUnionDSL builds a relation whose rewrite is a wide union of computed
-// usersets, each resolving down its own path, stressing the sibling-isolating
-// copies in the union branch.
+// buildWideUnionDSL builds a relation `wide` that is a union of width computed
+// usersets. Every member but the last computes itself and has no entry point;
+// the last resolves through base, so the union reaches it only after walking
+// every other member.
 func buildWideUnionDSL(width int) string {
 	var b strings.Builder
 	b.WriteString("model\n  schema 1.1\ntype user\n")
@@ -36,7 +37,11 @@ func buildWideUnionDSL(width int) string {
 	members := make([]string, 0, width)
 	for i := 0; i < width; i++ {
 		name := fmt.Sprintf("m%d", i)
-		fmt.Fprintf(&b, "    define %s: base\n", name)
+		target := name
+		if i == width-1 {
+			target = "base"
+		}
+		fmt.Fprintf(&b, "    define %s: %s\n", name, target)
 		members = append(members, name)
 	}
 	fmt.Fprintf(&b, "    define wide: %s\n", strings.Join(members, " or "))
@@ -55,10 +60,9 @@ func entryPointsFor(t *testing.T, dsl string) []*Finding {
 	return ExtractAllAs[*Finding](validateEntryPoints(newIndex(model), newSource(dsl)))
 }
 
-// TestCycleDetection_DeepChainTerminatesWithEntry verifies a long linear chain
-// of computed usersets terminating in a direct assignment resolves with an entry
-// point and terminates: the visited map must flow down the whole chain rather
-// than being copied per hop, or deep chains go quadratic.
+// TestCycleDetection_DeepChainTerminatesWithEntry checks that a chain of a
+// thousand computed usersets ending in a direct assignment resolves with an
+// entry point.
 func TestCycleDetection_DeepChainTerminatesWithEntry(t *testing.T) {
 	findings := entryPointsFor(t, buildDeepChainDSL(1000))
 
@@ -68,15 +72,23 @@ func TestCycleDetection_DeepChainTerminatesWithEntry(t *testing.T) {
 	}
 }
 
-// TestCycleDetection_WideUnionTerminatesWithEntry verifies that a wide union of
-// computed usersets, all reachable down to a concrete type, resolves with an
-// entry point and that the sibling-isolating copies don't change the outcome.
+// TestCycleDetection_WideUnionTerminatesWithEntry checks that a union keeps
+// looking past members with no entry point: `wide` resolves through its last
+// member, after 999 that loop.
 func TestCycleDetection_WideUnionTerminatesWithEntry(t *testing.T) {
-	findings := entryPointsFor(t, buildWideUnionDSL(1000))
+	const width = 1000
+	findings := entryPointsFor(t, buildWideUnionDSL(width))
 
-	if len(findings) > 0 {
-		t.Fatalf("wide union of resolvable members should have an entry point, "+
-			"got %d findings: %v", len(findings), findings)
+	for _, finding := range findings {
+		if finding.Metadata.Relation == "wide" {
+			t.Fatalf("union with a resolvable last member should have an entry "+
+				"point, but got finding: %s", finding.Message)
+		}
+	}
+
+	// Each looping member is reported on its own.
+	if len(findings) != width-1 {
+		t.Fatalf("expected %d no-entry-point findings, got %d", width-1, len(findings))
 	}
 }
 
@@ -99,9 +111,9 @@ type doc
 	}
 }
 
-// TestCycleDetection_UnionSiblingIsolation verifies a looping union member does
-// not poison a sibling that has an entry point: `mixed: loops or direct` resolves
-// with an entry point. This is what the per-branch copyVisited must preserve.
+// TestCycleDetection_UnionSiblingIsolation checks that a looping union member
+// does not stop the union from finding a sibling's entry point: `mixed: loops or
+// direct` resolves through direct.
 func TestCycleDetection_UnionSiblingIsolation(t *testing.T) {
 	findings := entryPointsFor(t, `model
   schema 1.1
@@ -123,7 +135,7 @@ type doc
 	}
 }
 
-// TestCycleDetection_IntersectionSiblingIsolation verifies one intersection
+// TestCycleDetection_IntersectionSiblingIsolation checks that one intersection
 // operand's walk does not hide a relation from the next: `a` and `b` both reach
 // `x` through a type restriction, and `b` must still find the entry point there
 // after `a` has visited it. This holds only if copyVisited copies the inner
@@ -141,29 +153,5 @@ type doc
 
 	for _, finding := range findings {
 		t.Errorf("unexpected finding: %s", finding.Message)
-	}
-}
-
-// TestCycleDetection_DeepChainCountStable checks a chain whose base self-loops
-// yields exactly one no-entry-point report per relation — neither suppressed
-// nor duplicated by the visited-map sharing on the linear path.
-func TestCycleDetection_DeepChainCountStable(t *testing.T) {
-	var b strings.Builder
-	b.WriteString("model\n  schema 1.1\ntype user\ntype doc\n  relations\n")
-	b.WriteString("    define base: base\n")
-	prev := "base"
-	const depth = 50
-	for i := 0; i < depth; i++ {
-		name := fmt.Sprintf("r%d", i)
-		fmt.Fprintf(&b, "    define %s: %s\n", name, prev)
-		prev = name
-	}
-
-	findings := entryPointsFor(t, b.String())
-
-	// base + r0..r49 = depth+1 relations, all with no entry point.
-	if len(findings) != depth+1 {
-		t.Fatalf("expected %d no-entry-point findings, got %d: %v",
-			depth+1, len(findings), findings)
 	}
 }

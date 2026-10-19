@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"regexp"
@@ -76,11 +77,12 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 			continue
 		}
 
-		file := typeDef.GetMetadata().GetSourceInfo().GetFile()
-		module := typeDef.GetMetadata().GetModule()
+		file, module := typeMeta(typeDef)
 
 		typeLine := src.typeLine(typeName)
-		for _, finding := range ExtractAllAs[*Finding](validateTypeName(typeName)) {
+
+		var finding *Finding
+		if errors.As(validateTypeName(typeName), &finding) {
 			finding.at(src, typeLine)
 			finding.File, finding.Metadata.Module = file, module
 			fs = append(fs, finding)
@@ -91,7 +93,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		// model's findings in the same order from run to run.
 		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
 			relationLine := src.relationLine(relationName, typeLine)
-			for _, finding := range ExtractAllAs[*Finding](validateRelationName(relationName, typeName)) {
+			var finding *Finding
+			if errors.As(validateRelationName(relationName, typeName), &finding) {
 				finding.at(src, relationLine)
 				finding.File, finding.Metadata.Module = file, module
 				fs = append(fs, finding)
@@ -105,7 +108,8 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 		file := condition.GetMetadata().GetSourceInfo().GetFile()
 		module := condition.GetMetadata().GetModule()
 
-		for _, finding := range ExtractAllAs[*Finding](validateConditionName(conditionName)) {
+		var finding *Finding
+		if errors.As(validateConditionName(conditionName), &finding) {
 			finding.at(src, src.conditionLine(conditionName))
 			finding.File, finding.Metadata.Module = file, module
 			fs = append(fs, finding)

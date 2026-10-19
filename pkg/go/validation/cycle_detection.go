@@ -208,12 +208,7 @@ func copyVisited(src map[string]map[string]bool) map[string]map[string]bool {
 	dst := make(map[string]map[string]bool, len(src))
 
 	for typeName, relations := range src {
-		inner := make(map[string]bool, len(relations))
-		for relationName, visited := range relations {
-			inner[relationName] = visited
-		}
-
-		dst[typeName] = inner
+		dst[typeName] = maps.Clone(relations)
 	}
 
 	return dst

@@ -7,9 +7,10 @@ import (
 
 // The functions here build one finding each: the corpus-pinned message, the
 // code, and which part of the model is at fault — everything the raise site
-// knows about *what* went wrong. Where it is in the source (position, file,
-// module) is stamped by the raise site through at and in, which is all a
-// finding built from a JSON model, having no source text, goes without.
+// knows about *what* went wrong. The raise site stamps where it is: the
+// position through at or one of its variants, and the file and module from the
+// model's metadata. A finding built from a JSON model has no source text, so it
+// goes without a position.
 
 // invalidTypeName reports a type name that breaks the naming rule.
 func invalidTypeName(name string) *Finding {

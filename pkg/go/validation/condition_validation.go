@@ -21,17 +21,14 @@ type conditionUse struct {
 func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	uses := conditionUses(model)
 
-	// The undefined-condition findings come first, matching the reference's
-	// order; the checks below append after them.
-	var errs []error
-	errs = append(errs, undefinedConditions(model, src, uses))
-
 	var fs []*Finding
 
 	// A condition whose nested name property differs from its map key. It
 	// carries no position, matching the reference.
 	conditions := model.GetConditions()
-	for _, conditionKey := range slices.Sorted(maps.Keys(conditions)) {
+	names := slices.Sorted(maps.Keys(conditions))
+
+	for _, conditionKey := range names {
 		condition := conditions[conditionKey]
 		if condition != nil && condition.GetName() != conditionKey {
 			fs = append(fs, differentNestedConditionName(conditionKey, condition.GetName()))
@@ -39,7 +36,7 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 	}
 
 	// A condition defined but never referenced.
-	for _, conditionName := range slices.Sorted(maps.Keys(conditions)) {
+	for _, conditionName := range names {
 		if len(uses[conditionName]) > 0 {
 			continue
 		}
@@ -53,9 +50,9 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 		fs = append(fs, finding)
 	}
 
-	errs = append(errs, joinFindings(fs...))
-
-	return errors.Join(errs...)
+	// The undefined-condition findings come first, matching the reference's
+	// order.
+	return errors.Join(undefinedConditions(model, src, uses), joinFindings(fs...))
 }
 
 // conditionUses collects where each condition is referenced, in the order the

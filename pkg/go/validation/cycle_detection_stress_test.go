@@ -123,6 +123,27 @@ type doc
 	}
 }
 
+// TestCycleDetection_IntersectionSiblingIsolation verifies one intersection
+// operand's walk does not hide a relation from the next: `a` and `b` both reach
+// `x` through a type restriction, and `b` must still find the entry point there
+// after `a` has visited it. This holds only if copyVisited copies the inner
+// per-type maps as well as the outer one.
+func TestCycleDetection_IntersectionSiblingIsolation(t *testing.T) {
+	findings := entryPointsFor(t, `model
+  schema 1.1
+type user
+type doc
+  relations
+    define x: [user]
+    define a: [doc#x]
+    define b: [doc#x]
+    define r: a and b`)
+
+	for _, finding := range findings {
+		t.Errorf("unexpected finding: %s", finding.Message)
+	}
+}
+
 // TestCycleDetection_DeepChainCountStable checks a chain whose base self-loops
 // yields exactly one no-entry-point report per relation — neither suppressed
 // nor duplicated by the visited-map sharing on the linear path.

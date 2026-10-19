@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
@@ -86,6 +87,61 @@ type document
 		assert.Equal(t, "editor", finding.Metadata.Symbol)
 		assert.Equal(t, &Range{Start: 5, End: 5}, finding.Line)
 		assert.Equal(t, &Range{Start: 19, End: 25}, finding.Column)
+	})
+
+	t.Run("an invalid condition name is reported at its declaration", func(t *testing.T) {
+		t.Parallel()
+
+		// The naming rule caps a condition name at 50 characters; the grammar
+		// does not.
+		name := strings.Repeat("c", 51)
+		dsl := `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user with ` + name + `]
+condition ` + name + `(x: int) {
+  x > 0
+}`
+
+		err := ValidateDSL(mustParse(t, dsl), dsl)
+		require.Error(t, err)
+
+		findings := ExtractAllAs[*Finding](err)
+		require.Len(t, findings, 1)
+
+		finding := findings[0]
+		assert.Equal(t, InvalidName, finding.Metadata.Kind)
+		assert.Equal(t, "condition '"+name+"' does not match naming rule: '^[^\\*\\s]{1,50}$'.", finding.Message)
+		assert.Equal(t, name, finding.Metadata.Condition)
+		assert.Equal(t, &Range{Start: 6, End: 6}, finding.Line)
+		assert.Equal(t, &Range{Start: 10, End: 61}, finding.Column)
+	})
+
+	t.Run("undefined conditions are reported before unused ones", func(t *testing.T) {
+		t.Parallel()
+
+		dsl := `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user with missing]
+condition marked(x: int) {
+  x > 0
+}`
+
+		err := ValidateDSL(mustParse(t, dsl), dsl)
+		require.Error(t, err)
+
+		findings := ExtractAllAs[*Finding](err)
+		require.Len(t, findings, 2)
+
+		assert.Equal(t, ConditionNotDefined, findings[0].Metadata.Kind)
+		assert.Equal(t, "missing", findings[0].Metadata.Condition)
+		assert.Equal(t, ConditionNotUsed, findings[1].Metadata.Kind)
+		assert.Equal(t, "marked", findings[1].Metadata.Condition)
 	})
 }
 

@@ -30,13 +30,15 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 
 // validate runs the validation phases in the reference implementation's order.
 //
-// Schema, name and reference validation always run. The later structural
-// phases are gated on nothing having been found yet: a model with bad
-// references or duplicates would otherwise produce a cascade of derived
-// entry-point and operation errors for the same root cause. This mirrors the
-// reference's modelValidation, which skips the later passes once any error has
-// been recorded. Multi-file and condition checks are independent of the cascade
-// and always run, matching the reference's handling of conditions.
+// Schema, name and reference validation always run. Duplicate detection runs
+// only if they found nothing, and the later structural phases only if nothing
+// has been found at all: a model with bad references or duplicates would
+// otherwise produce a cascade of derived entry-point and operation errors for
+// the same root cause. Multi-file and condition checks always run.
+//
+// The reference gates differently: when schema or name validation finds
+// anything it skips every later check but the multi-file one, so for such a
+// model it reports fewer findings than this does.
 func validate(model *openfgav1.AuthorizationModel, src source) error {
 	if model == nil {
 		return nil

@@ -25,7 +25,7 @@ class ValidationErrorsBuilder {
 
         var properties = new ErrorProperties(null, null, message);
 
-        if (lines != null) {
+        if (lines != null && lineIndex >= 0 && lineIndex < lines.length) {
             var rawLine = lines[lineIndex];
             var regex = Pattern.compile("\\b" + symbol + "\\b");
             var wordIdx = 0;
@@ -97,9 +97,15 @@ class ValidationErrorsBuilder {
     }
 
     public void raiseAssignableRelationMustHaveTypes(int lineIndex, String symbol) {
-        var rawLine = lines[lineIndex];
-        var actualValue =
-                rawLine.contains("[") ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1) : "self";
+        // Mirror the JS behavior: fall back to an empty value when the line
+        // cannot be resolved instead of throwing ArrayIndexOutOfBoundsException.
+        var actualValue = "";
+        if (lines != null && lineIndex >= 0 && lineIndex < lines.length) {
+            var rawLine = lines[lineIndex];
+            actualValue = rawLine.contains("[")
+                    ? rawLine.substring(rawLine.indexOf('['), rawLine.lastIndexOf(']') + 1)
+                    : "self";
+        }
         var message = "assignable relation '" + actualValue + "' must have types";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol);
         var metadata = new ValidationMetadata(symbol, ValidationError.AssignableRelationsMustHaveType);

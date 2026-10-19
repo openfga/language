@@ -11,7 +11,7 @@ const (
 	RuleType      Rule = "[^:#@\\*\\s]{1,254}"
 	RuleRelation  Rule = "[^:#@\\*\\s]{1,50}"
 	RuleCondition Rule = "[^\\*\\s]{1,50}"
-	RuleID        Rule = "[^#:\\s*][a-zA-Z0-9_|*@.+]*"
+	RuleID        Rule = "[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*"
 	RuleObject    Rule = "[^\\s]{2,256}"
 )
 

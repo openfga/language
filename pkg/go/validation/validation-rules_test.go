@@ -1,10 +1,31 @@
 package validation
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
+
+type objectIDValidationTestCase struct {
+	Name     string `yaml:"name"`
+	ObjectID string `yaml:"object_id"`
+	Valid    bool   `yaml:"valid"`
+}
+
+func loadObjectIDValidationTestCases(t *testing.T) []objectIDValidationTestCase {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join("../../../tests", "data", "object-id-validation-cases.yaml"))
+	assert.NoError(t, err)
+
+	var testCases []objectIDValidationTestCase
+	assert.NoError(t, yaml.Unmarshal(data, &testCases))
+
+	return testCases
+}
 
 func validateBadStructure(t *testing.T, validator func(string) bool) {
 	t.Helper()
@@ -27,35 +48,10 @@ func validateBadStructure(t *testing.T, validator func(string) bool) {
 func TestValidateObjectID(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		value    string
-		expected bool
-	}{
-		{"document1", true},                   // Should pass valid ID
-		{"doc_123", true},                     // Should pass valid ID with underscore
-		{"user@domain.com", true},             // Should pass valid email-like ID
-		{"file.name", true},                   // Should pass valid ID with dot
-		{"data+set", true},                    // Should pass valid ID with plus
-		{"pipe|char", true},                   // Should pass valid ID with pipe
-		{"star*char", true},                   // Should pass valid ID with star
-		{"underscore_", true},                 // Should pass valid ID with underscore
-		{"pipe|underscore_@domain.com", true}, // Should pass valid complex ID
-		{"#document1", false},                 // Should fail if starts with #
-		{":doc123", false},                    // Should fail if starts with :
-		{" doc123", false},                    // Should fail if starts with space
-		{"doc*123", true},                     // Should pass valid ID with star
-		{"doc:123", false},                    // Should fail if contains :
-		{"doc#123", false},                    // Should fail if contains #
-		{"doc 123", false},                    // Should fail if contains space
-		{"doc*", true},                        // Should pass valid ID with star
-		{"doc:", false},                       // Should fail if ends with :
-		{"    doc", false},                    // Should fail if starts with space
-	}
-
-	for _, test := range tests {
-		t.Run(test.value, func(t *testing.T) {
+	for _, test := range loadObjectIDValidationTestCases(t) {
+		t.Run(test.Name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, test.expected, ValidateObjectID(test.value))
+			assert.Equal(t, test.Valid, ValidateObjectID(test.ObjectID))
 		})
 	}
 }

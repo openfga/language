@@ -225,7 +225,7 @@ const createInvalidTypeError = (props: BaseProps, typeName: string) => {
 const createAssignableRelationMustHaveTypesError = (props: BaseProps) => {
   const { errors, lines, lineIndex } = props;
 
-  if (!lines?.length || lineIndex === undefined) {
+  if (!lines?.length || lineIndex === undefined || lineIndex < 0) {
     const actualValue = "";
     errors.push(
       constructValidationError({
@@ -292,7 +292,7 @@ const createDuplicateRelationError = (props: BaseProps, relationName: string, ty
 const createDuplicateRelationshipDefinitionError = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol, file, module } = props;
 
-  if (!lines?.length || lineIndex === undefined) {
+  if (!lines?.length || lineIndex === undefined || lineIndex < 0) {
     errors.push(
       new ModelValidationSingleError(
         {
@@ -437,7 +437,7 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
     offendingType: metadata.offendingType,
   };
 
-  if (lines?.length && lineIndex != undefined) {
+  if (lines?.length && lineIndex != undefined && lineIndex >= 0) {
     const rawLine = lines[lineIndex];
 
     const re = new RegExp("\\b" + metadata.symbol + "\\b");
@@ -749,7 +749,7 @@ interface TransformationErrorProps {
 export function constructTransformationError(props: TransformationErrorProps) {
   const { message, lines, lineIndex, metadata } = props;
 
-  if (!lines?.length || lineIndex === undefined) {
+  if (!lines?.length || lineIndex === undefined || lineIndex < 0) {
     return new ModuleTransformationSingleError(
       {
         msg: message,

@@ -9,6 +9,7 @@ import dev.openfga.sdk.api.model.Userset;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 class Dsl {
@@ -24,7 +25,7 @@ class Dsl {
             return -1;
         }
 
-        return IntStream.range(skipIndex, lines.length)
+        return IntStream.range(Math.max(skipIndex, 0), lines.length)
                 .filter(index -> predicate.test(lines[index]))
                 .findFirst()
                 .orElse(-1);
@@ -35,15 +36,31 @@ class Dsl {
     }
 
     public int getConditionLineNumber(String conditionName, int skipIndex) {
-        return findLine(line -> line.trim().startsWith("condition " + conditionName), skipIndex);
+        // Require `(` after the name so a condition name that is a prefix of
+        // another (e.g. `less` vs `less_than`) cannot match the wrong line.
+        return findLine(
+                line -> line.trim().matches("condition " + Pattern.quote(conditionName) + "\\s*\\(.*"), skipIndex);
     }
 
     public int getRelationLineNumber(String relationName, int skipIndex) {
-        return findLine(line -> line.trim().replaceAll(" {2,}", " ").startsWith("define " + relationName), skipIndex);
+        // Require `:` after the name so a relation name that is a prefix of
+        // another (e.g. `writer` vs `writers`) cannot match the wrong line.
+        return findLine(
+                line -> line.trim()
+                        .replaceAll(" {2,}", " ")
+                        .matches("define " + Pattern.quote(relationName) + "\\s*:.*"),
+                skipIndex);
     }
 
     public int getSchemaLineNumber(String schemaVersion) {
-        return findLine(line -> line.trim().replaceAll(" {2,}", " ").startsWith("schema " + schemaVersion), 0);
+        // Allow only whitespace or a trailing comment after the version so
+        // e.g. `1.1` cannot match `schema 1.10`. A comment must be preceded by
+        // whitespace so a `#` glued to the version isn't treated as a comment.
+        return findLine(
+                line -> line.trim()
+                        .replaceAll(" {2,}", " ")
+                        .matches("schema " + Pattern.quote(schemaVersion) + "(\\s+#.*)?"),
+                0);
     }
 
     public int getTypeLineNumber(String typeName) {
@@ -51,7 +68,10 @@ class Dsl {
     }
 
     public int getTypeLineNumber(String typeName, int skipIndex) {
-        return findLine(line -> line.trim().matches("type " + typeName), skipIndex);
+        // Allow an optional trailing comment (e.g. `type page # module: ...`) after the type name.
+        // The comment must be preceded by whitespace so a `#` glued to the name isn't treated as a comment.
+        // Quote the type name so regex metacharacters (e.g. `.`) are matched literally.
+        return findLine(line -> line.trim().matches("type " + Pattern.quote(typeName) + "(\\s+#.*)?"), skipIndex);
     }
 
     public static String getRelationDefName(Userset userset) {

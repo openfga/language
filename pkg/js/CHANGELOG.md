@@ -1,8 +1,17 @@
 # Changelog
 
-## Unreleased
+## [0.2.2](https://github.com/openfga/language/compare/pkg/js/v0.2.1...pkg/js/v0.2.2) (2026-07-07)
 
-### [Unreleased](https://github.com/openfga/language/compare/pkg/js/v0.2.1...HEAD)
+
+### Added
+
+* allow '-' and '/' in object IDs ([#624](https://github.com/openfga/language/issues/624)) ([e9a8cce](https://github.com/openfga/language/commit/e9a8cce18daf33b83d394a20daf96292c1bf9a54)), closes [#437](https://github.com/openfga/language/issues/437)
+
+
+### Fixed
+
+* don't use openfga/sdk for assertNever ([#539](https://github.com/openfga/language/issues/539)) ([efc2679](https://github.com/openfga/language/commit/efc2679964f754bbb5747ce8fe71372ddbcd472c))
+
 
 ## pkg/js/v0.2.1
 

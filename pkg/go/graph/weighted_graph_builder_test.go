@@ -1,8 +1,10 @@
 package graph
 
 import (
+	"slices"
 	"testing"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/require"
 
 	language "github.com/openfga/language/pkg/go/transformer"
@@ -919,7 +921,7 @@ func TestMixingTerminalTypesInIntersection(t *testing.T) {
 	authorizationModel := language.MustTransformDSLToProto(model)
 	wgb := NewWeightedAuthorizationModelGraphBuilder()
 	_, err := wgb.Build(authorizationModel)
-	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+	require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node group#member:intersection:0")
 }
 
 func TestGraphConstructionMultipleUsersetWithoutOrder(t *testing.T) {
@@ -1907,7 +1909,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node document#viewer:intersection:0")
 		})
 		t.Run("without_direct_types", func(t *testing.T) {
 			t.Parallel()
@@ -1927,7 +1929,7 @@ func TestGraphConstructionIntersection(t *testing.T) {
 			authorizationModel := language.MustTransformDSLToProto(model)
 			wgb := NewWeightedAuthorizationModelGraphBuilder()
 			_, err := wgb.Build(authorizationModel)
-			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node intersection:")
+			require.ErrorContains(t, err, "invalid model: not all paths return the same type for the node document#viewer:intersection:0")
 		})
 	})
 
@@ -2647,4 +2649,569 @@ func TestGraphConstructionTupleCycles(t *testing.T) {
 			require.Equal(t, "group#member", edge.GetRecursiveRelation())
 		}
 	})
+}
+
+// operatorNodeLabels collects the unique labels of all operator nodes in the graph, sorted.
+func operatorNodeLabels(graph *WeightedAuthorizationModelGraph) []string {
+	var labels []string
+	for _, node := range graph.GetNodes() {
+		if node.GetNodeType() == OperatorNode {
+			labels = append(labels, node.GetUniqueLabel())
+		}
+	}
+	slices.Sort(labels)
+	return labels
+}
+
+func TestGraphConstructionDeterministicOperatorNodeLabels(t *testing.T) {
+	t.Parallel()
+	// A model with mixed operators, sibling operators at the same depth,
+	// and multiple relations that each contain operators.
+	model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define d: [user]
+				define e: (a or b) but not (c and d)
+				define f: a and b
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+
+	// The operator node unique labels must be deterministic: the same model must
+	// produce exactly the same operator identifiers no matter how many times the
+	// weighted graph is regenerated.
+	firstGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+	secondGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+
+	firstLabels := operatorNodeLabels(firstGraph)
+	secondLabels := operatorNodeLabels(secondGraph)
+
+	require.Equal(t, firstLabels, secondLabels, "operator node labels must be identical across regenerations")
+
+	// The identifiers are of the form "type#relation:operator:index" where index is a
+	// per-relation running counter assigned in DFS pre-order. This guarantees sibling
+	// operators at the same depth get distinct, stable identifiers.
+	require.Equal(t, []string{
+		"folder#e:exclusion:0",
+		"folder#e:intersection:2",
+		"folder#e:union:1",
+		"folder#f:intersection:0",
+	}, firstLabels)
+
+	// Sanity check: the operators are wired in the expected topology using the deterministic labels.
+	require.Equal(t, "folder#e:exclusion:0", firstGraph.edges["folder#e"][0].to.GetUniqueLabel())
+	exclusionEdges := firstGraph.edges["folder#e:exclusion:0"]
+	require.Len(t, exclusionEdges, 2)
+	require.Equal(t, "folder#e:union:1", exclusionEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#e:intersection:2", exclusionEdges[1].to.GetUniqueLabel())
+}
+
+func TestGraphConstructionDeterministicOperatorNodeLabelsAcrossRelations(t *testing.T) {
+	t.Parallel()
+	// Multiple types, each with multiple relations that contain nested operations.
+	// folder#x has two sibling unions at the same depth (union:1 and union:2), which
+	// proves the per-relation index is a running DFS counter and not a nesting depth.
+	// document also has a relation "x" with operators, proving the type#relation prefix
+	// keeps operator identifiers unique across types (they must not collide).
+	model := `
+		model
+			schema 1.1
+		type user
+		type folder
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define d: [user]
+				define x: (a or b) and (c or d)
+				define y: a but not (b or c)
+		type document
+			relations
+				define a: [user]
+				define b: [user]
+				define c: [user]
+				define x: (a and b) or c
+	`
+	authorizationModel := language.MustTransformDSLToProto(model)
+
+	// Regenerate the weighted graph twice; every operator node label must be identical.
+	firstGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+	secondGraph, err := NewWeightedAuthorizationModelGraphBuilder().Build(authorizationModel)
+	require.NoError(t, err)
+
+	require.Equal(t, operatorNodeLabels(firstGraph), operatorNodeLabels(secondGraph),
+		"operator node labels must be identical across regenerations")
+
+	// Assert the name of every operator node in the whole model.
+	require.Equal(t, []string{
+		"document#x:intersection:1",
+		"document#x:union:0",
+		"folder#x:intersection:0",
+		"folder#x:union:1",
+		"folder#x:union:2",
+		"folder#y:exclusion:0",
+		"folder#y:union:1",
+	}, operatorNodeLabels(firstGraph))
+
+	// folder#x: (a or b) and (c or d) -> intersection(union(a,b), union(c,d))
+	folderX := firstGraph.edges["folder#x"][0].to
+	require.Equal(t, "folder#x:intersection:0", folderX.GetUniqueLabel())
+	folderXEdges := firstGraph.edges["folder#x:intersection:0"]
+	require.Len(t, folderXEdges, 2)
+	require.Equal(t, "folder#x:union:1", folderXEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#x:union:2", folderXEdges[1].to.GetUniqueLabel())
+	require.Equal(t, []string{"folder#a", "folder#b"},
+		[]string{firstGraph.edges["folder#x:union:1"][0].to.GetUniqueLabel(), firstGraph.edges["folder#x:union:1"][1].to.GetUniqueLabel()})
+	require.Equal(t, []string{"folder#c", "folder#d"},
+		[]string{firstGraph.edges["folder#x:union:2"][0].to.GetUniqueLabel(), firstGraph.edges["folder#x:union:2"][1].to.GetUniqueLabel()})
+
+	// folder#y: a but not (b or c) -> exclusion(a, union(b,c))
+	folderY := firstGraph.edges["folder#y"][0].to
+	require.Equal(t, "folder#y:exclusion:0", folderY.GetUniqueLabel())
+	folderYEdges := firstGraph.edges["folder#y:exclusion:0"]
+	require.Len(t, folderYEdges, 2)
+	require.Equal(t, "folder#a", folderYEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "folder#y:union:1", folderYEdges[1].to.GetUniqueLabel())
+
+	// document#x: (a and b) or c -> union(intersection(a,b), c)
+	documentX := firstGraph.edges["document#x"][0].to
+	require.Equal(t, "document#x:union:0", documentX.GetUniqueLabel())
+	documentXEdges := firstGraph.edges["document#x:union:0"]
+	require.Len(t, documentXEdges, 2)
+	require.Equal(t, "document#x:intersection:1", documentXEdges[0].to.GetUniqueLabel())
+	require.Equal(t, "document#c", documentXEdges[1].to.GetUniqueLabel())
+}
+
+// TestRecursionThroughComputedTupleCycle covers "Model 1" from requests.md.
+//
+//	type user
+//	type group
+//	  relations
+//	    define parent_group: [group]
+//	    define child_group: [group]
+//	    define member2: member from parent_group
+//	    define member: [user, group#member] or member2
+//
+// The claim under test is that `member` "should not depend on an edge like member2
+// that has a cycle to member relation" — i.e. the expectation is that this model
+// might fail to build.
+//
+// It does NOT fail: the weighted graph is built successfully. This test documents
+// that observed behavior and explains WHY (see the block comment at the end).
+func TestRecursionThroughComputedTupleCycle(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+		schema 1.1
+	type user
+	type group
+		relations
+			define parent_group: [group]
+			define child_group: [group]
+			define member2: member from parent_group
+			define member: [user, group#member] or member2
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+
+	// The graph builds cleanly. The cycle member -> ... -> member is a *valid*
+	// recursive/tuple cycle (it is reached through a TTU edge and a userset
+	// DirectEdge), not a model cycle. A model cycle (ErrModelCycle) only happens
+	// when a cycle is formed exclusively by computed/rewrite edges with no
+	// terminal type reachable; here `user` is directly assignable to `member`,
+	// so every node in the cycle can reach the terminal type `user`.
+	require.NoError(t, err)
+
+	// `member` reaches the terminal type `user`, but because it participates in a
+	// cycle the weight is Infinite (unbounded number of hops).
+	memberNode := graph.nodes["group#member"]
+	require.Equal(t, Infinite, memberNode.weights["user"])
+	require.Len(t, memberNode.weights, 1)
+
+	// The cycle involves more than one distinct SpecificTypeAndRelation node in
+	// the tupleset path (member -> member2 -> member via `from parent_group`),
+	// so it is flagged as a tuple cycle. It is still recursive on `member`, so
+	// the recursiveRelation is also set to group#member.
+	require.True(t, memberNode.tupleCycle)
+	require.Equal(t, "group#member", memberNode.recursiveRelation)
+
+	// member2 is the intermediate relation the request worried about. It exists,
+	// is part of the same tuple cycle, and also carries Infinite weight to user.
+	member2Node := graph.nodes["group#member2"]
+	require.Equal(t, Infinite, member2Node.weights["user"])
+	require.True(t, member2Node.tupleCycle)
+
+	// The direct-assignment grouping for `member` ([user, group#member]) reaches
+	// user directly (weight 1) via its DirectEdge to user, and loops back to
+	// member via the group#member userset DirectEdge.
+	directGrouping := graph.nodes["group#direct:member"]
+	require.Equal(t, Infinite, directGrouping.weights["user"])
+
+	directEdges := graph.edges["group#direct:member"]
+	require.Len(t, directEdges, 2)
+	// Edge to the terminal type user has weight 1.
+	require.Equal(t, "user", directEdges[0].to.uniqueLabel)
+	require.Equal(t, 1, directEdges[0].weights["user"])
+	// Edge to the group#member userset closes the cycle: Infinite + recursive.
+	require.Equal(t, "group#member", directEdges[1].to.uniqueLabel)
+	require.Equal(t, Infinite, directEdges[1].weights["user"])
+	require.Equal(t, "group#member", directEdges[1].recursiveRelation)
+
+	// The member2 -> member TTU edge (member from parent_group) is the second
+	// back-edge that closes the cycle through the computed relation member2.
+	member2Edges := graph.edges["group#member2"]
+	require.Len(t, member2Edges, 1)
+	require.Equal(t, TTUEdge, member2Edges[0].GetEdgeType())
+	require.Equal(t, "group#parent_group", member2Edges[0].GetTuplesetRelation())
+	require.Equal(t, "group#member", member2Edges[0].to.uniqueLabel)
+	require.True(t, member2Edges[0].tupleCycle)
+
+	/*
+		WHY MODEL 1 DOES NOT FAIL
+		-------------------------
+		The request expected `member` to reject depending on `member2`, which
+		closes a cycle back to `member`. The builder does not reject it because,
+		from the weighted-graph's point of view, this is a *legal* recursive
+		definition, not an illegal one:
+
+		  1. The only construct the builder rejects for cycles is:
+		       - ErrModelCycle: a cycle composed ONLY of computed/rewrite edges
+		         that never reaches a terminal type (e.g. `x: y` / `y: x`).
+		       - ErrContrainstTupleCycle: a cycle whose path crosses an AND
+		         (intersection) or BUT NOT (exclusion) operator.
+		  2. This cycle is neither. The back-edges that close it are:
+		       - group#direct:member --DirectEdge--> group#member (a userset
+		         [group#member]), and
+		       - group#member2 --TTUEdge--> group#member (member from parent_group).
+		     Because at least one edge in the cycle is a TTU or a userset
+		     DirectEdge to a SpecificTypeAndRelation, isTupleCycle() classifies it
+		     as a valid tuple/recursive cycle rather than a model cycle.
+		  3. `member` also has a DirectEdge to the terminal type `user`, so the
+		     node can reach a terminal type. A node with no reachable terminal
+		     type is what triggers ErrInvalidModel — that is not the case here.
+
+		So the presence of the intermediate `member2` relation does not matter:
+		whether the loop goes member -> member (direct userset) or
+		member -> member2 -> member (via TTU), the resulting cycle is a supported
+		recursive relation and the weight to `user` is correctly set to Infinite.
+		The "should not depend on member2" expectation is a semantic/modeling
+		preference, not a rule the weighted-graph builder enforces.
+	*/
+}
+
+// TestRecursionWithTwoIndependentTTUBranches covers "Model 2" from requests.md.
+//
+//	type user
+//	type group
+//	  relations
+//	    define parent_group: [group]
+//	    define child_group: [group]
+//	    define member: [user] or member from parent_group or member from child_group
+//
+// `member` is recursive with TWO independent recursive branches
+// (member from parent_group and member from child_group). This test verifies the
+// graph builds and explains why two recursive branches are still fine.
+func TestRecursionWithTwoIndependentTTUBranches(t *testing.T) {
+	t.Parallel()
+	model := `
+	model
+		schema 1.1
+	type user
+	type group
+		relations
+			define parent_group: [group]
+			define child_group: [group]
+			define member: [user] or member from parent_group or member from child_group
+`
+	authorizationModel := language.MustTransformDSLToProto(model)
+	wgb := NewWeightedAuthorizationModelGraphBuilder()
+	graph, err := wgb.Build(authorizationModel)
+
+	// Builds cleanly — same reasoning as Model 1: user is directly reachable and
+	// the cycles are closed by TTU edges, so they are valid recursive cycles.
+	require.NoError(t, err)
+
+	memberNode := graph.nodes["group#member"]
+	require.Equal(t, Infinite, memberNode.weights["user"])
+	require.Len(t, memberNode.weights, 1)
+
+	// `member` recurses through TWO independent branches (member from parent_group
+	// and member from child_group). Two distinct edges depending on each other to
+	// close the cycle is, by definition, a tuple cycle, so the node is flagged as
+	// BOTH recursive (recursiveRelation = group#member) AND part of a tuple cycle.
+	require.Equal(t, "group#member", memberNode.recursiveRelation)
+	require.True(t, memberNode.tupleCycle)
+
+	// The union has exactly three outgoing edges: one to the terminal type user,
+	// and one TTU edge per recursive branch. Both TTU edges point back to
+	// group#member but are distinguished by their tupleset relation.
+	unionNode := graph.edges["group#member"][0].to
+	require.Equal(t, OperatorNode, unionNode.GetNodeType())
+	require.Equal(t, UnionOperator, unionNode.GetLabel())
+	// The union node is on the cycle path, so it is flagged as a tuple cycle too.
+	require.True(t, unionNode.tupleCycle)
+	require.Equal(t, "group#member", unionNode.recursiveRelation)
+	unionEdges := graph.edges[unionNode.uniqueLabel]
+	require.Len(t, unionEdges, 3)
+
+	// Edge 1: direct to user, weight 1. This edge is NOT part of the cycle (it
+	// reaches a terminal type), so it is not flagged as a tuple cycle.
+	require.Equal(t, "user", unionEdges[0].to.uniqueLabel)
+	require.Equal(t, DirectEdge, unionEdges[0].GetEdgeType())
+	require.Equal(t, 1, unionEdges[0].weights["user"])
+	require.False(t, unionEdges[0].tupleCycle)
+
+	// Edge 2: member from parent_group (recursive branch #1). Part of the cycle.
+	require.Equal(t, "group#member", unionEdges[1].to.uniqueLabel)
+	require.Equal(t, TTUEdge, unionEdges[1].GetEdgeType())
+	require.Equal(t, "group#parent_group", unionEdges[1].GetTuplesetRelation())
+	require.Equal(t, Infinite, unionEdges[1].weights["user"])
+	require.Equal(t, "group#member", unionEdges[1].recursiveRelation)
+	require.True(t, unionEdges[1].tupleCycle)
+
+	// Edge 3: member from child_group (recursive branch #2). Part of the cycle.
+	require.Equal(t, "group#member", unionEdges[2].to.uniqueLabel)
+	require.Equal(t, TTUEdge, unionEdges[2].GetEdgeType())
+	require.Equal(t, "group#child_group", unionEdges[2].GetTuplesetRelation())
+	require.Equal(t, Infinite, unionEdges[2].weights["user"])
+	require.Equal(t, "group#member", unionEdges[2].recursiveRelation)
+	require.True(t, unionEdges[2].tupleCycle)
+}
+
+// TestWeightedParseThisMalformedRelationReference verifies that the weighted builder's
+// parseThis handles degenerate RelationReference shapes correctly, matching the regular
+// builder's behavior after the fix.
+func TestWeightedParseThisMalformedRelationReference(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		model                  *openfgav1.AuthorizationModel
+		expectUserNode         bool
+		expectGroupNode        bool
+		expectBogusUserHashNode bool // whether a "user#" node exists
+		userInDirectAssigns    bool
+		groupInDirectAssigns   bool
+	}{
+		`empty_relation_in_oneof_creates_concrete_type_not_bogus_userset`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true,
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false, // Must not create bogus "user#" node; default case is concrete type
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
+		`degenerate_entry_does_not_inherit_previous_node_in_weighted`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "group",
+						Relations: map[string]*openfgav1.Userset{
+							"member": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"member": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"},
+										{
+											Type:      "group",
+											Condition: "cond1",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Conditions: map[string]*openfgav1.Condition{
+					"cond1": {
+						Name:       "cond1",
+						Expression: "x == 1",
+						Parameters: map[string]*openfgav1.ConditionParamTypeRef{
+							"x": {TypeName: openfgav1.ConditionParamTypeRef_TYPE_NAME_INT},
+						},
+					},
+				},
+			},
+			expectUserNode:          true,
+			expectGroupNode:         true, // group node must exist; curNode must not leak across iterations
+			expectBogusUserHashNode: false,
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    true, // group must be in directAssigns; not inherited from user
+		},
+		`type_with_special_chars_is_skipped`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"}, // Valid entry
+										{Type: "user:admin"}, // Invalid: contains colon, should be skipped
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true, // Valid user entry creates node
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false, // Invalid entry skipped, no bogus node created
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
+		`nil_wildcard_in_oneof_creates_concrete_type`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Wildcard{
+												Wildcard: nil,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectUserNode:          true, // Default case: treats as concrete type
+			expectGroupNode:         false,
+			expectBogusUserHashNode: false,
+			userInDirectAssigns:     true,
+			groupInDirectAssigns:    false,
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			wgb := NewWeightedAuthorizationModelGraphBuilder()
+			graph, err := wgb.Build(testCase.model)
+			require.NoError(t, err)
+			require.NotNil(t, graph)
+
+			// Verify expected nodes exist or don't exist
+			userNode, userExists := graph.GetNodeByID("user")
+			if testCase.expectUserNode {
+				require.True(t, userExists, "user node should exist")
+				require.NotNil(t, userNode)
+			} else {
+				require.False(t, userExists, "user node should not exist")
+			}
+
+			groupNode, groupExists := graph.GetNodeByID("group")
+			if testCase.expectGroupNode {
+				require.True(t, groupExists, "group node should exist")
+				require.NotNil(t, groupNode)
+			} else {
+				require.False(t, groupExists, "group node should not exist")
+			}
+
+			// Verify the bogus "user#" node doesn't exist
+			bogusUserHashNode, bogusExists := graph.GetNodeByID("user#")
+			if testCase.expectBogusUserHashNode {
+				require.True(t, bogusExists, "bogus user# node should exist (before fix)")
+				require.NotNil(t, bogusUserHashNode)
+			} else {
+				require.False(t, bogusExists, "bogus user# node should not exist (after fix)")
+			}
+
+			// Verify directAssigns on document#viewer
+			viewerNode, viewerExists := graph.GetNodeByID("document#viewer")
+			require.True(t, viewerExists, "document#viewer node should exist")
+			require.NotNil(t, viewerNode)
+
+			if testCase.userInDirectAssigns {
+				require.Contains(t, viewerNode.directAssigns, "user",
+					"user should be in document#viewer directAssigns")
+			} else {
+				require.NotContains(t, viewerNode.directAssigns, "user",
+					"user should not be in document#viewer directAssigns")
+			}
+
+			if testCase.groupInDirectAssigns {
+				require.Contains(t, viewerNode.directAssigns, "group",
+					"group should be in document#viewer directAssigns")
+			} else {
+				require.NotContains(t, viewerNode.directAssigns, "group",
+					"group should not be in document#viewer directAssigns")
+			}
+		})
+	}
 }

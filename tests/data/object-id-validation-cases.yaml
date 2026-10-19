@@ -1,0 +1,74 @@
+---
+# Shared object ID validation cases used by the Go, JS, and Java validators.
+# `object_id` is the value under test; `valid` indicates whether object-ID validation should accept it.
+# Object IDs may contain letters, digits and `_ | * @ . + / -` (but not `#`, `:` or whitespace, and
+# may not start with `#`, `:`, whitespace or `*`).
+- name: "valid: alphanumeric"
+  object_id: "document1"
+  valid: true
+- name: "valid: with underscore"
+  object_id: "doc_123"
+  valid: true
+- name: "valid: email-like"
+  object_id: "user@domain.com"
+  valid: true
+- name: "valid: with dot"
+  object_id: "file.name"
+  valid: true
+- name: "valid: with plus"
+  object_id: "data+set"
+  valid: true
+- name: "valid: with pipe"
+  object_id: "pipe|char"
+  valid: true
+- name: "valid: with dash"
+  object_id: "dash-char"
+  valid: true
+- name: "valid: with slash"
+  object_id: "slash/char"
+  valid: true
+- name: "valid: mix of allowed characters"
+  object_id: "a-b/c|d.e+f@g"
+  valid: true
+- name: "valid: with star in the middle"
+  object_id: "star*char"
+  valid: true
+- name: "valid: trailing underscore"
+  object_id: "underscore_"
+  valid: true
+- name: "valid: complex id"
+  object_id: "pipe|underscore_@domain.com"
+  valid: true
+- name: "valid: star not in first position"
+  object_id: "doc*123"
+  valid: true
+- name: "valid: trailing star"
+  object_id: "doc*"
+  valid: true
+- name: "invalid: comma (regression - '-' must stay a literal, not a range)"
+  object_id: "a,b"
+  valid: false
+- name: "invalid: starts with hash"
+  object_id: "#document1"
+  valid: false
+- name: "invalid: starts with colon"
+  object_id: ":doc123"
+  valid: false
+- name: "invalid: starts with space"
+  object_id: " doc123"
+  valid: false
+- name: "invalid: contains colon"
+  object_id: "doc:123"
+  valid: false
+- name: "invalid: contains hash"
+  object_id: "doc#123"
+  valid: false
+- name: "invalid: contains space"
+  object_id: "doc 123"
+  valid: false
+- name: "invalid: ends with colon"
+  object_id: "doc:"
+  valid: false
+- name: "invalid: only leading spaces"
+  object_id: "    doc"
+  valid: false

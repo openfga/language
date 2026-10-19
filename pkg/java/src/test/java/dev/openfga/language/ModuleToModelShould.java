@@ -6,6 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import dev.openfga.language.errors.ModuleTransformationError;
 import dev.openfga.language.errors.ParsingError;
+import dev.openfga.language.errors.StartEnd;
 import dev.openfga.language.util.ModuleExpectedError;
 import dev.openfga.language.util.ModuleTransformerTestCase;
 import dev.openfga.language.util.TestsData;
@@ -41,23 +42,17 @@ public class ModuleToModelShould {
         List<? extends ParsingError> actualErrors = error.getErrors();
         var expectedErrors = testCase.getExpectedErrors();
         assertThat(actualErrors).hasSameSizeAs(expectedErrors);
-
-        var hasSyntaxError = expectedErrors.stream().anyMatch(e -> "syntax".equals(e.getType()));
-        if (!hasSyntaxError) {
-            // ANTLR emits differing syntax-error text across Java/Go/JS, so only assert the full message when
-            // every expected error is a transformation error.
-            assertThat(thrown).hasMessage(expectedMessage(expectedErrors));
-        }
+        // The Java ANTLR runtime reports the fixture's syntax error with the same text and position as Go, so the
+        // whole message is asserted, as the Go runner does.
+        assertThat(thrown).hasMessage(expectedMessage(expectedErrors));
 
         for (int i = 0; i < actualErrors.size(); i++) {
             var expected = expectedErrors.get(i);
             var actual = actualErrors.get(i);
             assertThat(actual.getFile()).isEqualTo(expected.getFile());
-            if (!"syntax".equals(expected.getType())) {
-                assertThat(actual.getMessage()).isEqualTo(expected.getMessage());
-                assertThat(actual.getLine()).isEqualTo(expected.getLine());
-                assertThat(actual.getColumn()).isEqualTo(expected.getColumn());
-            }
+            assertThat(actual.getMessage()).isEqualTo(expected.getMessage());
+            assertThat(actual.getLine()).isEqualTo(expected.getLine());
+            assertThat(actual.getColumn()).isEqualTo(expected.getColumn());
         }
     }
 
@@ -66,6 +61,89 @@ public class ModuleToModelShould {
         var model = ModulesToModelTransformer.transformToModel(
                 List.of(new ModuleFile("core.fga", "module core\n  type user")), "1.1");
         assertThat(model.getSchemaVersion()).isEqualTo("1.1");
+    }
+
+    @Test
+    public void rejectModelFileWhoseTypesDeclareRelations() {
+        var core = new ModuleFile("core.fga", "module core\n\ntype user\n");
+        var legacy = new ModuleFile(
+                "legacy.fga",
+                "model\n  schema 1.1\n\ntype doc\n  relations\n    define viewer: [user with c]\n\n"
+                        + "condition c(x: int) {\n  x < 1\n}\n");
+
+        assertSingleTransformationError(List.of(core, legacy), "legacy.fga", 0, 0, "", "file is not a module");
+    }
+
+    @Test
+    public void rejectModelFileOnceWhateverItsTypeCount() {
+        var core = new ModuleFile("core.fga", "module core\n\ntype user\n");
+        var legacy = new ModuleFile("legacy.fga", "model\n  schema 1.1\n\ntype a\n\ntype b\n");
+
+        assertSingleTransformationError(List.of(core, legacy), "legacy.fga", 0, 0, "", "file is not a module");
+    }
+
+    @Test
+    public void locateConditionWhoseNameIsAPrefixOfAnother() {
+        var core = new ModuleFile(
+                "core.fga",
+                "module core\n\ntype user\n\ntype documentation\n  relations\n    define viewer: [user with less]\n\n"
+                        + "condition less(val: int) {\n  val < 5\n}\n");
+        var dup = new ModuleFile(
+                "dup.fga",
+                "module dup\n\ntype document\n  relations\n    define viewer: [user with less_than]\n\n"
+                        + "condition less_than(val: int) {\n  val < 10\n}\n\ncondition less(val: int) {\n  val < 3\n}\n");
+
+        assertSingleTransformationError(List.of(core, dup), "dup.fga", 10, 10, "less", "duplicate condition less");
+    }
+
+    @Test
+    public void locateRelationWhoseNameIsAPrefixOfAnother() {
+        var core = new ModuleFile(
+                "core.fga", "module core\n\ntype user\n\ntype doc\n  relations\n    define owner: [user]\n");
+        var ext = new ModuleFile(
+                "ext.fga",
+                "module ext\n\nextend type doc\n  relations\n    define owner_group: [user]\n    define owner: [user]\n");
+
+        assertSingleTransformationError(
+                List.of(core, ext), "ext.fga", 5, 11, "owner", "relation owner already exists on type doc");
+    }
+
+    @Test
+    public void locateExtendedTypeWhoseNameIsAPrefixOfAnother() {
+        var core = new ModuleFile("core.fga", "module core\n\ntype user\n");
+        var ext = new ModuleFile(
+                "ext.fga",
+                "module ext\n\nextend type user\n  relations\n    define r: [user]\n\n"
+                        + "extend type use\n  relations\n    define q: [user]\n");
+
+        assertSingleTransformationError(
+                List.of(core, ext), "ext.fga", 6, 12, "use", "extended type use does not exist");
+    }
+
+    @Test
+    public void locateDeclarationsSeparatedByTabs() {
+        var core = new ModuleFile(
+                "core.fga", "module core\n\ntype user\n\ntype document\n  relations\n    define owner: [user]\n");
+        var dup = new ModuleFile(
+                "dup.fga", "module dup\n\nextend\ttype\tdocument\n  relations\n    define\towner: [user]\n");
+
+        assertSingleTransformationError(
+                List.of(core, dup), "dup.fga", 4, 11, "owner", "relation owner already exists on type document");
+    }
+
+    private static void assertSingleTransformationError(
+            List<ModuleFile> modules, String file, int line, int column, String symbol, String message) {
+        var thrown = catchThrowable(() -> ModulesToModelTransformer.transformToModel(modules, "1.2"));
+
+        assertThat(thrown)
+                .isInstanceOf(ModuleTransformationError.class)
+                .hasMessage(
+                        "1 error occurred:\n\t* transformation error at line=%d, column=%d: %s\n\n",
+                        line, column, message);
+        var error = ((ModuleTransformationError) thrown).getErrors().get(0);
+        assertThat(error.getFile()).isEqualTo(file);
+        assertThat(error.getLine()).isEqualTo(new StartEnd(line, line));
+        assertThat(error.getColumn()).isEqualTo(new StartEnd(column, column + symbol.length()));
     }
 
     private static String expectedMessage(List<ModuleExpectedError> errors) {

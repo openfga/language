@@ -30,6 +30,11 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
         return authorizationModel;
     }
 
+    /** Whether the DSL starts with a {@code module} header rather than a {@code model} header. */
+    public boolean isModularModel() {
+        return isModularModel;
+    }
+
     public Set<String> getTypeDefExtensions() {
         return typeDefExtensions.keySet();
     }

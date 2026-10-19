@@ -26,7 +26,7 @@ The `self-error` code is defined in both the Go and JavaScript error enums for f
 ## Implementation Notes
 
 The `self-error` code is declared in:
-- Go: `pkg/go/validation/errors.go`
+- Go: `pkg/go/validation/findings.go`
 - JavaScript: `pkg/js/errors.ts`
 
 No code path in either implementation currently raises it; the `self`/`this` naming checks live in the name-validation phase and emit the `reserved-*-keywords` codes above.

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// The functions here build one finding each: the message the corpus expects,
+// The functions here build one finding each: the message the shared test cases expect,
 // the code, and which part of the model is at fault. The raise site stamps
 // where it is: the position through at or one of its variants, and the file and
 // module from the model's metadata. A finding built from a JSON model has no
@@ -82,15 +82,6 @@ func duplicatePartialRelation(operand, relationName, typeName string) *Finding {
 	return &Finding{
 		Message:  fmt.Sprintf("the partial relation definition `%s` is a duplicate in the relation `%s`.", operand, relationName),
 		Metadata: Metadata{Kind: DuplicatedError, Symbol: operand, Type: typeName, Relation: relationName},
-	}
-}
-
-// undefinedType reports a reference to a type that does not exist. The metadata
-// names the type that is missing, not the relation it was referenced from.
-func undefinedType(typeName, relationName, parentTypeName string) *Finding {
-	return &Finding{
-		Message:  fmt.Sprintf("Type '%s' is not defined (referenced in relation '%s' of type '%s')", typeName, relationName, parentTypeName),
-		Metadata: Metadata{Kind: UndefinedType, Symbol: typeName, Type: typeName},
 	}
 }
 
@@ -209,51 +200,5 @@ func multipleModulesInSingleFile(file string, modules []string) *Finding {
 		Message: fmt.Sprintf("file %s would contain multiple module definitions (%s) when transforming to DSL. "+
 			"Only one module can be defined per file.", file, strings.Join(modules, ", ")),
 		Metadata: Metadata{Kind: MultipleModulesInFile, Symbol: file},
-	}
-}
-
-// redundantUnionMember reports a repeated member in a union.
-func redundantUnionMember(operation, relationName, typeName string) *Finding {
-	return &Finding{
-		Message:  fmt.Sprintf("Redundant operation '%s' found in union for relation '%s' of type '%s'", operation, relationName, typeName),
-		Metadata: Metadata{Kind: DuplicatedError, Symbol: operation, Type: typeName, Relation: relationName},
-	}
-}
-
-// impossibleIntersection reports an intersection that cannot be satisfied.
-func impossibleIntersection(relationName, typeName string, conflictingTypes []string) *Finding {
-	return &Finding{
-		Message: fmt.Sprintf("Impossible intersection in relation '%s' of type '%s': conflicting types [%s]",
-			relationName, typeName, strings.Join(conflictingTypes, ", ")),
-		Metadata: Metadata{Kind: InvalidRelationType, Symbol: relationName, Type: typeName, Relation: relationName},
-	}
-}
-
-// emptyDifference reports a difference that subtracts an operand from itself.
-func emptyDifference(relationName, typeName, operation string) *Finding {
-	return &Finding{
-		Message: fmt.Sprintf("Empty difference operation in relation '%s' of type '%s': subtracting '%s' from itself",
-			relationName, typeName, operation),
-		Metadata: Metadata{Kind: RelationNoEntrypoint, Symbol: relationName, Type: typeName, Relation: relationName},
-	}
-}
-
-// invalidWildcardUsage reports a wildcard used where it is not allowed. The
-// wildcard restricts typeName inside a relation of parentTypeName.
-func invalidWildcardUsage(typeName, relationName, parentTypeName, reason string) *Finding {
-	return &Finding{
-		Message: fmt.Sprintf("Invalid wildcard usage for type '%s' in relation '%s' of type '%s': %s",
-			typeName, relationName, parentTypeName, reason),
-		Metadata: Metadata{Kind: InvalidWildcardError, Symbol: typeName, Type: parentTypeName, Relation: relationName},
-	}
-}
-
-// tuplesetNotDirect reports a tupleset relation that does not allow direct
-// assignment.
-func tuplesetNotDirect(tuplesetRelation, typeName, parentRelation string) *Finding {
-	return &Finding{
-		Message: fmt.Sprintf("Tupleset relation '%s' on type '%s' must allow direct assignment (used in relation '%s')",
-			tuplesetRelation, typeName, parentRelation),
-		Metadata: Metadata{Kind: TuplesetNotDirect, Symbol: tuplesetRelation, Type: typeName, Relation: tuplesetRelation},
 	}
 }

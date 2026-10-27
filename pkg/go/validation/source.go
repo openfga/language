@@ -156,14 +156,10 @@ func (f *Finding) atRestriction(src source, line int) *Finding {
 }
 
 // wordIndex returns the index of symbol in rawLine matched on word boundaries,
-// mirroring the reference's `\bsymbol\b` lookup. This avoids matching a symbol
-// as a substring of another word (e.g. finding `t` inside `type`). Returns 0
-// when the symbol is not found, matching the reference's fallback.
-//
-// The boundary check is done directly rather than via a per-call compiled
-// regexp: `\b` only requires that the characters flanking the match are not
-// word characters, which is cheap to test in place and avoids recompiling a
-// pattern for every finding.
+// mirroring the reference's `\bsymbol\b` lookup, so a symbol is not found as a
+// substring of another word (e.g. `t` inside `type`). Returns 0 when absent,
+// matching the reference's fallback. The boundary test is done in place to
+// avoid compiling a regexp per finding.
 func wordIndex(rawLine, symbol string) int {
 	if symbol == "" {
 		return 0

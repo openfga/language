@@ -53,24 +53,17 @@ func validateEntryPoints(idx *index, src source) error {
 }
 
 // hasEntryPointOrLoop determines whether a rewrite reaches a concrete entry
-// point. The visited map tracks type#relation pairs already on the current
-// traversal.
+// point, porting the reference's hasEntryPointOrLoop (validate-dsl.ts): one
+// traversal per relation with one outcome. The visited map tracks
+// type#relation pairs already on the current traversal.
 //
-// It is a port of the reference implementation's hasEntryPointOrLoop
-// (pkg/js/validator/validate-dsl.ts): a single traversal per relation that
-// yields exactly one outcome, rather than separate cycle and entry-point
-// passes.
-//
-// Only the computed-userset branch turns a revisit into a reported loop. The
+// Only the computed-userset branch turns a revisit into a reported loop; the
 // direct type-relation and tuple-to-userset branches skip a reference already
-// being resolved and answer loop: false, matching validate-dsl.ts, which reads
-// hasEntry off those two recursive calls and discards their loop.
+// being resolved and answer loop: false, as the reference does.
 //
-// Sibling branches (the this/ttu type loops, union/intersection children, and a
-// difference's base/subtract) each get an isolated copy of visited so one
-// branch's path can't poison another's loop check. The lone linear successor —
-// the computed-userset tail call — shares visited directly: it accumulates down
-// the chain to detect back-edges, and avoids an O(n²) copy on deep chains.
+// Sibling branches each get a copy of visited so one branch's path can't
+// poison another's loop check; the computed-userset tail call shares it to
+// detect back-edges without an O(n²) copy on deep chains.
 func hasEntryPointOrLoop(idx *index, typeName, relationName string,
 	rewrite *openfgav1.Userset, visited map[string]map[string]bool) entryPointResult {
 	if relationName == "" || rewrite == nil {

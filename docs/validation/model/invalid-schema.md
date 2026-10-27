@@ -6,13 +6,13 @@
 
 ## Summary
 
-The model declares a schema version the validator does not recognise.
+The model declares an unsupported or unrecognized schema version.
 
 ## Description
 
 `1.1` and `1.2` are the supported versions. A version that parses but is neither of those is reported as `invalid-schema`, with the version itself as the symbol.
 
-Two neighbouring conditions have codes of their own. Version `1.0` is recognised and retired, so it reports [`schema-version-unsupported`](./schema-version-unsupported.md), and a model carrying no version at all reports [`schema-version-required`](./schema-version-required.md).
+Two neighboring conditions have codes of their own. Version `1.0` is recognized and retired, so it reports [`schema-version-unsupported`](./schema-version-unsupported.md), and a model carrying no version at all reports [`schema-version-required`](./schema-version-required.md).
 
 A malformed `schema` line never reaches validation. `schema v1.1`, `schema 1.1.0`, `schema` with no version, and a file with no `model` declaration all fail during DSL transformation with a syntax error and no error code attached.
 
@@ -61,8 +61,7 @@ Use `1.2` if the model is split across files with `module` declarations, `1.1` o
 ## Related Errors
 
 - [`schema-version-required`](./schema-version-required.md) - No schema version is declared
-- [`schema-version-unsupported`](./schema-version-unsupported.md) - Version `1.0`, recognised but retired
-- [`invalid-syntax`](./invalid-syntax.md) - Syntax problems, including a malformed `schema` line
+- [`schema-version-unsupported`](./schema-version-unsupported.md) - Version `1.0`, recognized but retired
 
 ## Implementation Notes
 

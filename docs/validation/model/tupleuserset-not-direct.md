@@ -99,7 +99,7 @@ type document
 
 - [`relation-no-entry-point`](./relation-no-entry-point.md) - When relations lack entry points
 - [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - Invalid tupleset relation usage
-- [`undefined-relation`](./undefined-relation.md) - When tupleset relation doesn't exist
+- [`missing-definition`](./missing-definition.md) - When tupleset relation doesn't exist
 
 ## Implementation Notes
 

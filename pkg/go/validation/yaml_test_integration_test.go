@@ -10,16 +10,16 @@ import (
 	"github.com/openfga/language/pkg/go/transformer"
 )
 
-// Outcomes of a corpus case. ERROR is a case whose DSL no longer parses, which is
+// Outcomes of a shared test case. ERROR is a case whose DSL no longer parses, which is
 // distinct from FAIL: nothing about validation was tested.
 const (
-	corpusPass    = "PASS"
-	corpusFail    = "FAIL"
-	corpusSkipped = "SKIPPED"
-	corpusError   = "ERROR"
+	casePass    = "PASS"
+	caseFail    = "FAIL"
+	caseSkipped = "SKIPPED"
+	caseError   = "ERROR"
 )
 
-// YAMLTestCase is one case from the shared validation corpus under tests/data.
+// YAMLTestCase is one case from the shared validation cases under tests/data.
 type YAMLTestCase struct {
 	Name           string              `yaml:"name"`
 	DSL            string              `yaml:"dsl"`
@@ -27,10 +27,10 @@ type YAMLTestCase struct {
 	ExpectedErrors []YAMLExpectedError `yaml:"expected_errors,omitempty"`
 }
 
-// YAMLExpectedError is one error a corpus case expects.
+// YAMLExpectedError is one error a shared case expects.
 //
 // Line and Column are pointers so a case that states no position is told apart from
-// one that states position 0. The corpus counts lines from zero, so the zero value is
+// one that states position 0. The shared cases count lines from zero, so the zero value is
 // a real position and a value type would make the two indistinguishable.
 type YAMLExpectedError struct {
 	Message  string            `yaml:"msg"`
@@ -45,20 +45,20 @@ type YAMLRange struct {
 	End   int `yaml:"end"`
 }
 
-// YAMLErrorMetadata is the metadata a corpus case states: the offending symbol and the
+// YAMLErrorMetadata is the metadata a shared case states: the offending symbol and the
 // error type.
 type YAMLErrorMetadata struct {
 	Symbol    string `yaml:"symbol,omitempty"`
 	ErrorType string `yaml:"errorType,omitempty"`
 }
 
-// YAMLTestSuite is a corpus file's cases.
+// YAMLTestSuite is a shared test file's cases.
 type YAMLTestSuite struct {
 	TestCases []YAMLTestCase
 	FilePath  string
 }
 
-// YAMLTestRunner loads corpus files from testDataPath and runs their cases.
+// YAMLTestRunner loads shared test files from testDataPath and runs their cases.
 type YAMLTestRunner struct {
 	testDataPath string
 	suites       map[string]*YAMLTestSuite
@@ -71,7 +71,7 @@ func NewYAMLTestRunner(testDataPath string) *YAMLTestRunner {
 	}
 }
 
-// LoadTestSuite reads and parses a corpus file, caching it by name.
+// LoadTestSuite reads and parses a shared test file, caching it by name.
 func (runner *YAMLTestRunner) LoadTestSuite(filename string) (*YAMLTestSuite, error) {
 	if suite, exists := runner.suites[filename]; exists {
 		return suite, nil
@@ -95,7 +95,7 @@ func (runner *YAMLTestRunner) LoadTestSuite(filename string) (*YAMLTestSuite, er
 	return suite, nil
 }
 
-// YAMLTestResult is the outcome of one corpus case.
+// YAMLTestResult is the outcome of one shared case.
 type YAMLTestResult struct {
 	Status string
 
@@ -108,23 +108,23 @@ type YAMLTestResult struct {
 // expects.
 func (runner *YAMLTestRunner) RunTestCase(testCase YAMLTestCase) *YAMLTestResult {
 	if testCase.Skip {
-		return &YAMLTestResult{Status: corpusSkipped}
+		return &YAMLTestResult{Status: caseSkipped}
 	}
 
 	model, err := transformer.TransformDSLToProto(testCase.DSL)
 	if err != nil {
 		return &YAMLTestResult{
-			Status:   corpusError,
+			Status:   caseError,
 			Problems: []string{fmt.Sprintf("DSL does not parse: %v", err)},
 		}
 	}
 
-	return compareWithCorpus(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateDSL(model, testCase.DSL)))
+	return compareWithExpected(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateDSL(model, testCase.DSL)))
 }
 
-// compareWithCorpus pairs each expected error with a distinct finding, so a case
+// compareWithExpected pairs each expected error with a distinct finding, so a case
 // expecting two errors is not satisfied by one finding that matches both.
-func compareWithCorpus(expectedErrors []YAMLExpectedError, findings []*Finding) *YAMLTestResult {
+func compareWithExpected(expectedErrors []YAMLExpectedError, findings []*Finding) *YAMLTestResult {
 	result := &YAMLTestResult{}
 	claimed := make([]bool, len(findings))
 	matched := make([]bool, len(expectedErrors))
@@ -174,9 +174,9 @@ func compareWithCorpus(expectedErrors []YAMLExpectedError, findings []*Finding) 
 	}
 
 	if len(result.Problems) > 0 {
-		result.Status = corpusFail
+		result.Status = caseFail
 	} else {
-		result.Status = corpusPass
+		result.Status = casePass
 	}
 
 	return result
@@ -185,9 +185,9 @@ func compareWithCorpus(expectedErrors []YAMLExpectedError, findings []*Finding) 
 // describeMismatch returns what keeps finding from satisfying expected, or "" when
 // nothing does.
 //
-// The message has to be equal rather than merely contain the expected text: the corpus
-// is the contract between the implementations, so a message that only starts with the
-// reference's is a divergence, not a pass.
+// The message has to be equal rather than merely contain the expected text: the shared
+// cases are the contract between the implementations, so a message that only starts
+// with the reference's is a divergence, not a pass.
 func describeMismatch(expected YAMLExpectedError, finding *Finding) string {
 	if finding.Message != expected.Message {
 		return fmt.Sprintf("message %q, want %q", finding.Message, expected.Message)
@@ -202,7 +202,7 @@ func describeMismatch(expected YAMLExpectedError, finding *Finding) string {
 		return fmt.Sprintf("symbol %q, want %q", finding.Metadata.Symbol, expected.Metadata.Symbol)
 	}
 
-	// A position the corpus states has to be reached, both ends of it. A finding
+	// A position a case states has to be reached, both ends of it. A finding
 	// with no position at all must not satisfy an expectation that states one:
 	// resolving to nowhere in the source is a failure mode of the line searches,
 	// not a match.

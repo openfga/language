@@ -123,9 +123,7 @@ define super_admin: viewer
 
 ## Related Errors
 
-- [`cyclic-error`](./cyclic-error.md) - When relations form circular dependencies
-- [`cyclic-relation`](./cyclic-relation.md) - Specific circular relation detection
-- [`undefined-relation`](./undefined-relation.md) - When referenced relations don't exist
+- [`missing-definition`](./missing-definition.md) - When referenced relations don't exist
 
 ## Implementation Notes
 

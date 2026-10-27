@@ -7,29 +7,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// corpusDir is the shared test data directory, which sits at the repository root and
+// sharedDataDir is the shared test data directory, which sits at the repository root and
 // is read by the Go, JS and Java implementations alike.
-var corpusDir = filepath.Join("..", "..", "..", "tests", "data")
+var sharedDataDir = filepath.Join("..", "..", "..", "tests", "data")
 
-// TestSemanticValidationCorpus runs every case in the shared semantic validation
-// corpus. It fails if the corpus cannot be loaded or has no cases. Cases the corpus
+// TestSemanticValidationSharedCases runs every case in the shared semantic validation
+// file. It fails if the file cannot be loaded or has no cases. Cases the file
 // marks skip are reported as skipped.
-func TestSemanticValidationCorpus(t *testing.T) {
+func TestSemanticValidationSharedCases(t *testing.T) {
 	t.Parallel()
 
-	runner := NewYAMLTestRunner(corpusDir)
+	runner := NewYAMLTestRunner(sharedDataDir)
 
 	suite, err := runner.LoadTestSuite("dsl-semantic-validation-cases.yaml")
 	require.NoError(t, err)
-	require.NotEmpty(t, suite.TestCases, "corpus loaded no cases")
+	require.NotEmpty(t, suite.TestCases, "shared test file loaded no cases")
 
 	for _, testCase := range suite.TestCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
 			result := runner.RunTestCase(testCase)
-			if result.Status == corpusSkipped {
-				t.Skip("marked skip in the corpus")
+			if result.Status == caseSkipped {
+				t.Skip("marked skip in the shared test file")
 			}
 
 			for _, problem := range result.Problems {
@@ -37,15 +37,15 @@ func TestSemanticValidationCorpus(t *testing.T) {
 			}
 
 			// Catches a failed status with no problems listed.
-			require.Equal(t, corpusPass, result.Status)
+			require.Equal(t, casePass, result.Status)
 		})
 	}
 }
 
-// TestCompareWithCorpus tests the comparison every corpus case relies on. If it
-// accepted a prefix of the message, or a finding with no position, every corpus case
+// TestCompareWithExpected tests the comparison every shared case relies on. If it
+// accepted a prefix of the message, or a finding with no position, every shared case
 // would still pass.
-func TestCompareWithCorpus(t *testing.T) {
+func TestCompareWithExpected(t *testing.T) {
 	t.Parallel()
 
 	expected := YAMLExpectedError{
@@ -92,10 +92,10 @@ func TestCompareWithCorpus(t *testing.T) {
 			findings: nil,
 		},
 		{
-			// A message that only starts with the corpus's is a different message, so
+			// A message that only starts with the expected one is a different message, so
 			// it satisfies nothing and is reported twice: the expectation went
 			// unmatched and the finding was not expected.
-			name:     "message is longer than the corpus states",
+			name:     "message is longer than the case states",
 			expected: []YAMLExpectedError{expected},
 			findings: []*Finding{finding(func(f *Finding) {
 				f.Message += " Did you mean `view`?"
@@ -146,7 +146,7 @@ func TestCompareWithCorpus(t *testing.T) {
 			name:     "wrong error type",
 			expected: []YAMLExpectedError{expected},
 			findings: []*Finding{finding(func(f *Finding) {
-				f.Metadata.Kind = UndefinedRelation
+				f.Metadata.Kind = DuplicatedError
 			})},
 			problems: 1,
 		},
@@ -157,7 +157,7 @@ func TestCompareWithCorpus(t *testing.T) {
 			problems: 1,
 		},
 		{
-			name:     "finding the corpus does not expect",
+			name:     "finding the case does not expect",
 			expected: []YAMLExpectedError{expected},
 			findings: []*Finding{finding(nil), finding(func(f *Finding) {
 				f.Message = "the relation `editor` does not exist."
@@ -165,7 +165,7 @@ func TestCompareWithCorpus(t *testing.T) {
 			problems: 1,
 		},
 		{
-			name:     "position the corpus leaves out is not compared",
+			name:     "position the case leaves out is not compared",
 			expected: []YAMLExpectedError{{Message: expected.Message}},
 			findings: []*Finding{finding(func(f *Finding) {
 				f.Line, f.Column = nil, nil
@@ -177,31 +177,31 @@ func TestCompareWithCorpus(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := compareWithCorpus(test.expected, test.findings)
+			result := compareWithExpected(test.expected, test.findings)
 
 			require.Len(t, result.Problems, test.problems, "problems: %v", result.Problems)
 
 			if test.problems == 0 {
-				require.Equal(t, corpusPass, result.Status)
+				require.Equal(t, casePass, result.Status)
 			} else {
-				require.Equal(t, corpusFail, result.Status)
+				require.Equal(t, caseFail, result.Status)
 			}
 		})
 	}
 }
 
-// TestRunTestCaseUnparsableDSL covers the one outcome the corpus cases cannot reach: a
+// TestRunTestCaseUnparsableDSL covers the one outcome the shared cases cannot reach: a
 // case whose DSL the transformer rejects tested nothing about validation, so it is
 // reported as an error rather than passing for lack of findings.
 func TestRunTestCaseUnparsableDSL(t *testing.T) {
 	t.Parallel()
 
-	result := NewYAMLTestRunner(corpusDir).RunTestCase(YAMLTestCase{
+	result := NewYAMLTestRunner(sharedDataDir).RunTestCase(YAMLTestCase{
 		Name: "not a model",
 		DSL:  "type document\n  relations\n",
 	})
 
-	require.Equal(t, corpusError, result.Status)
+	require.Equal(t, caseError, result.Status)
 	require.Len(t, result.Problems, 1)
 	require.Contains(t, result.Problems[0], "DSL does not parse")
 }

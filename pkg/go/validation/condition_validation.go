@@ -77,9 +77,8 @@ func conditionUses(model *openfgav1.AuthorizationModel) map[string][]conditionUs
 	return uses
 }
 
-// reservedInlineExpression is exempt from the undefined-condition check: it is
-// an inline expression, not a condition declared in the model's conditions
-// block, so it has no definition to resolve against.
+// reservedInlineExpression marks an inline expression; it is not declared in
+// the conditions block, so the undefined-condition check skips it.
 const reservedInlineExpression = "$expression"
 
 // undefinedConditions reports, for every reference to a condition the model

@@ -148,8 +148,7 @@ type document
 
 ## Related Errors
 
-- [`undefined-type`](./undefined-type.md) - Specifically for missing type definitions
-- [`undefined-relation`](./undefined-relation.md) - Specifically for missing relation definitions
+- [`invalid-type`](./invalid-type.md) - Specifically for missing type definitions
 - [`condition-not-defined`](./condition-not-defined.md) - Specifically for missing condition definitions
 
 ## Implementation Notes

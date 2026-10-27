@@ -1,7 +1,7 @@
 // Package validation checks OpenFGA authorization models for semantic errors
-// the DSL grammar does not catch. The corpus under tests/data, shared with
-// pkg/js and pkg/java, gives the expected message, code, symbol and position of
-// each finding.
+// the DSL grammar does not catch. The shared cases under tests/data fix each
+// finding's message, code, symbol and position across pkg/go, pkg/js and
+// pkg/java.
 package validation
 
 import (
@@ -11,14 +11,7 @@ import (
 )
 
 // Kind is a finding's machine-readable code, the wire `errorType`. The values
-// are part of the output and most are shared with pkg/js and pkg/java, so they
-// are fixed.
-//
-// This package never emits SelfError, UndefinedRelation, CyclicError,
-// CyclicRelation, InvalidSyntax, InvalidSchemaVersion,
-// AssignableRelationsMustHaveType or
-// TypeRestrictionCannotHaveWildcardAndRelation. The last two are emitted by
-// pkg/js and pkg/java.
+// are shared with pkg/js and pkg/java, so they are fixed.
 type Kind string
 
 const (
@@ -35,10 +28,6 @@ const (
 	RelationNoEntrypoint      Kind = "relation-no-entry-point"
 	TuplesetNotDirect         Kind = "tupleuserset-not-direct"
 	DuplicatedError           Kind = "duplicated-error"
-	UndefinedType             Kind = "undefined-type"
-	UndefinedRelation         Kind = "undefined-relation"
-	CyclicError               Kind = "cyclic-error"
-	InvalidWildcardError      Kind = "invalid-wildcard-error"
 
 	AssignableRelationsMustHaveType              Kind = "assignable-relation-must-have-type"
 	InvalidSchema                                Kind = "invalid-schema"
@@ -48,8 +37,6 @@ const (
 	ConditionNotUsed                             Kind = "condition-not-used"
 	DifferentNestedConditionName                 Kind = "different-nested-condition-name"
 	MultipleModulesInFile                        Kind = "multiple-modules-in-file"
-	CyclicRelation                               Kind = "cyclic-relation"
-	InvalidSchemaVersion                         Kind = "invalid-schema-version"
 )
 
 // Range is a start and end position in the source text, used for both the line

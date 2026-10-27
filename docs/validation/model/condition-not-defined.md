@@ -130,7 +130,7 @@ condition is_weekday(current_time: timestamp) {
 
 - [`condition-not-used`](./condition-not-used.md) - When conditions are defined but never used
 - [`different-nested-condition-name`](./different-nested-condition-name.md) - Condition name mismatches
-- [`undefined-relation`](./undefined-relation.md) - Similar pattern for relation references
+- [`missing-definition`](./missing-definition.md) - Similar pattern for relation references
 
 ## Implementation Notes
 

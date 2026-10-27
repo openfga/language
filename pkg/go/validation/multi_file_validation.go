@@ -27,7 +27,7 @@ func validateMultiFile(model *openfgav1.AuthorizationModel) error {
 // modulesByFile returns the files named in the model's metadata, in the order
 // first seen, and each file's modules, in the same order. A file's modules are
 // joined into its message, and pkg/js lists them in the order it meets them,
-// so a map's order or a sorted one would fail the shared corpus.
+// so a map's order or a sorted one would fail the shared test cases.
 //
 // The model is walked as pkg/js walks it: every type, then every relation,
 // then every condition. The passes are separate because a relation's module is

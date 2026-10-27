@@ -13,9 +13,8 @@ import java.util.*;
 
 public class ModelValidator {
 
-    // Reserved condition name for inline expressions on a type restriction. Unlike
-    // named conditions it is not declared in the model's `conditions` block, so it
-    // is exempt from the "condition must be defined" validation.
+    // Inline-expression marker on a type restriction; not declared in the model's
+    // `conditions` block, so it is exempt from the undefined-condition check.
     private static final String RESERVED_INLINE_EXPRESSION = "$expression";
 
     private final ValidationOptions options;
@@ -71,6 +70,10 @@ public class ModelValidator {
 
         if (schemaVersion != null && (schemaVersion.equals("1.1") || schemaVersion.equals("1.2"))) {
             modelValidation();
+        } else if (schemaVersion != null && schemaVersion.equals("1.0")) {
+            // 1.0 is retired, not invalid; matches Go and JS.
+            var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
+            errors.raiseSchemaVersionUnsupported(lineIndex, schemaVersion);
         } else if (schemaVersion != null) {
             var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
             errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);

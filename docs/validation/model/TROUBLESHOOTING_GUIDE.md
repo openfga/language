@@ -9,8 +9,8 @@ This guide provides quick solutions to common OpenFGA validation errors. For det
 | Error | Quick Fix | Link |
 |-------|-----------|------|
 | `schema-version-required` | Add `schema 1.1` after `model` | [Details](./schema-version-required.md) |
-| `undefined-relation` | Define the missing relation or fix typo | [Details](./undefined-relation.md) |
-| `undefined-type` | Define the missing type or fix typo | [Details](./undefined-type.md) |
+| `missing-definition` | Define the missing relation or fix typo | [Details](./missing-definition.md) |
+| `invalid-type` | Define the missing type or fix typo | [Details](./invalid-type.md) |
 | `invalid-name` | Use lowercase with underscores only | [Details](./invalid-name.md) |
 | `duplicated-error` | Remove or rename duplicate definitions | [Details](./duplicated-error.md) |
 
@@ -18,17 +18,14 @@ This guide provides quick solutions to common OpenFGA validation errors. For det
 
 | Error | Quick Fix                                    | Link |
 |-------|----------------------------------------------|------|
-| `invalid-syntax` | Check indentation and keyword spelling       | [Details](./invalid-syntax.md) |
-| `invalid-schema` | Declare a recognised version (`1.1` or `1.2`) | [Details](./invalid-schema.md) |
+| `invalid-schema` | Declare a recognized version (`1.1` or `1.2`) | [Details](./invalid-schema.md) |
 | `schema-version-unsupported` | Use supported version (`1.1` or `1.2`)           | [Details](./schema-version-unsupported.md) |
-| `invalid-schema-version` | Not emitted; an unrecognised version arrives as `invalid-schema` above | [Details](./invalid-schema-version.md) |
 
 ### Relationship and Reference Errors
 
 | Error | Quick Fix | Link |
 |-------|-----------|------|
 | `relation-no-entry-point` | Add `[user]` or direct assignment | [Details](./relation-no-entry-point.md) |
-| `cyclic-relation` | Break circular references | [Details](./cyclic-relation.md) |
 | `invalid-relation-type` | Fix `type#relation` syntax | [Details](./invalid-relation-type.md) |
 | `tupleuserset-not-direct` | Add direct assignment to tupleset relation | [Details](./tupleuserset-not-direct.md) |
 
@@ -36,7 +33,6 @@ This guide provides quick solutions to common OpenFGA validation errors. For det
 
 | Error | Quick Fix | Link |
 |-------|-----------|------|
-| `self-error` | Don't use `self` or `this` as names | [Details](./self-error.md) |
 | `reserved-type-keywords` | Use different type names | [Details](./reserved-type-keywords.md) |
 | `reserved-relation-keywords` | Use different relation names | [Details](./reserved-relation-keywords.md) |
 
@@ -44,7 +40,6 @@ This guide provides quick solutions to common OpenFGA validation errors. For det
 
 | Error | Quick Fix | Link |
 |-------|-----------|------|
-| `invalid-wildcard-error` | Use correct `[type:*]` syntax | [Details](./invalid-wildcard-error.md) |
 | `type-wildcard-relation` | Don't mix wildcard with relation | [Details](./type-wildcard-relation.md) |
 
 ### 🎯 Condition Errors

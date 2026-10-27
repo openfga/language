@@ -11,7 +11,7 @@ import (
 )
 
 // The anchored name rules, compiled once. Each rule string doubles as the
-// clause quoted in the invalid-name message, so the corpus fixes the values.
+// clause quoted in the invalid-name message, so the shared test cases fix the values.
 var (
 	typeNameRule      = fmt.Sprintf("^%s$", RuleType)
 	relationNameRule  = fmt.Sprintf("^%s$", RuleRelation)
@@ -56,7 +56,8 @@ func validateRelationName(name, typeName string) error {
 }
 
 // validateConditionName checks one condition name, returning the finding as an
-// error or nil.
+// error or nil. Go-only: pkg/js and pkg/java accept any condition name the
+// grammar parses.
 func validateConditionName(name string) error {
 	if !conditionNameRegex.MatchString(name) {
 		return invalidConditionName(name)

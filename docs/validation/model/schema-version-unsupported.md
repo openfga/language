@@ -352,14 +352,12 @@ In these cases, OpenFGA will not consider those invalid tuples when evaluating q
 ## Related Errors
 
 - [`schema-version-required`](./schema-version-required.md) - When no schema version is specified
-- [`invalid-schema-version`](./invalid-schema-version.md) - Schema versions and how they are reported
-- [`invalid-schema`](./invalid-schema.md) - When the declared version is not recognised
+- [`invalid-schema`](./invalid-schema.md) - When the declared version is not recognized
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/schema_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java schema validation package
+- Go: `validateSchemaVersion` in `pkg/go/validation/schema_validation.go`
+- JavaScript: `validate-dsl.ts`, through `createSchemaVersionUnsupportedError` in `util/exceptions.ts`
+- Java: `ModelValidator`, through `ValidationErrorsBuilder.raiseSchemaVersionUnsupported`
 
-The validation checks against a predefined list of supported schema versions and rejects models using unsupported versions.
+All three report version `1.0` as `schema-version-unsupported` with the message `schema version no longer supported`, checked by the shared case in `tests/data/dsl-semantic-validation-cases.yaml`.

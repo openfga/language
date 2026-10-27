@@ -156,7 +156,6 @@ define owner: organization#            # Incomplete reference
 
 ## Related Errors
 
-- [`undefined-relation`](./undefined-relation.md) - When referenced relations don't exist
 - [`invalid-type`](./invalid-type.md) - When type references are invalid
 - [`missing-definition`](./missing-definition.md) - When definitions are missing
 

@@ -11,53 +11,53 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// jsonCorpusCase is one case from tests/data/json-validation-cases.yaml, the corpus for
-// models supplied as JSON. A JSON model carries no source text to resolve a position
-// against, so no case in it states a line or a column.
-type jsonCorpusCase struct {
+// jsonTestCase is one case from tests/data/json-validation-cases.yaml, the shared
+// cases for models supplied as JSON. A JSON model carries no source text to resolve a
+// position against, so no case in it states a line or a column.
+type jsonTestCase struct {
 	Name           string              `yaml:"name"`
 	JSON           string              `yaml:"json"`
 	Skip           bool                `yaml:"skip,omitempty"`
 	ExpectedErrors []YAMLExpectedError `yaml:"expected_errors,omitempty"`
 }
 
-// TestJSONValidationCorpus runs the JSON corpus against ValidateJSON. The same file
-// is run by pkg/js and pkg/java, so what only a JSON model can reach, such as
+// TestJSONValidationSharedCases runs the shared JSON cases against ValidateJSON. The
+// same file is run by pkg/js and pkg/java, so what only a JSON model can reach, such as
 // findings with no position, is checked the same way in all three.
-func TestJSONValidationCorpus(t *testing.T) {
+func TestJSONValidationSharedCases(t *testing.T) {
 	t.Parallel()
 
-	data, err := os.ReadFile(filepath.Join(corpusDir, "json-validation-cases.yaml"))
+	data, err := os.ReadFile(filepath.Join(sharedDataDir, "json-validation-cases.yaml"))
 	require.NoError(t, err)
 
-	var cases []jsonCorpusCase
+	var cases []jsonTestCase
 	require.NoError(t, yaml.Unmarshal(data, &cases))
-	require.NotEmpty(t, cases, "corpus loaded no cases")
+	require.NotEmpty(t, cases, "shared test file loaded no cases")
 
 	for _, testCase := range cases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
 			if testCase.Skip {
-				t.Skip("marked skip in the corpus")
+				t.Skip("marked skip in the shared test file")
 			}
 
 			model := &openfgav1.AuthorizationModel{}
 
-			// DiscardUnknown: the corpus is shared with implementations whose model
+			// DiscardUnknown: the test file is shared with implementations whose model
 			// type may have fields this one does not, and an unknown field is not what
 			// a case is testing.
 			require.NoError(t,
 				protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal([]byte(testCase.JSON), model),
 				"the case's JSON must parse as an authorization model")
 
-			result := compareWithCorpus(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateJSON(model)))
+			result := compareWithExpected(testCase.ExpectedErrors, ExtractAllAs[*Finding](ValidateJSON(model)))
 
 			for _, problem := range result.Problems {
 				t.Error(problem)
 			}
 
-			require.Equal(t, corpusPass, result.Status)
+			require.Equal(t, casePass, result.Status)
 		})
 	}
 }

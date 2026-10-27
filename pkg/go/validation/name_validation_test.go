@@ -10,9 +10,12 @@ import (
 func TestValidateTypeName(t *testing.T) {
 	t.Parallel()
 
-	t.Run("valid name yields nothing", func(t *testing.T) {
+	t.Run("valid names yield nothing", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, validateTypeName("document"))
+
+		for _, name := range []string{"document", "user_group", "group2"} {
+			assert.NoError(t, validateTypeName(name), name)
+		}
 	})
 
 	t.Run("reserved keywords", func(t *testing.T) {
@@ -25,6 +28,16 @@ func TestValidateTypeName(t *testing.T) {
 			assert.Equal(t, "a type cannot be named 'self' or 'this'.", finding.Message)
 			assert.Equal(t, reserved, finding.Metadata.Symbol)
 			assert.Equal(t, reserved, finding.Metadata.Type)
+		}
+	})
+
+	t.Run("names breaking the rule are reported as invalid-name", func(t *testing.T) {
+		t.Parallel()
+
+		for _, name := range []string{"doc:ument", "document name", "document#tag", "doc@ument", "doc*ument", ""} {
+			var finding *Finding
+			require.ErrorAs(t, validateTypeName(name), &finding, name)
+			assert.Equal(t, InvalidName, finding.Metadata.Kind, name)
 		}
 	})
 
@@ -41,20 +54,35 @@ func TestValidateTypeName(t *testing.T) {
 func TestValidateRelationName(t *testing.T) {
 	t.Parallel()
 
-	t.Run("valid name yields nothing", func(t *testing.T) {
+	t.Run("valid names yield nothing", func(t *testing.T) {
 		t.Parallel()
-		assert.NoError(t, validateRelationName("viewer", "document"))
+
+		for _, name := range []string{"viewer", "can_view", "viewer2"} {
+			assert.NoError(t, validateRelationName(name, "document"), name)
+		}
 	})
 
-	t.Run("reserved keyword", func(t *testing.T) {
+	t.Run("reserved keywords", func(t *testing.T) {
 		t.Parallel()
 
-		var finding *Finding
-		require.ErrorAs(t, validateRelationName("self", "document"), &finding)
-		assert.Equal(t, ReservedRelationKeywords, finding.Metadata.Kind)
-		assert.Equal(t, "a relation cannot be named 'self' or 'this'.", finding.Message)
-		assert.Equal(t, "document", finding.Metadata.Type)
-		assert.Equal(t, "self", finding.Metadata.Relation)
+		for _, reserved := range []string{"self", "this"} {
+			var finding *Finding
+			require.ErrorAs(t, validateRelationName(reserved, "document"), &finding)
+			assert.Equal(t, ReservedRelationKeywords, finding.Metadata.Kind)
+			assert.Equal(t, "a relation cannot be named 'self' or 'this'.", finding.Message)
+			assert.Equal(t, "document", finding.Metadata.Type)
+			assert.Equal(t, reserved, finding.Metadata.Relation)
+		}
+	})
+
+	t.Run("names breaking the rule are reported as invalid-name", func(t *testing.T) {
+		t.Parallel()
+
+		for _, name := range []string{"view#er", "viewer:invalid", "can view", "view@er", "view*er", ""} {
+			var finding *Finding
+			require.ErrorAs(t, validateRelationName(name, "document"), &finding, name)
+			assert.Equal(t, InvalidName, finding.Metadata.Kind, name)
+		}
 	})
 
 	t.Run("rule violation names the relation and its type", func(t *testing.T) {
@@ -72,7 +100,15 @@ func TestValidateRelationName(t *testing.T) {
 func TestValidateConditionName(t *testing.T) {
 	t.Parallel()
 
-	require.NoError(t, validateConditionName("is_valid"))
+	for _, name := range []string{"is_valid", "is_owner", "condition123"} {
+		require.NoError(t, validateConditionName(name), name)
+	}
+
+	for _, name := range []string{"condition*", ""} {
+		var invalid *Finding
+		require.ErrorAs(t, validateConditionName(name), &invalid, name)
+		assert.Equal(t, InvalidName, invalid.Metadata.Kind, name)
+	}
 
 	var finding *Finding
 	require.ErrorAs(t, validateConditionName("has space"), &finding)

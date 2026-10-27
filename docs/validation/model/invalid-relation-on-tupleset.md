@@ -167,7 +167,7 @@ type document
 ## Related Errors
 
 - [`tupleuserset-not-direct`](./tupleuserset-not-direct.md) - When tupleset lacks direct assignment
-- [`undefined-relation`](./undefined-relation.md) - When relations don't exist
+- [`missing-definition`](./missing-definition.md) - When relations don't exist
 - [`invalid-relation-type`](./invalid-relation-type.md) - When relation syntax is invalid
 
 ## Implementation Notes

@@ -11,9 +11,8 @@ enum RelationDefOperator {
   Difference = "difference",
 }
 
-// Reserved condition name for inline expressions on a type restriction. Unlike
-// named conditions it is not declared in the model's `conditions` block, so it
-// is exempt from the "condition must be defined" validation.
+// Inline-expression marker on a type restriction; not declared in the model's
+// `conditions` block, so it is exempt from the undefined-condition check.
 const RESERVED_INLINE_EXPRESSION = "$expression";
 
 interface ValidationRegex {
@@ -296,10 +295,8 @@ function hasEntryPointOrLoop(
   return { hasEntry: false, loop: false };
 }
 
-// Collapse every run of inline whitespace into one space — space, tab and form
-// feed are exactly what the lexer's WHITESPACE rule admits between tokens
-// (OpenFGALexer.g4), so `define\towner:` must be found like `define owner:`.
-// Anything else (nbsp, vertical tab) fails to lex and can never reach a lookup.
+// Fold runs of space, tab and form feed — the separators the lexer's WHITESPACE
+// rule admits — so `define\towner:` is found like `define owner:`.
 const normalizeWhitespace = (line: string) => line.trim().replace(/[ \t\f]+/g, " ");
 
 const geConditionLineNumber = (conditionName: string, lines?: string[], skipIndex?: number) => {

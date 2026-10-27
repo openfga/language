@@ -191,3 +191,76 @@
       metadata:
         symbol: "core.fga"
         errorType: multiple-modules-in-file
+
+# Rewrite shapes only hand-written JSON can carry; no implementation reports them.
+- name: duplicate members in a nested union are not reported
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": {
+            "editor": { "this": {} },
+            "viewer": {
+              "union": {
+                "child": [
+                  { "this": {} },
+                  {
+                    "union": {
+                      "child": [
+                        { "computedUserset": { "relation": "editor" } },
+                        { "computedUserset": { "relation": "editor" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "editor": { "directly_related_user_types": [{ "type": "user" }] },
+              "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors: []
+
+- name: a nested difference subtracting an operand from itself is not reported
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": {
+            "editor": { "this": {} },
+            "viewer": {
+              "union": {
+                "child": [
+                  { "this": {} },
+                  {
+                    "difference": {
+                      "base": { "computedUserset": { "relation": "editor" } },
+                      "subtract": { "computedUserset": { "relation": "editor" } }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "editor": { "directly_related_user_types": [{ "type": "user" }] },
+              "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors: []

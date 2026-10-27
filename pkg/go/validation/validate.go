@@ -30,16 +30,15 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 // validate runs the validation phases over model and joins their findings.
 //
 // Schema, name and relation-reference validation always run. Duplicate
-// detection runs only if they found nothing, and the later structural phases
-// only if nothing has been found at all: a model with bad references or
-// duplicates would otherwise produce a cascade of derived entry-point and
-// operation errors for the same root cause. Multi-file and condition checks
-// always run.
+// detection runs only if they found nothing, and entry-point detection only if
+// nothing has been found at all: a model with bad references or duplicates
+// would otherwise produce a cascade of derived entry-point errors for the same
+// root cause. Multi-file and condition checks always run.
 //
 // The gating in pkg/js differs: when schema or name validation finds anything
 // it skips every later check but the multi-file one, so for such a model it
 // reports fewer findings than this does. Findings are also not always in
-// pkg/js's order, which this package's corpus test does not check.
+// pkg/js's order, which this package's shared-case test does not check.
 func validate(model *openfgav1.AuthorizationModel, src source) error {
 	if model == nil {
 		return nil
@@ -64,9 +63,6 @@ func validate(model *openfgav1.AuthorizationModel, src source) error {
 
 	if len(errs) == 0 {
 		add(validateEntryPoints(idx, src))
-		add(validateTupleToUsersets(idx, src))
-		add(validateComplexOperations(idx, src))
-		add(validateWildcards(idx, src))
 	}
 
 	add(validateMultiFile(model))

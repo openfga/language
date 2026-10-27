@@ -72,7 +72,6 @@ type document
 ## Related Errors
 
 - [`reserved-type-keywords`](./reserved-type-keywords.md) - Reserved keywords for type names
-- [`self-error`](./self-error.md) - Reserved error code, not currently emitted
 - [`invalid-name`](./invalid-name.md) - General invalid naming issues
 
 ## Implementation Notes

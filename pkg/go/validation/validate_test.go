@@ -264,8 +264,6 @@ type document
 	t.Run("condition checks run even when the cascade is gated", func(t *testing.T) {
 		t.Parallel()
 
-		// The undefined type gates the structural phases, but the unused
-		// condition must still be reported, matching the reference.
 		dsl := `model
   schema 1.1
 type user

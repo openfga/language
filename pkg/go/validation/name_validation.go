@@ -10,8 +10,8 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// The anchored name rules, compiled once. Each rule string doubles as the
-// clause quoted in the invalid-name message, so the shared test cases fix the values.
+// The anchored name rules, compiled once. Each rule string is also quoted in
+// the invalid-name message.
 var (
 	typeNameRule      = fmt.Sprintf("^%s$", RuleType)
 	relationNameRule  = fmt.Sprintf("^%s$", RuleRelation)
@@ -67,8 +67,7 @@ func validateConditionName(name string) error {
 }
 
 // validateNames checks every type, relation and condition name in the model
-// against the reserved keywords and the naming rules. Neither pkg/js nor
-// pkg/java checks condition names.
+// against the reserved keywords and the naming rules.
 func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 	var fs []*Finding
 

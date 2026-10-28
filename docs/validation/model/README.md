@@ -1,6 +1,6 @@
 # OpenFGA Model Validation Errors
 
-This directory contains comprehensive documentation for all OpenFGA model validation errors. These error codes and messages are consistent across Go, JavaScript, and Java implementations to provide a unified validation experience.
+This directory documents the OpenFGA model validation errors.
 
 ## Overview
 
@@ -51,13 +51,11 @@ Each error documentation includes:
 
 ## Implementation Notes
 
-These validation errors are implemented consistently across:
+These validation errors are implemented in:
 
 - **Go**: `pkg/go/validation/` package
 - **JavaScript**: `pkg/js/validator/` package  
 - **Java**: Java validation implementation
-
-Error codes, messages, and validation logic are synchronized to ensure identical behavior across all language implementations.
 
 ## Contributing
 

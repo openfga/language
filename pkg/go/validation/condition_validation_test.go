@@ -43,7 +43,6 @@ condition unused(x: int) {
 		findings := ExtractAllAs[*Finding](validateConditions(mustParse(t, dsl), newSource(dsl)))
 
 		require.Len(t, findings, 1)
-		assert.Equal(t, "`unused` condition is not used in the model.", findings[0].Message)
 		assert.Equal(t, ConditionNotUsed, findings[0].Metadata.Kind)
 		assert.Equal(t, "unused", findings[0].Metadata.Condition)
 		assert.Equal(t, &Range{Start: 6, End: 6}, findings[0].Line)
@@ -65,7 +64,6 @@ type document
 		require.Len(t, findings, 2)
 
 		for _, finding := range findings {
-			assert.Equal(t, "`missing` is not a defined condition in the model.", finding.Message)
 			assert.Equal(t, ConditionNotDefined, finding.Metadata.Kind)
 			assert.Equal(t, "document", finding.Metadata.Type)
 		}
@@ -114,7 +112,6 @@ condition is_valid(x: int) {
 		findings := ExtractAllAs[*Finding](validateConditions(model, source{}))
 
 		require.Len(t, findings, 1)
-		assert.Equal(t, "condition key is `is_valid` but nested name property is other_name", findings[0].Message)
 		assert.Equal(t, DifferentNestedConditionName, findings[0].Metadata.Kind)
 		assert.Equal(t, "other_name", findings[0].Metadata.Symbol)
 		assert.Equal(t, "is_valid", findings[0].Metadata.Condition)

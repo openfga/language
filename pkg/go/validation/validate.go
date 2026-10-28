@@ -35,9 +35,12 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 // would otherwise produce a cascade of derived entry-point errors for the same
 // root cause. Multi-file and condition checks always run.
 //
-// The gating in pkg/js differs: when schema or name validation finds anything
-// it skips every later check but the multi-file one, so for such a model it
-// reports fewer findings than this does. Findings are also not always in
+// The gating in pkg/js differs, so for some models it reports fewer findings
+// than this does. A schema or name finding skips every later check but the
+// multi-file one, and an undefined condition, which pkg/js reports with the
+// relation references, skips duplicate and entry-point detection. A skipped
+// check also leaves the modules of the relations or conditions it would have
+// visited out of the multi-file check. Findings are also not always in
 // pkg/js's order, which this package's shared-case test does not check.
 func validate(model *openfgav1.AuthorizationModel, src source) error {
 	if model == nil {

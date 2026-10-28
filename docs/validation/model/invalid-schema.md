@@ -65,8 +65,7 @@ Use `1.2` if the model is split across files with `module` declarations, `1.1` o
 
 ## Implementation Notes
 
-- Go: `validateSchemaVersion` in `pkg/go/validation/schema_validation.go`
-- JavaScript: `validate-dsl.ts`, through `createInvalidSchemaVersionError` in `util/exceptions.ts`
-- Java: `ModelValidator`, through `ValidationErrorsBuilder.raiseInvalidSchemaVersion`
-
-All three tag the finding `invalid-schema`. The message and the code are checked by `tests/data/dsl-semantic-validation-cases.yaml` and `tests/data/json-validation-cases.yaml`.
+This validation is enforced consistently across:
+- Go implementation: `pkg/go/validation/schema_validation.go`
+- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
+- Java implementation: Java schema validation package

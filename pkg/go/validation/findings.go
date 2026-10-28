@@ -11,7 +11,9 @@ import (
 )
 
 // Kind is a finding's machine-readable code, the wire `errorType`. The values
-// are shared with pkg/js and pkg/java, so they are fixed.
+// are shared with pkg/js and pkg/java, so they are fixed. This package never
+// emits SelfError, InvalidSyntax, AssignableRelationsMustHaveType or
+// TypeRestrictionCannotHaveWildcardAndRelation.
 type Kind string
 
 const (

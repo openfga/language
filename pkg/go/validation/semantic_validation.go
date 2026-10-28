@@ -17,7 +17,7 @@ func validateRelationReferences(idx *index, src source) error {
 		typeName := typeDef.GetType()
 
 		// When a type is declared more than once only the winning (last)
-		// definition is validated: the reference resolves a shadowed duplicate's
+		// definition is validated: pkg/js resolves a shadowed duplicate's
 		// relations against the winning type, so validating the winner alone
 		// avoids spurious reference errors. The duplicate itself is reported by
 		// the duplicates phase.
@@ -143,7 +143,7 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 }
 
 // validateTupleToUsersetReferences validates a `target from tupleset` rewrite,
-// mirroring the reference implementation:
+// mirroring pkg/js:
 //   - the tupleset relation must exist on the current type;
 //   - the tupleset relation must be a plain direct assignment whose assignable
 //     types are concrete (no wildcard, no type#relation);

@@ -9,8 +9,7 @@ import (
 // references, so each phase does not rebuild its own maps.
 //
 // When a type is declared more than once the maps are built last-wins, matching
-// the reference's typeMap; the duplicate itself is reported by the duplicates
-// phase.
+// pkg/js's typeMap; the duplicate itself is reported by the duplicates phase.
 type index struct {
 	model     *openfgav1.AuthorizationModel
 	types     map[string]*openfgav1.TypeDefinition
@@ -74,8 +73,8 @@ func (idx *index) directTypeRestrictions(typeName, relationName string) []*openf
 // directlyAssignableTypes returns the type restrictions a relation is directly
 // assignable to, but only when that relation is a single direct assignment
 // (i.e. `define r: [a, b]` rather than a rewrite). The bool reports whether the
-// relation is such a single direct assignment. This mirrors the reference
-// implementation's allowableTypes helper used for tuple-to-userset validation.
+// relation is such a single direct assignment. This mirrors pkg/js's
+// allowableTypes helper used for tuple-to-userset validation.
 func (idx *index) directlyAssignableTypes(typeName, relationName string) ([]*openfgav1.RelationReference, bool) {
 	userset := idx.userset(typeName, relationName)
 	if userset == nil {

@@ -5,11 +5,9 @@ import (
 	"strings"
 )
 
-// The functions here build one finding each: the message the shared test cases expect,
-// the code, and which part of the model is at fault. The raise site stamps
-// where it is: the position through at or one of its variants, and the file and
-// module from the model's metadata. A finding built from a JSON model has no
-// source text, so it goes without a position.
+// Each function here builds one finding: its message, its code and the part of
+// the model at fault. The raise site stamps the position, through at or one of
+// its variants, and the file and module from the model's metadata.
 
 // invalidTypeName reports a type name that breaks the naming rule.
 func invalidTypeName(name string) *Finding {
@@ -141,8 +139,7 @@ func missingRelation(name, typeName, relation string) *Finding {
 
 // invalidSchemaVersion reports a schema version that was never valid (e.g.
 // "0.9", "2.0"), as distinct from one that is recognized but no longer
-// supported. Its code is InvalidSchema, as in pkg/js; InvalidSchemaVersion is
-// never emitted.
+// supported. Its code is InvalidSchema, as in pkg/js.
 func invalidSchemaVersion(version string) *Finding {
 	return &Finding{
 		Message:  "invalid schema " + version,
@@ -185,7 +182,7 @@ func unusedCondition(condition string) *Finding {
 }
 
 // differentNestedConditionName reports a condition whose nested name property
-// differs from its map key. It carries no position, matching the reference.
+// differs from its map key. It carries no position, as in pkg/js.
 func differentNestedConditionName(conditionKey, nestedName string) *Finding {
 	return &Finding{
 		Message:  fmt.Sprintf("condition key is `%s` but nested name property is %s", conditionKey, nestedName),

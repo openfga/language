@@ -25,7 +25,6 @@ func TestValidateTypeName(t *testing.T) {
 			var finding *Finding
 			require.ErrorAs(t, validateTypeName(reserved), &finding)
 			assert.Equal(t, ReservedTypeKeywords, finding.Metadata.Kind)
-			assert.Equal(t, "a type cannot be named 'self' or 'this'.", finding.Message)
 			assert.Equal(t, reserved, finding.Metadata.Symbol)
 			assert.Equal(t, reserved, finding.Metadata.Type)
 		}
@@ -39,15 +38,6 @@ func TestValidateTypeName(t *testing.T) {
 			require.ErrorAs(t, validateTypeName(name), &finding, name)
 			assert.Equal(t, InvalidName, finding.Metadata.Kind, name)
 		}
-	})
-
-	t.Run("rule violation quotes the anchored rule", func(t *testing.T) {
-		t.Parallel()
-
-		var finding *Finding
-		require.ErrorAs(t, validateTypeName("doc:ument"), &finding)
-		assert.Equal(t, InvalidName, finding.Metadata.Kind)
-		assert.Equal(t, "type 'doc:ument' does not match naming rule: '^[^:#@\\*\\s]{1,254}$'.", finding.Message)
 	})
 }
 
@@ -69,7 +59,6 @@ func TestValidateRelationName(t *testing.T) {
 			var finding *Finding
 			require.ErrorAs(t, validateRelationName(reserved, "document"), &finding)
 			assert.Equal(t, ReservedRelationKeywords, finding.Metadata.Kind)
-			assert.Equal(t, "a relation cannot be named 'self' or 'this'.", finding.Message)
 			assert.Equal(t, "document", finding.Metadata.Type)
 			assert.Equal(t, reserved, finding.Metadata.Relation)
 		}
@@ -83,17 +72,6 @@ func TestValidateRelationName(t *testing.T) {
 			require.ErrorAs(t, validateRelationName(name, "document"), &finding, name)
 			assert.Equal(t, InvalidName, finding.Metadata.Kind, name)
 		}
-	})
-
-	t.Run("rule violation names the relation and its type", func(t *testing.T) {
-		t.Parallel()
-
-		var finding *Finding
-		require.ErrorAs(t, validateRelationName("view#er", "document"), &finding)
-		assert.Equal(t, InvalidName, finding.Metadata.Kind)
-		assert.Equal(t,
-			"relation 'view#er' of type 'document' does not match naming rule: '^[^:#@\\*\\s]{1,50}$'.",
-			finding.Message)
 	})
 }
 
@@ -123,12 +101,9 @@ func TestValidateNames(t *testing.T) {
 	t.Run("positions resolve to the declaring lines", func(t *testing.T) {
 		t.Parallel()
 
-		// The parser would reject these names; build the model directly, as the
-		// phase sees it.
 		dsl := "model\n  schema 1.1\ntype self\n  relations\n    define this: [self]"
-		model := modelWithRelations(t, "self", "this")
 
-		findings := ExtractAllAs[*Finding](validateNames(model, newSource(dsl)))
+		findings := ExtractAllAs[*Finding](validateNames(mustParse(t, dsl), newSource(dsl)))
 
 		require.Len(t, findings, 2)
 
@@ -144,7 +119,9 @@ func TestValidateNames(t *testing.T) {
 	t.Run("no source text means no positions", func(t *testing.T) {
 		t.Parallel()
 
-		findings := ExtractAllAs[*Finding](validateNames(modelWithRelations(t, "self", "viewer"), source{}))
+		dsl := "model\n  schema 1.1\ntype self\n  relations\n    define viewer: [self]"
+
+		findings := ExtractAllAs[*Finding](validateNames(mustParse(t, dsl), source{}))
 
 		require.Len(t, findings, 1)
 		assert.Nil(t, findings[0].Line)

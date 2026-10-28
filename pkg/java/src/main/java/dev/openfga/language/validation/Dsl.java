@@ -31,8 +31,10 @@ class Dsl {
                 .orElse(-1);
     }
 
-    // Fold runs of space, tab and form feed — the separators the lexer's WHITESPACE
-    // rule admits — so `define\towner:` is found like `define owner:`.
+    // Collapse every run of inline whitespace into one space — space, tab and form
+    // feed are exactly what the lexer's WHITESPACE rule admits between tokens
+    // (OpenFGALexer.g4), so `define\towner:` must be found like `define owner:`.
+    // Anything else (nbsp, vertical tab) fails to lex and can never reach a lookup.
     private static String normalizeWhitespace(String line) {
         return line.trim().replaceAll("[ \\t\\f]+", " ");
     }

@@ -5,8 +5,8 @@ import (
 )
 
 // validateSchemaVersion reports a missing, retired, or never-valid schema
-// version. A model with no version at all is reported at line zero, matching
-// the reference.
+// version. A model with no version at all is reported at line zero, as in
+// pkg/js.
 func validateSchemaVersion(model *openfgav1.AuthorizationModel, src source) error {
 	version := model.GetSchemaVersion()
 

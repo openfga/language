@@ -148,8 +148,7 @@ type document
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/wildcard_validation.go`
+This validation is enforced by:
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java wildcard validation package
 

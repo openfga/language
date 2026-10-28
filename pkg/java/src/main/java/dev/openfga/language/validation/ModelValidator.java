@@ -13,8 +13,9 @@ import java.util.*;
 
 public class ModelValidator {
 
-    // Inline-expression marker on a type restriction; not declared in the model's
-    // `conditions` block, so it is exempt from the undefined-condition check.
+    // Reserved condition name for inline expressions on a type restriction. Unlike
+    // named conditions it is not declared in the model's `conditions` block, so it
+    // is exempt from the "condition must be defined" validation.
     private static final String RESERVED_INLINE_EXPRESSION = "$expression";
 
     private final ValidationOptions options;

@@ -23,8 +23,7 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 
 	var fs []*Finding
 
-	// A condition whose nested name property differs from its map key. It
-	// carries no position, matching the reference.
+	// A condition whose nested name property differs from its map key.
 	conditions := model.GetConditions()
 	names := slices.Sorted(maps.Keys(conditions))
 
@@ -50,8 +49,7 @@ func validateConditions(model *openfgav1.AuthorizationModel, src source) error {
 		fs = append(fs, finding)
 	}
 
-	// The undefined-condition findings come first, matching the reference's
-	// order.
+	// The undefined-condition findings come first, as in pkg/js.
 	return errors.Join(undefinedConditions(model, src, uses), joinFindings(fs...))
 }
 
@@ -101,7 +99,7 @@ func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
 		for _, use := range uses[conditionName] {
 			// Anchor the relation line lookup to the referencing type's
 			// declaration so the correct `define` is found when several types
-			// share a relation name, matching the reference.
+			// share a relation name.
 			line := src.relationLine(use.relationName, src.typeLine(use.typeName))
 
 			var file, module string

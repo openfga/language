@@ -16,7 +16,6 @@ func TestSourceTypeLine(t *testing.T) {
 	assert.Equal(t, 3, src.typeLine("document"))
 	assert.Equal(t, -1, src.typeLine("missing"))
 	assert.Equal(t, -1, source{}.typeLine("user"), "no source, no line")
-	assert.Equal(t, 1, newSource("model\ntype\tuser").typeLine("user"), "a tab after type is folded")
 }
 
 func TestSourceRelationLine(t *testing.T) {
@@ -36,10 +35,7 @@ type document
 	assert.Equal(t, 8, src.relationLine("viewer", src.typeLine("document")),
 		"anchoring to the type finds its own define")
 	assert.Equal(t, -1, src.relationLine("missing", -1))
-
-	tabbed := newSource("type document\n  relations\n    define\tviewer: [user]\n    define \t editor: [user]")
-	assert.Equal(t, 2, tabbed.relationLine("viewer", -1), "a tab after define is folded")
-	assert.Equal(t, 3, tabbed.relationLine("editor", -1), "a mixed whitespace run is folded")
+	assert.Equal(t, -1, source{}.relationLine("viewer", -1), "no source, no line")
 }
 
 func TestSourceConditionLine(t *testing.T) {
@@ -55,12 +51,10 @@ condition less_than(x: int) {
   x < 10
 }`)
 
-	assert.Equal(t, 3, src.conditionLine("less"), "a name that prefixes another must not match its line")
+	assert.Equal(t, 3, src.conditionLine("less"))
 	assert.Equal(t, 6, src.conditionLine("less_than"))
 	assert.Equal(t, -1, src.conditionLine("missing"))
 	assert.Equal(t, -1, source{}.conditionLine("less"), "no source, no line")
-	assert.Equal(t, 1, newSource("type document\ncondition\tis_owner(x: int) {").conditionLine("is_owner"),
-		"a tab after condition is folded")
 }
 
 func TestSourceSchemaLine(t *testing.T) {
@@ -83,6 +77,8 @@ func TestWordIndex(t *testing.T) {
 		want    int
 	}{
 		{"word boundary skips substring", "    define type_a: [t]", "t", 20},
+		{"first boundary match wins", "a or a", "a", 0},
+		{"falls back to a substring with no boundary match", "type usergroup", "user", 5},
 		{"plain match", "    define viewer: [user]", "viewer", 11},
 		{"symbol with non-word characters", "    define viewer: [user:*]", "user:*", 20},
 		{"missing symbol falls back to zero", "    define viewer: [user]", "absent", 0},

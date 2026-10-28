@@ -98,6 +98,18 @@
       metadata:
         symbol: "this"
         errorType: reserved-relation-keywords
+- name: reserved keywords are case-sensitive
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type Self
+      relations
+        define This: [user]
+    type THIS
+      relations
+        define SELF: [user]
+  expected_errors: []
 - name: invalid type name
   dsl: >
     model
@@ -735,6 +747,20 @@
         end: 61
       metadata:
         errorType: invalid-relation-on-tupleset
+- name: from target relation needs to exist on only one of the assignable types
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+    type folder
+      relations
+        define viewer: [user]
+    type document
+      relations
+        define parent: [folder, org]
+        define viewer: viewer from parent
+  expected_errors: []
 - name: self reference with wildcard
   dsl: |
     model
@@ -831,6 +857,28 @@
         end: 26
       metadata:
         symbol: "user:*"
+        errorType: duplicated-error
+- name: duplicate type with condition in relations
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_owner, user with is_owner]
+    condition is_owner(x: int) {
+      x > 0
+    }
+  expected_errors:
+    - msg: "the type restriction `user with is_owner` is a duplicate in the relation `viewer`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 20
+        end: 38
+      metadata:
+        symbol: "user with is_owner"
         errorType: duplicated-error
 - name: duplicate relation union in relations
   dsl: |
@@ -2462,3 +2510,24 @@
       metadata:
         symbol: "marked"
         errorType: condition-not-used
+- name: a duplicate type is not reported when a relation reference is invalid
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+    type document
+    type folder
+      relations
+        define viewer: [ghost]
+  expected_errors:
+    - msg: "`ghost` is not a valid type."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 20
+        end: 25
+      metadata:
+        symbol: "ghost"
+        errorType: invalid-type

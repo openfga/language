@@ -256,7 +256,8 @@ class OpenFgaDslListener extends OpenFGAListener {
     if (ctx.conditionName()) {
       relationRef.condition = ctx.conditionName().getText();
     } else if (ctx.DOLLAR_EXPRESSION()) {
-      // Inline-expression marker, carried like a named condition.
+      // `$expression` is a reserved condition name for inline expressions; it
+      // is carried on the RelationReference exactly like a named condition.
       relationRef.condition = ctx.DOLLAR_EXPRESSION().getText();
     }
 

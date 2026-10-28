@@ -55,7 +55,6 @@ type YAMLErrorMetadata struct {
 // YAMLTestSuite is a shared test file's cases.
 type YAMLTestSuite struct {
 	TestCases []YAMLTestCase
-	FilePath  string
 }
 
 // YAMLTestRunner loads shared test files from testDataPath and runs their cases.
@@ -89,7 +88,7 @@ func (runner *YAMLTestRunner) LoadTestSuite(filename string) (*YAMLTestSuite, er
 		return nil, fmt.Errorf("failed to parse YAML file %s: %w", filePath, err)
 	}
 
-	suite := &YAMLTestSuite{TestCases: testCases, FilePath: filePath}
+	suite := &YAMLTestSuite{TestCases: testCases}
 	runner.suites[filename] = suite
 
 	return suite, nil
@@ -187,7 +186,7 @@ func compareWithExpected(expectedErrors []YAMLExpectedError, findings []*Finding
 //
 // The message has to be equal rather than merely contain the expected text: the shared
 // cases are the contract between the implementations, so a message that only starts
-// with the reference's is a divergence, not a pass.
+// with the expected one is a divergence, not a pass.
 func describeMismatch(expected YAMLExpectedError, finding *Finding) string {
 	if finding.Message != expected.Message {
 		return fmt.Sprintf("message %q, want %q", finding.Message, expected.Message)

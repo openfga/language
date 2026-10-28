@@ -7,7 +7,7 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// entryPointResult mirrors the reference implementation's { hasEntry, loop }.
+// entryPointResult mirrors pkg/js's { hasEntry, loop }.
 type entryPointResult struct {
 	hasEntry bool
 	loop     bool
@@ -53,13 +53,13 @@ func validateEntryPoints(idx *index, src source) error {
 }
 
 // hasEntryPointOrLoop determines whether a rewrite reaches a concrete entry
-// point, porting the reference's hasEntryPointOrLoop (validate-dsl.ts): one
+// point, porting hasEntryPointOrLoop from pkg/js's validate-dsl.ts: one
 // traversal per relation with one outcome. The visited map tracks
 // type#relation pairs already on the current traversal.
 //
 // Only the computed-userset branch turns a revisit into a reported loop; the
 // direct type-relation and tuple-to-userset branches skip a reference already
-// being resolved and answer loop: false, as the reference does.
+// being resolved and answer loop: false, as pkg/js does.
 //
 // Sibling branches each get a copy of visited so one branch's path can't
 // poison another's loop check; the computed-userset tail call shares it to

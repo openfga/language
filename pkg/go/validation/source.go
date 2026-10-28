@@ -25,47 +25,24 @@ func newSource(dsl string) source {
 // typeLine returns the line index a type is declared on, or -1 when the source
 // does not declare it.
 func (s source) typeLine(typeName string) int {
-	for i, line := range s.lines {
-		trimmed := utils.NormalizeWhitespace(strings.TrimSpace(line))
-		if !strings.HasPrefix(trimmed, "type ") {
-			continue
-		}
-
-		if fields := strings.Fields(trimmed); len(fields) >= 2 && fields[1] == typeName {
-			return i
-		}
-	}
-
-	return -1
+	return utils.GetTypeLineNumber(typeName, s.lines)
 }
 
 // relationLine returns the line index a relation is defined on, searching from
 // the given line so the right `define` is found when several types declare a
 // relation of the same name. A negative from searches the whole source.
 func (s source) relationLine(relationName string, from int) int {
-	if from < 0 {
-		from = 0
+	from = min(max(from, 0), len(s.lines))
+
+	line := utils.GetRelationLineNumber(relationName, s.lines[from:])
+	if line < 0 {
+		return -1
 	}
 
-	for i := from; i < len(s.lines); i++ {
-		trimmed := utils.NormalizeWhitespace(strings.TrimSpace(s.lines[i]))
-		if !strings.HasPrefix(trimmed, "define ") {
-			continue
-		}
-
-		definePart := strings.TrimPrefix(trimmed, "define ")
-
-		colon := strings.Index(definePart, ":")
-		if colon > 0 && strings.TrimSpace(definePart[:colon]) == relationName {
-			return i
-		}
-	}
-
-	return -1
+	return from + line
 }
 
 // conditionLine returns the line index a condition is declared on, or -1.
-// `less` does not match a declaration of `less_than`.
 func (s source) conditionLine(conditionName string) int {
 	return utils.GetConditionLineNumber(conditionName, s.lines)
 }
@@ -155,11 +132,12 @@ func (f *Finding) atRestriction(src source, line int) *Finding {
 	return f
 }
 
-// wordIndex returns the index of symbol in rawLine matched on word boundaries,
-// mirroring the reference's `\bsymbol\b` lookup, so a symbol is not found as a
-// substring of another word (e.g. `t` inside `type`). Returns 0 when absent,
-// matching the reference's fallback. The boundary test is done in place to
-// avoid compiling a regexp per finding.
+// wordIndex returns the index of symbol in rawLine, preferring a match on word
+// boundaries, as pkg/js's `\bsymbol\b` lookup does, so `t` is found on its own
+// rather than inside `type`. With no such match it falls back to the first
+// occurrence anywhere, where pkg/js answers 0, and it returns 0 when symbol is
+// absent, as pkg/js does. The boundary test is done in place to avoid compiling
+// a regexp per finding.
 func wordIndex(rawLine, symbol string) int {
 	if symbol == "" {
 		return 0

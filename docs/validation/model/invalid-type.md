@@ -150,7 +150,6 @@ type document
 ## Related Errors
 
 - [`invalid-name`](./invalid-name.md) - General naming convention issues
-- [`undefined-type`](./undefined-type.md) - When referenced types don't exist
 - [`reserved-type-keywords`](./reserved-type-keywords.md) - When type names use reserved words
 
 ## Implementation Notes

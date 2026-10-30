@@ -147,7 +147,6 @@ type document
 
 - [`reserved-type-keywords`](./reserved-type-keywords.md) - When names use reserved keywords
 - [`reserved-relation-keywords`](./reserved-relation-keywords.md) - When relation names use reserved keywords
-- [`self-error`](./self-error.md) - Specific issues with 'self' and 'this'
 
 ## Implementation Notes
 

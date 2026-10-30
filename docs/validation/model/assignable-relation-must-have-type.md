@@ -143,14 +143,12 @@ type document
 
 ## Related Errors
 
-- [`invalid-wildcard-error`](./invalid-wildcard-error.md) - General wildcard usage issues
 - [`type-wildcard-relation`](./type-wildcard-relation.md) - Conflicting wildcard and relation usage
-- [`undefined-type`](./undefined-type.md) - When referenced types don't exist
+- [`invalid-type`](./invalid-type.md) - When referenced types don't exist
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/wildcard_validation.go`
+This validation is enforced by:
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java wildcard validation package
 

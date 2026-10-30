@@ -71,6 +71,10 @@ public class ModelValidator {
 
         if (schemaVersion != null && (schemaVersion.equals("1.1") || schemaVersion.equals("1.2"))) {
             modelValidation();
+        } else if (schemaVersion != null && schemaVersion.equals("1.0")) {
+            // 1.0 is retired, not invalid; matches Go and JS.
+            var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
+            errors.raiseSchemaVersionUnsupported(lineIndex, schemaVersion);
         } else if (schemaVersion != null) {
             var lineIndex = dsl.getSchemaLineNumber(schemaVersion);
             errors.raiseInvalidSchemaVersion(lineIndex, schemaVersion);

@@ -1,4 +1,7 @@
 ---
+# Shared by pkg/go, pkg/js and pkg/java. Use only the fields all three read —
+# name, dsl, skip, expected_errors (msg, line, column, metadata.symbol,
+# metadata.errorType); an unknown field breaks the Java and JS runners.
 - name: model 1.1 diff in exclusion not valid and spaces are reflected correctly in error messages
   dsl: |
     model
@@ -95,6 +98,18 @@
       metadata:
         symbol: "this"
         errorType: reserved-relation-keywords
+- name: reserved keywords are case-sensitive
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type Self
+      relations
+        define This: [user]
+    type THIS
+      relations
+        define SELF: [user]
+  expected_errors: []
 - name: invalid type name
   dsl: >
     model
@@ -732,6 +747,20 @@
         end: 61
       metadata:
         errorType: invalid-relation-on-tupleset
+- name: from target relation needs to exist on only one of the assignable types
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+    type folder
+      relations
+        define viewer: [user]
+    type document
+      relations
+        define parent: [folder, org]
+        define viewer: viewer from parent
+  expected_errors: []
 - name: self reference with wildcard
   dsl: |
     model
@@ -828,6 +857,28 @@
         end: 26
       metadata:
         symbol: "user:*"
+        errorType: duplicated-error
+- name: duplicate type with condition in relations
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with is_owner, user with is_owner]
+    condition is_owner(x: int) {
+      x > 0
+    }
+  expected_errors:
+    - msg: "the type restriction `user with is_owner` is a duplicate in the relation `viewer`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 20
+        end: 38
+      metadata:
+        symbol: "user with is_owner"
         errorType: duplicated-error
 - name: duplicate relation union in relations
   dsl: |
@@ -2276,11 +2327,8 @@
         symbol: "less"
         errorType: condition-not-used
 
-# The four cases below contain literal tab characters (shown as \t in the names)
-# between a declaration keyword and its name. Tabs and form feeds are valid
-# separators per the lexer's WHITESPACE rule, so every SDK must fold them when
-# locating declaration lines. Keep the tabs when editing: replacing them with
-# spaces would stop these cases from guarding that behaviour.
+# The four cases below use literal tab separators (\t in the names). Tabs are
+# valid separators, so line lookups must fold them — keep the tabs when editing.
 - name: tab separator in define\treader is folded when locating the error line
   dsl: |
     model
@@ -2382,3 +2430,104 @@
       relations
         define viewer: [group#member with $expression]
   expected_errors: []
+- name: schema 1.0 is recognized but no longer supported
+  dsl: |
+    model
+      schema 1.0
+    type user
+  expected_errors:
+    - msg: "schema version no longer supported"
+      line:
+        start: 1
+        end: 1
+      column:
+        start: 9
+        end: 12
+      metadata:
+        symbol: "1.0"
+        errorType: schema-version-unsupported
+- name: an undefined condition is reported before an unused one
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with missing]
+    condition marked(x: int) {
+      x > 0
+    }
+  expected_errors:
+    - msg: "`missing` is not a defined condition in the model."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 30
+        end: 37
+      metadata:
+        symbol: "missing"
+        errorType: condition-not-defined
+    - msg: "`marked` condition is not used in the model."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 10
+        end: 16
+      metadata:
+        symbol: "marked"
+        errorType: condition-not-used
+- name: an unused condition is reported even when a relation reference is invalid
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [ghost]
+    condition marked(x: int) {
+      x > 0
+    }
+  expected_errors:
+    - msg: "`ghost` is not a valid type."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 20
+        end: 25
+      metadata:
+        symbol: "ghost"
+        errorType: invalid-type
+    - msg: "`marked` condition is not used in the model."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 10
+        end: 16
+      metadata:
+        symbol: "marked"
+        errorType: condition-not-used
+- name: a duplicate type is not reported when a relation reference is invalid
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+    type document
+    type folder
+      relations
+        define viewer: [ghost]
+  expected_errors:
+    - msg: "`ghost` is not a valid type."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 20
+        end: 25
+      metadata:
+        symbol: "ghost"
+        errorType: invalid-type

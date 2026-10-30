@@ -63,7 +63,6 @@ type document
 ## Related Errors
 
 - [`reserved-relation-keywords`](./reserved-relation-keywords.md) - Reserved keywords for relation names
-- [`self-error`](./self-error.md) - Reserved error code, not currently emitted
 - [`invalid-name`](./invalid-name.md) - General invalid naming issues
 
 ## Implementation Notes

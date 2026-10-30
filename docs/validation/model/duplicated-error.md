@@ -146,7 +146,7 @@ type document
 
 - [`invalid-name`](./invalid-name.md) - When names don't follow proper format
 - [`reserved-type-keywords`](./reserved-type-keywords.md) - When using reserved words
-- [`undefined-relation`](./undefined-relation.md) - Broken references after renaming
+- [`missing-definition`](./missing-definition.md) - Broken references after renaming
 
 ## Implementation Notes
 

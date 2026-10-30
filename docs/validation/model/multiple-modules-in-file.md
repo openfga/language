@@ -123,7 +123,7 @@ type document
 
 ## Related Errors
 
-- [`invalid-syntax`](./invalid-syntax.md) - Syntax issues in module declarations
+- [`duplicated-error`](./duplicated-error.md) - Duplicate definitions across module files
 
 ## Implementation Notes
 

@@ -1,6 +1,6 @@
 # OpenFGA Model Validation Errors
 
-This directory contains comprehensive documentation for all OpenFGA model validation errors. These error codes and messages are consistent across Go, JavaScript, and Java implementations to provide a unified validation experience.
+This directory documents the OpenFGA model validation errors.
 
 ## Overview
 
@@ -21,31 +21,23 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 |------------|------------|---------|---------------|
 | `schema-version-required` | Schema | Schema version must be specified | [schema-version-required.md](./schema-version-required.md) |
 | `schema-version-unsupported` | Schema | Unsupported schema version | [schema-version-unsupported.md](./schema-version-unsupported.md) |
-| `invalid-schema-version` | Schema | Invalid schema version format | [invalid-schema-version.md](./invalid-schema-version.md) |
+| `invalid-schema` | Schema | Unsupported or unrecognized schema version | [invalid-schema.md](./invalid-schema.md) |
 | `reserved-type-keywords` | Naming | Type name uses reserved keyword | [reserved-type-keywords.md](./reserved-type-keywords.md) |
 | `reserved-relation-keywords` | Naming | Relation name uses reserved keyword | [reserved-relation-keywords.md](./reserved-relation-keywords.md) |
-| `self-error` | Naming | Invalid use of 'self' or 'this' | [self-error.md](./self-error.md) |
 | `invalid-name` | Naming | Invalid type or relation name format | [invalid-name.md](./invalid-name.md) |
 | `duplicated-error` | Structure | Duplicate type or relation definition | [duplicated-error.md](./duplicated-error.md) |
 | `missing-definition` | Semantic | Referenced type or relation not defined | [missing-definition.md](./missing-definition.md) |
-| `undefined-type` | Semantic | Type is referenced but not defined | [undefined-type.md](./undefined-type.md) |
-| `undefined-relation` | Semantic | Relation is referenced but not defined | [undefined-relation.md](./undefined-relation.md) |
 | `invalid-relation-type` | Semantic | Invalid relation type in reference | [invalid-relation-type.md](./invalid-relation-type.md) |
 | `invalid-type` | Semantic | Invalid type in relation definition | [invalid-type.md](./invalid-type.md) |
 | `relation-no-entry-point` | Semantic | Relation has no entry point for assignment | [relation-no-entry-point.md](./relation-no-entry-point.md) |
-| `cyclic-error` | Semantic | Circular dependency in relations | [cyclic-error.md](./cyclic-error.md) |
-| `cyclic-relation` | Semantic | Circular relation dependency detected | [cyclic-relation.md](./cyclic-relation.md) |
 | `invalid-relation-on-tupleset` | Structure | Invalid relation in tuple-to-userset | [invalid-relation-on-tupleset.md](./invalid-relation-on-tupleset.md) |
 | `tupleuserset-not-direct` | Structure | Tuple-to-userset must have direct assignment | [tupleuserset-not-direct.md](./tupleuserset-not-direct.md) |
-| `invalid-wildcard-error` | Wildcard | Invalid wildcard usage in relation | [invalid-wildcard-error.md](./invalid-wildcard-error.md) |
 | `assignable-relation-must-have-type` | Wildcard | Assignable relation must specify type | [assignable-relation-must-have-type.md](./assignable-relation-must-have-type.md) |
 | `type-wildcard-relation` | Wildcard | Type restriction cannot have wildcard and relation | [type-wildcard-relation.md](./type-wildcard-relation.md) |
 | `condition-not-defined` | Condition | Referenced condition is not defined | [condition-not-defined.md](./condition-not-defined.md) |
 | `condition-not-used` | Condition | Defined condition is never used | [condition-not-used.md](./condition-not-used.md) |
 | `different-nested-condition-name` | Condition | Condition name mismatch in nested structure | [different-nested-condition-name.md](./different-nested-condition-name.md) |
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
-| `invalid-schema` | Schema | Invalid schema structure | [invalid-schema.md](./invalid-schema.md) |
-| `invalid-syntax` | Syntax | Invalid DSL syntax | [invalid-syntax.md](./invalid-syntax.md) |
 
 ## Usage
 
@@ -59,13 +51,11 @@ Each error documentation includes:
 
 ## Implementation Notes
 
-These validation errors are implemented consistently across:
+These validation errors are implemented in:
 
 - **Go**: `pkg/go/validation/` package
 - **JavaScript**: `pkg/js/validator/` package  
 - **Java**: Java validation implementation
-
-Error codes, messages, and validation logic are synchronized to ensure identical behavior across all language implementations.
 
 ## Contributing
 

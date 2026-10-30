@@ -18,13 +18,13 @@ OpenFGA supports specific schema versions that define the available features, sy
 
 Using an unsupported schema version prevents the system from knowing which validation rules to apply and which features are available.
 
-## Example 1: Using a version that is not yet supported
+## Example: Using a retired version
 
 The following model would trigger this error:
 
 ```
 model
-  schema 2.0  # Error: Version 2.0 not yet supported
+  schema 1.0  # Error: Version 1.0 is no longer supported
 
 type user
 
@@ -33,9 +33,9 @@ type document
     define viewer: [user]
 ```
 
-**Error Location:** Line 2, `schema 2.0` declaration.
+**Error Location:** Line 2, `schema 1.0` declaration.
 
-**Error Message:** `Schema version '2.0' is not supported. Supported versions are: 1.1, 1.2`
+**Error Message:** `schema version no longer supported`
 
 ## Resolution
 
@@ -57,7 +57,7 @@ type document
 ### Steps to fix:
 
 1. **Check supported versions:**
-   - Review the error message for list of supported versions
+   - Supported versions are `1.1` and `1.2`
    - Check OpenFGA documentation for version compatibility
 
 2. **Choose appropriate version:**
@@ -92,7 +92,7 @@ type document
 ### Migrating from Schema 1.0 to 1.1
 
 The main changes when migrating from Schema 1.0 to 1.1 include:
-1. [Adding model schema version field](#-model-schema-versions)
+1. [Adding model schema version field](#model-schema-versions)
 2. [Adding type enforcements and removing need to specify `as self`](#type-enforcements--removing-as-self)
 3. [Disallowing string literals in user_ids](#disallowing-string-literals-in-user_ids)
 4. [Enforcing userset type restrictions](#enforcing-userset-type-restrictions)
@@ -352,8 +352,7 @@ In these cases, OpenFGA will not consider those invalid tuples when evaluating q
 ## Related Errors
 
 - [`schema-version-required`](./schema-version-required.md) - When no schema version is specified
-- [`invalid-schema-version`](./invalid-schema-version.md) - When version format is invalid
-- [`invalid-schema`](./invalid-schema.md) - General schema structure issues
+- [`invalid-schema`](./invalid-schema.md) - When the declared version is not recognized
 
 ## Implementation Notes
 
@@ -361,5 +360,3 @@ This validation is enforced consistently across:
 - Go implementation: `pkg/go/validation/schema_validation.go`
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java schema validation package
-
-The validation checks against a predefined list of supported schema versions and rejects models using unsupported versions.

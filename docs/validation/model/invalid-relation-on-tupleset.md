@@ -167,13 +167,13 @@ type document
 ## Related Errors
 
 - [`tupleuserset-not-direct`](./tupleuserset-not-direct.md) - When tupleset lacks direct assignment
-- [`undefined-relation`](./undefined-relation.md) - When relations don't exist
+- [`missing-definition`](./missing-definition.md) - When relations don't exist
 - [`invalid-relation-type`](./invalid-relation-type.md) - When relation syntax is invalid
 
 ## Implementation Notes
 
 This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/wildcard_validation.go`
+- Go implementation: `pkg/go/validation/semantic_validation.go`
 - JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
 - Java implementation: Java tuple-to-userset validation package
 

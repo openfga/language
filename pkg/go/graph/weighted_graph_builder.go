@@ -2,6 +2,7 @@ package graph
 
 import (
 	"cmp"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -59,6 +60,15 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 
 	err := wb.AssignWeights()
 	if err != nil {
+		// A cycle refusal names the relations in every unresolvable cycle,
+		// read off the already-constructed graph. errors.Is and the message
+		// are those of err itself.
+		if errors.Is(err, ErrModelCycle) || errors.Is(err, ErrTupleCycle) {
+			if cycles := wb.unresolvableCycles(); len(cycles) > 0 {
+				return nil, &CycleError{err: err, Cycles: cycles}
+			}
+		}
+
 		return nil, err
 	}
 

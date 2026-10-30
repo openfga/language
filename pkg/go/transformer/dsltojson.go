@@ -307,7 +307,9 @@ func (l *OpenFgaDslListener) EnterRelationDefDirectAssignment(_ *parser.Relation
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefDirectAssignment(_ *parser.RelationDefDirectAssignmentContext) {
-	partialRewrite := &openfgav1.Userset{Userset: &openfgav1.Userset_This{}}
+	partialRewrite := &openfgav1.Userset{
+		Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}},
+	}
 
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }
@@ -330,6 +332,10 @@ func (l *OpenFgaDslListener) ExitRelationDefTypeRestriction(ctx *parser.Relation
 
 	if conditionName != nil {
 		relationRef.Condition = conditionName.GetText()
+	} else if dollarExpression := ctx.DOLLAR_EXPRESSION(); dollarExpression != nil {
+		// `$expression` is a reserved condition name for inline expressions; it
+		// is carried on the RelationReference exactly like a named condition.
+		relationRef.Condition = dollarExpression.GetText()
 	}
 
 	if usersetRestriction != nil {

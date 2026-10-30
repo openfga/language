@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/require"
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/multi"
 
 	language "github.com/openfga/language/pkg/go/transformer"
 )
@@ -1202,4 +1205,299 @@ func getSorted(input string) string {
 	sort.Strings(lines)
 
 	return strings.Join(lines, "\n")
+}
+
+// TestParseThisMalformedRelationReference tests that parseThis handles degenerate
+// RelationReference shapes that survive proto validation but cannot be expressed in the DSL.
+// These tests use hand-constructed protos because language.MustTransformDSLToProto cannot
+// produce an empty relation name (the grammar requires at least one character after #).
+func TestParseThisMalformedRelationReference(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		model                 *openfgav1.AuthorizationModel
+		expectPanic           bool
+		expectedUserNode      bool     // whether a "user" node should exist
+		expectedGroupNode     bool     // whether a "group" node should exist
+		expectedUserEdgeCond  []string // conditions on user -> document#viewer edge
+		expectedGroupEdgeCond []string // conditions on group -> document#viewer edge
+	}{
+		`empty_relation_in_oneof_does_not_panic`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectPanic:           false, // Should not panic; parseThis must handle all oneof states
+			expectedUserNode:      true,
+			expectedGroupNode:     false,
+			expectedUserEdgeCond:  []string{""},
+			expectedGroupEdgeCond: nil,
+		},
+		`nil_wildcard_in_oneof_does_not_panic`: {
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{
+											Type: "user",
+											RelationOrWildcard: &openfgav1.RelationReference_Wildcard{
+												Wildcard: nil,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectPanic:           false, // Should not panic; parseThis must handle all oneof states
+			expectedUserNode:      true,
+			expectedGroupNode:     false,
+			expectedUserEdgeCond:  []string{""},
+			expectedGroupEdgeCond: nil,
+		},
+		`degenerate_entry_does_not_inherit_previous_node`: {
+			// This is the silent graph-corruption variant: when a valid entry precedes
+			// a degenerate one, curNode is declared outside the loop so the degenerate
+			// entry reuses the previous iteration's node. The edge carrying condition "cond1"
+			// should originate from "group", not "user".
+			model: &openfgav1.AuthorizationModel{
+				SchemaVersion: "1.1",
+				TypeDefinitions: []*openfgav1.TypeDefinition{
+					{Type: "user"},
+					{
+						Type: "group",
+						Relations: map[string]*openfgav1.Userset{
+							"member": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"member": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Type: "document",
+						Relations: map[string]*openfgav1.Userset{
+							"viewer": {Userset: &openfgav1.Userset_This{}},
+						},
+						Metadata: &openfgav1.Metadata{
+							Relations: map[string]*openfgav1.RelationMetadata{
+								"viewer": {
+									DirectlyRelatedUserTypes: []*openfgav1.RelationReference{
+										{Type: "user"}, // valid entry first
+										{
+											Type:      "group",
+											Condition: "cond1",
+											RelationOrWildcard: &openfgav1.RelationReference_Relation{
+												Relation: "", // degenerate entry second
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Conditions: map[string]*openfgav1.Condition{
+					"cond1": {
+						Name:       "cond1",
+						Expression: "x == 1",
+						Parameters: map[string]*openfgav1.ConditionParamTypeRef{
+							"x": {TypeName: openfgav1.ConditionParamTypeRef_TYPE_NAME_INT},
+						},
+					},
+				},
+			},
+			expectPanic:      false, // no panic, but curNode must not leak across loop iterations
+			expectedUserNode: true,
+			expectedGroupNode: true, // group node must exist; cond1 must be on group edge not user
+			expectedUserEdgeCond: []string{""}, // user edge should have no condition
+			expectedGroupEdgeCond: []string{"cond1"}, // group edge must have cond1; not merged onto user
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if testCase.expectPanic {
+				// Test verifies parseThis handles degenerate RelationReference without panic
+				require.NotPanics(t, func() {
+					graph, err := NewAuthorizationModelGraph(testCase.model)
+					require.NoError(t, err)
+					require.NotNil(t, graph)
+				})
+			} else {
+				graph, err := NewAuthorizationModelGraph(testCase.model)
+				require.NoError(t, err)
+				require.NotNil(t, graph)
+
+				// Verify the expected nodes exist
+				userNode, _ := graph.GetNodeByLabel("user")
+				groupNode, _ := graph.GetNodeByLabel("group")
+				viewerNode, err := graph.GetNodeByLabel("document#viewer")
+				require.NoError(t, err, "document#viewer node should exist")
+
+				if testCase.expectedUserNode {
+					require.NotNil(t, userNode, "user node should exist")
+				} else {
+					require.Nil(t, userNode, "user node should not exist")
+				}
+
+				if testCase.expectedGroupNode {
+					require.NotNil(t, groupNode, "group node should exist")
+				} else {
+					require.Nil(t, groupNode, "group node should not exist")
+				}
+
+				require.NotNil(t, viewerNode, "document#viewer node should exist")
+
+				// Verify edge conditions
+				if testCase.expectedUserNode && len(testCase.expectedUserEdgeCond) > 0 {
+					userToViewer := findEdge(t, graph, userNode, viewerNode, DirectEdge, "")
+					require.NotNil(t, userToViewer, "edge from user to document#viewer should exist")
+					require.ElementsMatch(t, testCase.expectedUserEdgeCond, userToViewer.conditions,
+						"user -> document#viewer edge should have expected conditions")
+				}
+
+				if testCase.expectedGroupNode && len(testCase.expectedGroupEdgeCond) > 0 {
+					groupToViewer := findEdge(t, graph, groupNode, viewerNode, DirectEdge, "")
+					require.NotNil(t, groupToViewer, "edge from group to document#viewer should exist")
+					require.ElementsMatch(t, testCase.expectedGroupEdgeCond, groupToViewer.conditions,
+						"group -> document#viewer edge should have expected conditions")
+				}
+			}
+		})
+	}
+}
+
+// findEdge returns the edge from fromNode to toNode matching the given edgeType and tuplesetRelation,
+// or nil if no matching edge exists.
+func findEdge(t *testing.T, graph *AuthorizationModelGraph, fromNode, toNode *AuthorizationModelNode, edgeType EdgeType, tuplesetRelation string) *AuthorizationModelEdge {
+	t.Helper()
+	if fromNode == nil || toNode == nil {
+		return nil
+	}
+	iter := graph.Lines(fromNode.ID(), toNode.ID())
+	for iter.Next() {
+		edge, ok := iter.Line().(*AuthorizationModelEdge)
+		if !ok {
+			continue
+		}
+		if edge.edgeType == edgeType && edge.tuplesetRelation == tuplesetRelation {
+			return edge
+		}
+	}
+	return nil
+}
+
+// TestIsNilNode verifies that isNilNode correctly detects both nil and typed-nil *AuthorizationModelNode.
+func TestIsNilNode(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		node     graph.Node
+		expected bool
+	}{
+		{
+			name:     "nil interface",
+			node:     nil,
+			expected: true,
+		},
+		{
+			name: "typed-nil *AuthorizationModelNode",
+			node: func() graph.Node {
+				var n *AuthorizationModelNode
+				return n
+			}(),
+			expected: true,
+		},
+		{
+			name: "real *AuthorizationModelNode",
+			node: &AuthorizationModelNode{
+				Node:        &simpleNode{id: 1},
+				label:       "test",
+				nodeType:    SpecificType,
+				uniqueLabel: "test",
+			},
+			expected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			actual := isNilNode(testCase.node)
+			require.Equal(t, testCase.expected, actual)
+		})
+	}
+}
+
+// TestUpsertEdgeWithTypedNil verifies that upsertEdge with a typed-nil from is a no-op instead of a panic.
+func TestUpsertEdgeWithTypedNil(t *testing.T) {
+	t.Parallel()
+
+	graphBuilder := &AuthorizationModelGraphBuilder{
+		multi.NewDirectedGraph(), map[string]int64{},
+	}
+
+	validNode := graphBuilder.getOrAddNode("user", "user", SpecificType)
+
+	var nilNode *AuthorizationModelNode
+	var nilNodeAsInterface graph.Node = nilNode
+
+	// This should not panic, just return early
+	require.NotPanics(t, func() {
+		graphBuilder.upsertEdge(nilNodeAsInterface, validNode, DirectEdge, "", "")
+	})
+
+	// Verify no edge was created
+	require.False(t, graphBuilder.hasEdge(nilNodeAsInterface, validNode, DirectEdge, ""))
+}
+
+// simpleNode is a minimal graph.Node implementation for testing.
+type simpleNode struct {
+	id int64
+}
+
+func (n *simpleNode) ID() int64 {
+	return n.id
 }

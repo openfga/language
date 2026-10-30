@@ -13,6 +13,11 @@ import java.util.*;
 
 public class ModelValidator {
 
+    // Reserved condition name for inline expressions on a type restriction. Unlike
+    // named conditions it is not declared in the model's `conditions` block, so it
+    // is exempt from the "condition must be defined" validation.
+    private static final String RESERVED_INLINE_EXPRESSION = "$expression";
+
     private final ValidationOptions options;
     private final AuthorizationModel authorizationModel;
     private final Dsl dsl;
@@ -335,6 +340,7 @@ public class ModelValidator {
 
                     var decodedConditionName = type.getDecodedConditionName();
                     if (decodedConditionName != null
+                            && !decodedConditionName.equals(RESERVED_INLINE_EXPRESSION)
                             && !authorizationModel.getConditions().containsKey(decodedConditionName)) {
                         var typeIndex = dsl.getTypeLineNumber(typeName);
                         var lineIndex = dsl.getRelationLineNumber(relationName, typeIndex);

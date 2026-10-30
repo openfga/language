@@ -259,6 +259,10 @@ public class OpenFgaDslListener extends OpenFGAParserBaseListener {
 
         if (conditionName != null) {
             relationRef.setCondition(conditionName.getText());
+        } else if (ctx.DOLLAR_EXPRESSION() != null) {
+            // `$expression` is a reserved condition name for inline expressions; it
+            // is carried on the RelationReference exactly like a named condition.
+            relationRef.setCondition(ctx.DOLLAR_EXPRESSION().getText());
         }
 
         if (usersetRestriction != null) {

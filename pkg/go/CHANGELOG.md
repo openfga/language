@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.2](https://github.com/openfga/language/compare/pkg/go/v0.3.1...pkg/go/v0.3.2) (2026-10-01)
+
+
+### Added
+
+* create deterministic name to the operator nodes ([#640](https://github.com/openfga/language/issues/640)) ([b8b1a5a](https://github.com/openfga/language/commit/b8b1a5ae1ff2c040ee3c84c23560ce74a01b3f24))
+* support $expression reserved condition name on type restrictions ([#664](https://github.com/openfga/language/issues/664)) ([0d2ad7f](https://github.com/openfga/language/commit/0d2ad7fb7c40a9ade99ddbfaffc3cc12f5186456))
+
+
+### Fixed
+
+* flag multi-branch recursive relations as tuple cycles in the weighted graph ([#648](https://github.com/openfga/language/issues/648)) ([83fedf8](https://github.com/openfga/language/commit/83fedf8a4e70499aaa2f69d713084a410b687ad3))
+* **graph:** prevent nil-pointer panic and corruption in parseThis ([#661](https://github.com/openfga/language/issues/661)) ([96eccfe](https://github.com/openfga/language/commit/96eccfe5f3b76097001c33ad2edaf319b64a554b))
+
 ## [0.3.1](https://github.com/openfga/language/compare/pkg/go/v0.3.0...pkg/go/v0.3.1) (2026-07-06)
 
 

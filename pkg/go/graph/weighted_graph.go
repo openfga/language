@@ -513,7 +513,11 @@ func (wg *WeightedAuthorizationModelGraph) calculateEdgeWeight(edge *WeightedAut
 			tupleCycle = append(tupleCycle, edge.to.uniqueLabel)
 			return tupleCycle, nil
 		}
-		return tupleCycle, ErrModelCycle
+		return tupleCycle, &CycleError{
+			kind:    ErrModelCycle,
+			text:    ErrModelCycle.Error(),
+			Members: wg.relationMembers(cycleMembers(ancestorPath, edge.to.uniqueLabel)),
+		}
 	}
 
 	isTupleCycle := len(tupleCycle) > 0
@@ -673,7 +677,11 @@ func (wg *WeightedAuthorizationModelGraph) calculateNodeWeightFromTheEdges(nodeI
 	}
 
 	// In the case of interception or exclussion involved in a cycle, is not allowed, so we return an error
-	return tupleCycles, ErrContrainstTupleCycle
+	return tupleCycles, &CycleError{
+		kind:    ErrContrainstTupleCycle,
+		text:    ErrContrainstTupleCycle.Error(),
+		Members: wg.relationMembers(tupleCycles),
+	}
 }
 
 // The max weight strategy is to take all the types for all the edges and get the max value

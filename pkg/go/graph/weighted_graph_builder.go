@@ -59,6 +59,12 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 
 	err := wb.AssignWeights()
 	if err != nil {
+		// Re-walk the refusal in sorted node order, so which cycle it names
+		// does not depend on map iteration. Only refused models pay for this.
+		if retryErr := wgb.refuseDeterministically(model); retryErr != nil {
+			return nil, retryErr
+		}
+
 		return nil, err
 	}
 

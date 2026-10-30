@@ -192,7 +192,10 @@ public class ModelValidator {
                 var currentRelations = typeMap.get(typeName).getRelations();
                 var typeDefMetadata = typeDef.getMetadata();
                 var typeDefRelationsMetadata = getNullSafe(typeMap.get(typeName).getMetadata(), Metadata::getRelations);
-                for (var relationName : typeDef.getRelations().keySet()) {
+                // Sorted: the relations sit in a HashMap, and two relations of one
+                // type that both lack an entry point would otherwise be reported in
+                // hash-bucket order. pkg/go reports them sorted.
+                for (var relationName : new TreeSet<>(typeDef.getRelations().keySet())) {
                     var result = EntryPointOrLoop.compute(
                             typeMap, typeName, relationName, currentRelations.get(relationName), new HashMap<>());
 

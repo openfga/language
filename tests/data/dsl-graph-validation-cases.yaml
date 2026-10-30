@@ -1,0 +1,253 @@
+---
+# Expected findings of graph-based validation, the path that resolves
+# entry-point reachability from the weighted authorization-model graph.
+#
+# Run by pkg/go through ValidateDSLWithGraph. pkg/js and pkg/java have no graph
+# path yet; when they grow one, they run this file to converge on the same
+# messages, codes and positions. It holds what dsl-semantic-validation-cases.yaml
+# cannot: models whose findings exist only under the graph path, which the
+# default validators in every language call valid.
+#
+# Lines and columns count from zero. expected_errors are listed in emission
+# order. The fields are the ones every runner reads: name, dsl, skip,
+# expected_errors with msg, line, column and metadata (symbol, errorType).
+- name: rewrite cycle that reads no tuple
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define a: [user] or b
+        define b: [user] or a
+  expected_errors:
+    - msg: "`a` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "a"
+        errorType: cyclic-relation
+    - msg: "`b` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "b"
+        errorType: cyclic-relation
+- name: tuple cycle through an exclusion
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#member] but not blocked
+        define blocked: [user, group#member]
+  expected_errors:
+    - msg: "`blocked` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "blocked"
+        errorType: cyclic-relation
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
+- name: tuple cycle through an intersection names only the relations in it
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define admin: [user]
+        define member: [user, group#member] and admin
+  expected_errors:
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
+- name: a legal cycle does not excuse an illegal one
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#member] but not blocked
+        define blocked: [user, group#member]
+        define owner: [user, group#owner]
+  expected_errors:
+    - msg: "`blocked` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "blocked"
+        errorType: cyclic-relation
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
+- name: findings come out sorted by relation within a type
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define a: [user] or b
+        define b: [user] or a
+        define c: [user] or d
+        define d: [user] or c
+  expected_errors:
+    - msg: "`a` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "a"
+        errorType: cyclic-relation
+    - msg: "`b` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "b"
+        errorType: cyclic-relation
+    - msg: "`c` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "c"
+        errorType: cyclic-relation
+    - msg: "`d` on `document` takes part in a cycle that cannot be resolved: no relation in it reads a tuple, so resolving it never terminates."
+      line:
+        start: 8
+        end: 8
+      column:
+        start: 11
+        end: 12
+      metadata:
+        symbol: "d"
+        errorType: cyclic-relation
+- name: a refusal the rewrite-tree walk can attribute keeps the walk's findings
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define admin: [user]
+        define viewer: admin and editor
+        define editor: viewer
+  expected_errors:
+    - msg: "`editor` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "editor"
+        errorType: relation-no-entry-point
+    - msg: "`viewer` is an impossible relation for `document` (potential loop)."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "viewer"
+        errorType: relation-no-entry-point
+- name: a refusal nothing can attribute is one finding with no position
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type org
+    type folder
+      relations
+        define viewer: [user]
+    type document
+      relations
+        define parent: [folder, org]
+        define viewer: viewer from parent
+  expected_errors:
+    - msg: "the model cannot be built into a weighted graph: invalid model"
+      metadata:
+        errorType: graph-model-unbuildable
+- name: userset nesting is not reported
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#member]
+  expected_errors: []
+- name: tupleset recursion is not reported
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type folder
+      relations
+        define parent: [folder]
+        define viewer: [user] or viewer from parent
+  expected_errors: []
+- name: an exclusion outside a cycle is not reported
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define blocked: [user]
+        define viewer: [user] but not blocked
+  expected_errors: []

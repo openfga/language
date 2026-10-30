@@ -199,3 +199,23 @@ func multipleModulesInSingleFile(file string, modules []string) *Finding {
 		Metadata: Metadata{Kind: MultipleModulesInFile, Symbol: file},
 	}
 }
+
+// cyclicRelation reports a relation inside a cycle the resolver cannot work
+// through. The clause names the shape: no step reads a tuple, or a step is an
+// operand of an intersection or exclusion.
+func cyclicRelation(relation, typeName, clause string) *Finding {
+	return &Finding{
+		Message:  fmt.Sprintf("`%s` on `%s` takes part in a cycle that cannot be resolved: %s.", relation, typeName, clause),
+		Metadata: Metadata{Kind: CyclicRelation, Symbol: relation, Type: typeName, Relation: relation},
+	}
+}
+
+// modelUnbuildable reports a model the weighted-graph builder refuses when the
+// refusal cannot be attributed to relations. A whole-model failure has no
+// line, so the finding carries no position.
+func modelUnbuildable(reason string) *Finding {
+	return &Finding{
+		Message:  "the model cannot be built into a weighted graph: " + reason,
+		Metadata: Metadata{Kind: GraphModelUnbuildable},
+	}
+}

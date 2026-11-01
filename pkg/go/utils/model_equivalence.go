@@ -86,18 +86,27 @@ func normalizeTypeMetadata(metadata *openfgav1.Metadata) *openfgav1.Metadata {
 	return &openfgav1.Metadata{Relations: relations}
 }
 
-// normalizeUserset flattens nested unions and intersections and sorts their children in place.
+// normalizeUserset flattens nested unions and intersections, sorts their children and replaces a union or
+// intersection that is left with a single child by that child, in place.
 func normalizeUserset(userset *openfgav1.Userset) {
 	switch rewrite := userset.GetUserset().(type) {
 	case *openfgav1.Userset_Union:
 		rewrite.Union.Child = normalizeChildren(rewrite.Union.GetChild(), func(child *openfgav1.Userset) []*openfgav1.Userset {
 			return child.GetUnion().GetChild()
 		})
+
+		if len(rewrite.Union.GetChild()) == 1 {
+			userset.Userset = rewrite.Union.GetChild()[0].GetUserset()
+		}
 	case *openfgav1.Userset_Intersection:
 		rewrite.Intersection.Child = normalizeChildren(rewrite.Intersection.GetChild(),
 			func(child *openfgav1.Userset) []*openfgav1.Userset {
 				return child.GetIntersection().GetChild()
 			})
+
+		if len(rewrite.Intersection.GetChild()) == 1 {
+			userset.Userset = rewrite.Intersection.GetChild()[0].GetUserset()
+		}
 	case *openfgav1.Userset_Difference:
 		normalizeUserset(rewrite.Difference.GetBase())
 		normalizeUserset(rewrite.Difference.GetSubtract())

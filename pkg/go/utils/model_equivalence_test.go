@@ -320,6 +320,40 @@ type document
 	require.True(t, utils.AreModelsEquivalent(model1, model2))
 }
 
+func TestAreModelsEquivalentCollapsesSingleChildRewrites(t *testing.T) {
+	t.Parallel()
+
+	model1, err := transformer.TransformDSLToProto(`model
+  schema 1.1
+
+type user
+
+type document
+  relations
+    define a: [user]
+    define b: [user]
+    define viewer: a or a
+    define editor: b and b
+`)
+	require.NoError(t, err)
+
+	model2, err := transformer.TransformDSLToProto(`model
+  schema 1.1
+
+type user
+
+type document
+  relations
+    define a: [user]
+    define b: [user]
+    define viewer: a
+    define editor: b
+`)
+	require.NoError(t, err)
+
+	require.True(t, utils.AreModelsEquivalent(model1, model2))
+}
+
 func TestAreModelsEquivalentNil(t *testing.T) {
 	t.Parallel()
 

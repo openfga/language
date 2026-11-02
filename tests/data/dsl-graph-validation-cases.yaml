@@ -122,6 +122,98 @@
       metadata:
         symbol: "member"
         errorType: cyclic-relation
+- name: a tuple cycle through an exclusion is named whatever its relations are called
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#member] but not zblocked
+        define zblocked: [user, group#member]
+  expected_errors:
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
+    - msg: "`zblocked` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 19
+      metadata:
+        symbol: "zblocked"
+        errorType: cyclic-relation
+- name: the relation holding the exclusion is named with the cycle
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#viewer]
+        define viewer: member but not blocked
+        define blocked: [user]
+  expected_errors:
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
+    - msg: "`viewer` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "viewer"
+        errorType: cyclic-relation
+- name: the relation holding the exclusion is named when it sorts first
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user, group#aviewer]
+        define aviewer: member but not blocked
+        define blocked: [user]
+  expected_errors:
+    - msg: "`aviewer` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 11
+        end: 18
+      metadata:
+        symbol: "aviewer"
+        errorType: cyclic-relation
+    - msg: "`member` on `group` takes part in a cycle that cannot be resolved: a relation in it is an operand of an `and` or a `but not`."
+      line:
+        start: 5
+        end: 5
+      column:
+        start: 11
+        end: 17
+      metadata:
+        symbol: "member"
+        errorType: cyclic-relation
 - name: findings come out sorted by relation within a type
   dsl: |
     model

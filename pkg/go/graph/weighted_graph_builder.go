@@ -21,6 +21,21 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 }
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	wb, err := wgb.construct(model)
+	if err != nil {
+		return nil, err
+	}
+
+	err = wb.AssignWeights()
+	if err != nil {
+		return nil, err
+	}
+
+	return wb, nil
+}
+
+// construct adds the model's nodes and edges to a new graph, without weights.
+func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	wb := NewWeightedAuthorizationModelGraph()
 	// sort types by name to guarantee stable output
 	sortedTypeDefs := make([]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions()))
@@ -55,11 +70,6 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 				return nil, err
 			}
 		}
-	}
-
-	err := wb.AssignWeights()
-	if err != nil {
-		return nil, err
 	}
 
 	return wb, nil

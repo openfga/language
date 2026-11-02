@@ -2,6 +2,7 @@ package validation
 
 import (
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 
@@ -17,7 +18,7 @@ func validateWithGraph(idx *index, src source) error {
 		return nil
 	}
 
-	weighted, err := graph.NewWeightedAuthorizationModelGraphBuilder().Build(idx.model)
+	weighted, err := graph.NewWeightedAuthorizationModelGraphBuilder().BuildWithCycles(idx.model)
 	if err != nil {
 		return graphRefusal(idx, src, err)
 	}
@@ -32,25 +33,93 @@ func validateWithGraph(idx *index, src source) error {
 	return joinFindings(fs...)
 }
 
-// graphRefusal reports a model the builder refused, by the first of three
-// answers that applies.
+// graphRefusal reports a model the builder refused: the rewrite-tree walk's
+// findings, and every relation in a cycle the builder cannot resolve alongside
+// them.
 //
-// The rewrite-tree walk answers first: where it reports anything, those are
-// the findings. Where it is silent, the refusal is over a cycle shape the walk
-// does not look for, and the relations in that cycle are named as
-// cyclic-relation findings. A refusal neither can attribute becomes one
-// positionless graph-model-unbuildable finding, with a fixed reason per
-// builder sentinel.
+// The walk's findings come first and are kept as they are; a relation they
+// already cover is not reported again. Every other relation in such a cycle is
+// a cyclic-relation finding at its line. A refusal that is not over cycles
+// names no relation, so it becomes one positionless graph-model-unbuildable
+// finding. The wording is fixed per builder sentinel.
 func graphRefusal(idx *index, src source, cause error) error {
-	if err := validateEntryPoints(idx, src); err != nil {
-		return err
+	fs := ExtractAllAs[*Finding](validateEntryPoints(idx, src))
+
+	var cycleErr *graph.CycleError
+	if !errors.As(cause, &cycleErr) {
+		return joinFindings(append(fs, modelUnbuildable(describeRefusal(cause)))...)
 	}
 
-	if fs := relationCycleShapes(idx, src); len(fs) > 0 {
-		return joinFindings(fs...)
+	reported := reportedRelations(fs)
+	byRelation := map[string][]*Finding{}
+
+	for _, cycle := range cycleErr.Cycles {
+		for _, label := range cycle.Members {
+			if !reported[label] {
+				byRelation[label] = append(byRelation[label], cycleFinding(idx, src, cycle.Kind, label))
+			}
+		}
 	}
 
-	return joinFindings(modelUnbuildable(describeRefusal(cause)))
+	fs = append(fs, inModelOrder(idx, byRelation)...)
+	if len(fs) == 0 {
+		fs = append(fs, modelUnbuildable(describeRefusal(cause)))
+	}
+
+	return joinFindings(fs...)
+}
+
+// cycleFinding is the cyclic-relation finding for one relation in a cycle the
+// builder cannot resolve, at the relation's line.
+func cycleFinding(idx *index, src source, kind error, label string) *Finding {
+	typeName, relation, _ := splitRelationLabel(label)
+
+	shape := cycleUnderConstraint
+	if errors.Is(kind, graph.ErrModelCycle) {
+		shape = cycleReadsNoTuple
+	}
+
+	finding := cyclicRelation(relation, typeName, describeCycleShape(shape))
+	finding.at(src, src.relationLine(relation, src.typeLine(typeName)))
+	finding.File, finding.Metadata.Module = relationMeta(idx.typeDef(typeName), relation)
+
+	return finding
+}
+
+// reportedRelations is the set of relations, as "type#relation", that findings
+// are already about.
+func reportedRelations(fs []*Finding) map[string]bool {
+	reported := make(map[string]bool, len(fs))
+	for _, f := range fs {
+		reported[f.Metadata.Type+"#"+f.Metadata.Relation] = true
+	}
+
+	return reported
+}
+
+// inModelOrder lists the findings for each relation in the order the model
+// declares its types, and by relation name within a type, the order every other
+// finding on this path comes out in. A relation the model does not declare comes
+// last rather than being dropped.
+func inModelOrder(idx *index, byRelation map[string][]*Finding) []*Finding {
+	fs := make([]*Finding, 0, len(byRelation))
+	placed := make(map[string]bool, len(byRelation))
+
+	for _, typeDef := range idx.model.GetTypeDefinitions() {
+		for _, relation := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
+			label := typeDef.GetType() + "#" + relation
+			fs = append(fs, byRelation[label]...)
+			placed[label] = true
+		}
+	}
+
+	for _, label := range slices.Sorted(maps.Keys(byRelation)) {
+		if !placed[label] {
+			fs = append(fs, byRelation[label]...)
+		}
+	}
+
+	return fs
 }
 
 // graphRefusalReasons words a refusal from the sentinel it carries rather than

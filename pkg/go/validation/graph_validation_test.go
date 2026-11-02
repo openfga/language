@@ -258,11 +258,11 @@ type document
 	assert.Equal(t, fromTraversal[0].Column, finding.Column)
 }
 
-// TestGraphRefusalFallsBackInOrder covers the three rungs of graphRefusal: the
-// walk's findings where it has any, the cycle shapes where the walk is silent,
-// and the positionless unbuildable finding where neither can attribute the
-// refusal to relations.
-func TestGraphRefusalFallsBackInOrder(t *testing.T) {
+// TestGraphRefusalKeepsTheWalkAndAddsTheBuilder covers what graphRefusal
+// reports: the walk's findings as they are, the relations the builder names in
+// a cycle beside them, and one positionless finding for a refusal that is not
+// over cycles.
+func TestGraphRefusalKeepsTheWalkAndAddsTheBuilder(t *testing.T) {
 	t.Parallel()
 
 	t.Run("the walk's findings are kept", func(t *testing.T) {
@@ -280,10 +280,10 @@ type document
 		assert.Equal(t,
 			describeFindings(ExtractAllAs[*Finding](ValidateDSL(mustParse(t, dsl), dsl))),
 			describeFindings(graphFindings(t, dsl)),
-			"a refusal the walk can attribute reports exactly the walk's findings")
+			"a refusal the walk covers entirely reports exactly the walk's findings")
 	})
 
-	t.Run("cycle shapes answer where the walk is silent", func(t *testing.T) {
+	t.Run("the builder's cycles are reported where the walk is silent", func(t *testing.T) {
 		t.Parallel()
 
 		dsl := `model
@@ -295,19 +295,22 @@ type document
     define b: [user] or a
 `
 		require.NoError(t, ValidateDSL(mustParse(t, dsl), dsl),
-			"the walk has to be silent here, or the rung below it is never reached")
+			"the walk has to be silent here, so every finding comes from the builder")
 
-		for _, finding := range graphFindings(t, dsl) {
+		findings := graphFindings(t, dsl)
+		require.Len(t, findings, 2)
+
+		for _, finding := range findings {
 			assert.Equal(t, CyclicRelation, finding.Metadata.Kind)
 		}
 	})
 
-	t.Run("an unattributable refusal is one positionless finding", func(t *testing.T) {
+	t.Run("a refusal that is not over cycles is one positionless finding", func(t *testing.T) {
 		t.Parallel()
 
 		// The builder requires a tupleset target relation on every assignable
-		// type; validation requires it on one. The refusal names no relation
-		// and holds no cycle, so only the backstop is left.
+		// type; validation requires it on one. The refusal is not over cycles,
+		// so BuildWithCycles names no relation and only the backstop is left.
 		dsl := `model
   schema 1.1
 type user

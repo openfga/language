@@ -323,13 +323,15 @@ func TestCycleSearchStaysWithinItsBudget(t *testing.T) {
 			"a search cut short must not report the shape it had reached, which is a lower bound")
 		require.Equal(t, cycleStepBudget, walked, "the cap did not bind, so giving up is not being tested")
 
-		// What a caller loses is the position, not the answer. The refusal still reaches
-		// them through the backstop.
+		// Graph validation no longer goes through this search: the builder names every
+		// relation in the cycle, so a caller keeps the positions as well as the answer.
 		findings := ExtractAllAs[*Finding](ValidateDSLWithGraph(model, dsl))
-		require.Len(t, findings, 1)
+		assert.Len(t, findings, 9, "one per relation in the cycle, admin excepted")
 
-		assert.Equal(t, GraphModelUnbuildable, findings[0].Metadata.Kind)
-		assert.Contains(t, findings[0].Message, graph.ErrTupleCycle.Error())
+		for _, finding := range findings {
+			assert.Equal(t, CyclicRelation, finding.Metadata.Kind)
+			assert.NotNil(t, finding.Line)
+		}
 	})
 }
 

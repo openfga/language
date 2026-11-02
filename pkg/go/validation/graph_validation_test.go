@@ -258,11 +258,11 @@ type document
 	assert.Equal(t, fromTraversal[0].Column, finding.Column)
 }
 
-// TestGraphRefusalFallsBackInOrder covers the three rungs of graphRefusal: the
-// walk's findings where it has any, the cycle shapes where the walk is silent,
-// and the positionless unbuildable finding where neither can attribute the
-// refusal to relations.
-func TestGraphRefusalFallsBackInOrder(t *testing.T) {
+// TestGraphRefusalKeepsTheWalkAndAddsTheBuilder covers what graphRefusal
+// reports: the walk's findings as they are, the relations the builder names
+// beside them, each at its line, and one positionless finding for a problem the
+// builder names no relation for.
+func TestGraphRefusalKeepsTheWalkAndAddsTheBuilder(t *testing.T) {
 	t.Parallel()
 
 	t.Run("the walk's findings are kept", func(t *testing.T) {
@@ -280,10 +280,10 @@ type document
 		assert.Equal(t,
 			describeFindings(ExtractAllAs[*Finding](ValidateDSL(mustParse(t, dsl), dsl))),
 			describeFindings(graphFindings(t, dsl)),
-			"a refusal the walk can attribute reports exactly the walk's findings")
+			"a refusal the walk covers entirely reports exactly the walk's findings")
 	})
 
-	t.Run("cycle shapes answer where the walk is silent", func(t *testing.T) {
+	t.Run("the builder's cycles are reported where the walk is silent", func(t *testing.T) {
 		t.Parallel()
 
 		dsl := `model
@@ -295,19 +295,22 @@ type document
     define b: [user] or a
 `
 		require.NoError(t, ValidateDSL(mustParse(t, dsl), dsl),
-			"the walk has to be silent here, or the rung below it is never reached")
+			"the walk has to be silent here, so every finding comes from the builder")
 
-		for _, finding := range graphFindings(t, dsl) {
+		findings := graphFindings(t, dsl)
+		require.Len(t, findings, 2)
+
+		for _, finding := range findings {
 			assert.Equal(t, CyclicRelation, finding.Metadata.Kind)
 		}
 	})
 
-	t.Run("an unattributable refusal is one positionless finding", func(t *testing.T) {
+	t.Run("a relation the builder could not construct is reported at its line", func(t *testing.T) {
 		t.Parallel()
 
 		// The builder requires a tupleset target relation on every assignable
-		// type; validation requires it on one. The refusal names no relation
-		// and holds no cycle, so only the backstop is left.
+		// type; validation requires it on one. The builder names the relation it
+		// could not construct, so the finding sits at that relation.
 		dsl := `model
   schema 1.1
 type user
@@ -326,8 +329,31 @@ type document
 		finding := findings[0]
 		assert.Equal(t, GraphModelUnbuildable, finding.Metadata.Kind)
 		assert.Equal(t, "the model cannot be built into a weighted graph: invalid model", finding.Message)
-		assert.Nil(t, finding.Line)
-		assert.Nil(t, finding.Column)
+		assert.Equal(t, "viewer", finding.Metadata.Symbol)
+		assert.Equal(t, &Range{Start: 10, End: 10}, finding.Line)
+		assert.Equal(t, &Range{Start: 11, End: 17}, finding.Column)
+	})
+
+	t.Run("a problem the builder names no relation for is one positionless finding", func(t *testing.T) {
+		t.Parallel()
+
+		// The refusal is built by hand, so the test does not depend on finding a
+		// model the walk refuses this way.
+		dsl := `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user]
+`
+		cause := &graph.BuildError{Problems: []graph.Problem{{Kind: graph.ErrInvalidModel, Message: "invalid model"}}}
+
+		findings := ExtractAllAs[*Finding](graphRefusal(newIndex(mustParse(t, dsl)), newSource(dsl), cause))
+		require.Len(t, findings, 1)
+
+		assert.Equal(t, GraphModelUnbuildable, findings[0].Metadata.Kind)
+		assert.Equal(t, "the model cannot be built into a weighted graph: invalid model", findings[0].Message)
+		assert.Nil(t, findings[0].Line)
 	})
 }
 

@@ -205,7 +205,7 @@
       metadata:
         symbol: "viewer"
         errorType: relation-no-entry-point
-- name: a refusal nothing can attribute is one finding with no position
+- name: a relation the builder could not construct is reported at its line
   dsl: |
     model
       schema 1.1
@@ -220,7 +220,14 @@
         define viewer: viewer from parent
   expected_errors:
     - msg: "the model cannot be built into a weighted graph: invalid model"
+      line:
+        start: 10
+        end: 10
+      column:
+        start: 11
+        end: 17
       metadata:
+        symbol: "viewer"
         errorType: graph-model-unbuildable
 - name: userset nesting is not reported
   dsl: |

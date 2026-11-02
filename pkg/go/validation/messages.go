@@ -219,3 +219,12 @@ func modelUnbuildable(reason string) *Finding {
 		Metadata: Metadata{Kind: GraphModelUnbuildable},
 	}
 }
+
+// relationUnbuildable is modelUnbuildable for a refusal the builder pins on one
+// relation it could not construct, so the finding can sit at that relation.
+func relationUnbuildable(relation, typeName, reason string) *Finding {
+	finding := modelUnbuildable(reason)
+	finding.Metadata.Symbol, finding.Metadata.Type, finding.Metadata.Relation = relation, typeName, relation
+
+	return finding
+}

@@ -2,6 +2,7 @@ package validation
 
 import (
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 
@@ -32,25 +33,112 @@ func validateWithGraph(idx *index, src source) error {
 	return joinFindings(fs...)
 }
 
-// graphRefusal reports a model the builder refused, by the first of three
-// answers that applies.
+// graphRefusal reports a model the builder refused: the rewrite-tree walk's
+// findings, and every problem the builder names alongside them.
 //
-// The rewrite-tree walk answers first: where it reports anything, those are
-// the findings. Where it is silent, the refusal is over a cycle shape the walk
-// does not look for, and the relations in that cycle are named as
-// cyclic-relation findings. A refusal neither can attribute becomes one
-// positionless graph-model-unbuildable finding, with a fixed reason per
-// builder sentinel.
+// The walk's findings come first and are kept as they are; a relation they
+// already cover is not reported again. Every other relation in a cycle the
+// builder cannot resolve is a cyclic-relation finding, and every relation it
+// could not construct is a graph-model-unbuildable finding, each at the
+// relation's line. A problem the builder names no relation for becomes one
+// positionless graph-model-unbuildable finding, but only where the walk
+// reported nothing: otherwise it is most likely what the walk already reports.
+// The wording is fixed per builder sentinel.
 func graphRefusal(idx *index, src source, cause error) error {
-	if err := validateEntryPoints(idx, src); err != nil {
-		return err
+	fs := ExtractAllAs[*Finding](validateEntryPoints(idx, src))
+
+	var buildErr *graph.BuildError
+	if !errors.As(cause, &buildErr) {
+		return joinFindings(append(fs, modelUnbuildable(describeRefusal(cause)))...)
 	}
 
-	if fs := relationCycleShapes(idx, src); len(fs) > 0 {
-		return joinFindings(fs...)
+	reported := reportedRelations(fs)
+	byRelation := map[string][]*Finding{}
+
+	var unattributed []*Finding
+
+	for _, problem := range buildErr.Problems {
+		if len(problem.Relations) == 0 {
+			if len(fs) == 0 {
+				unattributed = append(unattributed, modelUnbuildable(describeRefusal(problem.Kind)))
+			}
+
+			continue
+		}
+
+		for _, label := range problem.Relations {
+			if !reported[label] {
+				byRelation[label] = append(byRelation[label], problemFinding(idx, src, problem.Kind, label))
+			}
+		}
 	}
 
-	return joinFindings(modelUnbuildable(describeRefusal(cause)))
+	fs = append(append(fs, inModelOrder(idx, byRelation)...), unattributed...)
+	if len(fs) == 0 {
+		fs = append(fs, modelUnbuildable(describeRefusal(cause)))
+	}
+
+	return joinFindings(fs...)
+}
+
+// problemFinding is the finding for one relation a builder problem names: a
+// cyclic-relation finding for a cycle the builder cannot resolve, and a
+// graph-model-unbuildable one for a relation it could not construct. Either
+// sits at the relation's line.
+func problemFinding(idx *index, src source, kind error, label string) *Finding {
+	typeName, relation, _ := splitRelationLabel(label)
+
+	var finding *Finding
+
+	switch {
+	case errors.Is(kind, graph.ErrModelCycle):
+		finding = cyclicRelation(relation, typeName, describeCycleShape(cycleReadsNoTuple))
+	case errors.Is(kind, graph.ErrTupleCycle):
+		finding = cyclicRelation(relation, typeName, describeCycleShape(cycleUnderConstraint))
+	default:
+		finding = relationUnbuildable(relation, typeName, describeRefusal(kind))
+	}
+
+	finding.at(src, src.relationLine(relation, src.typeLine(typeName)))
+	finding.File, finding.Metadata.Module = relationMeta(idx.typeDef(typeName), relation)
+
+	return finding
+}
+
+// reportedRelations is the set of relations, as "type#relation", that findings
+// are already about.
+func reportedRelations(fs []*Finding) map[string]bool {
+	reported := make(map[string]bool, len(fs))
+	for _, f := range fs {
+		reported[f.Metadata.Type+"#"+f.Metadata.Relation] = true
+	}
+
+	return reported
+}
+
+// inModelOrder lists the findings for each relation in the order the model
+// declares its types, and by relation name within a type, the order every other
+// finding on this path comes out in. A relation the model does not declare comes
+// last rather than being dropped.
+func inModelOrder(idx *index, byRelation map[string][]*Finding) []*Finding {
+	fs := make([]*Finding, 0, len(byRelation))
+	placed := make(map[string]bool, len(byRelation))
+
+	for _, typeDef := range idx.model.GetTypeDefinitions() {
+		for _, relation := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
+			label := typeDef.GetType() + "#" + relation
+			fs = append(fs, byRelation[label]...)
+			placed[label] = true
+		}
+	}
+
+	for _, label := range slices.Sorted(maps.Keys(byRelation)) {
+		if !placed[label] {
+			fs = append(fs, byRelation[label]...)
+		}
+	}
+
+	return fs
 }
 
 // graphRefusalReasons words a refusal from the sentinel it carries rather than

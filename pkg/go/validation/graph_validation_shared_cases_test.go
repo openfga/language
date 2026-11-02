@@ -105,9 +105,8 @@ func TestGraphAgreesWithTraversalOnWhichModelsAreInvalid(t *testing.T) {
 // The one divergence left is a builder gap: the weighted graph requires a
 // tupleset target relation on every assignable type of the tupleset, while
 // validation, pkg/js and pkg/java require it on one. The builder refuses the
-// model, the walk and the cycle shapes find nothing to attribute the refusal
-// to, and the case's empty expectation meets one graph-model-unbuildable
-// finding.
+// model and names the relation it could not construct, and the case's empty
+// expectation meets one graph-model-unbuildable finding at that relation.
 //
 // A refusal the rewrite-tree walk can attribute no longer diverges at all:
 // graphRefusal reports the walk's own findings, so the cycle and
@@ -146,9 +145,9 @@ func TestSharedCasesUnderGraphValidation(t *testing.T) {
 // consists of, so the test names a behaviour rather than a list.
 //
 // For each divergent case: validation calls the model valid, and the graph path
-// reports exactly one finding, the positionless unbuildable one. Anything else,
-// a second finding or a different code, is a different problem than the
-// builder refusing a model validation accepts.
+// reports exactly one finding, the unbuildable one, at the relation the builder
+// names. Anything else, a second finding or a different code, is a different
+// problem than the builder refusing a model validation accepts.
 func TestGraphDivergenceIsOnlyTheBuilderRefusal(t *testing.T) {
 	t.Parallel()
 
@@ -174,7 +173,7 @@ func TestGraphDivergenceIsOnlyTheBuilderRefusal(t *testing.T) {
 		require.Lenf(t, findings, 1, "case %q reports more than the unbuildable finding", entry.Case.Name)
 		assert.Equalf(t, GraphModelUnbuildable, findings[0].Metadata.Kind,
 			"case %q diverges by reporting something other than the unbuildable finding", entry.Case.Name)
-		assert.Nil(t, findings[0].Line)
+		assert.NotNilf(t, findings[0].Line, "case %q: the builder names the relation, so the finding has its line", entry.Case.Name)
 	}
 
 	assert.Len(t, graphDivergentSharedCases, checked, "every named case was found in the shared file")

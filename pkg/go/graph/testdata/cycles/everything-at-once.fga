@@ -1,0 +1,53 @@
+# The pattern matrix plus relations with no entry point (team ghost and
+# ghost2) and a from whose target is missing on one of its types (project
+# can_hold, which team lacks).
+model
+  schema 1.1
+
+type user
+
+type team
+  relations
+    define parent: [team]
+    define child: [team]
+    define projects: [project]
+    define member: [user, team#member]
+    define lead: [user] or lead from parent
+    define staff: [user] or staff from parent or staff from child
+    define liaison: [user, project#liaison]
+    define a1_x: [user] or a1_y
+    define a1_y: a1_x
+    define a2_x: [user] and a2_y
+    define a2_y: [user] or a2_x
+    define a3_x: [user] but not a3_y
+    define a3_y: [user] or a3_x
+    define a4_x: ([user] or a4_y) and a4_z
+    define a4_y: a4_x
+    define a4_z: [user]
+    define b1_member: [user, team#b1_member] but not b1_blocked
+    define b1_blocked: [user]
+    define b2_x: [user] but not b2_y
+    define b2_y: [user, team#b2_x]
+    define b3_x: ([user] or b3_x from parent) and b3_ok
+    define b3_ok: [user]
+    define b4_back: [user, project#b4_x]
+    define b5_y: [user] or b5_x from projects
+    define h_a: h_b but not h_x
+    define h_b: [user, team#h_a, team#h_c]
+    define h_c: [user, team#h_b]
+    define h_x: [user]
+    define m_p: [user, team#m_q] but not m_r
+    define m_q: [user] or m_p
+    define m_r: [user] or m_q
+    define ghost: [user] and ghost2
+    define ghost2: ghost2 from parent
+
+type project
+  relations
+    define team: [team]
+    define owner: [user]
+    define liaison: [user, team#liaison]
+    define b4_x: [user, team#b4_back] but not owner
+    define b5_x: [user] and b5_y from team
+    define holder: [team, project]
+    define can_hold: [user] or can_hold from holder

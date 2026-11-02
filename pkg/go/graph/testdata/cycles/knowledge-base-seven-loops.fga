@@ -1,0 +1,67 @@
+# The knowledge-base sample store with seven broken loops added, including a
+# six-relation ring and a group holding both kinds of loop (p, q, r). Its own
+# parent_container chains are legal and must not be reported.
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define member: [user] or admin or editor
+    define admin: [user]
+    define editor: [user] or member
+
+type group
+  relations
+    define p: [user, group#q] but not r
+    define q: [user] or p
+    define r: [user] or q
+    define organization: [organization]
+    define member: [user]
+
+type container
+  relations
+    define banned: [user]
+    define pinned: [article]
+    define featured: can_feature from pinned
+    define l1: [user] or l2
+    define l2: l3
+    define l3: [user] or l4
+    define l4: l5
+    define l5: l6
+    define l6: l1
+    define organization: [organization]
+    define organization_admin: admin from organization
+    define parent_container: [container]
+    define owner: [user]
+    define editor: ([user, group#member] or owner or organization_admin or editor from parent_container) but not banned
+    define viewer: [user, group#member, user:*] or editor or viewer from parent_container or member from organization
+    define can_delete: owner or organization_admin
+    define can_edit: editor or can_delete
+    define can_create_article: editor or can_delete
+    define can_view: viewer or can_edit
+
+type article
+  relations
+    define reviewer: editor
+    define can_feature: [user] and featured from parent_container
+    define attachment: [attachment]
+    define hidden: [user] or can_view from attachment
+    define parent_container: [container]
+    define organization_admin: organization_admin from parent_container
+    define author: [user]
+    define editor: [user, group#member] or author or editor from parent_container or reviewer
+    define viewer: [user, group#member, user:*] or editor or viewer from parent_container
+    define can_delete: author or organization_admin
+    define can_archive: can_delete
+    define can_publish: can_delete
+    define can_edit: editor or can_delete
+    define can_view: (viewer or can_edit) but not hidden
+
+type attachment
+  relations
+    define article: [article]
+    define uploader: [user]
+    define can_view: uploader or can_view from article
+    define can_delete: uploader or organization_admin from article

@@ -27,7 +27,42 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 	return validate(model, source{})
 }
 
-// validate runs the validation phases over model and joins their findings.
+// ValidateDSLWithGraph runs the same validations as ValidateDSL but resolves
+// entry-point reachability from the weighted authorization-model graph rather
+// than by walking the rewrite tree. Where the graph builds, it reports the same
+// relation-no-entry-point findings as ValidateDSL: same message, code and
+// position.
+//
+// A model the graph builder refuses is reported by the first of these that
+// applies: the findings the rewrite-tree walk reports for it; cyclic-relation
+// findings naming the relations of a cycle the resolver cannot work through;
+// or a single positionless graph-model-unbuildable finding. The last two codes
+// are Go-only; pkg/js and pkg/java have no graph path.
+func ValidateDSLWithGraph(model *openfgav1.AuthorizationModel, dsl string) error {
+	return validateWith(model, newSource(dsl), validateWithGraph)
+}
+
+// ValidateJSONWithGraph is ValidateDSLWithGraph for a model that has no DSL
+// source. Findings carry no Line or Column; messages and metadata match what
+// ValidateDSLWithGraph reports for the same model. The name matches
+// ValidateJSON.
+func ValidateJSONWithGraph(model *openfgav1.AuthorizationModel) error {
+	return validateWith(model, source{}, validateWithGraph)
+}
+
+// entryPointPhase answers which relations can never be satisfied. The default
+// validateEntryPoints walks the rewrite tree; validateWithGraph reads the same
+// question off the weighted graph. The two share every other phase, the phase
+// order and the cascade gate through validateWith.
+type entryPointPhase func(idx *index, src source) error
+
+// validate runs every validation phase over model, resolving entry points by
+// walking the rewrite tree.
+func validate(model *openfgav1.AuthorizationModel, src source) error {
+	return validateWith(model, src, validateEntryPoints)
+}
+
+// validateWith runs the validation phases over model and joins their findings.
 //
 // Schema, name and relation-reference validation always run. Duplicate
 // detection runs only if they found nothing, and entry-point detection only if
@@ -42,7 +77,7 @@ func ValidateJSON(model *openfgav1.AuthorizationModel) error {
 // check also leaves the modules of the relations or conditions it would have
 // visited out of the multi-file check. Findings are also not always in
 // pkg/js's order, which this package's shared-case test does not check.
-func validate(model *openfgav1.AuthorizationModel, src source) error {
+func validateWith(model *openfgav1.AuthorizationModel, src source, entryPoints entryPointPhase) error {
 	if model == nil {
 		return nil
 	}
@@ -65,7 +100,7 @@ func validate(model *openfgav1.AuthorizationModel, src source) error {
 	}
 
 	if len(errs) == 0 {
-		add(validateEntryPoints(idx, src))
+		add(entryPoints(idx, src))
 	}
 
 	add(validateMultiFile(model))

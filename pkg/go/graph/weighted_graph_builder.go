@@ -2,7 +2,6 @@ package graph
 
 import (
 	"cmp"
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -22,6 +21,21 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 }
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	wb, err := wgb.construct(model)
+	if err != nil {
+		return nil, err
+	}
+
+	err = wb.AssignWeights()
+	if err != nil {
+		return nil, err
+	}
+
+	return wb, nil
+}
+
+// construct adds the model's nodes and edges to a new graph, without weights.
+func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	wb := NewWeightedAuthorizationModelGraph()
 	// sort types by name to guarantee stable output
 	sortedTypeDefs := make([]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions()))
@@ -56,20 +70,6 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 				return nil, err
 			}
 		}
-	}
-
-	err := wb.AssignWeights()
-	if err != nil {
-		// A cycle refusal names the relations in every unresolvable cycle,
-		// read off the already-constructed graph. errors.Is and the message
-		// are those of err itself.
-		if errors.Is(err, ErrModelCycle) || errors.Is(err, ErrTupleCycle) {
-			if cycles := wb.unresolvableCycles(); len(cycles) > 0 {
-				return nil, &CycleError{err: err, Cycles: cycles}
-			}
-		}
-
-		return nil, err
 	}
 
 	return wb, nil

@@ -18,7 +18,7 @@ func cycleRefusalFor(t *testing.T, dsl string) *CycleError {
 	model, err := transformer.TransformDSLToProto(dsl)
 	require.NoError(t, err)
 
-	_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
+	_, err = NewWeightedAuthorizationModelGraphBuilder().BuildWithCycles(model)
 	require.Error(t, err, "the builder accepted the model, so there is no refusal to read")
 
 	var cycleErr *CycleError
@@ -45,10 +45,10 @@ type document
     define b: [user] or a
 `)
 
-		assert.ErrorIs(t, cycleErr, ErrModelCycle)
+		require.ErrorIs(t, cycleErr, ErrModelCycle)
 		assert.Equal(t, "model cycle", cycleErr.Error())
 		require.Len(t, cycleErr.Cycles, 1)
-		assert.ErrorIs(t, cycleErr.Cycles[0].Kind, ErrModelCycle)
+		require.ErrorIs(t, cycleErr.Cycles[0].Kind, ErrModelCycle)
 		assert.Equal(t, []string{"document#a", "document#b"}, cycleErr.Cycles[0].Members)
 	})
 
@@ -103,9 +103,9 @@ type group
     define blocked: [user, group#member]
 `)
 
-		assert.ErrorIs(t, cycleErr, ErrTupleCycle)
+		require.ErrorIs(t, cycleErr, ErrTupleCycle)
 		require.Len(t, cycleErr.Cycles, 1)
-		assert.ErrorIs(t, cycleErr.Cycles[0].Kind, ErrContrainstTupleCycle)
+		require.ErrorIs(t, cycleErr.Cycles[0].Kind, ErrContrainstTupleCycle)
 		assert.Equal(t, []string{"group#blocked", "group#member"}, cycleErr.Cycles[0].Members)
 	})
 
@@ -166,7 +166,7 @@ type group
 		require.NoError(t, err)
 
 		for range 20 {
-			_, buildErr := NewWeightedAuthorizationModelGraphBuilder().Build(model)
+			_, buildErr := NewWeightedAuthorizationModelGraphBuilder().BuildWithCycles(model)
 
 			var cycleErr *CycleError
 			require.ErrorAs(t, buildErr, &cycleErr)
@@ -187,15 +187,14 @@ type group
 `)
 		require.NoError(t, err)
 
-		_, buildErr := NewWeightedAuthorizationModelGraphBuilder().Build(model)
+		_, buildErr := NewWeightedAuthorizationModelGraphBuilder().BuildWithCycles(model)
 		require.NoError(t, buildErr)
 	})
 }
 
 // TestUnresolvableCyclesAgreeWithTheWalk holds the structural read to the
-// weight walk over every model embedded in this package's test corpus of
-// DSLs: wherever the walk refuses for a cycle, the structural read names at
-// least one, and wherever the build is accepted it is never consulted.
+// weight walk on refusals the walk makes for a cycle: each one names at least
+// one cycle, with a cycle sentinel and the relations in it.
 func TestUnresolvableCyclesAgreeWithTheWalk(t *testing.T) {
 	t.Parallel()
 
@@ -229,5 +228,52 @@ type folder
 			assert.Truef(t, errors.Is(cycle.Kind, ErrModelCycle) || errors.Is(cycle.Kind, ErrTupleCycle),
 				"%s: cycle kind %v is not a cycle sentinel", name, cycle.Kind)
 		}
+	}
+}
+
+// TestBuildRefusalIsUnchanged pins that Build itself is untouched: a cycle
+// refusal is still the bare sentinel, not a *CycleError. Only BuildWithCycles
+// names the cycles.
+func TestBuildRefusalIsUnchanged(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		dsl  string
+		want error
+	}{
+		"model cycle": {
+			dsl: `model
+  schema 1.1
+type user
+type document
+  relations
+    define a: [user] or b
+    define b: [user] or a
+`,
+			want: ErrModelCycle,
+		},
+		"tuple cycle under an exclusion": {
+			dsl: `model
+  schema 1.1
+type user
+type group
+  relations
+    define member: [user, group#member] but not blocked
+    define blocked: [user, group#member]
+`,
+			want: ErrContrainstTupleCycle,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			model, err := transformer.TransformDSLToProto(test.dsl)
+			require.NoError(t, err)
+
+			_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
+			require.Equal(t, test.want, err, "Build must return the sentinel itself")
+		})
 	}
 }

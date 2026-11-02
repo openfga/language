@@ -1,14 +1,41 @@
 package graph
 
 import (
+	"errors"
 	"maps"
 	"slices"
+
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// CycleError is the refusal Build returns for a model whose relations sit in
-// cycles the builder cannot resolve. It wraps the error the weight walk
-// refused with, so errors.Is and the message are unchanged, and adds every
-// unresolvable cycle with the relations in it.
+// BuildWithCycles is Build for a caller that needs to know which relations a
+// refusal is about. A model refused because of cycles the builder cannot
+// resolve comes back as a *CycleError naming them; every other result is
+// exactly what Build returns. Build itself is unchanged.
+func (wgb *WeightedAuthorizationModelGraphBuilder) BuildWithCycles(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	wb, err := wgb.construct(model)
+	if err != nil {
+		return nil, err
+	}
+
+	err = wb.AssignWeights()
+	if err == nil {
+		return wb, nil
+	}
+
+	if errors.Is(err, ErrModelCycle) || errors.Is(err, ErrTupleCycle) {
+		if cycles := wb.unresolvableCycles(); len(cycles) > 0 {
+			return nil, &CycleError{err: err, Cycles: cycles}
+		}
+	}
+
+	return nil, err
+}
+
+// CycleError is the refusal BuildWithCycles returns for a model whose
+// relations sit in cycles the builder cannot resolve. It wraps the error Build
+// returns for the same model, so errors.Is and the message are the same, and
+// adds every unresolvable cycle with the relations in it.
 type CycleError struct {
 	err error
 
@@ -136,9 +163,9 @@ func (wg *WeightedAuthorizationModelGraph) relationMembers(labels []string) []st
 }
 
 // stronglyConnected returns the cyclic strongly connected components of the
-// graph: components of two or more nodes. A single node is never one — a
-// relation rewriting itself is the builder's recursive-edge special case and
-// resolves. With tupleEdges false, edges that read a tuple are left out,
+// graph: components of two or more nodes. A single node is never one: the builder
+// accepts a relation that only rewrites itself, leaving it with no weights, so it
+// is not a refusal. With tupleEdges false, edges that read a tuple are left out,
 // which is the subgraph where a cycle can never terminate.
 //
 // Tarjan's algorithm, iterative so model depth is not bounded by the stack.
@@ -168,6 +195,7 @@ func stronglyConnected(wg *WeightedAuthorizationModelGraph, tupleEdges bool) [][
 	type frame struct {
 		node string
 		next int
+		ns   []string
 	}
 
 	for _, start := range slices.Sorted(maps.Keys(wg.nodes)) {
@@ -175,7 +203,7 @@ func stronglyConnected(wg *WeightedAuthorizationModelGraph, tupleEdges bool) [][
 			continue
 		}
 
-		frames := []frame{{node: start}}
+		frames := []frame{{node: start, ns: neighbors(start)}}
 		indices[start], low[start] = index, index
 		index++
 		stack = append(stack, start)
@@ -183,10 +211,9 @@ func stronglyConnected(wg *WeightedAuthorizationModelGraph, tupleEdges bool) [][
 
 		for len(frames) > 0 {
 			f := &frames[len(frames)-1]
-			ns := neighbors(f.node)
 
-			if f.next < len(ns) {
-				next := ns[f.next]
+			if f.next < len(f.ns) {
+				next := f.ns[f.next]
 				f.next++
 
 				if _, seen := indices[next]; !seen {
@@ -194,7 +221,7 @@ func stronglyConnected(wg *WeightedAuthorizationModelGraph, tupleEdges bool) [][
 					index++
 					stack = append(stack, next)
 					onStack[next] = true
-					frames = append(frames, frame{node: next})
+					frames = append(frames, frame{node: next, ns: neighbors(next)})
 				} else if onStack[next] {
 					low[f.node] = min(low[f.node], indices[next])
 				}

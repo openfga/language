@@ -3,97 +3,87 @@ package graph
 import (
 	"cmp"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 )
 
-// BuildError is the refusal Build returns: every problem that stops the model
-// from being built, each with the relations it is about, so a caller can report
-// all of them at once rather than the first.
-type BuildError struct {
-	// Problems holds every problem found, sorted by the relations they are about.
-	Problems []Problem
-}
-
-// Problem is one reason Build refused a model.
-type Problem struct {
-	// Kind is the sentinel for the problem: ErrModelCycle, ErrContrainstTupleCycle,
-	// ErrTupleCycle or ErrInvalidModel.
-	Kind error
-
-	// Relations names the relations the problem is about ("type#relation"),
+// RelationError is one reason Build rejected a model, with the relations it
+// involves.
+type RelationError struct {
+	// Relations names the relations the error involves, as "type#relation",
 	// sorted. A cycle names every relation in it. It is empty when the builder
-	// cannot attribute the problem to a relation.
+	// cannot attribute the error to a relation.
 	Relations []string
 
-	// Message describes the problem.
-	Message string
+	// Err is the reason. It is, or wraps, one of ErrModelCycle,
+	// ErrContrainstTupleCycle, ErrTupleCycle or ErrInvalidModel.
+	Err error
 }
 
-// Error joins every problem's message, so a log line or an API error carries all
-// of them.
-func (e *BuildError) Error() string {
-	messages := make([]string, 0, len(e.Problems))
-	for _, problem := range e.Problems {
-		messages = append(messages, problem.Message)
+func (e *RelationError) Error() string {
+	if len(e.Relations) == 0 {
+		return e.Err.Error()
 	}
 
-	return strings.Join(messages, "; ")
+	return e.Err.Error() + ": " + strings.Join(e.Relations, ", ")
 }
 
-// Unwrap returns every problem's Kind, so errors.Is matches any of them.
-func (e *BuildError) Unwrap() []error {
-	kinds := make([]error, 0, len(e.Problems))
-	for _, problem := range e.Problems {
-		kinds = append(kinds, problem.Kind)
+func (e *RelationError) Unwrap() error {
+	return e.Err
+}
+
+// RelationMultipleError is the error Build returns when it rejects a model, so a
+// caller can report every problem at once rather than the first.
+type RelationMultipleError struct {
+	// Errors holds one *RelationError per problem, sorted by the relations they
+	// involve.
+	Errors []error
+}
+
+func (e *RelationMultipleError) Unwrap() []error {
+	return e.Errors
+}
+
+func (e *RelationMultipleError) Error() string {
+	pluralS := ""
+	if len(e.Errors) > 1 {
+		pluralS = "s"
 	}
 
-	return kinds
+	messages := make([]string, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		messages = append(messages, err.Error())
+	}
+
+	return fmt.Sprintf("%d error%s occurred:\n\t* %s\n\n", len(e.Errors), pluralS, strings.Join(messages, "\n\t* "))
 }
 
-// newBuildError sorts the problems so the same model reports the same refusal on
-// every build.
-func newBuildError(problems []Problem) *BuildError {
-	slices.SortFunc(problems, func(a, b Problem) int {
-		return cmp.Or(slices.Compare(a.Relations, b.Relations), cmp.Compare(a.Message, b.Message))
+// newRelationMultipleError sorts the relation errors, so the same model is
+// rejected with the same error on every build.
+func newRelationMultipleError(relationErrs []RelationError) *RelationMultipleError {
+	slices.SortFunc(relationErrs, func(a, b RelationError) int {
+		return cmp.Or(slices.Compare(a.Relations, b.Relations), cmp.Compare(a.Err.Error(), b.Err.Error()))
 	})
 
-	return &BuildError{Problems: problems}
-}
-
-// cycleProblems reports each unresolvable cycle as a problem naming its
-// relations.
-func cycleProblems(cycles []cycle) []Problem {
-	problems := make([]Problem, 0, len(cycles))
-	for _, c := range cycles {
-		problems = append(problems, Problem{Kind: c.kind, Relations: c.members, Message: c.kind.Error() + ": " + strings.Join(c.members, ", ")})
+	errs := make([]error, len(relationErrs))
+	for i := range relationErrs {
+		errs[i] = &relationErrs[i]
 	}
 
-	return problems
+	return &RelationMultipleError{Errors: errs}
 }
 
-// walkProblems turns the weight walk's refusal into problems: every unresolvable
-// cycle, read off the graph's structure, and the walk's own error when it is not
-// one of those cycles.
-func walkProblems(wg *WeightedAuthorizationModelGraph, err error) []Problem {
-	problems := cycleProblems(wg.unresolvableCycles())
+// walkErrors turns a failed weight assignment into relation errors: every
+// unresolvable cycle, read off the graph's structure, and the assignment's own
+// error when it is not about those cycles.
+func walkErrors(wg *WeightedAuthorizationModelGraph, err error) []RelationError {
+	relationErrs := wg.unresolvableCycles()
 
 	isCycleRefusal := errors.Is(err, ErrModelCycle) || errors.Is(err, ErrTupleCycle)
-	if len(problems) == 0 || !isCycleRefusal {
-		problems = append(problems, Problem{Kind: sentinelOf(err), Message: err.Error()})
+	if len(relationErrs) == 0 || !isCycleRefusal {
+		relationErrs = append(relationErrs, RelationError{Err: err})
 	}
 
-	return problems
-}
-
-// sentinelOf returns the sentinel err wraps, most specific first: the
-// constrained tuple cycle wraps the plain one.
-func sentinelOf(err error) error {
-	for _, sentinel := range []error{ErrContrainstTupleCycle, ErrTupleCycle, ErrModelCycle, ErrInvalidModel} {
-		if errors.Is(err, sentinel) {
-			return sentinel
-		}
-	}
-
-	return err
+	return relationErrs
 }

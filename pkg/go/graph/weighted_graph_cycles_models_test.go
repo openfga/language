@@ -34,42 +34,42 @@ func cycleModel(t *testing.T, name string) *openfgav1.AuthorizationModel {
 	return model
 }
 
-// describeProblems renders each problem as its kind and relations, so a whole
-// refusal compares as one value.
-func describeProblems(problems []Problem) []string {
-	described := make([]string, 0, len(problems))
+// describeRelationErrors renders each relation error as its kind and
+// relations, so a whole refusal compares as one value.
+func describeRelationErrors(relationErrs []*RelationError) []string {
+	described := make([]string, 0, len(relationErrs))
 
-	for _, problem := range problems {
+	for _, relationErr := range relationErrs {
 		var kind string
 
 		switch {
-		case errors.Is(problem.Kind, ErrModelCycle):
+		case errors.Is(relationErr, ErrModelCycle):
 			kind = "no stored data"
-		case errors.Is(problem.Kind, ErrTupleCycle):
+		case errors.Is(relationErr, ErrTupleCycle):
 			kind = "and or but not"
-		case errors.Is(problem.Kind, ErrInvalidModel):
+		case errors.Is(relationErr, ErrInvalidModel):
 			kind = "invalid model"
 		default:
-			kind = problem.Kind.Error()
+			kind = relationErr.Err.Error()
 		}
 
-		described = append(described, kind+": "+strings.Join(problem.Relations, ", "))
+		described = append(described, kind+": "+strings.Join(relationErr.Relations, ", "))
 	}
 
 	return described
 }
 
-// buildProblems builds a model from testdata/cycles and returns the problems it
-// was refused for.
-func buildProblems(t *testing.T, name string) []Problem {
+// rejectedFor builds a model from testdata/cycles and returns the relation
+// errors it was refused for.
+func rejectedFor(t *testing.T, name string) []*RelationError {
 	t.Helper()
 
 	_, err := NewWeightedAuthorizationModelGraphBuilder().Build(cycleModel(t, name))
 
-	var buildErr *BuildError
-	require.ErrorAs(t, err, &buildErr, name)
+	var multiErr *RelationMultipleError
+	require.ErrorAs(t, err, &multiErr, name)
 
-	return buildErr.Problems
+	return relationErrors(t, multiErr)
 }
 
 // TestBuildNamesEveryLoopInLargeModels covers models with seven to eleven broken
@@ -124,7 +124,7 @@ func TestBuildNamesEveryLoopInLargeModels(t *testing.T) {
 			t.Parallel()
 
 			for range 20 {
-				require.Equal(t, want, describeProblems(buildProblems(t, name)))
+				require.Equal(t, want, describeRelationErrors(rejectedFor(t, name)))
 			}
 		})
 	}
@@ -167,7 +167,7 @@ func TestBuildReportsEveryProblem(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			assert.Equal(t, want, describeProblems(buildProblems(t, name)))
+			assert.Equal(t, want, describeRelationErrors(rejectedFor(t, name)))
 		})
 	}
 }
@@ -206,17 +206,17 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 
 		refused++
 
-		var buildErr *BuildError
-		require.ErrorAsf(t, err, &buildErr, "%s", name)
+		var multiErr *RelationMultipleError
+		require.ErrorAsf(t, err, &multiErr, "%s", name)
 
 		named := map[string]bool{} // relation: named for a loop with no stored data
-		for _, problem := range buildErr.Problems {
-			if !errors.Is(problem.Kind, ErrModelCycle) && !errors.Is(problem.Kind, ErrTupleCycle) {
+		for _, relationErr := range relationErrors(t, multiErr) {
+			if !errors.Is(relationErr, ErrModelCycle) && !errors.Is(relationErr, ErrTupleCycle) {
 				continue
 			}
 
-			for _, relation := range problem.Relations {
-				named[relation] = errors.Is(problem.Kind, ErrModelCycle)
+			for _, relation := range relationErr.Relations {
+				named[relation] = errors.Is(relationErr, ErrModelCycle)
 			}
 		}
 

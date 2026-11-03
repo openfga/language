@@ -5,73 +5,210 @@ import (
 	"slices"
 )
 
-// cycle is one unresolvable cycle: the sentinel naming why it cannot be
-// resolved, and the relations in it. Each cycle names the relations in its
-// strongly connected component, so a relation on a resolvable cycle that shares
-// a relation with a broken one is named with it.
-type cycle struct {
-	// kind is ErrModelCycle for a cycle no step of which reads a tuple, and
-	// ErrContrainstTupleCycle for a tuple-reading cycle constrained by an
-	// intersection or an exclusion.
-	kind error
+// unresolvableCycles finds every cycle the builder cannot resolve, from the
+// graph's structure alone, as one RelationError per strongly connected
+// component. It works on a graph whose weights could not be assigned, runs in
+// linear time and returns the same errors on every run, whatever order the
+// weight walk failed in.
+//
+// Each error names every relation in its component, so a relation on a
+// resolvable cycle that shares a relation with a broken one is named with it.
+func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() []RelationError {
+	index := newCycleIndex(wg)
 
-	// members holds the unique labels ("type#relation") of the relations in
-	// the cycle, sorted and deduplicated.
-	members []string
-}
+	var relationErrs []RelationError
 
-// unresolvableCycles finds every cycle the builder cannot resolve, reading
-// the graph's structure. The graph is fully constructed before weight
-// assignment starts, so this works on a refused build; it runs in linear
-// time and is deterministic regardless of the order the weight walk failed
-// in.
-func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() []cycle {
-	var cycles []cycle
+	// A component over the edges that read no tuple: going round it consumes
+	// nothing, so it never terminates.
+	inModelCycle := make([]bool, len(index.labels))
 
-	// A cycle no step of which reads a tuple: a strongly connected component
-	// over the rewrite-only edges. Going around it consumes nothing, so it
-	// never terminates.
-	inModelCycle := map[string]bool{}
-
-	for _, component := range stronglyConnected(wg, false) {
-		members := wg.relationMembers(component)
-		if len(members) == 0 {
+	for _, component := range index.components(false) {
+		relations := index.relations(component, nil)
+		if len(relations) == 0 {
 			continue
 		}
 
-		for _, member := range members {
-			inModelCycle[member] = true
+		for _, node := range component {
+			inModelCycle[node] = true
 		}
 
-		cycles = append(cycles, cycle{kind: ErrModelCycle, members: members})
+		relationErrs = append(relationErrs, RelationError{Relations: relations, Err: ErrModelCycle})
 	}
 
-	// A tuple-reading cycle with an intersection or exclusion on it: the
-	// resolver cannot subtract or intersect a set it is still computing.
+	// A tuple-reading component with an intersection or exclusion in it: the
+	// resolver cannot intersect or subtract a set it is still computing.
 	// Relations already reported for a model cycle are not named again.
-	for _, component := range stronglyConnected(wg, true) {
-		if !containsConstraint(wg, component) {
+	for _, component := range index.components(true) {
+		if !index.constrained(component) {
 			continue
 		}
 
-		members := make([]string, 0, len(component))
-
-		for _, member := range wg.relationMembers(component) {
-			if !inModelCycle[member] {
-				members = append(members, member)
-			}
-		}
-
-		if len(members) > 0 {
-			cycles = append(cycles, cycle{kind: ErrContrainstTupleCycle, members: members})
+		if relations := index.relations(component, inModelCycle); len(relations) > 0 {
+			relationErrs = append(relationErrs, RelationError{Relations: relations, Err: ErrContrainstTupleCycle})
 		}
 	}
 
-	slices.SortFunc(cycles, func(a, b cycle) int {
-		return slices.Compare(a.members, b.members)
+	slices.SortFunc(relationErrs, func(a, b RelationError) int {
+		return slices.Compare(a.Relations, b.Relations)
 	})
 
-	return cycles
+	return relationErrs
+}
+
+// cycleIndex is the graph as integer arrays for the component search: nodes in
+// label order, and the edges out of node n as edgeTo[edgeStart[n]:edgeStart[n+1]].
+type cycleIndex struct {
+	labels     []string
+	relation   []bool // per node: a type#relation node
+	constraint []bool // per node: an intersection or exclusion operator
+	edgeStart  []int
+	edgeTo     []int
+	readsTuple []bool // per edge
+}
+
+func newCycleIndex(wg *WeightedAuthorizationModelGraph) *cycleIndex {
+	labels := slices.Sorted(maps.Keys(wg.nodes))
+	ids := make(map[string]int, len(labels))
+	edgeCount := 0
+
+	for i, label := range labels {
+		ids[label] = i
+		edgeCount += len(wg.edges[label])
+	}
+
+	index := &cycleIndex{
+		labels:     labels,
+		relation:   make([]bool, len(labels)),
+		constraint: make([]bool, len(labels)),
+		edgeStart:  make([]int, len(labels)+1),
+		edgeTo:     make([]int, 0, edgeCount),
+		readsTuple: make([]bool, 0, edgeCount),
+	}
+
+	for i, label := range labels {
+		node := wg.nodes[label]
+		index.relation[i] = node.nodeType == SpecificTypeAndRelation
+		index.constraint[i] = node.nodeType == OperatorNode &&
+			(node.label == IntersectionOperator || node.label == ExclusionOperator)
+
+		for _, edge := range wg.edges[label] {
+			index.edgeTo = append(index.edgeTo, ids[edge.to.uniqueLabel])
+			index.readsTuple = append(index.readsTuple, readsTuple(edge))
+		}
+
+		index.edgeStart[i+1] = len(index.edgeTo)
+	}
+
+	return index
+}
+
+// components returns the strongly connected components of two or more nodes,
+// over every edge or, with tupleEdges false, over the edges that read no tuple.
+// A single node is never one: the builder accepts a relation that only rewrites
+// itself, leaving it with no weights, so it is not a refusal.
+//
+// Tarjan's algorithm, iterative so model depth is not bounded by the stack.
+func (index *cycleIndex) components(tupleEdges bool) [][]int {
+	n := len(index.labels)
+	order := make([]int, n) // visit order, from 1; 0 is unvisited
+	low := make([]int, n)
+	onStack := make([]bool, n)
+
+	type frame struct {
+		node, edge int
+	}
+
+	var (
+		stack      []int
+		frames     []frame
+		components [][]int
+		visited    int
+	)
+
+	visit := func(node int) {
+		visited++
+		order[node], low[node] = visited, visited
+		stack = append(stack, node)
+		onStack[node] = true
+		frames = append(frames, frame{node: node, edge: index.edgeStart[node]})
+	}
+
+	for root := range n {
+		if order[root] != 0 {
+			continue
+		}
+
+		visit(root)
+
+		for len(frames) > 0 {
+			top := &frames[len(frames)-1]
+			node := top.node
+
+			if top.edge < index.edgeStart[node+1] {
+				edge := top.edge
+				top.edge++
+
+				if !tupleEdges && index.readsTuple[edge] {
+					continue
+				}
+
+				if next := index.edgeTo[edge]; order[next] == 0 {
+					visit(next)
+				} else if onStack[next] {
+					low[node] = min(low[node], order[next])
+				}
+
+				continue
+			}
+
+			if low[node] == order[node] {
+				start := len(stack) - 1
+				for stack[start] != node {
+					start--
+				}
+
+				for _, member := range stack[start:] {
+					onStack[member] = false
+				}
+
+				if len(stack)-start > 1 {
+					components = append(components, slices.Clone(stack[start:]))
+				}
+
+				stack = stack[:start]
+			}
+
+			frames = frames[:len(frames)-1]
+			if len(frames) > 0 {
+				parent := frames[len(frames)-1].node
+				low[parent] = min(low[parent], low[node])
+			}
+		}
+	}
+
+	return components
+}
+
+// relations returns the labels of the relations among nodes, sorted, leaving
+// out the nodes skip marks. Operator and grouping nodes share a component with
+// the relations they belong to and are not named.
+func (index *cycleIndex) relations(nodes []int, skip []bool) []string {
+	var relations []string
+
+	for _, node := range nodes {
+		if index.relation[node] && (skip == nil || !skip[node]) {
+			relations = append(relations, index.labels[node])
+		}
+	}
+
+	slices.Sort(relations)
+
+	return relations
+}
+
+// constrained reports whether nodes hold an intersection or exclusion operator.
+func (index *cycleIndex) constrained(nodes []int) bool {
+	return slices.ContainsFunc(nodes, func(node int) bool { return index.constraint[node] })
 }
 
 // readsTuple mirrors the weight walk's test for a step that consumes a tuple:
@@ -80,139 +217,4 @@ func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() []cycle {
 func readsTuple(edge *WeightedAuthorizationModelEdge) bool {
 	return edge.edgeType == TTUEdge ||
 		(edge.edgeType == DirectEdge && edge.to.nodeType == SpecificTypeAndRelation)
-}
-
-// containsConstraint reports whether the component holds an intersection or
-// exclusion operator node.
-func containsConstraint(wg *WeightedAuthorizationModelGraph, component []string) bool {
-	for _, label := range component {
-		node := wg.nodes[label]
-		if node != nil && node.nodeType == OperatorNode &&
-			(node.label == IntersectionOperator || node.label == ExclusionOperator) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// relationMembers filters component labels to the relations among them,
-// sorted and deduplicated. Operator and grouping nodes share a cycle with the
-// relations they belong to and are not named.
-func (wg *WeightedAuthorizationModelGraph) relationMembers(labels []string) []string {
-	members := make([]string, 0, len(labels))
-	seen := make(map[string]bool, len(labels))
-
-	for _, label := range labels {
-		if seen[label] {
-			continue
-		}
-		seen[label] = true
-
-		if node, ok := wg.nodes[label]; ok && node.nodeType == SpecificTypeAndRelation {
-			members = append(members, label)
-		}
-	}
-
-	slices.Sort(members)
-
-	return members
-}
-
-// stronglyConnected returns the cyclic strongly connected components of the
-// graph: components of two or more nodes. A single node is never one: the builder
-// accepts a relation that only rewrites itself, leaving it with no weights, so it
-// is not a refusal. With tupleEdges false, edges that read a tuple are left out,
-// which is the subgraph where a cycle can never terminate.
-//
-// Tarjan's algorithm, iterative so model depth is not bounded by the stack.
-func stronglyConnected(wg *WeightedAuthorizationModelGraph, tupleEdges bool) [][]string {
-	index := 0
-	indices := map[string]int{}
-	low := map[string]int{}
-	onStack := map[string]bool{}
-	stack := []string{}
-
-	var components [][]string
-
-	neighbors := func(from string) []string {
-		var out []string
-
-		for _, edge := range wg.edges[from] {
-			if !tupleEdges && readsTuple(edge) {
-				continue
-			}
-
-			out = append(out, edge.to.uniqueLabel)
-		}
-
-		return out
-	}
-
-	type frame struct {
-		node string
-		next int
-		ns   []string
-	}
-
-	for _, start := range slices.Sorted(maps.Keys(wg.nodes)) {
-		if _, seen := indices[start]; seen {
-			continue
-		}
-
-		frames := []frame{{node: start, ns: neighbors(start)}}
-		indices[start], low[start] = index, index
-		index++
-		stack = append(stack, start)
-		onStack[start] = true
-
-		for len(frames) > 0 {
-			f := &frames[len(frames)-1]
-
-			if f.next < len(f.ns) {
-				next := f.ns[f.next]
-				f.next++
-
-				if _, seen := indices[next]; !seen {
-					indices[next], low[next] = index, index
-					index++
-					stack = append(stack, next)
-					onStack[next] = true
-					frames = append(frames, frame{node: next, ns: neighbors(next)})
-				} else if onStack[next] {
-					low[f.node] = min(low[f.node], indices[next])
-				}
-
-				continue
-			}
-
-			if low[f.node] == indices[f.node] {
-				var component []string
-
-				for {
-					top := stack[len(stack)-1]
-					stack = stack[:len(stack)-1]
-					onStack[top] = false
-					component = append(component, top)
-
-					if top == f.node {
-						break
-					}
-				}
-
-				if len(component) > 1 {
-					components = append(components, component)
-				}
-			}
-
-			frames = frames[:len(frames)-1]
-
-			if len(frames) > 0 {
-				parent := &frames[len(frames)-1]
-				low[parent.node] = min(low[parent.node], low[f.node])
-			}
-		}
-	}
-
-	return components
 }

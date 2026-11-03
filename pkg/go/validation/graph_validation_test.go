@@ -346,7 +346,7 @@ type document
   relations
     define viewer: [user]
 `
-		cause := &graph.BuildError{Problems: []graph.Problem{{Kind: graph.ErrInvalidModel, Message: "invalid model"}}}
+		cause := &graph.RelationMultipleError{Errors: []error{&graph.RelationError{Err: graph.ErrInvalidModel}}}
 
 		findings := ExtractAllAs[*Finding](graphRefusal(newIndex(mustParse(t, dsl)), newSource(dsl), cause))
 		require.Len(t, findings, 1)

@@ -3,6 +3,7 @@ package graph
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -223,7 +224,8 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	ancestorPath := make([]*WeightedAuthorizationModelEdge, 0)
 	tupleCycleDependencies := make(map[string][]*WeightedAuthorizationModelEdge)
 
-	for nodeID, node := range wg.nodes {
+	for _, nodeID := range slices.Sorted(maps.Keys(wg.nodes)) {
+		node := wg.nodes[nodeID]
 		if wg.isLogicalOperator(node) {
 			// Inititally defer weight assignment of operator nodes and the logical nodes to later in `fixDependantNodesWeight()`.
 			// This enables more deterministic behavior of intermediate functions.

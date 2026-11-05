@@ -1,4 +1,4 @@
-FROM docker.io/library/eclipse-temurin:11@sha256:96e6d8e43d40476fe01d5a09c5aa639d18be78292defd761429c0151f3f0ee2f
+FROM docker.io/library/eclipse-temurin:25@sha256:83f4a7fc27df94dcc7b8de04d14cbbba8da14406f921e966969c3b09000aa507
 
 ARG ANTLR_VERSION=4.13.1
 ENV CLASSPATH .:/antlr-$ANTLR_VERSION-complete.jar:$CLASSPATH

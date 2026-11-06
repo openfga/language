@@ -48,10 +48,6 @@ func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() []RelationError 
 		}
 	}
 
-	slices.SortFunc(relationErrs, func(a, b RelationError) int {
-		return slices.Compare(a.Relations, b.Relations)
-	})
-
 	return relationErrs
 }
 
@@ -211,9 +207,10 @@ func (index *cycleIndex) constrained(nodes []int) bool {
 	return slices.ContainsFunc(nodes, func(node int) bool { return index.constraint[node] })
 }
 
-// readsTuple mirrors the weight walk's test for a step that consumes a tuple:
-// a tuple-to-userset edge, or a direct edge to another relation (a userset
-// restriction). These are the steps that let a cycle terminate.
+// readsTuple reports whether a step consumes a tuple: a tuple-to-userset edge,
+// or a direct edge to another relation (a userset restriction). These are the
+// steps that let a cycle terminate. The weight walk and the cycle scan both use
+// it, so they agree on which cycles can be resolved.
 func readsTuple(edge *WeightedAuthorizationModelEdge) bool {
 	return edge.edgeType == TTUEdge ||
 		(edge.edgeType == DirectEdge && edge.to.nodeType == SpecificTypeAndRelation)

@@ -44,9 +44,9 @@ func describeRelationErrors(relationErrs []*RelationError) []string {
 
 		switch {
 		case errors.Is(relationErr, ErrModelCycle):
-			kind = "no stored data"
+			kind = "model cycle"
 		case errors.Is(relationErr, ErrTupleCycle):
-			kind = "and or but not"
+			kind = "tuple cycle"
 		case errors.Is(relationErr, ErrInvalidModel):
 			kind = "invalid model"
 		default:
@@ -72,50 +72,50 @@ func rejectedFor(t *testing.T, name string) []*RelationError {
 	return relationErrs
 }
 
-// TestBuildNamesEveryLoopInLargeModels covers models with seven to eleven broken
-// loops next to legal ones: every broken loop comes back with all of its
-// relations, no legal loop does, and every build agrees.
+// TestBuildNamesEveryCycleInLargeModels covers models with seven to eleven broken
+// cycles next to legal ones: every broken cycle comes back with all of its
+// relations, no legal cycle does, and every build agrees.
 //
-// The relations organization#c and team#h_c sit on a legal loop that shares a
+// The relations organization#c and team#h_c sit on a legal cycle that shares a
 // relation with a broken one. The scan names the whole group, so they are named
 // too.
-func TestBuildNamesEveryLoopInLargeModels(t *testing.T) {
+func TestBuildNamesEveryCycleInLargeModels(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
 		"file-storage-ten-loops": {
-			"and or but not: drive#can_manage, organization#can_admin_drive",
-			"no stored data: drive#editor, drive#writer",
-			"no stored data: drive#r1, drive#r2, drive#r3, drive#r4",
-			"no stored data: file#allowed, file#can_view",
-			"no stored data: file#x, file#y, file#z",
-			"and or but not: folder#can_view, folder#restricted",
-			"and or but not: folder#reader",
-			"and or but not: group#member, group#suspended",
-			"and or but not: organization#a, organization#b, organization#c",
-			"no stored data: organization#admin, organization#member",
+			"tuple cycle: drive#can_manage, organization#can_admin_drive",
+			"model cycle: drive#editor, drive#writer",
+			"model cycle: drive#r1, drive#r2, drive#r3, drive#r4",
+			"model cycle: file#allowed, file#can_view",
+			"model cycle: file#x, file#y, file#z",
+			"tuple cycle: folder#can_view, folder#restricted",
+			"tuple cycle: folder#reader",
+			"tuple cycle: group#member, group#suspended",
+			"tuple cycle: organization#a, organization#b, organization#c",
+			"model cycle: organization#admin, organization#member",
 		},
 		"knowledge-base-seven-loops": {
-			"and or but not: article#can_feature, container#featured",
-			"and or but not: article#can_view, article#hidden, attachment#can_view",
-			"no stored data: article#editor, article#reviewer",
-			"and or but not: container#editor",
-			"no stored data: container#l1, container#l2, container#l3, container#l4, container#l5, container#l6",
-			"no stored data: group#p, group#q, group#r",
-			"no stored data: organization#editor, organization#member",
+			"tuple cycle: article#can_feature, container#featured",
+			"tuple cycle: article#can_view, article#hidden, attachment#can_view",
+			"model cycle: article#editor, article#reviewer",
+			"tuple cycle: container#editor",
+			"model cycle: container#l1, container#l2, container#l3, container#l4, container#l5, container#l6",
+			"model cycle: group#p, group#q, group#r",
+			"model cycle: organization#editor, organization#member",
 		},
 		"pattern-matrix-eleven-loops": {
-			"and or but not: project#b4_x, team#b4_back",
-			"and or but not: project#b5_x, team#b5_y",
-			"no stored data: team#a1_x, team#a1_y",
-			"no stored data: team#a2_x, team#a2_y",
-			"no stored data: team#a3_x, team#a3_y",
-			"no stored data: team#a4_x, team#a4_y",
-			"and or but not: team#b1_member",
-			"and or but not: team#b2_x, team#b2_y",
-			"and or but not: team#b3_x",
-			"and or but not: team#h_a, team#h_b, team#h_c",
-			"no stored data: team#m_p, team#m_q, team#m_r",
+			"tuple cycle: project#b4_x, team#b4_back",
+			"tuple cycle: project#b5_x, team#b5_y",
+			"model cycle: team#a1_x, team#a1_y",
+			"model cycle: team#a2_x, team#a2_y",
+			"model cycle: team#a3_x, team#a3_y",
+			"model cycle: team#a4_x, team#a4_y",
+			"tuple cycle: team#b1_member",
+			"tuple cycle: team#b2_x, team#b2_y",
+			"tuple cycle: team#b3_x",
+			"tuple cycle: team#h_a, team#h_b, team#h_c",
+			"model cycle: team#m_p, team#m_q, team#m_r",
 		},
 	}
 
@@ -130,36 +130,36 @@ func TestBuildNamesEveryLoopInLargeModels(t *testing.T) {
 	}
 }
 
-// TestBuildReportsEveryProblem covers broken loops in models that have another
+// TestBuildReportsEveryProblem covers broken cycles in models that have another
 // problem too. Every problem the builder can attribute comes back in one
-// refusal, so a missing from target no longer hides the loops.
+// refusal, so a missing from target no longer hides the cycles.
 func TestBuildReportsEveryProblem(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
 		// A relation with no entry point, or one that only rewrites itself, is not
-		// a loop the builder refuses, so only the broken loop is named.
-		"mixed-no-entry-point": {"no stored data: drive#editor, drive#writer"},
-		"mixed-self-rewrite":   {"no stored data: drive#editor, drive#writer"},
-		// The relation whose from target is missing is reported, and the loops in
+		// a cycle the builder refuses, so only the broken cycle is named.
+		"mixed-no-entry-point": {"model cycle: drive#editor, drive#writer"},
+		"mixed-self-rewrite":   {"model cycle: drive#editor, drive#writer"},
+		// The relation whose from target is missing is reported, and the cycles in
 		// the rest of the model are still found.
 		"mixed-missing-from-target": {
-			"no stored data: drive#editor, drive#writer",
+			"model cycle: drive#editor, drive#writer",
 			"invalid model: folder#can_preview",
 		},
 		"everything-at-once": {
-			"and or but not: project#b4_x, team#b4_back",
-			"and or but not: project#b5_x, team#b5_y",
+			"tuple cycle: project#b4_x, team#b4_back",
+			"tuple cycle: project#b5_x, team#b5_y",
 			"invalid model: project#can_hold",
-			"no stored data: team#a1_x, team#a1_y",
-			"no stored data: team#a2_x, team#a2_y",
-			"no stored data: team#a3_x, team#a3_y",
-			"no stored data: team#a4_x, team#a4_y",
-			"and or but not: team#b1_member",
-			"and or but not: team#b2_x, team#b2_y",
-			"and or but not: team#b3_x",
-			"and or but not: team#h_a, team#h_b, team#h_c",
-			"no stored data: team#m_p, team#m_q, team#m_r",
+			"model cycle: team#a1_x, team#a1_y",
+			"model cycle: team#a2_x, team#a2_y",
+			"model cycle: team#a3_x, team#a3_y",
+			"model cycle: team#a4_x, team#a4_y",
+			"tuple cycle: team#b1_member",
+			"tuple cycle: team#b2_x, team#b2_y",
+			"tuple cycle: team#b3_x",
+			"tuple cycle: team#h_a, team#h_b, team#h_c",
+			"model cycle: team#m_p, team#m_q, team#m_r",
 		},
 	}
 
@@ -175,14 +175,14 @@ func TestBuildReportsEveryProblem(t *testing.T) {
 // TestUnresolvableCyclesMatchTheChecker holds the structural scan to a
 // brute-force search over every simple cycle, in both directions, over the
 // models in testdata/cycles, the transformer fixtures and the shared validation
-// cases. On a model the builder accepts, neither finds a broken loop. On a model
+// cases. On a model the builder accepts, neither finds a broken cycle. On a model
 // it refuses, for any reason, the cycles it names cover every relation the
 // search finds, with the same kind, and nothing else but relations grouped with
 // an and or a but not.
 func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 	t.Parallel()
 
-	accepted, refused, withLoops := 0, 0, 0
+	accepted, refused, withCycles := 0, 0, 0
 
 	for name, dsl := range checkerModels(t) {
 		model, err := transformer.TransformDSLToProto(dsl)
@@ -197,9 +197,9 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 		if err == nil {
 			accepted++
 
-			assert.Emptyf(t, check.noStoredData, "%s: accepted, but the search finds a loop with no stored data", name)
-			assert.Emptyf(t, check.andOrButNot, "%s: accepted, but the search finds a loop through an and or a but not", name)
-			assert.Emptyf(t, wg.unresolvableCycles(), "%s: accepted, but the scan names a loop", name)
+			assert.Emptyf(t, check.noStoredData, "%s: accepted, but the search finds a model cycle", name)
+			assert.Emptyf(t, check.andOrButNot, "%s: accepted, but the search finds a tuple cycle through an and or a but not", name)
+			assert.Emptyf(t, wg.unresolvableCycles(), "%s: accepted, but the scan names a cycle", name)
 
 			continue
 		}
@@ -209,7 +209,7 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 		relationErrs := RelationErrors(err)
 		require.NotEmptyf(t, relationErrs, "%s", name)
 
-		named := map[string]bool{} // relation: named for a loop with no stored data
+		named := map[string]bool{} // relation: named for a model cycle
 		for _, relationErr := range relationErrs {
 			if !errors.Is(relationErr, ErrModelCycle) && !errors.Is(relationErr, ErrTupleCycle) {
 				continue
@@ -221,17 +221,17 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 		}
 
 		if len(named) > 0 {
-			withLoops++
+			withCycles++
 		}
 
 		for relation := range check.noStoredData {
 			noStoredData, ok := named[relation]
-			assert.Truef(t, ok && noStoredData, "%s: %s is on a loop with no stored data", name, relation)
+			assert.Truef(t, ok && noStoredData, "%s: %s is on a model cycle", name, relation)
 		}
 
 		for relation := range check.andOrButNot {
 			noStoredData, ok := named[relation]
-			assert.Truef(t, ok && !noStoredData, "%s: %s is on a loop through an and or a but not", name, relation)
+			assert.Truef(t, ok && !noStoredData, "%s: %s is on a tuple cycle through an and or a but not", name, relation)
 		}
 
 		for relation, noStoredData := range named {
@@ -239,15 +239,15 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 				continue
 			}
 
-			assert.Falsef(t, noStoredData, "%s: %s is named for a loop with no stored data it is not on", name, relation)
+			assert.Falsef(t, noStoredData, "%s: %s is named for a model cycle it is not on", name, relation)
 			assert.Truef(t, check.groupedWithOperator(relation), "%s: %s is named but is not grouped with an and or a but not", name, relation)
 		}
 	}
 
 	assert.Positive(t, accepted, "no accepted model was checked")
-	assert.Positive(t, withLoops, "no refused model with a loop was checked")
+	assert.Positive(t, withCycles, "no refused model with a cycle was checked")
 
-	t.Logf("checked %d accepted and %d refused models, %d of them with loops", accepted, refused, withLoops)
+	t.Logf("checked %d accepted and %d refused models, %d of them with cycles", accepted, refused, withCycles)
 }
 
 // checkerModels gathers the models the checker runs over, keyed by where they

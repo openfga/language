@@ -318,7 +318,7 @@ type document
 
 // TestBuildRejectsAModelTheSameWayOnEveryRun pins that the weight walk visits
 // nodes in a fixed order. The walk stops at its first error, so which of a
-// loop and an invalid relation it reaches first decides whether the invalid
+// cycle and an invalid relation it reaches first decides whether the invalid
 // relation is reported, and that must not change from one build to the next.
 func TestBuildRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
 	t.Parallel()
@@ -328,7 +328,7 @@ func TestBuildRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
 		contains []string
 		excludes []string
 	}{
-		"the loop is reached first and hides the invalid relation": {
+		"the cycle is reached first and hides the invalid relation": {
 			dsl: `model
   schema 1.1
 type user

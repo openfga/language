@@ -89,8 +89,8 @@ func RelationErrors(err error) []*RelationError {
 // assignment's own error when it is not about those cycles.
 //
 // That error is still the first one the walk reaches, because the walk stops at
-// its first error, so a loop reached first can hide a later error that is not a
-// loop. The walk visits nodes in a fixed order, so the same model gives the same
+// its first error, so a cycle reached first can hide a later error that is not a
+// cycle. The walk visits nodes in a fixed order, so the same model gives the same
 // answer every time.
 func assignWeightErrors(wg *WeightedAuthorizationModelGraph, err error) []RelationError {
 	relationErrs := wg.unresolvableCycles()

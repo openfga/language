@@ -91,8 +91,8 @@ func TestTransformModuleFilesToModelIsDeterministic(t *testing.T) {
 
 	modules := []transformer.ModuleFile{
 		{Name: "core.fga", Contents: "module core\n\ntype user\n\ntype doc\n\ncondition x(a: int) {\n  a < 1\n}\n\ncondition y(a: int) {\n  a < 1\n}\n"},
-		{Name: "a.fga", Contents: "module a\n\nextend type doc\n  relations\n    define viewer: [user]\n    define editor: [user]\n"},
 		{Name: "b.fga", Contents: "module b\n\nextend type doc\n  relations\n    define viewer: [user]\n    define editor: [user]\n\ncondition y(a: int) {\n  a < 1\n}\n\ncondition x(a: int) {\n  a < 1\n}\n"},
+		{Name: "a.fga", Contents: "module a\n\nextend type doc\n  relations\n    define viewer: [user]\n    define editor: [user]\n"},
 		{Name: "c.fga", Contents: "module c\n\nextend type folder\n  relations\n    define viewer: [user]\n"},
 	}
 
@@ -107,6 +107,15 @@ func TestTransformModuleFilesToModelIsDeterministic(t *testing.T) {
 
 	expected := transformErrors()
 	require.Len(t, expected, 5)
+
+	// b.fga is passed before a.fga, so b.fga keeps the relations and a.fga gets the duplicates.
+	files := []string{}
+	for _, e := range expected {
+		var serr *transformer.ModuleTransformationSingleError
+		require.ErrorAs(t, e, &serr)
+		files = append(files, serr.File)
+	}
+	require.Equal(t, []string{"b.fga", "b.fga", "a.fga", "a.fga", "c.fga"}, files)
 
 	for range 50 {
 		require.Equal(t, expected, transformErrors())

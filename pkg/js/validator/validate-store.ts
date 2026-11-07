@@ -8,7 +8,7 @@ import {
   TupleKey,
   TypeDefinition,
 } from "@openfga/sdk";
-import Ajv, { Schema, ValidateFunction, SchemaValidateFunction } from "ajv";
+import { Ajv, Schema, ValidateFunction, SchemaValidateFunction } from "ajv";
 import { Validator } from "./validate-rules";
 
 export function isStringValue(str: unknown) {

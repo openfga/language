@@ -1,5 +1,4 @@
-import { parseDocument, LineCounter, Scalar, isSeq, isNode, YAMLSeq } from "yaml";
-import { LinePos } from "yaml/dist/errors";
+import { parseDocument, LineCounter, Scalar, isSeq, isNode, YAMLSeq, YAMLError } from "yaml";
 import { FGAModFileValidationError, FGAModFileValidationSingleError } from "../../errors";
 
 /**
@@ -48,7 +47,7 @@ export interface ModFile {
  * @param linePos - The `linePos` property.
  * @returns Line and column data.
  */
-function getLineAndColumnFromLinePos(linePos?: [LinePos] | [LinePos, LinePos]): {
+function getLineAndColumnFromLinePos(linePos?: YAMLError["linePos"]): {
   line: { start: number; end: number };
   column: { start: number; end: number };
 } {

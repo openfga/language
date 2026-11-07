@@ -1,88 +1,27 @@
 import js from "@eslint/js";
+import { defineConfig, globalIgnores } from "eslint/config";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
+import importX from "eslint-plugin-import-x";
 import tseslint from "typescript-eslint";
-import importPlugin from "eslint-plugin-import-x";
-import eslintConfigPrettier from "eslint-config-prettier";
-import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 
-const tsPlugin = tseslint.plugin;
-const tsParser = tseslint.parser;
-
-export default [
+export default defineConfig([
+  // `gen/` is ANTLR-generated output; `dist/` is the tsc build output.
+  globalIgnores(["dist/", "gen/"]),
   {
-    ignores: ["dist/", "gen/", "*.config.js", "*.config.mjs", ".eslintrc.js", "jest.config.js"],
-  },
-  js.configs.recommended,
-  // TypeScript config
-  {
-    files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
-    plugins: {
-      "@typescript-eslint": tsPlugin,
-      "import-x": importPlugin,
-    },
-    languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: "module",
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 2021,
-        sourceType: "module",
-      },
-      globals: {
-        window: "readonly",
-        document: "readonly",
-        navigator: "readonly",
-        console: "readonly",
-        process: "readonly",
-        __dirname: "readonly",
-        __filename: "readonly",
-        Buffer: "readonly",
-        global: "readonly",
-        module: "readonly",
-        require: "readonly",
-        exports: "readonly",
-        Promise: "readonly",
-        Symbol: "readonly",
-        WeakMap: "readonly",
-        WeakSet: "readonly",
-        Map: "readonly",
-        Set: "readonly",
-        Proxy: "readonly",
-        Reflect: "readonly",
-      },
-    },
-
-    settings: {
-      "import-x/resolver-next": [
-        createTypeScriptImportResolver({
-          alwaysTryTypes: true,
-          project: "./tsconfig.json",
-        }),
-      ],
-    },
-
+    files: ["**/*.{ts,tsx,mts,cts}"],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      importX.flatConfigs.recommended,
+      importX.flatConfigs.typescript,
+    ],
     rules: {
-      ...tsPlugin.configs["eslint-recommended"].overrides[0].rules,
-      ...tsPlugin.configs.recommended.rules,
-
-      ...importPlugin.flatConfigs.recommended.rules,
-      ...importPlugin.flatConfigs.typescript.rules,
-
+      // Four `case` clauses declare variables without braces; silenced since f060aae (original reason not recorded).
       "no-case-declarations": "off",
-      "linebreak-style": ["error", "unix"],
+      // Tests use bare `@ts-expect-error` to pass invalid inputs; silenced since f060aae (original reason not recorded).
       "@typescript-eslint/ban-ts-comment": "off",
-      quotes: ["error", "double"],
-      semi: ["error", "always"],
-      "max-len": [
-        "warn",
-        {
-          code: 120,
-        },
-      ],
-      "object-curly-spacing": ["error", "always"],
-      "no-trailing-spaces": "error",
     },
   },
-
-  // Must be last
+  // Must stay last: turns off any rule that conflicts with Prettier.
   eslintConfigPrettier,
-];
+]);

@@ -1,0 +1,26 @@
+[
+  {
+    "msg": "relation viewer already exists on type doc",
+    "file": "b.fga",
+    "line": {
+      "start": 4,
+      "end": 4
+    },
+    "column": {
+      "start": 11,
+      "end": 17
+    }
+  },
+  {
+    "msg": "extended type folder does not exist",
+    "file": "c.fga",
+    "line": {
+      "start": 2,
+      "end": 2
+    },
+    "column": {
+      "start": 12,
+      "end": 18
+    }
+  }
+]

@@ -1,0 +1,5 @@
+module c
+
+extend type folder
+  relations
+    define viewer: [user]

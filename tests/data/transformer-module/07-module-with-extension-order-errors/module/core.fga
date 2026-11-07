@@ -1,0 +1,5 @@
+module core
+
+type user
+
+type doc

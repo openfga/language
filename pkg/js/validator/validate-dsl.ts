@@ -880,13 +880,9 @@ export function validateJSON(
   const collector = new ExceptionCollector(errors, lines);
   const typeValidation = options.typeValidation || `^${Rules.type}$`;
   const relationValidation = options.relationValidation || `^${Rules.relation}$`;
-  const defaultRegex = new RegExp("[a-zA-Z]*");
   const fileToModuleMap: Record<string, Set<string>> = {};
 
-  let typeRegex: ValidationRegex = {
-    regex: defaultRegex,
-    rule: typeValidation,
-  };
+  let typeRegex: ValidationRegex;
   try {
     typeRegex = {
       regex: new RegExp(typeValidation),
@@ -897,10 +893,7 @@ export function validateJSON(
     throw new ConfigurationError(`Incorrect type regex specification for ${typeValidation}`, e);
   }
 
-  let relationRegex: ValidationRegex = {
-    regex: defaultRegex,
-    rule: relationValidation,
-  };
+  let relationRegex: ValidationRegex;
   try {
     relationRegex = {
       regex: new RegExp(relationValidation),

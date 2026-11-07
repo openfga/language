@@ -36,12 +36,7 @@ updates:
     directory: "/pkg/js"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "eslint"
-        versions: [">=10.0.0 <11.0.0"]
     groups:
       dependencies:
         patterns:
           - "*"
-        exclude-patterns:
-          - "eslint"

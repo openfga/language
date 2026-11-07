@@ -1,8 +1,11 @@
 import js from "@eslint/js";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
-import importPlugin from "eslint-plugin-import";
+import tseslint from "typescript-eslint";
+import importPlugin from "eslint-plugin-import-x";
 import eslintConfigPrettier from "eslint-config-prettier";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+
+const tsPlugin = tseslint.plugin;
+const tsParser = tseslint.parser;
 
 export default [
   {
@@ -14,7 +17,7 @@ export default [
     files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
     plugins: {
       "@typescript-eslint": tsPlugin,
-      import: importPlugin,
+      "import-x": importPlugin,
     },
     languageOptions: {
       ecmaVersion: 2021,
@@ -49,23 +52,20 @@ export default [
     },
 
     settings: {
-      "import/resolver": {
-        typescript: {
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver({
           alwaysTryTypes: true,
           project: "./tsconfig.json",
-        },
-        node: {
-          extensions: [".js", ".jsx", ".ts", ".tsx"],
-        },
-      },
+        }),
+      ],
     },
 
     rules: {
       ...tsPlugin.configs["eslint-recommended"].overrides[0].rules,
       ...tsPlugin.configs.recommended.rules,
 
-      ...importPlugin.configs.recommended.rules,
-      ...importPlugin.configs.typescript.rules,
+      ...importPlugin.flatConfigs.recommended.rules,
+      ...importPlugin.flatConfigs.typescript.rules,
 
       "no-case-declarations": "off",
       "linebreak-style": ["error", "unix"],

@@ -85,6 +85,21 @@ The [`schemas`](/schemas) folder has JSON Schemas for tuple files and store file
 
 The schemas check structure and the format of users, relations and objects. Checks that need the model, like whether a relation exists on a type, are still done by `fga model test`.
 
+There's also a schema for authorization models in JSON. It catches a malformed model, like an `intersection` without its `child` list, that the API would otherwise accept. To use it in VS Code:
+
+```json
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["*.fga.json", "authorization-model.json"],
+      "url": "https://raw.githubusercontent.com/openfga/language/main/schemas/authorization-model.schema.json"
+    }
+  ]
+}
+```
+
+It only checks the shape of the model. Use the validators in this repo, or `fga model validate`, to check that the types and relations it refers to exist.
+
 ## Community Parsers
 
 | Repo                                                                         | License                                                                            | Maintainers                                                                           | Language                                  | Schema v1.0                                                                 | Schema v1.1                                                                                          | Package Managers                                                                                                                                                                                                                                                                                               | Other Links                                                                                                                    |

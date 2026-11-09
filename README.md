@@ -18,6 +18,7 @@ ANTLR Grammar for the OpenFGA DSL and parser from and to the OpenFGA JSON Syntax
 - [Packages](#packages)
 - [About This Repo](#about-this-repo)
 - [CLI](#cli)
+- [JSON Schemas](#json-schemas)
 - [Community Parsers](#community-parsers)
 - [Contributing](#contributing)
 - [License](#license)
@@ -68,6 +69,21 @@ This repo contains everything needed to interact with the OpenFGA Authorization 
 ## CLI
 
 Use the [FGA CLI](https://github.com/openfga/cli)
+
+## JSON Schemas
+
+The [`schemas`](/schemas) folder has JSON Schemas for tuple files and store files (`.fga.yaml`), so editors can check them as you type. For example, with the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) in VS Code:
+
+```json
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/openfga/language/main/schemas/store.schema.json": "*.fga.yaml",
+    "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json": ["tuples.yaml", "tuples.json"]
+  }
+}
+```
+
+The schemas check structure and the format of users, relations and objects. Checks that need the model, like whether a relation exists on a type, are still done by `fga model test`.
 
 ## Community Parsers
 

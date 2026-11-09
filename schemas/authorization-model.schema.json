@@ -1,0 +1,388 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/openfga/language/main/schemas/authorization-model.schema.json",
+  "title": "OpenFGA authorization model",
+  "description": "An authorization model in JSON, as returned by the API, written by `fga model write` and produced by the DSL transformers. It checks the shape of the model; use the language validators to check that its types and relations are consistent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[ABCDEFGHJKMNPQRSTVWXYZ0-9]{26}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[1-9]\\.[1-9]$"
+    },
+    "type_definitions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/typeDefinition"
+      }
+    },
+    "conditions": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "propertyNames": {
+        "pattern": "^[^:#@\\s]{1,50}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/condition"
+      }
+    }
+  },
+  "definitions": {
+    "sourceInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-\\/]{1,100}\\.fga$"
+        }
+      }
+    },
+    "objectRelation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "relation": {
+          "type": "string",
+          "maxLength": 50
+        }
+      }
+    },
+    "usersets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "child"
+      ],
+      "properties": {
+        "child": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/userset"
+          }
+        }
+      },
+      "description": "the child usersets of a union or intersection"
+    },
+    "difference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base",
+        "subtract"
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/definitions/userset"
+        },
+        "subtract": {
+          "$ref": "#/definitions/userset"
+        }
+      }
+    },
+    "tupleToUserset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tupleset"
+      ],
+      "properties": {
+        "tupleset": {
+          "$ref": "#/definitions/objectRelation"
+        },
+        "computedUserset": {
+          "$ref": "#/definitions/objectRelation"
+        },
+        "computed_userset": {
+          "$ref": "#/definitions/objectRelation"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "computedUserset"
+          ]
+        },
+        {
+          "required": [
+            "computed_userset"
+          ]
+        }
+      ]
+    },
+    "userset": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "description": "a relation definition, with exactly one of these keys",
+      "properties": {
+        "this": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "users directly related through a tuple"
+        },
+        "computedUserset": {
+          "$ref": "#/definitions/objectRelation"
+        },
+        "computed_userset": {
+          "$ref": "#/definitions/objectRelation"
+        },
+        "tupleToUserset": {
+          "$ref": "#/definitions/tupleToUserset"
+        },
+        "tuple_to_userset": {
+          "$ref": "#/definitions/tupleToUserset"
+        },
+        "union": {
+          "$ref": "#/definitions/usersets"
+        },
+        "intersection": {
+          "$ref": "#/definitions/usersets"
+        },
+        "difference": {
+          "$ref": "#/definitions/difference"
+        }
+      }
+    },
+    "relationReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[^:#@\\s]{1,254}$"
+        },
+        "relation": {
+          "type": "string",
+          "pattern": "^[^:#@\\s]{1,50}$"
+        },
+        "wildcard": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "condition": {
+          "type": "string",
+          "pattern": "^[^:#@\\s]{1,50}$"
+        }
+      },
+      "not": {
+        "required": [
+          "relation",
+          "wildcard"
+        ]
+      }
+    },
+    "relationMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "directly_related_user_types": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/relationReference"
+          }
+        },
+        "module": {
+          "type": "string",
+          "pattern": "^([^:#@\\s]{1,50})?$"
+        },
+        "source_info": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/sourceInfo"
+            }
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "relations": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "propertyNames": {
+            "pattern": "^[^:#@\\s]{1,50}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/relationMetadata"
+          }
+        },
+        "module": {
+          "type": "string",
+          "pattern": "^([^:#@\\s]{1,50})?$"
+        },
+        "source_info": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/sourceInfo"
+            }
+          ]
+        }
+      }
+    },
+    "typeDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[^:#@\\s]{1,254}$"
+        },
+        "relations": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "propertyNames": {
+            "pattern": "^[^:#@\\s]{1,50}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/userset"
+          }
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/metadata"
+            }
+          ]
+        }
+      }
+    },
+    "conditionParamTypeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type_name"
+      ],
+      "properties": {
+        "type_name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "TYPE_NAME_UNSPECIFIED",
+                "TYPE_NAME_ANY",
+                "TYPE_NAME_BOOL",
+                "TYPE_NAME_STRING",
+                "TYPE_NAME_INT",
+                "TYPE_NAME_UINT",
+                "TYPE_NAME_DOUBLE",
+                "TYPE_NAME_DURATION",
+                "TYPE_NAME_TIMESTAMP",
+                "TYPE_NAME_MAP",
+                "TYPE_NAME_LIST",
+                "TYPE_NAME_IPADDRESS"
+              ]
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 11
+            }
+          ]
+        },
+        "generic_types": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/conditionParamTypeRef"
+          }
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "expression"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[^:#@\\s]{1,50}$"
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "parameters": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "maxProperties": 25,
+          "propertyNames": {
+            "pattern": "^[^:#@\\s]{1,50}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/conditionParamTypeRef"
+          }
+        },
+        "metadata": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "module": {
+              "type": "string",
+              "pattern": "^([^:#@\\s]{1,50})?$"
+            },
+            "source_info": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/definitions/sourceInfo"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

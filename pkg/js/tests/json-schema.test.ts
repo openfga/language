@@ -7,11 +7,15 @@ import { Rules, Validator } from "../validator/validate-rules";
 
 const schemasDir = path.join(__dirname, "../../../schemas");
 const storesDir = path.join(__dirname, "../../../tests/data/stores");
+const transformerDirs = ["transformer", "transformer-module"].map((dir) =>
+  path.join(__dirname, "../../../tests/data", dir),
+);
 
 const readSchema = (name: string) => JSON.parse(fs.readFileSync(path.join(schemasDir, name), "utf-8"));
 
 const tuplesSchema = readSchema("tuples.schema.json");
 const storeSchema = readSchema("store.schema.json");
+const modelSchema = readSchema("authorization-model.schema.json");
 
 const newAjv = () => new Ajv({ allErrors: true }).addSchema(tuplesSchema);
 
@@ -23,6 +27,7 @@ describe("published JSON schemas", () => {
     expect(ajv.validateSchema(tuplesSchema)).toBe(true);
     expect(ajv.validateSchema(storeSchema)).toBe(true);
     expect(() => ajv.compile(storeSchema)).not.toThrow();
+    expect(ajv.validateSchema(modelSchema)).toBe(true);
   });
 
   it("build their patterns from the shared validation rules", () => {
@@ -124,6 +129,103 @@ describe("published JSON schemas", () => {
       expect(validate({ tests: [{ check: [{ object: "document:roadmap", assertions: { viewer: true } }] }] })).toBe(
         false,
       );
+    });
+  });
+
+  describe("authorization model schema", () => {
+    const validate = new Ajv({ allErrors: true, allowUnionTypes: true }).compile(modelSchema);
+
+    transformerDirs.forEach((root) => {
+      fs.readdirSync(root).forEach((dir) => {
+        const file = path.join(root, dir, "authorization-model.json");
+        if (!fs.existsSync(file)) {
+          return;
+        }
+
+        it(`accepts ${path.basename(root)}/${dir}`, () => {
+          const valid = validate(JSON.parse(fs.readFileSync(file, "utf-8")));
+          expect(validate.errors).toBeNull();
+          expect(valid).toBe(true);
+        });
+      });
+    });
+
+    const model = (relations: Record<string, unknown>) => ({
+      schema_version: "1.1",
+      type_definitions: [{ type: "user" }, { type: "document", relations }],
+    });
+
+    it("accepts the snake_case rewrite names the API also takes", () => {
+      expect(
+        validate(
+          model({
+            parent: { this: {} },
+            viewer: {
+              tuple_to_userset: { tupleset: { relation: "parent" }, computed_userset: { relation: "viewer" } },
+            },
+          }),
+        ),
+      ).toBe(true);
+    });
+
+    it("rejects an intersection without its child list", () => {
+      // https://github.com/openfga/openfga/issues/1164
+      const valid = validate(
+        model({
+          parent: { this: {} },
+          viewer: {
+            union: {
+              child: [
+                {
+                  intersection: {
+                    tupleToUserset: { tupleset: { relation: "parent" }, computedUserset: { relation: "viewer" } },
+                  },
+                },
+                { this: {} },
+              ],
+            },
+          },
+        }),
+      );
+      expect(valid).toBe(false);
+      expect(validate.errors).toContainEqual(
+        expect.objectContaining({
+          instancePath: "/type_definitions/1/relations/viewer/union/child/0/intersection",
+          params: { missingProperty: "child" },
+        }),
+      );
+    });
+
+    it("rejects malformed rewrites", () => {
+      expect(validate(model({ viewer: {} }))).toBe(false);
+      expect(validate(model({ viewer: { this: {}, computedUserset: { relation: "owner" } } }))).toBe(false);
+      expect(validate(model({ viewer: { difference: { base: { this: {} } } } }))).toBe(false);
+      expect(validate(model({ viewer: { tupleToUserset: { tupleset: { relation: "parent" } } } }))).toBe(false);
+      expect(validate(model({ viewer: { thiss: {} } }))).toBe(false);
+    });
+
+    it("rejects a model without a schema version", () => {
+      expect(validate({ type_definitions: [] })).toBe(false);
+    });
+
+    it("rejects a type restriction with both a relation and a wildcard", () => {
+      expect(
+        validate({
+          schema_version: "1.1",
+          type_definitions: [
+            { type: "user" },
+            {
+              type: "document",
+              relations: { viewer: { this: {} } },
+              metadata: {
+                relations: {
+                  viewer: { directly_related_user_types: [{ type: "user", relation: "member", wildcard: {} }] },
+                },
+              },
+            },
+          ],
+        }),
+      ).toBe(false);
     });
   });
 });

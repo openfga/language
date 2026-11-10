@@ -20,20 +20,22 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 	return &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 }
 
-// Build returns the weighted graph for model, or a *RelationMultipleError
-// listing every problem that stops it from being built, each with the
-// relations it involves.
+// Build returns the weighted graph for model, or an error joining one
+// *RelationError per problem that stops it from being built, each with the
+// relations it involves. As before, errors.Is matches ErrModelCycle,
+// ErrTupleCycle, ErrContrainstTupleCycle and ErrInvalidModel; RelationErrors(err)
+// returns the list, and errors.As finds a single *RelationError.
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	wb, relationErrs := wgb.construct(model)
 	if len(relationErrs) > 0 {
 		// Weights cannot be assigned to a graph that is missing what failed to
 		// build, but the cycles among the relations that did build can still be
 		// found.
-		return nil, newRelationMultipleError(append(relationErrs, wb.unresolvableCycles()...))
+		return nil, joinRelationErrors(append(relationErrs, wb.unresolvableCycles()...))
 	}
 
 	if err := wb.AssignWeights(); err != nil {
-		return nil, newRelationMultipleError(walkErrors(wb, err))
+		return nil, joinRelationErrors(assignWeightErrors(wb, err))
 	}
 
 	return wb, nil

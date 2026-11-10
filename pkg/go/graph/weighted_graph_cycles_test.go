@@ -14,7 +14,7 @@ import (
 
 // rejectionFor builds dsl, which the builder must reject, and returns the error
 // it was rejected with.
-func rejectionFor(t *testing.T, dsl string) *RelationMultipleError {
+func rejectionFor(t *testing.T, dsl string) error {
 	t.Helper()
 
 	model, err := transformer.TransformDSLToProto(dsl)
@@ -23,39 +23,30 @@ func rejectionFor(t *testing.T, dsl string) *RelationMultipleError {
 	_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
 	require.Error(t, err, "the builder accepted the model, so there is no rejection to read")
 
-	var multiErr *RelationMultipleError
-	require.ErrorAs(t, err, &multiErr, "a rejection must be a RelationMultipleError")
-
-	return multiErr
+	return err
 }
 
-// relationErrors returns the relation errors a rejection holds, failing if any
-// of them is not one.
-func relationErrors(t *testing.T, multiErr *RelationMultipleError) []*RelationError {
+// problemsOf returns the relation errors a rejection holds, failing if it holds
+// none.
+func problemsOf(t *testing.T, err error) []*RelationError {
 	t.Helper()
 
-	relationErrs := make([]*RelationError, 0, len(multiErr.Errors))
-
-	for _, err := range multiErr.Errors {
-		var relationErr *RelationError
-		require.ErrorAs(t, err, &relationErr, "every error in a rejection must be a RelationError")
-
-		relationErrs = append(relationErrs, relationErr)
-	}
+	relationErrs := RelationErrors(err)
+	require.NotEmpty(t, relationErrs, "a rejection must hold relation errors")
 
 	return relationErrs
 }
 
 // TestBuildRefusalNamesCycleMembers checks that a refused build names every
 // relation of every unresolvable cycle, and still matches the sentinel it
-// carried before RelationMultipleError existed.
+// carried before it named relations.
 func TestBuildRefusalNamesCycleMembers(t *testing.T) {
 	t.Parallel()
 
 	t.Run("model cycle", func(t *testing.T) {
 		t.Parallel()
 
-		multiErr := rejectionFor(t, `model
+		err := rejectionFor(t, `model
   schema 1.1
 type user
 type document
@@ -64,16 +55,16 @@ type document
     define b: [user] or a
 `)
 
-		require.ErrorIs(t, multiErr, ErrModelCycle)
-		assert.Equal(t, "1 error occurred:\n\t* model cycle: document#a, document#b\n\n", multiErr.Error())
+		require.ErrorIs(t, err, ErrModelCycle)
+		assert.Equal(t, "model cycle: document#a, document#b", err.Error())
 
-		relationErrs := relationErrors(t, multiErr)
+		relationErrs := problemsOf(t, err)
 		require.Len(t, relationErrs, 1)
 		require.ErrorIs(t, relationErrs[0], ErrModelCycle)
 		assert.Equal(t, []string{"document#a", "document#b"}, relationErrs[0].Relations)
 
 		var relationErr *RelationError
-		require.ErrorAs(t, multiErr, &relationErr, "errors.As must find a single relation error")
+		require.ErrorAs(t, err, &relationErr, "errors.As must find a single relation error")
 		assert.Equal(t, []string{"document#a", "document#b"}, relationErr.Relations)
 	})
 
@@ -82,7 +73,7 @@ type document
 
 		// The builder accepts a bare self-rewrite, leaving it with no weights, so
 		// it must not be named when a real cycle elsewhere triggers the refusal.
-		relationErrs := relationErrors(t, rejectionFor(t, `model
+		relationErrs := problemsOf(t, rejectionFor(t, `model
   schema 1.1
 type user
 type document
@@ -99,7 +90,7 @@ type document
 	t.Run("every unresolvable cycle is named", func(t *testing.T) {
 		t.Parallel()
 
-		relationErrs := relationErrors(t, rejectionFor(t, `model
+		relationErrs := problemsOf(t, rejectionFor(t, `model
   schema 1.1
 type user
 type document
@@ -118,7 +109,7 @@ type document
 	t.Run("tuple cycle under an exclusion", func(t *testing.T) {
 		t.Parallel()
 
-		multiErr := rejectionFor(t, `model
+		err := rejectionFor(t, `model
   schema 1.1
 type user
 type group
@@ -127,9 +118,9 @@ type group
     define blocked: [user, group#member]
 `)
 
-		require.ErrorIs(t, multiErr, ErrTupleCycle)
+		require.ErrorIs(t, err, ErrTupleCycle)
 
-		relationErrs := relationErrors(t, multiErr)
+		relationErrs := problemsOf(t, err)
 		require.Len(t, relationErrs, 1)
 		require.ErrorIs(t, relationErrs[0], ErrContrainstTupleCycle)
 		assert.Equal(t, []string{"group#blocked", "group#member"}, relationErrs[0].Relations)
@@ -141,7 +132,7 @@ type group
 	t.Run("membership does not depend on relation names", func(t *testing.T) {
 		t.Parallel()
 
-		relationErrs := relationErrors(t, rejectionFor(t, `model
+		relationErrs := problemsOf(t, rejectionFor(t, `model
   schema 1.1
 type user
 type group
@@ -171,7 +162,7 @@ type group
 			expected := []string{"group#" + viewer, "group#member"}
 			slices.Sort(expected)
 
-			relationErrs := relationErrors(t, rejectionFor(t, dsl))
+			relationErrs := problemsOf(t, rejectionFor(t, dsl))
 			require.Len(t, relationErrs, 1)
 			assert.Equal(t, expected, relationErrs[0].Relations, "under the name %q", viewer)
 		}
@@ -194,10 +185,7 @@ type group
 		for range 20 {
 			_, err := NewWeightedAuthorizationModelGraphBuilder().Build(model)
 
-			var multiErr *RelationMultipleError
-			require.ErrorAs(t, err, &multiErr)
-
-			relationErrs := relationErrors(t, multiErr)
+			relationErrs := problemsOf(t, err)
 			require.Len(t, relationErrs, 1)
 			assert.Equal(t, []string{"group#member", "group#zblocked"}, relationErrs[0].Relations)
 		}
@@ -248,7 +236,7 @@ type folder
 	}
 
 	for name, dsl := range refusals {
-		relationErrs := relationErrors(t, rejectionFor(t, dsl))
+		relationErrs := problemsOf(t, rejectionFor(t, dsl))
 		assert.NotEmptyf(t, relationErrs, "%s: refused for a cycle but none was named", name)
 
 		for _, relationErr := range relationErrs {
@@ -259,11 +247,11 @@ type folder
 	}
 }
 
-// TestRelationMultipleErrorMatchesTheSentinels pins what callers of Build keep:
-// errors.Is still matches the sentinel for every problem, so code that checks
-// the kind of refusal is unaffected. Only code that compares the error with ==
-// would notice that it is now a *RelationMultipleError.
-func TestRelationMultipleErrorMatchesTheSentinels(t *testing.T) {
+// TestBuildErrorMatchesTheSentinels pins what callers of Build keep: errors.Is
+// still matches the sentinel for every problem, so code that checks the kind of
+// refusal is unaffected. Only code that compares the error with == would notice
+// that it now joins relation errors.
+func TestBuildErrorMatchesTheSentinels(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -319,15 +307,93 @@ type document
 			require.NoError(t, err)
 
 			_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
-
-			var multiErr *RelationMultipleError
-			require.ErrorAs(t, err, &multiErr)
+			require.Error(t, err)
 
 			for _, sentinel := range test.want {
 				require.ErrorIs(t, err, sentinel)
 			}
 		})
 	}
+}
+
+// TestBuildRejectsAModelTheSameWayOnEveryRun pins that the weight walk visits
+// nodes in a fixed order. The walk stops at its first error, so which of a
+// cycle and an invalid relation it reaches first decides whether the invalid
+// relation is reported, and that must not change from one build to the next.
+func TestBuildRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		dsl      string
+		contains []string
+		excludes []string
+	}{
+		"the cycle is reached first and hides the invalid relation": {
+			dsl: `model
+  schema 1.1
+type user
+type employee
+type document
+  relations
+    define a: [user] or b
+    define b: [user] or a
+    define x: [user] and y
+    define y: [employee]
+`,
+			contains: []string{"model cycle: document#a, document#b"},
+			excludes: []string{"invalid model"},
+		},
+		"the invalid relation is reached first and both are reported": {
+			dsl: `model
+  schema 1.1
+type user
+type employee
+type document
+  relations
+    define x: [user] or y
+    define y: [user] or x
+    define a: [user] and b
+    define b: [employee]
+`,
+			contains: []string{"model cycle: document#x, document#y", "invalid model"},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			model, err := transformer.TransformDSLToProto(test.dsl)
+			require.NoError(t, err)
+
+			_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
+			require.Error(t, err)
+
+			first := err.Error()
+			for _, want := range test.contains {
+				assert.Contains(t, first, want)
+			}
+
+			for _, unwanted := range test.excludes {
+				assert.NotContains(t, first, unwanted)
+			}
+
+			for range 200 {
+				_, err := NewWeightedAuthorizationModelGraphBuilder().Build(model)
+				require.Error(t, err)
+				require.Equal(t, first, err.Error())
+			}
+		})
+	}
+}
+
+// TestRelationErrorsIsNilForAnErrorBuildDidNotProduce pins that RelationErrors
+// finds nothing in a nil error or in one that holds no relation error.
+func TestRelationErrorsIsNilForAnErrorBuildDidNotProduce(t *testing.T) {
+	t.Parallel()
+
+	assert.Nil(t, RelationErrors(nil))
+	assert.Nil(t, RelationErrors(errors.New("x")))
 }
 
 // TestRelationErrorReadsAsItsReasonAndRelations pins how a relation error reads

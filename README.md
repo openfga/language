@@ -85,7 +85,7 @@ The [`schemas`](/schemas) folder has JSON Schemas for tuple files and store file
 
 The schemas check structure and the format of users, relations and objects. Checks that need the model, like whether a relation exists on a type, are still done by `fga model test`.
 
-There's also a schema for authorization models in JSON. It catches a malformed model, like an `intersection` without its `child` list, that the API would otherwise accept. To use it in VS Code:
+There's also a schema for authorization models in JSON, generated from the API's protobuf definitions with `make generate-schemas`, so it follows the API's field names and validation rules. It catches a malformed model, like an `intersection` without its `child` list, that the API would otherwise accept. To use it in VS Code:
 
 ```json
 {

@@ -17,6 +17,7 @@ var ErrModelChanged = errors.New("formatting would change the meaning of the mod
 
 const defaultIndentSize = 2
 
+// options holds the settings applied by Option functions.
 type options struct {
 	indent string
 }
@@ -81,6 +82,7 @@ func MustFormat(dsl string, opts ...Option) string {
 	return formatted
 }
 
+// sameModel reports whether two models are the same once condition expressions are trimmed.
 func sameModel(a, b *openfgav1.AuthorizationModel) bool {
 	return proto.Equal(normalizeModel(a), normalizeModel(b))
 }
@@ -96,6 +98,7 @@ func normalizeModel(model *openfgav1.AuthorizationModel) *openfgav1.Authorizatio
 	return clone
 }
 
+// sameExtensions reports whether two sets of extended type definitions are equal.
 func sameExtensions(a, b map[string]*openfgav1.TypeDefinition) bool {
 	if len(a) != len(b) {
 		return false
@@ -110,6 +113,7 @@ func sameExtensions(a, b map[string]*openfgav1.TypeDefinition) bool {
 	return true
 }
 
+// statementKind is the kind of DSL statement last printed, used to decide on blank lines.
 type statementKind int
 
 const (
@@ -121,6 +125,7 @@ const (
 	kindCondition
 )
 
+// printer accumulates the formatted output line by line.
 type printer struct {
 	indent string
 	out    []string
@@ -130,6 +135,7 @@ type printer struct {
 	last    statementKind
 }
 
+// format prints every statement in lines and returns the formatted file.
 func (p *printer) format(lines []string) string {
 	for i := 0; i < len(lines); i++ {
 		trimmed := strings.TrimSpace(lines[i])
@@ -181,6 +187,7 @@ func (p *printer) statement(lines []string, start int) int {
 	return start
 }
 
+// define prints the relation definition that starts at lines[start] and returns the index of its last line.
 func (p *printer) define(lines []string, start int) int {
 	code, comment := splitComment(lines[start])
 	end := start
@@ -218,6 +225,7 @@ func (p *printer) define(lines []string, start int) int {
 	return end
 }
 
+// condition prints the condition that starts at lines[start] and returns the index of its closing line.
 func (p *printer) condition(lines []string, start int) int {
 	// Read the header up to the opening brace.
 	header := ""
@@ -320,6 +328,7 @@ func (p *printer) emit(kind statementKind, level int, text, comment string) {
 	p.last = kind
 }
 
+// flushPendingFor prints the pending comments before a statement, adding a blank line first when needed.
 func (p *printer) flushPendingFor(level int, forceBlank, keepBlank bool) {
 	hadBlank := len(p.pending) > 0 && p.pending[0] == ""
 
@@ -345,6 +354,7 @@ func (p *printer) flushPending() {
 	p.writePending(0)
 }
 
+// writePending prints the pending comments at the given level, collapsing runs of blank lines.
 func (p *printer) writePending(level int) {
 	previousBlank := true
 
@@ -377,10 +387,12 @@ func splitComment(line string) (string, string) {
 	return code, "#" + strings.TrimRight(comment, " ")
 }
 
+// depth returns how many brackets and parentheses are left open in code.
 func depth(code string) int {
 	return strings.Count(code, "[") + strings.Count(code, "(") - strings.Count(code, "]") - strings.Count(code, ")")
 }
 
+// depthOf returns how many brackets and parentheses are left open across lines, ignoring comments.
 func depthOf(lines []string) int {
 	total := 0
 
@@ -416,6 +428,7 @@ func normalizeExpression(expression string) string {
 	return builder.String()
 }
 
+// tokenize splits a relation definition into words, brackets, parentheses and commas.
 func tokenize(expression string) []string {
 	tokens := []string{}
 
@@ -493,6 +506,7 @@ func closingBrace(line string, braces *int) int {
 	return -1
 }
 
+// trimBlankLines drops blank lines from the start and end of lines.
 func trimBlankLines(lines []string) []string {
 	start := 0
 	for start < len(lines) && strings.TrimSpace(lines[start]) == "" {

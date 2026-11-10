@@ -47,8 +47,8 @@ func validateWithGraph(idx *index, src source) error {
 func graphRefusal(idx *index, src source, cause error) error {
 	fs := ExtractAllAs[*Finding](validateEntryPoints(idx, src))
 
-	var multiErr *graph.RelationMultipleError
-	if !errors.As(cause, &multiErr) {
+	relationErrs := graph.RelationErrors(cause)
+	if len(relationErrs) == 0 {
 		return joinFindings(append(fs, modelUnbuildable(describeRefusal(cause)))...)
 	}
 
@@ -57,11 +57,10 @@ func graphRefusal(idx *index, src source, cause error) error {
 
 	var unattributed []*Finding
 
-	for _, err := range multiErr.Errors {
-		var relationErr *graph.RelationError
-		if !errors.As(err, &relationErr) || len(relationErr.Relations) == 0 {
+	for _, relationErr := range relationErrs {
+		if len(relationErr.Relations) == 0 {
 			if len(fs) == 0 {
-				unattributed = append(unattributed, modelUnbuildable(describeRefusal(err)))
+				unattributed = append(unattributed, modelUnbuildable(describeRefusal(relationErr)))
 			}
 
 			continue

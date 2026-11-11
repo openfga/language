@@ -1,0 +1,8 @@
+model
+  schema 1.1
+
+type user
+
+condition something(x: int) {
+  x > 0
+}

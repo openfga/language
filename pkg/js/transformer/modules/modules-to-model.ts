@@ -40,6 +40,39 @@ export const transformModuleFilesToModel = (
       const lines = contents.split("\n");
       const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
+      // A plain model file is not a module. Skip the whole file with a single
+      // error, so its definitions are not added to the module and a condition
+      // without metadata below does not throw.
+      let isModule = true;
+      for (const typeDef of authorizationModel.type_definitions) {
+        if (typeDefExtensions.has(typeDef.type)) {
+          continue;
+        }
+        if (!typeDef.metadata) {
+          isModule = false;
+          break;
+        }
+      }
+      if (isModule && authorizationModel.conditions) {
+        for (const condition of Object.values(authorizationModel.conditions)) {
+          if (!condition.metadata) {
+            isModule = false;
+            break;
+          }
+        }
+      }
+      if (!isModule) {
+        errors.push(
+          new ModuleTransformationSingleError({
+            msg: "file is not a module",
+            line: { start: 0, end: 0 },
+            column: { start: 0, end: 0 },
+            file: name,
+          }),
+        );
+        continue;
+      }
+
       for (const typeDef of authorizationModel.type_definitions) {
         // If this is an extension mark it to be merged later
         if (typeDefExtensions.has(typeDef.type)) {
@@ -47,17 +80,6 @@ export const transformModuleFilesToModel = (
             extendedTypeDefs[name] = [];
           }
           extendedTypeDefs[name].push(typeDef);
-          continue;
-        }
-        if (!typeDef.metadata) {
-          errors.push(
-            new ModuleTransformationSingleError({
-              msg: "file is not a module",
-              line: { start: 0, end: 0 },
-              column: { start: 0, end: 0 },
-              file: "nomodule.fga",
-            }),
-          );
           continue;
         }
         typeDef.metadata!.source_info = {

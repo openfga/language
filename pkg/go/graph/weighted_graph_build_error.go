@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// RelationError is one reason Build rejected a model, with the relations it
-// involves.
+// RelationError is one reason BuildForValidation rejected a model, with the
+// relations it involves.
 type RelationError struct {
 	// Relations names the relations the error involves, as "type#relation",
 	// sorted. A cycle names every relation in it. It is empty when the builder
@@ -48,8 +48,9 @@ func joinRelationErrors(relationErrs []RelationError) error {
 	return errors.Join(errs...)
 }
 
-// RelationErrors returns every *RelationError in err, in the order Build
-// reports them. It is nil for a nil error or one Build did not produce.
+// RelationErrors returns every *RelationError in err, in the order
+// BuildForValidation reports them. It is nil for a nil error and for one
+// BuildForValidation did not produce, which includes every error Build returns.
 func RelationErrors(err error) []*RelationError {
 	var relationErrs []*RelationError
 
@@ -90,8 +91,8 @@ func RelationErrors(err error) []*RelationError {
 //
 // That error is still the first one the walk reaches, because the walk stops at
 // its first error, so a cycle reached first can hide a later error that is not a
-// cycle. The walk visits nodes in a fixed order, so the same model gives the same
-// answer every time.
+// cycle. BuildForValidation's walk visits nodes in a fixed order, so the same
+// model gives the same answer every time.
 func assignWeightErrors(wg *WeightedAuthorizationModelGraph, err error) []RelationError {
 	relationErrs := wg.unresolvableCycles()
 

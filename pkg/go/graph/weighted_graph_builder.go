@@ -20,13 +20,38 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 	return &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 }
 
-// Build returns the weighted graph for model, or an error joining one
-// *RelationError per problem that stops it from being built, each with the
-// relations it involves. As before, errors.Is matches ErrModelCycle,
-// ErrTupleCycle, ErrContrainstTupleCycle and ErrInvalidModel; RelationErrors(err)
-// returns the list, and errors.As finds a single *RelationError.
+// Build returns the weighted graph for model, or the first problem that stops
+// it from being built. BuildForValidation reports every problem instead.
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
-	wb, relationErrs := wgb.construct(model)
+	wb, err := wgb.construct(model, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = wb.AssignWeights()
+	if err != nil {
+		return nil, err
+	}
+
+	return wb, nil
+}
+
+// BuildForValidation builds the same graph as Build, but when it rejects the
+// model, its error joins one *RelationError per problem, each with the
+// relations it involves, sorted by relations and the same on every run. As with
+// Build's error, errors.Is matches the sentinels, and RelationErrors(err)
+// returns the list.
+//
+// It does more work than Build: it keeps building after a relation fails, finds
+// every cycle the builder cannot resolve, and assigns weights in a fixed order.
+// It is meant for validation, such as explaining a model Build rejected, so
+// loading a graph to use it should go through Build.
+func (wgb *WeightedAuthorizationModelGraphBuilder) BuildForValidation(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	var relationErrs []RelationError
+
+	wb, _ := wgb.construct(model, func(relationErr RelationError) {
+		relationErrs = append(relationErrs, relationErr)
+	})
 	if len(relationErrs) > 0 {
 		// Weights cannot be assigned to a graph that is missing what failed to
 		// build, but the cycles among the relations that did build can still be
@@ -34,7 +59,7 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 		return nil, joinRelationErrors(append(relationErrs, wb.unresolvableCycles()...))
 	}
 
-	if err := wb.AssignWeights(); err != nil {
+	if err := wb.assignWeightsSorted(); err != nil {
 		return nil, joinRelationErrors(assignWeightErrors(wb, err))
 	}
 
@@ -42,11 +67,10 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 }
 
 // construct adds the model's nodes and edges to a new graph, without weights.
-// A relation that cannot be built is recorded as a RelationError and the rest
-// of the model is still constructed, so one problem does not hide the others.
-func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, []RelationError) {
-	var relationErrs []RelationError
-
+// When a relation fails to build, it returns the error, unless onFailure is set:
+// then it passes the relation to onFailure and builds the rest of the model, so
+// one problem does not hide the others.
+func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.AuthorizationModel, onFailure func(RelationError)) (*WeightedAuthorizationModelGraph, error) {
 	wb := NewWeightedAuthorizationModelGraph()
 	// sort types by name to guarantee stable output
 	sortedTypeDefs := make([]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions()))
@@ -78,12 +102,16 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.Au
 			operatorIndex := 0
 			err := wgb.parseRewrite(wb, parentNode, model, rewrite, typeDef, relation, &operatorIndex)
 			if err != nil {
-				relationErrs = append(relationErrs, RelationError{Relations: []string{uniqueLabel}, Err: err})
+				if onFailure == nil {
+					return nil, err
+				}
+
+				onFailure(RelationError{Relations: []string{uniqueLabel}, Err: err})
 			}
 		}
 	}
 
-	return wb, relationErrs
+	return wb, nil
 }
 
 func (wgb *WeightedAuthorizationModelGraphBuilder) parseRewrite(wg *WeightedAuthorizationModelGraph, parentNode *WeightedAuthorizationModelNode, model *openfgav1.AuthorizationModel, rewrite *openfgav1.Userset, typeDef *openfgav1.TypeDefinition, relation string, operatorIndex *int) error {

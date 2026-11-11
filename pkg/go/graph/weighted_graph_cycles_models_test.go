@@ -64,7 +64,7 @@ func describeRelationErrors(relationErrs []*RelationError) []string {
 func rejectedFor(t *testing.T, name string) []*RelationError {
 	t.Helper()
 
-	_, err := NewWeightedAuthorizationModelGraphBuilder().Build(cycleModel(t, name))
+	_, err := NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(cycleModel(t, name))
 
 	relationErrs := RelationErrors(err)
 	require.NotEmpty(t, relationErrs, name)
@@ -72,14 +72,14 @@ func rejectedFor(t *testing.T, name string) []*RelationError {
 	return relationErrs
 }
 
-// TestBuildNamesEveryCycleInLargeModels covers models with seven to eleven broken
+// TestBuildForValidationNamesEveryCycleInLargeModels covers models with seven to eleven broken
 // cycles next to legal ones: every broken cycle comes back with all of its
 // relations, no legal cycle does, and every build agrees.
 //
 // The relations organization#c and team#h_c sit on a legal cycle that shares a
 // relation with a broken one. The scan names the whole group, so they are named
 // too.
-func TestBuildNamesEveryCycleInLargeModels(t *testing.T) {
+func TestBuildForValidationNamesEveryCycleInLargeModels(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
@@ -130,10 +130,10 @@ func TestBuildNamesEveryCycleInLargeModels(t *testing.T) {
 	}
 }
 
-// TestBuildReportsEveryProblem covers broken cycles in models that have another
+// TestBuildForValidationReportsEveryProblem covers broken cycles in models that have another
 // problem too. Every problem the builder can attribute comes back in one
 // refusal, so a missing from target no longer hides the cycles.
-func TestBuildReportsEveryProblem(t *testing.T) {
+func TestBuildForValidationReportsEveryProblem(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
@@ -190,10 +190,10 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 			continue
 		}
 
-		wg, _ := NewWeightedAuthorizationModelGraphBuilder().construct(model)
+		wg, _ := NewWeightedAuthorizationModelGraphBuilder().construct(model, func(RelationError) {})
 		check := checkCycles(t, wg)
 
-		_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
+		_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
 		if err == nil {
 			accepted++
 

@@ -13,13 +13,20 @@ import (
 // rather than by walking the rewrite tree. It builds through the exported
 // WeightedAuthorizationModelGraphBuilder, so what validation reports and what
 // anything else reading that graph concludes cannot drift apart.
+//
+// A model that builds costs one Build, as anywhere else. Only a model Build
+// rejects is built again, with BuildForValidation, to get every problem.
 func validateWithGraph(idx *index, src source) error {
 	if idx == nil || idx.model == nil {
 		return nil
 	}
 
-	weighted, err := graph.NewWeightedAuthorizationModelGraphBuilder().Build(idx.model)
+	builder := graph.NewWeightedAuthorizationModelGraphBuilder()
+
+	weighted, err := builder.Build(idx.model)
 	if err != nil {
+		_, err = builder.BuildForValidation(idx.model)
+
 		return graphRefusal(idx, src, err)
 	}
 

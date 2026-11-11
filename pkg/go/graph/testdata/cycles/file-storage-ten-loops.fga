@@ -1,0 +1,70 @@
+# The file-storage sample store with ten broken loops added. Its own parent
+# chains (owner, writer and reader from parent or folder) are legal and must
+# not be reported.
+model
+  schema 1.1
+
+type user
+
+type organization
+  relations
+    define primary_drive: [drive]
+    define can_admin_drive: [user] and can_manage from primary_drive
+    define a: b but not xx
+    define b: [user, organization#a, organization#c]
+    define c: [user, organization#b]
+    define xx: [user]
+    define member: [user] or admin
+    define admin: [user] and member
+
+type group
+  relations
+    define suspended: [user, group#member]
+    define organization: [organization]
+    define member: [user, group#member] but not suspended
+
+type drive
+  relations
+    define editor: writer
+    define r1: [user] or r2
+    define r2: [user] or r3
+    define r3: r4
+    define r4: [user] or r1
+    define can_manage: [user] or can_admin_drive from organization
+    define organization: [organization]
+    define organization_admin: admin from organization
+    define owner: [user]
+    define writer: [user, group#member] or owner or editor
+    define reader: [user, group#member] or writer or member from organization
+    define can_delete: owner or organization_admin
+    define can_edit: writer or can_delete
+    define can_view: reader or can_edit
+
+type folder
+  relations
+    define blocked: [user]
+    define restricted: [user] or can_view from parent
+    define parent: [drive, folder]
+    define organization_admin: organization_admin from parent
+    define owner: [user] or owner from parent
+    define writer: [user, group#member] or owner or writer from parent
+    define reader: ([user, group#member] or writer or reader from parent) but not blocked
+    define can_delete: owner or organization_admin
+    define can_create_file: writer or can_delete
+    define can_edit: writer or can_delete
+    define can_view: (reader or can_edit) but not restricted
+
+type file
+  relations
+    define allowed: [user] or can_view
+    define x: [user] or y
+    define y: x or z
+    define z: [user] or y
+    define folder: [folder]
+    define owner: [user] or owner from folder
+    define writer: [user, group#member] or owner or writer from folder
+    define reader: [user, group#member] or writer or reader from folder
+    define can_delete: owner or organization_admin from folder
+    define can_edit: writer or can_delete
+    define can_download: reader or can_edit
+    define can_view: (reader or can_edit) and allowed

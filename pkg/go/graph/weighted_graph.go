@@ -3,6 +3,7 @@ package graph
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -240,6 +241,37 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 		}
 		if len(tupleCyles) > 0 {
 			return fmt.Errorf("%w: %d tuple cycles found without resolution", ErrTupleCycle, len(tupleCyles))
+		}
+	}
+	return nil
+}
+
+// assignWeightsSorted is AssignWeights visiting the nodes sorted by ID, so a
+// model it rejects is rejected the same way on every run: the walk stops at its
+// first error, and in map order which error comes first changes between runs.
+// The weights don't depend on the order, which is why AssignWeights keeps the
+// map order and skips the sort. Keep the two loops in step.
+func (wg *WeightedAuthorizationModelGraph) assignWeightsSorted() error {
+	visited := make(map[string]bool)
+	ancestorPath := make([]*WeightedAuthorizationModelEdge, 0)
+	tupleCycleDependencies := make(map[string][]*WeightedAuthorizationModelEdge)
+
+	for _, nodeID := range slices.Sorted(maps.Keys(wg.nodes)) {
+		node := wg.nodes[nodeID]
+		if wg.isLogicalOperator(node) {
+			continue
+		}
+
+		if visited[nodeID] {
+			continue
+		}
+
+		tupleCycles, err := wg.calculateNodeWeight(nodeID, visited, ancestorPath, tupleCycleDependencies)
+		if err != nil {
+			return err
+		}
+		if len(tupleCycles) > 0 {
+			return fmt.Errorf("%w: %d tuple cycles found without resolution", ErrTupleCycle, len(tupleCycles))
 		}
 	}
 	return nil
@@ -564,7 +596,7 @@ func isTupleCycle(nodeID string, ancestorPath []*WeightedAuthorizationModelEdge)
 		}
 		if startTracking {
 			cyclePath = append(cyclePath, edge)
-			if edge.edgeType == TTUEdge || (edge.edgeType == DirectEdge && edge.to.nodeType == SpecificTypeAndRelation) {
+			if readsTuple(edge) {
 				tupleCycle = true
 			}
 			if edge.to.nodeType == SpecificTypeAndRelation {

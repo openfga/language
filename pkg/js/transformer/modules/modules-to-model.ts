@@ -40,22 +40,22 @@ export const transformModuleFilesToModel = (
       const lines = contents.split("\n");
       const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
-      // A plain model file is not a module. Skip the whole file with a single
-      // error, so its definitions are not added to the module and a condition
-      // without metadata below does not throw.
+      // A plain model carries no module name on its definitions (a type may
+      // still keep relation metadata), so skip the whole file with one error
+      // rather than letting its types leak in or a condition throw below.
       let isModule = true;
       for (const typeDef of authorizationModel.type_definitions) {
         if (typeDefExtensions.has(typeDef.type)) {
           continue;
         }
-        if (!typeDef.metadata) {
+        if (!typeDef.metadata?.module) {
           isModule = false;
           break;
         }
       }
       if (isModule && authorizationModel.conditions) {
         for (const condition of Object.values(authorizationModel.conditions)) {
-          if (!condition.metadata) {
+          if (!condition.metadata?.module) {
             isModule = false;
             break;
           }

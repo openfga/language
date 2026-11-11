@@ -471,6 +471,120 @@
       ]
     },
     {
+      "name": "follows the aliases of the object's type only",
+      "model": {
+        "schema_version": "1.1",
+        "type_definitions": [
+          {
+            "type": "user"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "owner": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    }
+                  ]
+                },
+                "viewer": {}
+              }
+            },
+            "relations": {
+              "owner": {
+                "this": {}
+              },
+              "viewer": {
+                "computedUserset": {
+                  "relation": "owner"
+                }
+              }
+            },
+            "type": "folder"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "owner": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    }
+                  ]
+                },
+                "viewer": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    }
+                  ]
+                }
+              }
+            },
+            "relations": {
+              "owner": {
+                "this": {}
+              },
+              "viewer": {
+                "this": {}
+              }
+            },
+            "type": "document"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "id": "a",
+          "user": "user:anne",
+          "relation": "viewer",
+          "object": "folder:1"
+        },
+        {
+          "id": "b",
+          "user": "user:anne",
+          "relation": "owner",
+          "object": "folder:1"
+        },
+        {
+          "id": "c",
+          "user": "user:anne",
+          "relation": "viewer",
+          "object": "document:1"
+        },
+        {
+          "id": "d",
+          "user": "user:anne",
+          "relation": "owner",
+          "object": "document:1"
+        }
+      ],
+      "expected_sent": [
+        {
+          "id": "merged-1",
+          "user": "user:anne",
+          "relation": "owner",
+          "object": "folder:1",
+          "for": ["a", "b"]
+        },
+        {
+          "id": "c",
+          "user": "user:anne",
+          "relation": "viewer",
+          "object": "document:1",
+          "for": ["c"]
+        },
+        {
+          "id": "d",
+          "user": "user:anne",
+          "relation": "owner",
+          "object": "document:1",
+          "for": ["d"]
+        }
+      ]
+    },
+    {
       "name": "sends checks in the order of each group's first check",
       "model": {
         "schema_version": "1.1",
@@ -1583,6 +1697,82 @@
       ]
     },
     {
+      "name": "does not merge repeats of a userset on the same object whose relation is in the chain",
+      "model": {
+        "schema_version": "1.1",
+        "type_definitions": [
+          {
+            "type": "user"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "can_share": {},
+                "can_view": {},
+                "viewer": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    },
+                    {
+                      "relation": "can_view",
+                      "type": "document"
+                    }
+                  ]
+                }
+              }
+            },
+            "relations": {
+              "can_share": {
+                "computedUserset": {
+                  "relation": "can_view"
+                }
+              },
+              "can_view": {
+                "computedUserset": {
+                  "relation": "viewer"
+                }
+              },
+              "viewer": {
+                "this": {}
+              }
+            },
+            "type": "document"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "id": "a",
+          "user": "document:1#can_view",
+          "relation": "can_share",
+          "object": "document:1"
+        },
+        {
+          "id": "b",
+          "user": "document:1#can_view",
+          "relation": "can_share",
+          "object": "document:1"
+        }
+      ],
+      "expected_sent": [
+        {
+          "id": "a",
+          "user": "document:1#can_view",
+          "relation": "can_share",
+          "object": "document:1",
+          "for": ["a"]
+        },
+        {
+          "id": "b",
+          "user": "document:1#can_view",
+          "relation": "can_share",
+          "object": "document:1",
+          "for": ["b"]
+        }
+      ]
+    },
+    {
       "name": "merges a userset on the same object whose relation isn't in the chain",
       "model": {
         "schema_version": "1.1",
@@ -1662,6 +1852,75 @@
       ]
     },
     {
+      "name": "merges a userset on the same object whose relation is another alias of the final relation",
+      "model": {
+        "schema_version": "1.1",
+        "type_definitions": [
+          {
+            "type": "user"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "can_read": {},
+                "can_view": {},
+                "viewer": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    },
+                    {
+                      "relation": "can_read",
+                      "type": "document"
+                    }
+                  ]
+                }
+              }
+            },
+            "relations": {
+              "can_read": {
+                "computedUserset": {
+                  "relation": "viewer"
+                }
+              },
+              "can_view": {
+                "computedUserset": {
+                  "relation": "viewer"
+                }
+              },
+              "viewer": {
+                "this": {}
+              }
+            },
+            "type": "document"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "id": "a",
+          "user": "document:1#can_read",
+          "relation": "can_view",
+          "object": "document:1"
+        },
+        {
+          "id": "b",
+          "user": "document:1#can_read",
+          "relation": "viewer",
+          "object": "document:1"
+        }
+      ],
+      "expected_sent": [
+        {
+          "id": "merged-1",
+          "user": "document:1#can_read",
+          "relation": "viewer",
+          "object": "document:1",
+          "for": ["a", "b"]
+        }
+      ]
+    },
+    {
       "name": "merges a userset on another object",
       "model": {
         "schema_version": "1.1",
@@ -1724,6 +1983,88 @@
         {
           "id": "merged-1",
           "user": "document:2#can_view",
+          "relation": "viewer",
+          "object": "document:1",
+          "for": ["a", "b"]
+        }
+      ]
+    },
+    {
+      "name": "merges a userset on an object of another type with the same id",
+      "model": {
+        "schema_version": "1.1",
+        "type_definitions": [
+          {
+            "type": "user"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "viewer": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    }
+                  ]
+                }
+              }
+            },
+            "relations": {
+              "viewer": {
+                "this": {}
+              }
+            },
+            "type": "folder"
+          },
+          {
+            "metadata": {
+              "relations": {
+                "can_view": {},
+                "viewer": {
+                  "directly_related_user_types": [
+                    {
+                      "type": "user"
+                    },
+                    {
+                      "relation": "viewer",
+                      "type": "folder"
+                    }
+                  ]
+                }
+              }
+            },
+            "relations": {
+              "can_view": {
+                "computedUserset": {
+                  "relation": "viewer"
+                }
+              },
+              "viewer": {
+                "this": {}
+              }
+            },
+            "type": "document"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "id": "a",
+          "user": "folder:1#viewer",
+          "relation": "can_view",
+          "object": "document:1"
+        },
+        {
+          "id": "b",
+          "user": "folder:1#viewer",
+          "relation": "viewer",
+          "object": "document:1"
+        }
+      ],
+      "expected_sent": [
+        {
+          "id": "merged-1",
+          "user": "folder:1#viewer",
           "relation": "viewer",
           "object": "document:1",
           "for": ["a", "b"]

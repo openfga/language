@@ -120,6 +120,14 @@ describe("published JSON schemas", () => {
       ).toBe(true);
     });
 
+    it("rejects a check with both user and users, or both object and objects", () => {
+      const assertions = { viewer: true };
+      const bothUsers = { user: "user:anne", users: ["user:beth"], object: "document:a", assertions };
+      const bothObjects = { user: "user:anne", object: "document:a", objects: ["document:b"], assertions };
+      expect(validate({ tests: [{ check: [bothUsers] }] })).toBe(false);
+      expect(validate({ tests: [{ check: [bothObjects] }] })).toBe(false);
+    });
+
     it("requires a user and an object in a check", () => {
       expect(validate({ tests: [{ check: [{ object: "document:roadmap", assertions: { viewer: true } }] }] })).toBe(
         false,

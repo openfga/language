@@ -78,8 +78,14 @@ The [`schemas`](/schemas) folder has JSON Schemas for tuple files and store file
 {
   "yaml.schemas": {
     "https://raw.githubusercontent.com/openfga/language/main/schemas/store.schema.json": "*.fga.yaml",
-    "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json": ["tuples.yaml", "tuples.json"]
-  }
+    "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json": "tuples.yaml"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["tuples.json"],
+      "url": "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json"
+    }
+  ]
 }
 ```
 

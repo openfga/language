@@ -68,7 +68,7 @@
               ],
               "allOf": [
                 {
-                  "anyOf": [
+                  "oneOf": [
                     {
                       "required": [
                         "user"
@@ -82,7 +82,7 @@
                   ]
                 },
                 {
-                  "anyOf": [
+                  "oneOf": [
                     {
                       "required": [
                         "object"

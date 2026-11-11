@@ -128,3 +128,61 @@ func TestMustFormatPanicsOnInvalidDSL(t *testing.T) {
 		formatter.MustFormat("not a model")
 	})
 }
+
+func TestFormatConditionBodyEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	const header = "model\n  schema 1.1\n\ntype user\n\n"
+
+	testCases := []struct {
+		name     string
+		dsl      string
+		expected string
+	}{
+		{
+			name:     "comment right after the closing brace",
+			dsl:      header + "condition c(x: int) {\n  x > 0\n}// explanation\n",
+			expected: header + "condition c(x: int) {\n  x > 0\n}// explanation\n",
+		},
+		{
+			name:     "escaped quote in a string",
+			dsl:      header + "condition c(x: string) {\n  x == \"\\\"}\"\n}\n",
+			expected: header + "condition c(x: string) {\n  x == \"\\\"}\"\n}\n",
+		},
+		{
+			name:     "brace in a hash comment",
+			dsl:      header + "condition c(x: int) {\n  x > 0 # } explanation\n}\n",
+			expected: header + "condition c(x: int) {\n  x > 0 # } explanation\n}\n",
+		},
+		{
+			name:     "brace in a slash comment",
+			dsl:      header + "condition c(x: int) {\n  x > 0 // } explanation\n}\n",
+			expected: header + "condition c(x: int) {\n  x > 0 // } explanation\n}\n",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			formatted, err := formatter.Format(testCase.dsl)
+			require.NoError(t, err)
+			require.Equal(t, testCase.expected, formatted)
+		})
+	}
+}
+
+func TestFormatCRLFInMultilineLiteral(t *testing.T) {
+	t.Parallel()
+
+	const header = "model\r\n  schema 1.1\r\n\r\ntype user\r\n\r\n"
+
+	// Line endings are not part of the model, so a file with CRLF line endings is formatted.
+	formatted, err := formatter.Format(header + "condition c(x: int) {\r\n  x > 0\r\n}\r\n")
+	require.NoError(t, err)
+	require.Equal(t, strings.ReplaceAll(header, "\r\n", "\n")+"condition c(x: int) {\n  x > 0\n}\n", formatted)
+
+	// They are part of a multiline string literal, which must not be changed silently.
+	_, err = formatter.Format(header + "condition c(x: string) {\r\n  x == \"\"\"a\r\nb\"\"\"\r\n}\r\n")
+	require.ErrorIs(t, err, formatter.ErrModelChanged)
+}

@@ -50,15 +50,13 @@ func Format(dsl string, opts ...Option) (string, error) {
 		opt(&o)
 	}
 
-	dsl = strings.ReplaceAll(dsl, "\r\n", "\n")
-
 	before, beforeExtensions, err := transformer.TransformModularDSLToProto(dsl)
 	if err != nil {
 		return "", err
 	}
 
 	p := &printer{indent: o.indent}
-	formatted := p.format(strings.Split(dsl, "\n"))
+	formatted := p.format(strings.Split(strings.ReplaceAll(dsl, "\r\n", "\n"), "\n"))
 
 	after, afterExtensions, err := transformer.TransformModularDSLToProto(formatted)
 	if err != nil {
@@ -92,10 +90,21 @@ func sameModel(a, b *openfgav1.AuthorizationModel) bool {
 func normalizeModel(model *openfgav1.AuthorizationModel) *openfgav1.AuthorizationModel {
 	clone, _ := proto.Clone(model).(*openfgav1.AuthorizationModel)
 	for _, condition := range clone.GetConditions() {
-		condition.Expression = strings.TrimSpace(condition.GetExpression())
+		condition.Expression = normalizeConditionExpression(condition.GetExpression())
 	}
 
 	return clone
+}
+
+// normalizeConditionExpression trims an expression and, unless it has a multiline string literal whose
+// line endings are part of its value, treats CRLF and LF line endings as the same.
+func normalizeConditionExpression(expression string) string {
+	expression = strings.TrimSpace(expression)
+	if strings.Contains(expression, `"""`) || strings.Contains(expression, `'''`) {
+		return expression
+	}
+
+	return strings.ReplaceAll(expression, "\r\n", "\n")
 }
 
 // sameExtensions reports whether two sets of extended type definitions are equal.
@@ -263,13 +272,14 @@ func (p *printer) condition(lines []string, start int) int {
 	bodyLines := []string{}
 	closingComment := ""
 	braces := 1
+	quote := ""
 	current := body
 	line := end
 
 	for {
-		if idx := closingBrace(current, &braces); idx >= 0 {
+		if idx := closingBrace(current, &braces, &quote); idx >= 0 {
 			bodyLines = append(bodyLines, current[:idx])
-			_, closingComment = splitComment(current[idx+1:])
+			closingComment = closingLineComment(current[idx+1:])
 
 			break
 		}
@@ -296,7 +306,12 @@ func (p *printer) condition(lines []string, start int) int {
 	}
 
 	closing := "}"
-	if closingComment != "" {
+
+	switch {
+	case strings.HasPrefix(closingComment, "//"):
+		// A space would turn the comment into part of the condition body for the parser.
+		closing += closingComment
+	case closingComment != "":
 		closing += " " + closingComment
 	}
 
@@ -481,21 +496,33 @@ func normalizeConditionHeader(header string) string {
 }
 
 // closingBrace returns the index of the brace that closes the condition body in line, or -1.
-// Braces inside string literals are ignored.
-func closingBrace(line string, braces *int) int {
-	var quote rune
-
-	for i, char := range line {
-		switch {
-		case quote != 0:
-			if char == quote {
-				quote = 0
+// Braces inside string literals and comments are ignored. quote carries an open string literal
+// over to the next line, which is how multiline literals are handled.
+func closingBrace(line string, braces *int, quote *string) int {
+	for i := 0; i < len(line); i++ {
+		if *quote != "" {
+			switch {
+			case line[i] == '\\' && len(*quote) == 1:
+				i++
+			case strings.HasPrefix(line[i:], *quote):
+				i += len(*quote) - 1
+				*quote = ""
 			}
-		case char == '"' || char == '\'':
-			quote = char
-		case char == '{':
+
+			continue
+		}
+
+		switch {
+		case strings.HasPrefix(line[i:], `"""`), strings.HasPrefix(line[i:], `'''`):
+			*quote = line[i : i+3]
+			i += 2
+		case line[i] == '"' || line[i] == '\'':
+			*quote = string(line[i])
+		case line[i] == '#' || strings.HasPrefix(line[i:], "//"):
+			return -1
+		case line[i] == '{':
 			*braces++
-		case char == '}':
+		case line[i] == '}':
 			*braces--
 			if *braces == 0 {
 				return i
@@ -503,7 +530,23 @@ func closingBrace(line string, braces *int) int {
 		}
 	}
 
+	// A single quoted literal can't continue on the next line.
+	if len(*quote) == 1 {
+		*quote = ""
+	}
+
 	return -1
+}
+
+// closingLineComment returns the comment that follows the closing brace of a condition, if any.
+func closingLineComment(rest string) string {
+	if trimmed := strings.TrimSpace(rest); strings.HasPrefix(trimmed, "//") {
+		return trimmed
+	}
+
+	_, comment := splitComment(rest)
+
+	return comment
 }
 
 // trimBlankLines drops blank lines from the start and end of lines.

@@ -121,6 +121,22 @@ jsonString, _ := json.MarshalIndent(model, "", "  ")
 
 ```
 
+### Formatter
+
+Rewrites a DSL file (a model or a module) into the standard layout, keeping comments.
+
+```go
+import "github.com/openfga/language/pkg/go/formatter"
+
+formatted, err := formatter.Format(dslString)
+
+// Use 4 spaces per indentation level instead of 2.
+formatted, err = formatter.Format(dslString, formatter.WithIndentSize(4))
+```
+
+The input must be valid DSL. `Format` parses its output and returns `formatter.ErrModelChanged` instead of the
+output if it would not produce the same model as the input.
+
 ### Validation
 
 Not yet implemented, but the [feature is in our issue backlog](https://github.com/openfga/language/issues/99).

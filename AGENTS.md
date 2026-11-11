@@ -80,6 +80,7 @@ cd pkg/java && ./gradlew test --tests "dev.openfga.language.DslToJsonShould"
 | Syntactic Validation | ✓ | ✓ | ✓ |
 | Semantic Validation | ✗ | ✓ | ✓ |
 | Graph Utilities | ✓ | ✗ | ✗ |
+| DSL Formatter | ✓ | ✗ | ✗ |
 
 ## Critical: Graph Package (`pkg/go/graph/`)
 

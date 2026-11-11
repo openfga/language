@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -78,23 +79,76 @@ func TestEquivalentChecksCases(t *testing.T) {
 	)
 }
 
+// TestEquivalentChecksCasesRejectsInvalidSource makes sure the generator fails instead of
+// silently dropping or duplicating data.
+func TestEquivalentChecksCasesRejectsInvalidSource(t *testing.T) {
+	t.Parallel()
+
+	const validCase = "- name: a\n  json: '{}'\n  checks: []\n  expected_sent: []\n"
+
+	_, err := generateEquivalentChecksCases([]byte(validCase))
+	require.NoError(t, err)
+
+	tests := []struct {
+		name    string
+		source  string
+		message string
+	}{
+		{"a model followed by more JSON", strings.Replace(validCase, "'{}'", "'{} {}'", 1), "expected one JSON value"},
+		{"a second YAML document", validCase + "---\n" + validCase, "expected one YAML document"},
+		{"a model field", validCase + "  model: {}\n", "use dsl or json, not model"},
+		{"a repeated key", validCase + "  checks: []\n", `repeated key "checks"`},
+		{"an unquoted boolean word", strings.Replace(validCase, "checks: []", "checks: [yes]", 1), `quote "yes"`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := generateEquivalentChecksCases([]byte(test.source))
+			require.ErrorIs(t, err, errInvalidEquivalentChecksCases)
+			require.ErrorContains(t, err, test.message)
+		})
+	}
+}
+
 // decodeKeepingNumbers compares numbers by their text, so 1 and 1.0 or 0 and -0.0 stay different.
 func decodeKeepingNumbers(t *testing.T, data []byte) any {
 	t.Helper()
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.UseNumber()
-
-	var value any
-	require.NoError(t, decoder.Decode(&value))
+	value, err := decodeOneJSONValue(data)
+	require.NoError(t, err)
 
 	return value
 }
 
+// decodeOneJSONValue keeps numbers as written and fails if anything follows the first value.
+func decodeOneJSONValue(data []byte) (any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	if err := decoder.Decode(&json.RawMessage{}); !errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("%w: expected one JSON value", errInvalidEquivalentChecksCases)
+	}
+
+	return value, nil
+}
+
 func generateEquivalentChecksCases(source []byte) ([]byte, error) {
+	decoder := yaml.NewDecoder(bytes.NewReader(source))
+
 	var document yaml.Node
-	if err := yaml.Unmarshal(source, &document); err != nil {
+	if err := decoder.Decode(&document); err != nil {
 		return nil, fmt.Errorf("%w: %w", errInvalidEquivalentChecksCases, err)
+	}
+
+	if err := decoder.Decode(&yaml.Node{}); !errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("%w: expected one YAML document", errInvalidEquivalentChecksCases)
 	}
 
 	if len(document.Content) != 1 || document.Content[0].Kind != yaml.SequenceNode {
@@ -157,6 +211,8 @@ func equivalentChecksCase(node *yaml.Node, names map[string]bool) (jsonObject, e
 			}
 
 			result = append(result, jsonField{"model", model})
+		case "model":
+			return nil, fmt.Errorf("%w: case %q: use dsl or json, not model", errInvalidEquivalentChecksCases, name)
 		default:
 			result = append(result, field)
 		}
@@ -184,12 +240,9 @@ func modelAsJSON(kind string, value any) (any, error) {
 		text = converted
 	}
 
-	decoder := json.NewDecoder(strings.NewReader(text))
-	decoder.UseNumber()
-
-	var model any
-	if err := decoder.Decode(&model); err != nil {
-		return nil, err //nolint:wrapcheck
+	model, err := decodeOneJSONValue([]byte(text))
+	if err != nil {
+		return nil, err
 	}
 
 	return sortedKeys(model), nil
@@ -211,6 +264,7 @@ func fromYAML(node *yaml.Node) (any, error) {
 	switch node.Kind {
 	case yaml.MappingNode:
 		object := jsonObject{}
+		seen := map[string]bool{}
 
 		for i := 0; i < len(node.Content); i += 2 {
 			key := node.Content[i]
@@ -221,6 +275,13 @@ func fromYAML(node *yaml.Node) (any, error) {
 			if key.ShortTag() != "!!str" {
 				return nil, fmt.Errorf("%w: line %d: keys must be strings", errInvalidEquivalentChecksCases, key.Line)
 			}
+
+			// Decoding into yaml.Node skips the parser's own duplicate key check.
+			if seen[key.Value] {
+				return nil, fmt.Errorf("%w: line %d: repeated key %q", errInvalidEquivalentChecksCases, key.Line, key.Value)
+			}
+
+			seen[key.Value] = true
 
 			value, err := fromYAML(node.Content[i+1])
 			if err != nil {

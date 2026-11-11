@@ -2575,10 +2575,10 @@
       "model": {
         "conditions": {
           "at_most": {
-            "expression": "n <= 9007199254740992.0",
+            "expression": "x <= 9007199254740992.0",
             "name": "at_most",
             "parameters": {
-              "n": {
+              "x": {
                 "type_name": "TYPE_NAME_DOUBLE"
               }
             }
@@ -2627,7 +2627,7 @@
           "relation": "can_view",
           "object": "document:1",
           "context": {
-            "n": 9007199254740993
+            "x": 9007199254740993
           }
         },
         {
@@ -2636,7 +2636,7 @@
           "relation": "viewer",
           "object": "document:1",
           "context": {
-            "n": 9007199254740992
+            "x": 9007199254740992
           }
         }
       ],
@@ -3591,7 +3591,7 @@
                 1,
                 {
                   "k": "v",
-                  "n": 2
+                  "count": 2
                 }
               ]
             }
@@ -3607,7 +3607,7 @@
               "items": [
                 1.0,
                 {
-                  "n": 2.0,
+                  "count": 2.0,
                   "k": "v"
                 }
               ],
@@ -5224,13 +5224,13 @@
           "object": "document:1"
         },
         {
-          "id": "x",
+          "id": "c",
           "user": "user:bob",
           "relation": "can_view",
           "object": "document:1"
         },
         {
-          "id": "y",
+          "id": "d",
           "user": "user:bob",
           "relation": "viewer",
           "object": "document:1"
@@ -5249,7 +5249,7 @@
           "user": "user:bob",
           "relation": "viewer",
           "object": "document:1",
-          "for": ["x", "y"]
+          "for": ["c", "d"]
         }
       ]
     }

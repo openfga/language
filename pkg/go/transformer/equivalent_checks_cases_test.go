@@ -33,7 +33,10 @@ const (
 	jsonPrintWidth = 80
 )
 
-var jsonNumberRegex = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`)
+var (
+	jsonNumberRegex      = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`)
+	yamlBooleanWordRegex = regexp.MustCompile(`^(y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$`)
+)
 
 var errInvalidEquivalentChecksCases = errors.New("invalid equivalent checks cases")
 
@@ -211,6 +214,10 @@ func fromYAML(node *yaml.Node) (any, error) {
 
 		for i := 0; i < len(node.Content); i += 2 {
 			key := node.Content[i]
+			if err := checkPortable(key); err != nil {
+				return nil, err
+			}
+
 			if key.ShortTag() != "!!str" {
 				return nil, fmt.Errorf("%w: line %d: keys must be strings", errInvalidEquivalentChecksCases, key.Line)
 			}
@@ -238,10 +245,15 @@ func fromYAML(node *yaml.Node) (any, error) {
 
 		return list, nil
 	case yaml.ScalarNode:
+		if err := checkPortable(node); err != nil {
+			return nil, err
+		}
+
 		switch node.ShortTag() {
 		case "!!str":
 			return node.Value, nil
 		case "!!bool":
+			// checkPortable allows only true and false.
 			return node.Value == "true", nil
 		case "!!null":
 			return nil, nil
@@ -260,6 +272,22 @@ func fromYAML(node *yaml.Node) (any, error) {
 	}
 
 	return nil, fmt.Errorf("%w: line %d: unsupported YAML value", errInvalidEquivalentChecksCases, node.Line)
+}
+
+// checkPortable rejects unquoted words that YAML parsers disagree on, like True, yes or n,
+// so every SDK reading the YAML gets the same values as the JSON copy.
+func checkPortable(node *yaml.Node) error {
+	quoted := node.Style&(yaml.DoubleQuotedStyle|yaml.SingleQuotedStyle|yaml.LiteralStyle|yaml.FoldedStyle) != 0
+	if quoted || node.Value == "true" || node.Value == "false" || !yamlBooleanWordRegex.MatchString(node.Value) {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"%w: line %d: write booleans as true or false, and quote %q if it's a string",
+		errInvalidEquivalentChecksCases,
+		node.Line,
+		node.Value,
+	)
 }
 
 func sortedKeys(value any) any {

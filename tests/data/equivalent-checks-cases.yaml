@@ -1088,20 +1088,20 @@
       relations
         define viewer: [user, user with at_most]
         define can_view: viewer
-    condition at_most(n: double) {
-      n <= 9007199254740992.0
+    condition at_most(x: double) {
+      x <= 9007199254740992.0
     }
   checks:
     - id: a
       user: "user:anne"
       relation: can_view
       object: "document:1"
-      context: { n: 9007199254740993 }
+      context: { x: 9007199254740993 }
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
-      context: { n: 9007199254740992 }
+      context: { x: 9007199254740992 }
   expected_sent:
     - id: merged-1
       user: "user:anne"
@@ -1477,13 +1477,13 @@
       object: "document:1"
       context:
         region: "eu"
-        meta: { level: 1, items: [1, { k: "v", n: 2 }] }
+        meta: { level: 1, items: [1, { k: "v", count: 2 }] }
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
       context:
-        meta: { items: [1.0, { n: 2.0, k: "v" }], level: 1.0 }
+        meta: { items: [1.0, { count: 2.0, k: "v" }], level: 1.0 }
         region: "eu"
   expected_sent:
     - id: merged-1
@@ -2173,11 +2173,11 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
-    - id: x
+    - id: c
       user: "user:bob"
       relation: can_view
       object: "document:1"
-    - id: y
+    - id: d
       user: "user:bob"
       relation: viewer
       object: "document:1"
@@ -2191,4 +2191,4 @@
       user: "user:bob"
       relation: viewer
       object: "document:1"
-      for: [x, y]
+      for: [c, d]

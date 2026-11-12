@@ -14,19 +14,15 @@ import (
 // WeightedAuthorizationModelGraphBuilder, so what validation reports and what
 // anything else reading that graph concludes cannot drift apart.
 //
-// A model that builds costs one Build, as anywhere else. Only a model Build
-// rejects is built again, with BuildForValidation, to get every problem.
+// Parse costs one Build for a model that builds, as anywhere else, and reports
+// every problem in one it rejects.
 func validateWithGraph(idx *index, src source) error {
 	if idx == nil || idx.model == nil {
 		return nil
 	}
 
-	builder := graph.NewWeightedAuthorizationModelGraphBuilder()
-
-	weighted, err := builder.Build(idx.model)
+	weighted, err := graph.NewWeightedAuthorizationModelGraphBuilder().Parse(idx.model)
 	if err != nil {
-		_, err = builder.BuildForValidation(idx.model)
-
 		return graphRefusal(idx, src, err)
 	}
 
@@ -54,8 +50,8 @@ func validateWithGraph(idx *index, src source) error {
 func graphRefusal(idx *index, src source, cause error) error {
 	fs := ExtractAllAs[*Finding](validateEntryPoints(idx, src))
 
-	relationErrs := graph.RelationErrors(cause)
-	if len(relationErrs) == 0 {
+	var relationErrs graph.RelationErrors
+	if !errors.As(cause, &relationErrs) {
 		return joinFindings(append(fs, modelUnbuildable(describeRefusal(cause)))...)
 	}
 

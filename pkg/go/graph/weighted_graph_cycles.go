@@ -1,199 +1,112 @@
 package graph
 
 import (
-	"maps"
 	"slices"
+
+	"gonum.org/v1/gonum/graph/simple"
+	"gonum.org/v1/gonum/graph/topo"
 )
 
-// unresolvableCycles finds every cycle the builder cannot resolve, from the
-// graph's structure alone, as one RelationError per strongly connected
-// component. It works on a graph whose weights could not be assigned, runs in
-// linear time and returns the same errors on every run, whatever order the
-// weight walk failed in.
+// unresolvableCycles finds every cycle the builder rejects, from the graph's
+// structure alone, as one RelationError per strongly connected component: model
+// cycles, which no tuple data can resolve, and tuple cycles through an
+// intersection or exclusion, which the weighted graph does not allow. It works
+// on a graph whose weights could not be assigned. The components are the same
+// whatever order they are found in, and Parse sorts the errors, so the same
+// model gets the same errors on every run.
 //
-// Each error names every relation in its component, so a relation on a
-// resolvable cycle that shares a relation with a broken one is named with it.
-func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() []RelationError {
-	index := newCycleIndex(wg)
-
-	var relationErrs []RelationError
+// Each error names every relation in its component, so a relation on an
+// accepted cycle that shares a relation with a rejected one is named with it.
+func (wg *WeightedAuthorizationModelGraph) unresolvableCycles() RelationErrors {
+	var relationErrs RelationErrors
 
 	// A component over the edges that read no tuple: going round it consumes
 	// nothing, so it never terminates.
-	inModelCycle := make([]bool, len(index.labels))
+	inModelCycle := map[string]bool{}
 
-	for _, component := range index.components(false) {
-		relations := index.relations(component, nil)
+	for _, component := range wg.components(func(edge *WeightedAuthorizationModelEdge) bool { return !readsTuple(edge) }) {
+		relations := relationsIn(component, nil)
 		if len(relations) == 0 {
 			continue
 		}
 
 		for _, node := range component {
-			inModelCycle[node] = true
+			inModelCycle[node.uniqueLabel] = true
 		}
 
-		relationErrs = append(relationErrs, RelationError{Relations: relations, Err: ErrModelCycle})
+		relationErrs = append(relationErrs, &RelationError{Relations: relations, Err: ErrModelCycle})
 	}
 
-	// A tuple-reading component with an intersection or exclusion in it: the
-	// resolver cannot intersect or subtract a set it is still computing.
-	// Relations already reported for a model cycle are not named again.
-	for _, component := range index.components(true) {
-		if !index.constrained(component) {
+	// A tuple-reading component with an intersection or exclusion in it. The
+	// tuple data may resolve a tuple cycle, but the weighted graph does not allow
+	// an intersection or exclusion on one (ErrContrainstTupleCycle). Relations
+	// already reported for a model cycle are not named again.
+	for _, component := range wg.components(nil) {
+		if !slices.ContainsFunc(component, isConstraint) {
 			continue
 		}
 
-		if relations := index.relations(component, inModelCycle); len(relations) > 0 {
-			relationErrs = append(relationErrs, RelationError{Relations: relations, Err: ErrContrainstTupleCycle})
+		if relations := relationsIn(component, inModelCycle); len(relations) > 0 {
+			relationErrs = append(relationErrs, &RelationError{Relations: relations, Err: ErrContrainstTupleCycle})
 		}
 	}
 
 	return relationErrs
 }
 
-// cycleIndex is the graph as integer arrays for the component search: nodes in
-// label order, and the edges out of node n as edgeTo[edgeStart[n]:edgeStart[n+1]].
-type cycleIndex struct {
-	labels     []string
-	relation   []bool // per node: a type#relation node
-	constraint []bool // per node: an intersection or exclusion operator
-	edgeStart  []int
-	edgeTo     []int
-	readsTuple []bool // per edge
-}
-
-func newCycleIndex(wg *WeightedAuthorizationModelGraph) *cycleIndex {
-	labels := slices.Sorted(maps.Keys(wg.nodes))
-	ids := make(map[string]int, len(labels))
-	edgeCount := 0
-
-	for i, label := range labels {
-		ids[label] = i
-		edgeCount += len(wg.edges[label])
-	}
-
-	index := &cycleIndex{
-		labels:     labels,
-		relation:   make([]bool, len(labels)),
-		constraint: make([]bool, len(labels)),
-		edgeStart:  make([]int, len(labels)+1),
-		edgeTo:     make([]int, 0, edgeCount),
-		readsTuple: make([]bool, 0, edgeCount),
-	}
-
-	for i, label := range labels {
-		node := wg.nodes[label]
-		index.relation[i] = node.nodeType == SpecificTypeAndRelation
-		index.constraint[i] = node.nodeType == OperatorNode &&
-			(node.label == IntersectionOperator || node.label == ExclusionOperator)
-
-		for _, edge := range wg.edges[label] {
-			index.edgeTo = append(index.edgeTo, ids[edge.to.uniqueLabel])
-			index.readsTuple = append(index.readsTuple, readsTuple(edge))
-		}
-
-		index.edgeStart[i+1] = len(index.edgeTo)
-	}
-
-	return index
-}
-
 // components returns the strongly connected components of two or more nodes,
-// over every edge or, with tupleEdges false, over the edges that read no tuple.
-// A single node is never one: the builder accepts a relation that only rewrites
-// itself, leaving it with no weights, so it is not a refusal.
-//
-// Tarjan's algorithm, iterative so model depth is not bounded by the stack.
-func (index *cycleIndex) components(tupleEdges bool) [][]int {
-	n := len(index.labels)
-	order := make([]int, n) // visit order, from 1; 0 is unvisited
-	low := make([]int, n)
-	onStack := make([]bool, n)
+// over the edges keep accepts, or over every edge when keep is nil. A single
+// node is never one: the builder accepts a relation that only rewrites itself,
+// leaving it with no weights, so it is not a refusal.
+func (wg *WeightedAuthorizationModelGraph) components(keep func(*WeightedAuthorizationModelEdge) bool) [][]*WeightedAuthorizationModelNode {
+	g := simple.NewDirectedGraph()
+	nodes := make([]*WeightedAuthorizationModelNode, 0, len(wg.nodes))
+	ids := make(map[string]int64, len(wg.nodes))
 
-	type frame struct {
-		node, edge int
+	for label, node := range wg.nodes {
+		ids[label] = int64(len(nodes))
+		nodes = append(nodes, node)
+		g.AddNode(simple.Node(ids[label]))
 	}
 
-	var (
-		stack      []int
-		frames     []frame
-		components [][]int
-		visited    int
-	)
+	for label, edges := range wg.edges {
+		from := ids[label]
 
-	visit := func(node int) {
-		visited++
-		order[node], low[node] = visited, visited
-		stack = append(stack, node)
-		onStack[node] = true
-		frames = append(frames, frame{node: node, edge: index.edgeStart[node]})
+		for _, edge := range edges {
+			// A node's edge to itself cannot join it to any other node.
+			if to := ids[edge.to.uniqueLabel]; to != from && (keep == nil || keep(edge)) {
+				g.SetEdge(simple.Edge{F: simple.Node(from), T: simple.Node(to)})
+			}
+		}
 	}
 
-	for root := range n {
-		if order[root] != 0 {
+	var components [][]*WeightedAuthorizationModelNode
+
+	for _, scc := range topo.TarjanSCC(g) {
+		if len(scc) < 2 {
 			continue
 		}
 
-		visit(root)
-
-		for len(frames) > 0 {
-			top := &frames[len(frames)-1]
-			node := top.node
-
-			if top.edge < index.edgeStart[node+1] {
-				edge := top.edge
-				top.edge++
-
-				if !tupleEdges && index.readsTuple[edge] {
-					continue
-				}
-
-				if next := index.edgeTo[edge]; order[next] == 0 {
-					visit(next)
-				} else if onStack[next] {
-					low[node] = min(low[node], order[next])
-				}
-
-				continue
-			}
-
-			if low[node] == order[node] {
-				start := len(stack) - 1
-				for stack[start] != node {
-					start--
-				}
-
-				for _, member := range stack[start:] {
-					onStack[member] = false
-				}
-
-				if len(stack)-start > 1 {
-					components = append(components, slices.Clone(stack[start:]))
-				}
-
-				stack = stack[:start]
-			}
-
-			frames = frames[:len(frames)-1]
-			if len(frames) > 0 {
-				parent := frames[len(frames)-1].node
-				low[parent] = min(low[parent], low[node])
-			}
+		component := make([]*WeightedAuthorizationModelNode, len(scc))
+		for i, node := range scc {
+			component[i] = nodes[node.ID()]
 		}
+
+		components = append(components, component)
 	}
 
 	return components
 }
 
-// relations returns the labels of the relations among nodes, sorted, leaving
-// out the nodes skip marks. Operator and grouping nodes share a component with
-// the relations they belong to and are not named.
-func (index *cycleIndex) relations(nodes []int, skip []bool) []string {
+// relationsIn returns the labels of the relations among nodes, sorted, leaving
+// out the ones in skip. Operator and grouping nodes share a component with the
+// relations they belong to and are not named.
+func relationsIn(nodes []*WeightedAuthorizationModelNode, skip map[string]bool) []string {
 	var relations []string
 
 	for _, node := range nodes {
-		if index.relation[node] && (skip == nil || !skip[node]) {
-			relations = append(relations, index.labels[node])
+		if node.nodeType == SpecificTypeAndRelation && !skip[node.uniqueLabel] {
+			relations = append(relations, node.uniqueLabel)
 		}
 	}
 
@@ -202,9 +115,9 @@ func (index *cycleIndex) relations(nodes []int, skip []bool) []string {
 	return relations
 }
 
-// constrained reports whether nodes hold an intersection or exclusion operator.
-func (index *cycleIndex) constrained(nodes []int) bool {
-	return slices.ContainsFunc(nodes, func(node int) bool { return index.constraint[node] })
+// isConstraint reports whether node is an intersection or exclusion operator.
+func isConstraint(node *WeightedAuthorizationModelNode) bool {
+	return node.nodeType == OperatorNode && (node.label == IntersectionOperator || node.label == ExclusionOperator)
 }
 
 // readsTuple reports whether a step consumes a tuple: a tuple-to-userset edge,

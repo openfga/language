@@ -77,12 +77,13 @@ func graphShape(wg *WeightedAuthorizationModelGraph) []string {
 	return lines
 }
 
-// TestBuildForValidationBuildsWhatBuildBuilds holds the two builders to each
-// other on every shared model: BuildForValidation accepts exactly the models
-// Build accepts and weighs them the same. They share construction and the
-// weight calculation for each node, but walk the nodes in separate loops, so
-// this is what catches one loop changing without the other.
-func TestBuildForValidationBuildsWhatBuildBuilds(t *testing.T) {
+// TestRelationWalkWeighsWhatBuildWeighs holds the two weight walks to each
+// other on every shared model: the walk Parse uses for a rejected model, which
+// starts from the relations in order, accepts exactly the models AssignWeights
+// accepts and weighs them the same. They share the weight calculation for each
+// node, but walk the nodes in separate loops, so this is what catches one loop
+// changing without the other.
+func TestRelationWalkWeighsWhatBuildWeighs(t *testing.T) {
 	t.Parallel()
 
 	accepted, rejected := 0, 0
@@ -94,10 +95,14 @@ func TestBuildForValidationBuildsWhatBuildBuilds(t *testing.T) {
 		}
 
 		built, buildErr := NewWeightedAuthorizationModelGraphBuilder().Build(model)
-		validated, validateErr := NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
 
-		if !assert.Equalf(t, buildErr == nil, validateErr == nil,
-			"%s: only one builder accepts it (Build: %v, BuildForValidation: %v)", name, buildErr, validateErr) {
+		walked, walkErr := NewWeightedAuthorizationModelGraphBuilder().construct(model, nil)
+		if walkErr == nil {
+			walkErr = walked.assignWeightsByRelation()
+		}
+
+		if !assert.Equalf(t, buildErr == nil, walkErr == nil,
+			"%s: only one walk accepts it (Build: %v, relation walk: %v)", name, buildErr, walkErr) {
 			continue
 		}
 
@@ -109,9 +114,36 @@ func TestBuildForValidationBuildsWhatBuildBuilds(t *testing.T) {
 
 		accepted++
 
-		assert.Equalf(t, graphShape(built), graphShape(validated), "%s: the two builders weigh it differently", name)
+		assert.Equalf(t, graphShape(built), graphShape(walked), "%s: the two walks weigh it differently", name)
 	}
 
 	assert.Positive(t, accepted, "no shared model was accepted")
 	assert.Positive(t, rejected, "no shared model was rejected")
+}
+
+// TestParseAcceptsWhatBuildAccepts pins Parse to Build on every shared model:
+// for a model Build accepts, Parse returns the same graph, and for one Build
+// rejects, Parse's error names at least one problem.
+func TestParseAcceptsWhatBuildAccepts(t *testing.T) {
+	t.Parallel()
+
+	for name, dsl := range driftModels(t) {
+		model, err := transformer.TransformDSLToProto(dsl)
+		if err != nil {
+			continue
+		}
+
+		built, buildErr := NewWeightedAuthorizationModelGraphBuilder().Build(model)
+		parsed, parseErr := NewWeightedAuthorizationModelGraphBuilder().Parse(model)
+
+		if buildErr == nil {
+			require.NoErrorf(t, parseErr, "%s: Parse rejects a model Build accepts", name)
+			assert.Equalf(t, graphShape(built), graphShape(parsed), "%s: Parse returns a different graph", name)
+
+			continue
+		}
+
+		assert.Nilf(t, parsed, "%s: Parse returns a graph for a model Build rejects", name)
+		assert.NotEmptyf(t, relationErrorsIn(parseErr), "%s: Parse's error names no problem", name)
+	}
 }

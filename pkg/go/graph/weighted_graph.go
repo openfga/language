@@ -3,7 +3,6 @@ package graph
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -246,22 +245,33 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	return nil
 }
 
-// assignWeightsSorted is AssignWeights visiting the nodes sorted by ID, so a
+// assignWeightsByRelation is AssignWeights starting from the relations in the
+// order construct builds them, types by name and then relations by name, so a
 // model it rejects is rejected the same way on every run: the walk stops at its
 // first error, and in map order which error comes first changes between runs.
-// The weights don't depend on the order, which is why AssignWeights keeps the
-// map order and skips the sort. Keep the two loops in step.
-func (wg *WeightedAuthorizationModelGraph) assignWeightsSorted() error {
+// Only the relations need an order, because they are the only nodes
+// AssignWeights starts from: it skips operators, and calculateNodeWeight
+// returns at once for types and wildcards. The weights don't depend on the
+// order, which is why AssignWeights keeps the map order. Keep the two loops in
+// step.
+func (wg *WeightedAuthorizationModelGraph) assignWeightsByRelation() error {
+	var relations []string
+
+	for nodeID, node := range wg.nodes {
+		if node.nodeType == SpecificTypeAndRelation {
+			relations = append(relations, nodeID)
+		}
+	}
+
+	// "#" sorts before every character a type name can hold, so sorting the
+	// type#relation labels sorts by type and then by relation.
+	slices.Sort(relations)
+
 	visited := make(map[string]bool)
 	ancestorPath := make([]*WeightedAuthorizationModelEdge, 0)
 	tupleCycleDependencies := make(map[string][]*WeightedAuthorizationModelEdge)
 
-	for _, nodeID := range slices.Sorted(maps.Keys(wg.nodes)) {
-		node := wg.nodes[nodeID]
-		if wg.isLogicalOperator(node) {
-			continue
-		}
-
+	for _, nodeID := range relations {
 		if visited[nodeID] {
 			continue
 		}

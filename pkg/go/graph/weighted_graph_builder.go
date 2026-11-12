@@ -20,7 +20,76 @@ func NewWeightedAuthorizationModelGraphBuilder() *WeightedAuthorizationModelGrap
 	return &WeightedAuthorizationModelGraphBuilder{multi.NewDirectedGraph(), DrawingDirectionCheck}
 }
 
+// Build returns the weighted graph for model, or the first problem that stops
+// it from being built. Parse reports every problem instead.
 func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	wb, err := wgb.construct(model, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = wb.AssignWeights()
+	if err != nil {
+		return nil, err
+	}
+
+	return wb, nil
+}
+
+// Parse returns the weighted graph for model. It calls Build, so for a model
+// Build accepts it returns the same graph, at the same cost. When Build rejects
+// the model, Parse looks for every problem in it and returns them as
+// RelationErrors, one *RelationError per problem with the relations it
+// involves, the same on every run. As with Build's error, errors.Is matches the
+// sentinels.
+func (wgb *WeightedAuthorizationModelGraphBuilder) Parse(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
+	wb, err := wgb.Build(model)
+	if err == nil {
+		return wb, nil
+	}
+
+	relationErrs := wgb.problems(model)
+	if len(relationErrs) == 0 {
+		// problems finds at least one problem in any model Build rejects. If it
+		// ever finds none, Build's own error is reported, so Parse never accepts
+		// a model Build rejects.
+		relationErrs = RelationErrors{{Err: err}}
+	}
+
+	relationErrs.sort()
+
+	return nil, relationErrs
+}
+
+// problems finds every problem in model. It does more work than Build: it keeps
+// building after a relation fails, finds every cycle the builder cannot
+// resolve, and assigns weights starting from each relation in a fixed order,
+// which is why Parse only calls it once Build has rejected the model.
+func (wgb *WeightedAuthorizationModelGraphBuilder) problems(model *openfgav1.AuthorizationModel) RelationErrors {
+	var relationErrs RelationErrors
+
+	wb, _ := wgb.construct(model, func(relationErr *RelationError) {
+		relationErrs = append(relationErrs, relationErr)
+	})
+	if len(relationErrs) > 0 {
+		// Weights cannot be assigned to a graph that is missing what failed to
+		// build, but the cycles among the relations that did build can still be
+		// found.
+		return append(relationErrs, wb.unresolvableCycles()...)
+	}
+
+	if err := wb.assignWeightsByRelation(); err != nil {
+		return assignWeightErrors(wb, err)
+	}
+
+	return nil
+}
+
+// construct adds the model's nodes and edges to a new graph, without weights.
+// When a relation fails to build, it returns the error, unless onFailure is set:
+// then it passes the relation to onFailure and builds the rest of the model, so
+// one problem does not hide the others.
+func (wgb *WeightedAuthorizationModelGraphBuilder) construct(model *openfgav1.AuthorizationModel, onFailure func(*RelationError)) (*WeightedAuthorizationModelGraph, error) {
 	wb := NewWeightedAuthorizationModelGraph()
 	// sort types by name to guarantee stable output
 	sortedTypeDefs := make([]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions()))
@@ -52,14 +121,13 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 			operatorIndex := 0
 			err := wgb.parseRewrite(wb, parentNode, model, rewrite, typeDef, relation, &operatorIndex)
 			if err != nil {
-				return nil, err
+				if onFailure == nil {
+					return nil, err
+				}
+
+				onFailure(&RelationError{Relations: []string{uniqueLabel}, Err: err})
 			}
 		}
-	}
-
-	err := wb.AssignWeights()
-	if err != nil {
-		return nil, err
 	}
 
 	return wb, nil

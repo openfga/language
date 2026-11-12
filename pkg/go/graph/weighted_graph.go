@@ -245,6 +245,48 @@ func (wg *WeightedAuthorizationModelGraph) AssignWeights() error {
 	return nil
 }
 
+// assignWeightsByRelation is AssignWeights starting from the relations in the
+// order construct builds them, types by name and then relations by name, so a
+// model it rejects is rejected the same way on every run: the walk stops at its
+// first error, and in map order which error comes first changes between runs.
+// Only the relations need an order, because they are the only nodes
+// AssignWeights starts from: it skips operators, and calculateNodeWeight
+// returns at once for types and wildcards. The weights don't depend on the
+// order, which is why AssignWeights keeps the map order. Keep the two loops in
+// step.
+func (wg *WeightedAuthorizationModelGraph) assignWeightsByRelation() error {
+	var relations []string
+
+	for nodeID, node := range wg.nodes {
+		if node.nodeType == SpecificTypeAndRelation {
+			relations = append(relations, nodeID)
+		}
+	}
+
+	// "#" sorts before every character a type name can hold, so sorting the
+	// type#relation labels sorts by type and then by relation.
+	slices.Sort(relations)
+
+	visited := make(map[string]bool)
+	ancestorPath := make([]*WeightedAuthorizationModelEdge, 0)
+	tupleCycleDependencies := make(map[string][]*WeightedAuthorizationModelEdge)
+
+	for _, nodeID := range relations {
+		if visited[nodeID] {
+			continue
+		}
+
+		tupleCycles, err := wg.calculateNodeWeight(nodeID, visited, ancestorPath, tupleCycleDependencies)
+		if err != nil {
+			return err
+		}
+		if len(tupleCycles) > 0 {
+			return fmt.Errorf("%w: %d tuple cycles found without resolution", ErrTupleCycle, len(tupleCycles))
+		}
+	}
+	return nil
+}
+
 // GetNodeWeight returns the weight for the given key in the node, it could be a userset key or a terminal type key.
 func (wg *WeightedAuthorizationModelGraph) GetNodeWeight(node *WeightedAuthorizationModelNode, key string) (int, bool) {
 	if node == nil {
@@ -564,7 +606,7 @@ func isTupleCycle(nodeID string, ancestorPath []*WeightedAuthorizationModelEdge)
 		}
 		if startTracking {
 			cyclePath = append(cyclePath, edge)
-			if edge.edgeType == TTUEdge || (edge.edgeType == DirectEdge && edge.to.nodeType == SpecificTypeAndRelation) {
+			if readsTuple(edge) {
 				tupleCycle = true
 			}
 			if edge.to.nodeType == SpecificTypeAndRelation {

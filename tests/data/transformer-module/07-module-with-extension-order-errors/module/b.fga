@@ -1,0 +1,5 @@
+module b
+
+extend type doc
+  relations
+    define viewer: [user]

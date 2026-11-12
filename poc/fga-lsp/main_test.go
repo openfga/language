@@ -10,8 +10,7 @@ import (
 	"testing"
 )
 
-// TestDiagnosticsForTheCycleModels is the editor run behind the RFD "name the
-// cycle members in weighted-graph refusals": what the server publishes when each
+// TestDiagnosticsForTheCycleModels pins what the server publishes when each
 // model in pkg/go/graph/testdata/cycles is opened, and when a model of densely
 // nested relations around one broken cycle is. It calls diagnose, which is the
 // whole of what a didOpen publishes, so it needs no client.

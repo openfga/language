@@ -38,7 +38,7 @@ public class FgaModTransformer {
         FgaModFile modFile = new FgaModFile();
         ArrayList<String> seenFields = new ArrayList<String>();
 
-        while (parser.nextToken() != JsonToken.END_OBJECT) {
+        while (parser.nextToken() != null && !parser.hasToken(JsonToken.END_OBJECT)) {
             JsonToken currentToken = parser.currentToken();
             String name = parser.getCurrentName();
 
@@ -56,6 +56,8 @@ public class FgaModTransformer {
             } else if (name.equals("contents")) {
                 seenFields.add("contents");
                 handleContents(parser, modFile, currentToken, location);
+            } else {
+                parser.skipChildren();
             }
         }
 
@@ -82,6 +84,7 @@ public class FgaModTransformer {
             StartEnd line = getLine(location);
             StartEnd column = getColumn(location, value);
             addError("unexpected schema type, expected string got value " + value, line, column);
+            parser.skipChildren();
         } else if (!value.equals("1.2")) {
             StartEnd line = getLine(location);
             StartEnd column = getColumn(location, "\"" + value + "\"");
@@ -107,6 +110,7 @@ public class FgaModTransformer {
             StartEnd line = getLine(startLocation);
             StartEnd column = getColumn(startLocation, value);
             addError("unexpected contents type, expected list of strings got value " + value, line, column);
+            parser.skipChildren();
             return;
         }
 
@@ -114,13 +118,14 @@ public class FgaModTransformer {
         while (parser.nextToken() != JsonToken.END_ARRAY) {
             currentToken = parser.currentToken();
             JsonLocation currentLoc = parser.getCurrentLocation();
-            String rawValue = parser.getValueAsString();
+            String rawValue = parser.getText();
 
             StartEnd line = getLine(currentLoc);
             StartEnd column = getColumn(currentLoc, rawValue);
 
             if (currentToken != JsonToken.VALUE_STRING) {
                 addError("unexpected contents item type, expected string got value " + rawValue, line, column);
+                parser.skipChildren();
                 continue;
             }
 

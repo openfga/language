@@ -61,25 +61,25 @@ func describeRelationErrors(relationErrs []*RelationError) []string {
 
 // rejectedFor builds a model from testdata/cycles and returns the relation
 // errors it was refused for.
-func rejectedFor(t *testing.T, name string) []*RelationError {
+func rejectedFor(t *testing.T, name string) RelationErrors {
 	t.Helper()
 
-	_, err := NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(cycleModel(t, name))
+	_, err := NewWeightedAuthorizationModelGraphBuilder().Parse(cycleModel(t, name))
 
-	relationErrs := RelationErrors(err)
+	relationErrs := relationErrorsIn(err)
 	require.NotEmpty(t, relationErrs, name)
 
 	return relationErrs
 }
 
-// TestBuildForValidationNamesEveryCycleInLargeModels covers models with seven to eleven broken
+// TestParseNamesEveryCycleInLargeModels covers models with seven to eleven broken
 // cycles next to legal ones: every broken cycle comes back with all of its
 // relations, no legal cycle does, and every build agrees.
 //
 // The relations organization#c and team#h_c sit on a legal cycle that shares a
 // relation with a broken one. The scan names the whole group, so they are named
 // too.
-func TestBuildForValidationNamesEveryCycleInLargeModels(t *testing.T) {
+func TestParseNamesEveryCycleInLargeModels(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
@@ -130,10 +130,10 @@ func TestBuildForValidationNamesEveryCycleInLargeModels(t *testing.T) {
 	}
 }
 
-// TestBuildForValidationReportsEveryProblem covers broken cycles in models that have another
+// TestParseReportsEveryProblem covers broken cycles in models that have another
 // problem too. Every problem the builder can attribute comes back in one
 // refusal, so a missing from target no longer hides the cycles.
-func TestBuildForValidationReportsEveryProblem(t *testing.T) {
+func TestParseReportsEveryProblem(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
@@ -190,10 +190,10 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 			continue
 		}
 
-		wg, _ := NewWeightedAuthorizationModelGraphBuilder().construct(model, func(RelationError) {})
+		wg, _ := NewWeightedAuthorizationModelGraphBuilder().construct(model, func(*RelationError) {})
 		check := checkCycles(t, wg)
 
-		_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+		_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 		if err == nil {
 			accepted++
 
@@ -206,7 +206,7 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 
 		refused++
 
-		relationErrs := RelationErrors(err)
+		relationErrs := relationErrorsIn(err)
 		require.NotEmptyf(t, relationErrs, "%s", name)
 
 		named := map[string]bool{} // relation: named for a model cycle

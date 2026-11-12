@@ -20,27 +20,38 @@ func rejectionFor(t *testing.T, dsl string) error {
 	model, err := transformer.TransformDSLToProto(dsl)
 	require.NoError(t, err)
 
-	_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+	_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 	require.Error(t, err, "the builder accepted the model, so there is no rejection to read")
 
 	return err
 }
 
+// relationErrorsIn returns the RelationErrors in err, the way a caller gets
+// them with errors.As, or nil when err holds none.
+func relationErrorsIn(err error) RelationErrors {
+	var relationErrs RelationErrors
+	if !errors.As(err, &relationErrs) {
+		return nil
+	}
+
+	return relationErrs
+}
+
 // problemsOf returns the relation errors a rejection holds, failing if it holds
 // none.
-func problemsOf(t *testing.T, err error) []*RelationError {
+func problemsOf(t *testing.T, err error) RelationErrors {
 	t.Helper()
 
-	relationErrs := RelationErrors(err)
+	relationErrs := relationErrorsIn(err)
 	require.NotEmpty(t, relationErrs, "a rejection must hold relation errors")
 
 	return relationErrs
 }
 
-// TestBuildForValidationNamesCycleMembers checks that a refused build names every
+// TestParseNamesCycleMembers checks that a refused build names every
 // relation of every unresolvable cycle, and still matches the sentinel it
 // carried before it named relations.
-func TestBuildForValidationNamesCycleMembers(t *testing.T) {
+func TestParseNamesCycleMembers(t *testing.T) {
 	t.Parallel()
 
 	t.Run("model cycle", func(t *testing.T) {
@@ -183,7 +194,7 @@ type group
 		require.NoError(t, err)
 
 		for range 20 {
-			_, err := NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+			_, err := NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 
 			relationErrs := problemsOf(t, err)
 			require.Len(t, relationErrs, 1)
@@ -203,7 +214,7 @@ type group
 `)
 		require.NoError(t, err)
 
-		_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+		_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 		require.NoError(t, err)
 	})
 }
@@ -247,10 +258,10 @@ type folder
 	}
 }
 
-// TestBuildForValidationErrorMatchesTheSentinels pins that errors.Is matches
-// the sentinel for every problem in BuildForValidation's error, as it does for
-// Build's, so code that checks the kind of refusal works with either.
-func TestBuildForValidationErrorMatchesTheSentinels(t *testing.T) {
+// TestParseErrorMatchesTheSentinels pins that errors.Is matches the sentinel
+// for every problem in Parse's error, as it does for Build's, so code that
+// checks the kind of refusal works with either.
+func TestParseErrorMatchesTheSentinels(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -305,7 +316,7 @@ type document
 			model, err := transformer.TransformDSLToProto(test.dsl)
 			require.NoError(t, err)
 
-			_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+			_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 			require.Error(t, err)
 
 			for _, sentinel := range test.want {
@@ -315,12 +326,12 @@ type document
 	}
 }
 
-// TestBuildForValidationRejectsAModelTheSameWayOnEveryRun pins that its weight
-// walk visits nodes in a fixed order. The walk stops at its first error, so
+// TestParseRejectsAModelTheSameWayOnEveryRun pins that its weight walk starts
+// from the relations in a fixed order. The walk stops at its first error, so
 // which of a cycle and an invalid relation it reaches first decides whether the
 // invalid relation is reported, and that must not change from one build to the
 // next.
-func TestBuildForValidationRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
+func TestParseRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -366,7 +377,7 @@ type document
 			model, err := transformer.TransformDSLToProto(test.dsl)
 			require.NoError(t, err)
 
-			_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+			_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 			require.Error(t, err)
 
 			first := err.Error()
@@ -379,7 +390,7 @@ type document
 			}
 
 			for range 200 {
-				_, err := NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
+				_, err := NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 				require.Error(t, err)
 				require.Equal(t, first, err.Error())
 			}
@@ -387,13 +398,10 @@ type document
 	}
 }
 
-// TestRelationErrorsIsNilForOtherErrors pins that RelationErrors finds nothing
-// in a nil error, in one that holds no relation error, or in Build's error.
-func TestRelationErrorsIsNilForOtherErrors(t *testing.T) {
+// TestOnlyParseReturnsRelationErrors pins that Parse's error is the list
+// itself, and that errors.As finds no list in Build's error for the same model.
+func TestOnlyParseReturnsRelationErrors(t *testing.T) {
 	t.Parallel()
-
-	assert.Nil(t, RelationErrors(nil))
-	assert.Nil(t, RelationErrors(errors.New("x")))
 
 	model, err := transformer.TransformDSLToProto(`model
   schema 1.1
@@ -405,15 +413,18 @@ type document
 `)
 	require.NoError(t, err)
 
+	_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
+	assert.IsType(t, RelationErrors{}, err)
+
 	_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
 	require.ErrorIs(t, err, ErrModelCycle)
-	assert.Nil(t, RelationErrors(err))
+	assert.Nil(t, relationErrorsIn(err))
 }
 
-// TestBuildStillStopsAtTheFirstProblem pins that Build is unaffected by
-// BuildForValidation: on a model with a relation that fails to build and two
-// broken cycles, it returns the construction error, as it always has, with no
-// relation errors in it.
+// TestBuildStillStopsAtTheFirstProblem pins that Build is unaffected by Parse:
+// on a model with a relation that fails to build and two broken cycles, it
+// returns the construction error, as it always has, with no relation errors in
+// it.
 func TestBuildStillStopsAtTheFirstProblem(t *testing.T) {
 	t.Parallel()
 
@@ -438,10 +449,10 @@ type document
 	_, err = NewWeightedAuthorizationModelGraphBuilder().Build(model)
 	require.ErrorIs(t, err, ErrInvalidModel)
 	assert.Equal(t, "invalid model: Model cannot be parsed. folder type does not have defined owner relation", err.Error())
-	assert.Nil(t, RelationErrors(err))
+	assert.Nil(t, relationErrorsIn(err))
 
-	_, err = NewWeightedAuthorizationModelGraphBuilder().BuildForValidation(model)
-	assert.Len(t, RelationErrors(err), 3)
+	_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
+	assert.Len(t, relationErrorsIn(err), 3)
 }
 
 // TestRelationErrorReadsAsItsReasonAndRelations pins how a relation error reads
@@ -456,4 +467,22 @@ func TestRelationErrorReadsAsItsReasonAndRelations(t *testing.T) {
 
 	unattributed := &RelationError{Err: ErrInvalidModel}
 	assert.Equal(t, "invalid model", unattributed.Error())
+}
+
+// TestRelationErrorsReadAndUnwrapAsTheirErrors pins how the list reads, one
+// error per line, and that errors.Is and errors.As see each error in it.
+func TestRelationErrorsReadAndUnwrapAsTheirErrors(t *testing.T) {
+	t.Parallel()
+
+	relationErrs := RelationErrors{
+		{Relations: []string{"document#a", "document#b"}, Err: ErrModelCycle},
+		{Relations: []string{"document#reader"}, Err: ErrInvalidModel},
+	}
+	assert.Equal(t, "model cycle: document#a, document#b\ninvalid model: document#reader", relationErrs.Error())
+	require.ErrorIs(t, relationErrs, ErrModelCycle)
+	require.ErrorIs(t, relationErrs, ErrInvalidModel)
+
+	var relationErr *RelationError
+	require.ErrorAs(t, relationErrs, &relationErr)
+	assert.Same(t, relationErrs[0], relationErr)
 }

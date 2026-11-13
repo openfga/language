@@ -18,6 +18,7 @@ ANTLR Grammar for the OpenFGA DSL and parser from and to the OpenFGA JSON Syntax
 - [Packages](#packages)
 - [About This Repo](#about-this-repo)
 - [CLI](#cli)
+- [JSON Schemas](#json-schemas)
 - [Community Parsers](#community-parsers)
 - [Contributing](#contributing)
 - [License](#license)
@@ -68,6 +69,42 @@ This repo contains everything needed to interact with the OpenFGA Authorization 
 ## CLI
 
 Use the [FGA CLI](https://github.com/openfga/cli)
+
+## JSON Schemas
+
+The [`schemas`](/schemas) folder has JSON Schemas for tuple files and store files (`.fga.yaml`), so editors can check them as you type. For example, with the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) in VS Code:
+
+```json
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/openfga/language/main/schemas/store.schema.json": "*.fga.yaml",
+    "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json": "tuples.yaml"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["tuples.json"],
+      "url": "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json"
+    }
+  ]
+}
+```
+
+The schemas check structure and the format of users, relations and objects. Checks that need the model, like whether a relation exists on a type, are still done by `fga model test`.
+
+There's also a schema for authorization models in JSON, generated from the API's protobuf definitions with `make generate-schemas`, so it follows the API's field names and validation rules. It catches a malformed model, like an `intersection` without its `child` list, that the API would otherwise accept. To use it in VS Code:
+
+```json
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["*.fga.json", "authorization-model.json"],
+      "url": "https://raw.githubusercontent.com/openfga/language/main/schemas/authorization-model.schema.json"
+    }
+  ]
+}
+```
+
+It only checks the shape of the model. Use the validators in this repo, or `fga model validate`, to check that the types and relations it refers to exist.
 
 ## Community Parsers
 

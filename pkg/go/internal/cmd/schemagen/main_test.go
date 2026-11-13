@@ -61,7 +61,8 @@ func TestRootRequiresSchemaVersionButNotID(t *testing.T) {
 	properties, ok := schema["properties"].(map[string]any)
 	require.True(t, ok)
 	require.Contains(t, properties, "type_definitions")
-	require.Contains(t, properties, "typeDefinitions")
+	// The API sets json_name to the snake_case name, so protojson rejects typeDefinitions.
+	require.NotContains(t, properties, "typeDefinitions")
 }
 
 func TestUsersetSetsExactlyOneRewrite(t *testing.T) {

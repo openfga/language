@@ -40,6 +40,43 @@ export const transformModuleFilesToModel = (
       const lines = contents.split("\n");
       const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
+      // A condition-only model has no type_definitions; default it so the
+      // loops below iterate rather than throw before the module check.
+      authorizationModel.type_definitions = authorizationModel.type_definitions || [];
+
+      // A plain model carries no module name on its definitions (a type may
+      // still keep relation metadata), so skip the whole file with one error
+      // rather than letting its types leak in or a condition throw below.
+      let isModule = true;
+      for (const typeDef of authorizationModel.type_definitions) {
+        if (typeDefExtensions.has(typeDef.type)) {
+          continue;
+        }
+        if (!typeDef.metadata?.module) {
+          isModule = false;
+          break;
+        }
+      }
+      if (isModule && authorizationModel.conditions) {
+        for (const condition of Object.values(authorizationModel.conditions)) {
+          if (!condition.metadata?.module) {
+            isModule = false;
+            break;
+          }
+        }
+      }
+      if (!isModule) {
+        errors.push(
+          new ModuleTransformationSingleError({
+            msg: "file is not a module",
+            line: { start: 0, end: 0 },
+            column: { start: 0, end: 0 },
+            file: name,
+          }),
+        );
+        continue;
+      }
+
       for (const typeDef of authorizationModel.type_definitions) {
         // If this is an extension mark it to be merged later
         if (typeDefExtensions.has(typeDef.type)) {
@@ -47,17 +84,6 @@ export const transformModuleFilesToModel = (
             extendedTypeDefs[name] = [];
           }
           extendedTypeDefs[name].push(typeDef);
-          continue;
-        }
-        if (!typeDef.metadata) {
-          errors.push(
-            new ModuleTransformationSingleError({
-              msg: "file is not a module",
-              line: { start: 0, end: 0 },
-              column: { start: 0, end: 0 },
-              file: "nomodule.fga",
-            }),
-          );
           continue;
         }
         typeDef.metadata!.source_info = {

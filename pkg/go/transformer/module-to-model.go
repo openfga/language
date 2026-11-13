@@ -94,6 +94,36 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			continue
 		}
 
+		// A plain model carries no module name on its definitions (a type may
+		// still keep relation metadata), so skip the whole file with one error
+		// rather than letting its types leak in or a condition panic below.
+		isModule := true
+		for _, typeDef := range mdl.GetTypeDefinitions() {
+			if _, extension := typeDefExtensions[typeDef.GetType()]; extension {
+				continue
+			}
+			if typeDef.GetMetadata().GetModule() == "" {
+				isModule = false
+				break
+			}
+		}
+		if isModule {
+			for _, condition := range mdl.GetConditions() {
+				if condition.GetMetadata().GetModule() == "" {
+					isModule = false
+					break
+				}
+			}
+		}
+		if !isModule {
+			transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
+				Msg:  "file is not a module",
+				File: module.Name,
+			})
+
+			continue
+		}
+
 		for _, typeDef := range mdl.GetTypeDefinitions() {
 			_, extension := typeDefExtensions[typeDef.GetType()]
 			if slices.Contains(types, typeDef.GetType()) && !extension {
@@ -121,15 +151,8 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			}
 
 			types = append(types, typeDef.GetType())
-			if typeDef.GetMetadata() != nil {
-				typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
-					File: module.Name,
-				}
-			} else {
-				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
-					Msg: "file is not a module",
-				})
-				continue
+			typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
+				File: module.Name,
 			}
 			rawTypeDefs = append(rawTypeDefs, typeDef)
 		}

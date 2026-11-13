@@ -40,6 +40,10 @@ export const transformModuleFilesToModel = (
       const lines = contents.split("\n");
       const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
 
+      // A condition-only model has no type_definitions; default it so the
+      // loops below iterate rather than throw before the module check.
+      authorizationModel.type_definitions = authorizationModel.type_definitions || [];
+
       // A plain model carries no module name on its definitions (a type may
       // still keep relation metadata), so skip the whole file with one error
       // rather than letting its types leak in or a condition throw below.

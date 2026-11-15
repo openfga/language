@@ -121,6 +121,22 @@ jsonString, _ := json.MarshalIndent(model, "", "  ")
 
 ```
 
+### Get Modules From a Model
+
+```go
+import "github.com/openfga/language/pkg/go/transformer"
+
+...
+
+// Get the alphabetically sorted names of the modules that make up a modular (schema 1.2) model,
+// e.g. the model generated in the previous example
+modules, err := transformer.GetModulesFromJSON(model)
+
+// modules: []string{"core"}
+
+// An error is returned if the schema version of the model does not support modules (e.g. 1.1)
+```
+
 ### Validation
 
 Not yet implemented, but the [feature is in our issue backlog](https://github.com/openfga/language/issues/99).

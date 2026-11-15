@@ -188,6 +188,7 @@ type moduleTestCase struct {
 	DSLWithSourceInfo string
 	Skip              bool
 	ExpectedErrors    []expectedError `json:"expected_errors" yaml:"expected_errors"`
+	ExpectedModules   []string
 }
 
 func (testCase *moduleTestCase) GetErrorString() string {
@@ -253,6 +254,13 @@ func loadModuleTestCases() ([]moduleTestCase, error) { //nolint:cyclop,gocognit
 		dslWithSourceInfoFile := filepath.Join(testDataPath, testCase.Name, "combined-sourceinfo.fga")
 		if dslWithSourceInfoData, err := os.ReadFile(dslWithSourceInfoFile); err == nil {
 			testCase.DSLWithSourceInfo = string(dslWithSourceInfoData)
+		}
+
+		modulesFile := filepath.Join(testDataPath, testCase.Name, "expected_modules.json")
+		if modulesData, err := os.ReadFile(modulesFile); err == nil {
+			if err := json.Unmarshal(modulesData, &testCase.ExpectedModules); err != nil {
+				return nil, err //nolint:wrapcheck
+			}
 		}
 
 		errorsFile := filepath.Join(testDataPath, testCase.Name, "expected_errors.json")

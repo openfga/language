@@ -22,3 +22,10 @@ func ConditionNameDoesntMatchError(conditionName string, conditionNestedName str
 		conditionNestedName,
 	)
 }
+
+func UnsupportedModularModulesError(schemaVersion string) error {
+	return fmt.Errorf( //nolint:goerr113
+		"model schema version %s does not support modules",
+		schemaVersion,
+	)
+}

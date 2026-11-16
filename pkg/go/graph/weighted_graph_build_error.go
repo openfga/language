@@ -2,7 +2,6 @@ package graph
 
 import (
 	"cmp"
-	"errors"
 	"slices"
 	"strings"
 )
@@ -11,8 +10,10 @@ import (
 // involves.
 type RelationError struct {
 	// Relations names the relations the error involves, as "type#relation",
-	// sorted. A cycle names every relation in it. It is empty when the builder
-	// cannot attribute the error to a relation.
+	// sorted. A cycle names every relation in it, and an error found while
+	// assigning weights names the relations of the strongly connected component
+	// it was found in. It is empty only when Parse finds no problem in a model
+	// Build rejects, and returns Build's error on its own.
 	Relations []string
 
 	// Err is the reason. It is, or wraps, one of ErrModelCycle,
@@ -64,23 +65,4 @@ func (e RelationErrors) sort() {
 	slices.SortFunc(e, func(a, b *RelationError) int {
 		return cmp.Or(slices.Compare(a.Relations, b.Relations), cmp.Compare(a.Err.Error(), b.Err.Error()))
 	})
-}
-
-// assignWeightErrors turns a failed weight assignment into relation errors:
-// every unresolvable cycle, read off the graph's structure, and the
-// assignment's own error when it is not about those cycles.
-//
-// That error is still the first one the walk reaches, because the walk stops at
-// its first error, so a cycle reached first can hide a later error that is not a
-// cycle. The walk Parse uses starts from the relations in a fixed order, so the
-// same model gives the same answer every time.
-func assignWeightErrors(wg *WeightedAuthorizationModelGraph, err error) RelationErrors {
-	relationErrs := wg.unresolvableCycles()
-
-	isCycleRefusal := errors.Is(err, ErrModelCycle) || errors.Is(err, ErrTupleCycle)
-	if len(relationErrs) == 0 || !isCycleRefusal {
-		relationErrs = append(relationErrs, &RelationError{Err: err})
-	}
-
-	return relationErrs
 }

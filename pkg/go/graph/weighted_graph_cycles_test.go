@@ -326,20 +326,19 @@ type document
 	}
 }
 
-// TestParseRejectsAModelTheSameWayOnEveryRun pins that its weight walk starts
-// from the relations in a fixed order. The walk stops at its first error, so
-// which of a cycle and an invalid relation it reaches first decides whether the
-// invalid relation is reported, and that must not change from one build to the
-// next.
+// TestParseRejectsAModelTheSameWayOnEveryRun pins that a cycle does not hide an
+// invalid relation next to it, whichever sorts first, and that the model is
+// rejected the same way on every run. The weight walk goes through the strongly
+// connected components in an order that changes from run to run, so the errors
+// must not depend on it.
 func TestParseRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		dsl      string
-		contains []string
-		excludes []string
+		dsl  string
+		want string
 	}{
-		"the cycle is reached first and hides the invalid relation": {
+		"the cycle sorts first": {
 			dsl: `model
   schema 1.1
 type user
@@ -351,10 +350,10 @@ type document
     define x: [user] and y
     define y: [employee]
 `,
-			contains: []string{"model cycle: document#a, document#b"},
-			excludes: []string{"invalid model"},
+			want: "model cycle: document#a, document#b\n" +
+				"invalid model: not all paths return the same type for the node document#x:intersection:0: document#x",
 		},
-		"the invalid relation is reached first and both are reported": {
+		"the invalid relation sorts first": {
 			dsl: `model
   schema 1.1
 type user
@@ -366,7 +365,8 @@ type document
     define a: [user] and b
     define b: [employee]
 `,
-			contains: []string{"model cycle: document#x, document#y", "invalid model"},
+			want: "invalid model: not all paths return the same type for the node document#a:intersection:0: document#a\n" +
+				"model cycle: document#x, document#y",
 		},
 	}
 
@@ -377,22 +377,10 @@ type document
 			model, err := transformer.TransformDSLToProto(test.dsl)
 			require.NoError(t, err)
 
-			_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
-			require.Error(t, err)
-
-			first := err.Error()
-			for _, want := range test.contains {
-				assert.Contains(t, first, want)
-			}
-
-			for _, unwanted := range test.excludes {
-				assert.NotContains(t, first, unwanted)
-			}
-
 			for range 200 {
 				_, err := NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 				require.Error(t, err)
-				require.Equal(t, first, err.Error())
+				require.Equal(t, test.want, err.Error())
 			}
 		})
 	}

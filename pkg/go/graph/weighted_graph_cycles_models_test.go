@@ -132,15 +132,20 @@ func TestParseNamesEveryCycleInLargeModels(t *testing.T) {
 
 // TestParseReportsEveryProblem covers broken cycles in models that have another
 // problem too. Every problem the builder can attribute comes back in one
-// refusal, so a missing from target no longer hides the cycles.
+// refusal, so neither a missing from target nor a cycle hides the rest.
 func TestParseReportsEveryProblem(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string][]string{
-		// A relation with no entry point, or one that only rewrites itself, is not
-		// a cycle the builder refuses, so only the broken cycle is named.
-		"mixed-no-entry-point": {"model cycle: drive#editor, drive#writer"},
-		"mixed-self-rewrite":   {"model cycle: drive#editor, drive#writer"},
+		// ghost needs ghost2, which has no entry point, to have weights. The
+		// builder reports that as a model cycle, though ghost is on none, and so
+		// does Parse. ghost2 on its own, like a relation that only rewrites
+		// itself, is accepted.
+		"mixed-no-entry-point": {
+			"model cycle: drive#editor, drive#writer",
+			"model cycle: folder#ghost",
+		},
+		"mixed-self-rewrite": {"model cycle: drive#editor, drive#writer"},
 		// The relation whose from target is missing is reported, and the cycles in
 		// the rest of the model are still found.
 		"mixed-missing-from-target": {
@@ -178,7 +183,11 @@ func TestParseReportsEveryProblem(t *testing.T) {
 // cases. On a model the builder accepts, neither finds a broken cycle. On a model
 // it refuses, for any reason, the cycles it names cover every relation the
 // search finds, with the same kind, and nothing else but relations grouped with
-// an and or a but not.
+// an and or a but not, and Parse reports each of them.
+//
+// Only the scan is held to the search. The weight walk reports a relation that
+// needs another with no weights as a model cycle, as Build does, though it is on
+// no cycle: folder#ghost in mixed-no-entry-point.fga.
 func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 	t.Parallel()
 
@@ -192,6 +201,7 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 
 		wg, _ := NewWeightedAuthorizationModelGraphBuilder().construct(model, func(*RelationError) {})
 		check := checkCycles(t, wg)
+		cycles, _ := wg.unresolvableCycles(wg.components(nil))
 
 		_, err = NewWeightedAuthorizationModelGraphBuilder().Parse(model)
 		if err == nil {
@@ -199,24 +209,24 @@ func TestUnresolvableCyclesMatchTheChecker(t *testing.T) {
 
 			assert.Emptyf(t, check.noStoredData, "%s: accepted, but the search finds a model cycle", name)
 			assert.Emptyf(t, check.andOrButNot, "%s: accepted, but the search finds a tuple cycle through an and or a but not", name)
-			assert.Emptyf(t, wg.unresolvableCycles(), "%s: accepted, but the scan names a cycle", name)
+			assert.Emptyf(t, cycles, "%s: accepted, but the scan names a cycle", name)
 
 			continue
 		}
 
 		refused++
 
-		relationErrs := relationErrorsIn(err)
-		require.NotEmptyf(t, relationErrs, "%s", name)
+		reported := map[string]bool{}
+		for _, relationErr := range problemsOf(t, err) {
+			reported[relationErr.Error()] = true
+		}
 
 		named := map[string]bool{} // relation: named for a model cycle
-		for _, relationErr := range relationErrs {
-			if !errors.Is(relationErr, ErrModelCycle) && !errors.Is(relationErr, ErrTupleCycle) {
-				continue
-			}
+		for _, cycle := range cycles {
+			assert.Truef(t, reported[cycle.Error()], "%s: Parse does not report %q", name, cycle.Error())
 
-			for _, relation := range relationErr.Relations {
-				named[relation] = errors.Is(relationErr, ErrModelCycle)
+			for _, relation := range cycle.Relations {
+				named[relation] = errors.Is(cycle, ErrModelCycle)
 			}
 		}
 

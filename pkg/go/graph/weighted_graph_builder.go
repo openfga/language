@@ -40,8 +40,10 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Build(model *openfgav1.Author
 // Build accepts it returns the same graph, at the same cost. When Build rejects
 // the model, Parse looks for every problem in it and returns them as
 // RelationErrors, one *RelationError per problem with the relations it
-// involves, the same on every run. As with Build's error, errors.Is matches the
-// sentinels.
+// involves. A relation that fails only because it depends on one that fails is
+// not reported on its own, since its problem is already reported. The errors
+// depend only on the model, so it is rejected the same way on every run. As
+// with Build's error, errors.Is matches the sentinels.
 func (wgb *WeightedAuthorizationModelGraphBuilder) Parse(model *openfgav1.AuthorizationModel) (*WeightedAuthorizationModelGraph, error) {
 	wb, err := wgb.Build(model)
 	if err == nil {
@@ -61,28 +63,29 @@ func (wgb *WeightedAuthorizationModelGraphBuilder) Parse(model *openfgav1.Author
 	return nil, relationErrs
 }
 
-// problems finds every problem in model. It does more work than Build: it keeps
-// building after a relation fails, finds every cycle the builder cannot
-// resolve, and assigns weights starting from each relation in a fixed order,
-// which is why Parse only calls it once Build has rejected the model.
+// problems finds every problem in model. It does more work than Build, which is
+// why Parse only calls it once Build has rejected the model: it keeps building
+// after a relation fails, finds every cycle the builder cannot resolve, and
+// assigns weights one strongly connected component at a time, so that one
+// failure does not end the walk.
 func (wgb *WeightedAuthorizationModelGraphBuilder) problems(model *openfgav1.AuthorizationModel) RelationErrors {
 	var relationErrs RelationErrors
 
 	wb, _ := wgb.construct(model, func(relationErr *RelationError) {
 		relationErrs = append(relationErrs, relationErr)
 	})
+
+	components := wb.components(nil)
+	cycleErrs, failed := wb.unresolvableCycles(components)
+
 	if len(relationErrs) > 0 {
 		// Weights cannot be assigned to a graph that is missing what failed to
 		// build, but the cycles among the relations that did build can still be
 		// found.
-		return append(relationErrs, wb.unresolvableCycles()...)
+		return append(relationErrs, cycleErrs...)
 	}
 
-	if err := wb.assignWeightsByRelation(); err != nil {
-		return assignWeightErrors(wb, err)
-	}
-
-	return nil
+	return append(cycleErrs, wb.assignWeightsByComponent(components, failed)...)
 }
 
 // construct adds the model's nodes and edges to a new graph, without weights.

@@ -1,5 +1,7 @@
 # One broken loop (drive writer and editor) next to relations with no entry
-# point (folder ghost and ghost2), which are not loops the builder refuses.
+# point (folder ghost and ghost2). The builder accepts ghost2 on its own, as a
+# relation that only reaches itself, but refuses ghost, which needs ghost2 to
+# have weights, as a model cycle.
 model
   schema 1.1
 

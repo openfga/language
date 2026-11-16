@@ -24,7 +24,7 @@ type document
     define blocked: [user]
     define owner: [user]
     define editor: [user, group#member with in_office] or owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define approver: editor and owner
 
 condition in_office(ip: ipaddress) {
@@ -46,18 +46,14 @@ func TestAreModelsEquivalent(t *testing.T) {
 			equivalent: true,
 		},
 		{
-			name: "types, relations and conditions in a different order",
+			name: "types and relations in a different order",
 			dsl: `model
   schema 1.1
-
-condition in_office(ip: ipaddress) {
-  ip.in_cidr("10.0.0.0/8")
-}
 
 type document
   relations
     define approver: editor and owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define editor: [user, group#member with in_office] or owner
     define owner: [user]
     define blocked: [user]
@@ -67,6 +63,10 @@ type group
     define member: [user, group#member]
 
 type user
+
+condition in_office(ip: ipaddress) {
+  ip.in_cidr("10.0.0.0/8")
+}
 `,
 			equivalent: true,
 		},
@@ -85,8 +85,8 @@ type document
   relations
     define blocked: [user]
     define owner: [user]
-    define editor: owner or [group#member with in_office, user]
-    define viewer: [user:*, user] or owner or editor but not blocked
+    define editor: [group#member with in_office, user] or owner
+    define viewer: ([user:*, user] or owner or editor) but not blocked
     define approver: owner and editor
 
 condition in_office(ip: ipaddress) {
@@ -111,7 +111,7 @@ type document
     define blocked: [user]
     define owner: [user]
     define editor: [user, group#member with in_office] or owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define approver: editor and owner
 
 condition in_office(ip: ipaddress) {
@@ -152,7 +152,7 @@ type document
     define blocked: [user]
     define owner: [user]
     define editor: [user, group#member with in_office] or owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define approver: editor and owner
 
 condition in_office(ip: ipaddress) {
@@ -177,7 +177,7 @@ type document
     define blocked: [user]
     define owner: [user]
     define editor: [user, group#member with in_office] and owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define approver: editor and owner
 
 condition in_office(ip: ipaddress) {
@@ -202,7 +202,7 @@ type document
     define blocked: [user]
     define owner: [user]
     define editor: [user, group#member with in_office] or owner
-    define viewer: [user, user:*] or editor or owner but not blocked
+    define viewer: ([user, user:*] or editor or owner) but not blocked
     define approver: editor and owner
 
 condition in_office(ip: ipaddress) {

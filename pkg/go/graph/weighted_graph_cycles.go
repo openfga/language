@@ -67,11 +67,12 @@ func (wg *WeightedAuthorizationModelGraph) unresolvableCycles(components [][]*We
 
 // assignWeightsByComponent assigns weights to a graph Build rejected one
 // strongly connected component at a time, and returns an error for each
-// component that fails instead of stopping at the first. It takes the graph's
-// components over every edge, as components(nil) returns them, so a component
-// is walked only once everything it reaches has been, and the nodes known to
-// fail, those of the cycles unresolvableCycles reports, to which it adds the
-// nodes of every component that fails.
+// component that fails instead of stopping at the first.
+//
+// It takes the graph's components over every edge, as components(nil) returns
+// them, so a component is walked only once everything it reaches has been. The
+// failed set starts with the nodes of the cycles unresolvableCycles reports, and
+// the walk adds the nodes of every component that fails.
 //
 // A component that holds a failed node, or has an edge to one, fails without an
 // error of its own: its problem is the one it reaches. Any other component has
@@ -85,7 +86,10 @@ func (wg *WeightedAuthorizationModelGraph) unresolvableCycles(components [][]*We
 // it. A relation that reaches one later fails on it with ErrModelCycle, as it
 // does when it reaches it first. So what happens to a component depends only on
 // the components it reaches, and the errors do not depend on the order of
-// components that do not reach each other.
+// components that do not reach each other. Do not mark such a node failed when
+// a walk fails: only the relation walked first would then be reported, and
+// which one that is changes from run to run. TestParseReportsEveryRootCause
+// ("relations that share a tuple to userset with no weights") pins this.
 //
 // A component with no relation, such as a type or an operator, is not walked on
 // its own. An operator is walked from its relation, as in AssignWeights, so its

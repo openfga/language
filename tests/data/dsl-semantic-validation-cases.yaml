@@ -1918,6 +1918,70 @@
         define viewer: [document#viewer] or editor
   expected_errors: []
 
+- name: alias of an intersection of a computed relation and the same relation from parent should pass
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type folder
+      relations
+        define parent: [folder]
+        define member: [user]
+        define owner: member
+        define both: owner and owner from parent
+        define alias: both
+  expected_errors: []
+
+- name: alias of an intersection of a computed relation from parent and the same relation should pass
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type folder
+      relations
+        define parent: [folder]
+        define member: [user]
+        define owner: member
+        define both: owner from parent and owner
+        define alias: both
+  expected_errors: []
+
+- name: alias of an exclusion of a computed relation and the same relation from parent should pass
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type folder
+      relations
+        define parent: [folder]
+        define member: [user]
+        define owner: member
+        define both: owner but not owner from parent
+        define alias: both
+  expected_errors: []
+
+- name: alias of an exclusion of a computed relation from parent and the same relation should pass
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type folder
+      relations
+        define parent: [folder]
+        define member: [user]
+        define owner: member
+        define both: owner from parent but not owner
+        define alias: both
+  expected_errors: []
+
 # Models with loops, but are valid because of an entry point
 
 - name: union does not require all child to have entry

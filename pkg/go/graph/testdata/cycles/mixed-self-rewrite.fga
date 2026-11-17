@@ -1,5 +1,5 @@
-# One broken loop (drive writer and editor) next to a relation that only
-# rewrites itself (drive echo), which the builder accepts.
+# A model cycle (drive writer, editor) next to a relation that only rewrites itself
+# (drive echo), which the builder accepts.
 model
   schema 1.1
 

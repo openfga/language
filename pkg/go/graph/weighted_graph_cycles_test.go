@@ -12,8 +12,7 @@ import (
 	"github.com/openfga/language/pkg/go/transformer"
 )
 
-// rejectionFor builds dsl, which the builder must reject, and returns the error
-// it was rejected with.
+// rejectionFor parses dsl, which Parse must reject, and returns the error.
 func rejectionFor(t *testing.T, dsl string) error {
 	t.Helper()
 
@@ -26,8 +25,7 @@ func rejectionFor(t *testing.T, dsl string) error {
 	return err
 }
 
-// relationErrorsIn returns the RelationErrors in err, the way a caller gets
-// them with errors.As, or nil when err holds none.
+// relationErrorsIn returns the RelationErrors errors.As finds in err, or nil.
 func relationErrorsIn(err error) RelationErrors {
 	var relationErrs RelationErrors
 	if !errors.As(err, &relationErrs) {
@@ -37,8 +35,7 @@ func relationErrorsIn(err error) RelationErrors {
 	return relationErrs
 }
 
-// problemsOf returns the relation errors a rejection holds, failing if it holds
-// none.
+// problemsOf returns the RelationErrors in err, failing if there are none.
 func problemsOf(t *testing.T, err error) RelationErrors {
 	t.Helper()
 
@@ -48,9 +45,8 @@ func problemsOf(t *testing.T, err error) RelationErrors {
 	return relationErrs
 }
 
-// TestParseNamesCycleMembers checks that a refused build names every
-// relation of every unresolvable cycle, and still matches the sentinel it
-// carried before it named relations.
+// TestParseNamesCycleMembers checks that each rejected cycle is named with its relations
+// and still matches its sentinel.
 func TestParseNamesCycleMembers(t *testing.T) {
 	t.Parallel()
 
@@ -82,8 +78,7 @@ type document
 	t.Run("a relation rewriting itself is not a cycle", func(t *testing.T) {
 		t.Parallel()
 
-		// The builder accepts a bare self-rewrite, leaving it with no weights, so
-		// it must not be named when a real cycle elsewhere triggers the refusal.
+		// The builder accepts a relation that only rewrites itself, so it isn't named.
 		relationErrs := problemsOf(t, rejectionFor(t, `model
   schema 1.1
 type user
@@ -98,7 +93,7 @@ type document
 		assert.Equal(t, []string{"document#a", "document#b"}, relationErrs[0].Relations)
 	})
 
-	t.Run("every unresolvable cycle is named", func(t *testing.T) {
+	t.Run("every rejected cycle is named", func(t *testing.T) {
 		t.Parallel()
 
 		relationErrs := problemsOf(t, rejectionFor(t, `model
@@ -137,9 +132,7 @@ type group
 		assert.Equal(t, []string{"group#blocked", "group#member"}, relationErrs[0].Relations)
 	})
 
-	// The two cases below are the regression the structural read exists for:
-	// membership read off the weight walk depended on relation names, because
-	// the walk recorded only the nodes it happened to re-enter.
+	// Regression: cycle members read off the weight walk depended on relation names.
 	t.Run("membership does not depend on relation names", func(t *testing.T) {
 		t.Parallel()
 
@@ -219,10 +212,9 @@ type group
 	})
 }
 
-// TestUnresolvableCyclesAgreeWithTheWalk holds the structural read to the
-// weight walk on refusals the walk makes for a cycle: each one names at least
-// one cycle, with a cycle sentinel and the relations in it.
-func TestUnresolvableCyclesAgreeWithTheWalk(t *testing.T) {
+// TestRejectedCyclesAgreeWithTheWalk checks that a model the walk rejects for a cycle
+// gets a cycle error with the relations in it.
+func TestRejectedCyclesAgreeWithTheWalk(t *testing.T) {
 	t.Parallel()
 
 	refusals := map[string]string{
@@ -258,9 +250,7 @@ type folder
 	}
 }
 
-// TestParseErrorMatchesTheSentinels pins that errors.Is matches the sentinel
-// for every problem in Parse's error, as it does for Build's, so code that
-// checks the kind of refusal works with either.
+// TestParseErrorMatchesTheSentinels checks that errors.Is matches each problem's sentinel.
 func TestParseErrorMatchesTheSentinels(t *testing.T) {
 	t.Parallel()
 
@@ -326,11 +316,8 @@ type document
 	}
 }
 
-// TestParseRejectsAModelTheSameWayOnEveryRun pins that a cycle does not hide an
-// invalid relation next to it, whichever sorts first, and that the model is
-// rejected the same way on every run. The weight walk goes through the strongly
-// connected components in an order that changes from run to run, so the errors
-// must not depend on it.
+// TestParseRejectsAModelTheSameWayOnEveryRun checks that a cycle doesn't hide an invalid
+// relation, whichever sorts first, and that every run gives the same errors.
 func TestParseRejectsAModelTheSameWayOnEveryRun(t *testing.T) {
 	t.Parallel()
 
@@ -386,8 +373,7 @@ type document
 	}
 }
 
-// TestOnlyParseReturnsRelationErrors pins that Parse's error is the list
-// itself, and that errors.As finds no list in Build's error for the same model.
+// TestOnlyParseReturnsRelationErrors checks that Parse's error is RelationErrors and Build's isn't.
 func TestOnlyParseReturnsRelationErrors(t *testing.T) {
 	t.Parallel()
 
@@ -409,10 +395,7 @@ type document
 	assert.Nil(t, relationErrorsIn(err))
 }
 
-// TestBuildStillStopsAtTheFirstProblem pins that Build is unaffected by Parse:
-// on a model with a relation that fails to build and two broken cycles, it
-// returns the construction error, as it always has, with no relation errors in
-// it.
+// TestBuildStillStopsAtTheFirstProblem checks that Build still returns only the first problem.
 func TestBuildStillStopsAtTheFirstProblem(t *testing.T) {
 	t.Parallel()
 
@@ -443,9 +426,7 @@ type document
 	assert.Len(t, relationErrorsIn(err), 3)
 }
 
-// TestRelationErrorReadsAsItsReasonAndRelations pins how a relation error reads
-// in a log line: its reason, then the relations it involves, and that it
-// unwraps to the reason.
+// TestRelationErrorReadsAsItsReasonAndRelations checks how a RelationError reads and unwraps.
 func TestRelationErrorReadsAsItsReasonAndRelations(t *testing.T) {
 	t.Parallel()
 
@@ -457,8 +438,7 @@ func TestRelationErrorReadsAsItsReasonAndRelations(t *testing.T) {
 	assert.Equal(t, "invalid model", unattributed.Error())
 }
 
-// TestRelationErrorsReadAndUnwrapAsTheirErrors pins how the list reads, one
-// error per line, and that errors.Is and errors.As see each error in it.
+// TestRelationErrorsReadAndUnwrapAsTheirErrors checks how RelationErrors reads and unwraps.
 func TestRelationErrorsReadAndUnwrapAsTheirErrors(t *testing.T) {
 	t.Parallel()
 

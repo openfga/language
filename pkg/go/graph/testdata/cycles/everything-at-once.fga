@@ -1,6 +1,5 @@
-# The pattern matrix plus relations with no entry point (team ghost and
-# ghost2) and a from whose target is missing on one of its types (project
-# can_hold, which team lacks).
+# The pattern matrix plus relations with no entry point (team ghost, ghost2) and a
+# from whose relation is missing on one of its types (project can_hold).
 model
   schema 1.1
 

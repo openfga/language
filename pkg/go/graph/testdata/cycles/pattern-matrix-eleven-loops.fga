@@ -1,7 +1,5 @@
-# Every kind of broken loop in each position. a1 to a4 never read stored data;
-# b1 to b5 pass through an and or a but not (b4 and b5 across types); h_ is a
-# legal loop sharing a relation with a broken one; m_ holds both kinds. member,
-# lead, staff and liaison are legal loops and must not be reported.
+# Rejected cycles: a1-a4 model cycles, b1-b5 through an and or but not, h_ sharing a
+# relation with an accepted cycle, m_ both kinds. member, lead, staff, liaison are accepted cycles.
 model
   schema 1.1
 

@@ -1,5 +1,5 @@
-# One broken loop (drive writer and editor) next to a from whose target is
-# missing on one of its types (folder can_preview, which drive lacks).
+# A model cycle (drive writer, editor) next to a from whose relation is missing on
+# one of its types (folder can_preview).
 model
   schema 1.1
 

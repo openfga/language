@@ -6,19 +6,10 @@ import (
 	"strings"
 )
 
-// RelationError is one reason Parse rejected a model, with the relations it
-// involves.
+// RelationError is one problem Parse found, with the relations it involves.
 type RelationError struct {
-	// Relations names the relations the error involves, as "type#relation",
-	// sorted. A cycle names every relation in it, and an error found while
-	// assigning weights names the relations of the strongly connected component
-	// it was found in. It is empty only when Parse finds no problem in a model
-	// Build rejects, and returns Build's error on its own.
-	Relations []string
-
-	// Err is the reason. It is, or wraps, one of ErrModelCycle,
-	// ErrContrainstTupleCycle, ErrTupleCycle or ErrInvalidModel.
-	Err error
+	Relations []string // "type#relation", sorted; empty if no relation can be named
+	Err       error    // ErrModelCycle, ErrTupleCycle or ErrInvalidModel, possibly wrapped
 }
 
 func (e *RelationError) Error() string {
@@ -33,13 +24,11 @@ func (e *RelationError) Unwrap() error {
 	return e.Err
 }
 
-// RelationErrors is the error Parse returns for a model it rejects: every
-// reason, sorted by relations, so the same model is rejected the same way on
-// every run. Callers get it with errors.As, and errors.Is matches the sentinel
-// of each error in it.
+// RelationErrors is the error Parse returns for a model it rejects, sorted by relations.
+// Get it with errors.As; errors.Is matches each problem's sentinel.
 type RelationErrors []*RelationError
 
-// Error is each error on its own line.
+// Error returns one line per problem.
 func (e RelationErrors) Error() string {
 	lines := make([]string, len(e))
 	for i, relationErr := range e {
@@ -49,8 +38,7 @@ func (e RelationErrors) Error() string {
 	return strings.Join(lines, "\n")
 }
 
-// Unwrap returns the errors, so errors.Is matches each one's sentinel and
-// errors.As finds a single *RelationError.
+// Unwrap returns each *RelationError, for errors.Is and errors.As.
 func (e RelationErrors) Unwrap() []error {
 	errs := make([]error, len(e))
 	for i, relationErr := range e {

@@ -1,6 +1,5 @@
-# The file-storage sample store with ten broken loops added. Its own parent
-# chains (owner, writer and reader from parent or folder) are legal and must
-# not be reported.
+# The file-storage sample store with ten rejected cycles added. Its own parent
+# chains are accepted and must not be reported.
 model
   schema 1.1
 

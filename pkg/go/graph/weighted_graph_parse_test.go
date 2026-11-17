@@ -15,9 +15,8 @@ import (
 	"github.com/openfga/language/pkg/go/transformer"
 )
 
-// driftModels returns the models the drift test runs through both builders,
-// keyed by where each came from: the shared transformer models, the DSL of the
-// shared semantic validation cases, and the cycle models in testdata.
+// driftModels returns the shared transformer models, the shared validation cases and
+// the models in testdata/cycles, keyed by source.
 func driftModels(t *testing.T) map[string]string {
 	t.Helper()
 
@@ -54,8 +53,7 @@ func driftModels(t *testing.T) map[string]string {
 	return models
 }
 
-// graphShape lists what the weight walk decides about wg, one line per node and
-// edge, sorted, so two graphs compare equal whatever order they were walked in.
+// graphShape lists wg's nodes and edges with what the weight walk set on them, sorted.
 func graphShape(wg *WeightedAuthorizationModelGraph) []string {
 	var lines []string
 
@@ -78,12 +76,8 @@ func graphShape(wg *WeightedAuthorizationModelGraph) []string {
 	return lines
 }
 
-// TestComponentWalkWeighsWhatBuildWeighs holds the two weight walks to each
-// other on every shared model: the walk Parse uses for a rejected model, which
-// goes through the strongly connected components with what each depends on
-// first, accepts exactly the models AssignWeights accepts and weighs them the
-// same. They share the weight calculation for each node, but walk the nodes in
-// separate loops, so this is what catches one loop changing without the other.
+// TestComponentWalkWeighsWhatBuildWeighs checks that the component walk accepts and
+// weighs every shared model as AssignWeights does.
 func TestComponentWalkWeighsWhatBuildWeighs(t *testing.T) {
 	t.Parallel()
 
@@ -102,7 +96,7 @@ func TestComponentWalkWeighsWhatBuildWeighs(t *testing.T) {
 		var walkErr error
 		if constructErr != nil {
 			walkErr = constructErr
-		} else if walkErrs := walked.assignWeightsByComponent(walked.components(nil), map[string]bool{}); len(walkErrs) > 0 {
+		} else if walkErrs := walked.assignWeightsByComponent(walked.stronglyConnectedComponents(nil), map[string]bool{}); len(walkErrs) > 0 {
 			walkErr = walkErrs
 		}
 
@@ -126,10 +120,8 @@ func TestComponentWalkWeighsWhatBuildWeighs(t *testing.T) {
 	assert.Positive(t, rejected, "no shared model was rejected")
 }
 
-// TestParseAcceptsWhatBuildAccepts pins Parse to Build on every shared model:
-// for a model Build accepts, Parse returns the same graph, and for one Build
-// rejects, Parse's error names at least one problem, and every problem names
-// the relations it involves.
+// TestParseAcceptsWhatBuildAccepts checks that Parse returns Build's graph for each shared
+// model Build accepts, and names the relations of every problem in one it rejects.
 func TestParseAcceptsWhatBuildAccepts(t *testing.T) {
 	t.Parallel()
 
@@ -160,8 +152,7 @@ func TestParseAcceptsWhatBuildAccepts(t *testing.T) {
 	}
 }
 
-// rejectedTheSameWay parses dsl, which the builder must reject, 200 times, and
-// returns its problems once every run has reported the same ones.
+// rejectedTheSameWay parses dsl 200 times and returns its problems, failing if a run differs.
 func rejectedTheSameWay(t *testing.T, dsl string) RelationErrors {
 	t.Helper()
 
@@ -179,10 +170,8 @@ func rejectedTheSameWay(t *testing.T, dsl string) RelationErrors {
 	return relationErrs
 }
 
-// TestParseReportsEveryRootCause pins that the weight walk does not stop at its
-// first error: every relation that fails on its own is reported with its
-// relations, and a relation that fails only because it depends on one that
-// fails is not.
+// TestParseReportsEveryRootCause checks that the walk reports each relation that fails on
+// its own, and not one that fails only because it needs another that does.
 func TestParseReportsEveryRootCause(t *testing.T) {
 	t.Parallel()
 
@@ -238,14 +227,11 @@ type document
 `,
 			want: []string{"model cycle: document#a, document#b"},
 		},
-		// owner and reporter each need a member relation that does not exist.
 		"missing relations in two types": {
 			dsl:  missingRelations,
 			want: []string{"invalid model: page#member", "invalid model: ticket#member"},
 		},
-		// a and b reach folder#viewer, which has no weights, through the node
-		// that groups viewer from parent for both of them. Whichever is walked
-		// first leaves that node without weights, and both fail on it either way.
+		// a and b share the node that groups viewer from parent, so both fail whichever is walked first.
 		"relations that share a tuple to userset with no weights": {
 			dsl: `model
   schema 1.1
@@ -274,8 +260,8 @@ type folder
 	}
 }
 
-// TestParseReportsTheSameProblemsWhateverTheTypeNames pins that a cycle does
-// not hide an invalid relation in another type, whichever type sorts first.
+// TestParseReportsTheSameProblemsWhateverTheTypeNames checks that a cycle doesn't hide an
+// invalid relation in another type, whichever type sorts first.
 func TestParseReportsTheSameProblemsWhateverTheTypeNames(t *testing.T) {
 	t.Parallel()
 

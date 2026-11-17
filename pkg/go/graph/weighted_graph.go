@@ -564,7 +564,7 @@ func isTupleCycle(nodeID string, ancestorPath []*WeightedAuthorizationModelEdge)
 		}
 		if startTracking {
 			cyclePath = append(cyclePath, edge)
-			if readsTuple(edge) {
+			if isTTUOrUsersetEdge(edge) {
 				tupleCycle = true
 			}
 			if edge.to.nodeType == SpecificTypeAndRelation {

@@ -38,34 +38,12 @@ export const transformModuleFilesToModel = (
   for (const { name, contents } of files) {
     try {
       const lines = contents.split("\n");
-      const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
+      const { authorizationModel, typeDefExtensions, isModularModel } = transformModularDSLToJSONObject(contents);
 
-      // A condition-only model has no type_definitions; default it so the
-      // loops below iterate rather than throw before the module check.
-      authorizationModel.type_definitions = authorizationModel.type_definitions || [];
-
-      // A plain model carries no module name on its definitions (a type may
-      // still keep relation metadata), so skip the whole file with one error
-      // rather than letting its types leak in or a condition throw below.
-      let isModule = true;
-      for (const typeDef of authorizationModel.type_definitions) {
-        if (typeDefExtensions.has(typeDef.type)) {
-          continue;
-        }
-        if (!typeDef.metadata?.module) {
-          isModule = false;
-          break;
-        }
-      }
-      if (isModule && authorizationModel.conditions) {
-        for (const condition of Object.values(authorizationModel.conditions)) {
-          if (!condition.metadata?.module) {
-            isModule = false;
-            break;
-          }
-        }
-      }
-      if (!isModule) {
+      // A file with no module header is a plain model, not a module. Skip the
+      // whole file with one error rather than letting its types leak into the
+      // combined model or a later step act on a file that was never a module.
+      if (!isModularModel) {
         errors.push(
           new ModuleTransformationSingleError({
             msg: "file is not a module",
@@ -76,6 +54,10 @@ export const transformModuleFilesToModel = (
         );
         continue;
       }
+
+      // A condition-only module has no type_definitions; default it so the
+      // loop below iterates rather than throwing.
+      authorizationModel.type_definitions = authorizationModel.type_definitions || [];
 
       for (const typeDef of authorizationModel.type_definitions) {
         // If this is an extension mark it to be merged later

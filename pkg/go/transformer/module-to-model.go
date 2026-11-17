@@ -84,7 +84,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 		lines := strings.Split(module.Contents, "\n")
 		moduleFiles[module.Name] = lines
 
-		mdl, typeDefExtensions, err := TransformModularDSLToProto(module.Contents)
+		mdl, typeDefExtensions, isModule, err := transformModularDSLToProto(module.Contents)
 		if err != nil {
 			var syntaxError *OpenFgaDslSyntaxMultipleError
 			if errors.As(err, &syntaxError) {
@@ -94,27 +94,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			continue
 		}
 
-		// A plain model carries no module name on its definitions (a type may
-		// still keep relation metadata), so skip the whole file with one error
-		// rather than letting its types leak in or a condition panic below.
-		isModule := true
-		for _, typeDef := range mdl.GetTypeDefinitions() {
-			if _, extension := typeDefExtensions[typeDef.GetType()]; extension {
-				continue
-			}
-			if typeDef.GetMetadata().GetModule() == "" {
-				isModule = false
-				break
-			}
-		}
-		if isModule {
-			for _, condition := range mdl.GetConditions() {
-				if condition.GetMetadata().GetModule() == "" {
-					isModule = false
-					break
-				}
-			}
-		}
+		// A file with no module header is a plain model, not a module. Skip the
+		// whole file with one error rather than letting its types leak into the
+		// combined model or a later step act on a file that was never a module.
 		if !isModule {
 			transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
 				Msg:  "file is not a module",

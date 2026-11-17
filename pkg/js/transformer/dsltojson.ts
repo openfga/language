@@ -102,7 +102,7 @@ class OpenFgaDslListener extends OpenFGAListener {
   private currentTypeDef: Partial<TypeDefinition> | undefined;
   private currentRelation: Partial<Relation> | undefined;
   private currentCondition: Condition | undefined;
-  private isModularModel = false;
+  public isModularModel = false;
   private moduleName?: string;
 
   private rewriteStack: StackRelation[] = [];
@@ -508,6 +508,7 @@ export function transformDSLToJSON(data: string): string {
 interface ModularDSLTransformResult {
   authorizationModel: Omit<AuthorizationModel, "id">;
   typeDefExtensions: Map<string, TypeDefinition>;
+  isModularModel: boolean;
 }
 
 /**
@@ -527,5 +528,6 @@ export function transformModularDSLToJSONObject(data: string): ModularDSLTransfo
   return {
     authorizationModel: listener.authorizationModel as Omit<AuthorizationModel, "id">,
     typeDefExtensions: listener.typeDefExtensions,
+    isModularModel: listener.isModularModel,
   };
 }

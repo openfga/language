@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/openfga/language/compare/pkg/go/v0.3.2...pkg/go/v0.4.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **go:** x/net v0.60.0 requires Go 1.26, so the minimum supported Go version for pkg/go is now 1.26 (was 1.25). The CI build matrix now tests Go 1.26 and 1.27.
+
+### Fixed
+
+* **go:** bump golang.org/x/net to v0.60.0 to resolve govulncheck findings ([#699](https://github.com/openfga/language/issues/699)) ([9248a88](https://github.com/openfga/language/commit/9248a88b64db3e4eb9e5f88a594e84ee87fd7ed4))
+* **go:** handle proto direct assignments in DSL transform ([#621](https://github.com/openfga/language/issues/621)) ([ed62a11](https://github.com/openfga/language/commit/ed62a11e759a0faa1354404ead761f956469e149))
+
+
+### Changed
+
+* **graph:** use strings.IndexByte instead of strings.Contains for single char ([#694](https://github.com/openfga/language/issues/694)) ([2aed764](https://github.com/openfga/language/commit/2aed7640561f1bd836b68b3eb7c3e6fe8670ba4a))
+
 ## [0.3.2](https://github.com/openfga/language/compare/pkg/go/v0.3.1...pkg/go/v0.3.2) (2026-10-01)
 
 

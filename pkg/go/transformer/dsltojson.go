@@ -307,7 +307,9 @@ func (l *OpenFgaDslListener) EnterRelationDefDirectAssignment(_ *parser.Relation
 }
 
 func (l *OpenFgaDslListener) ExitRelationDefDirectAssignment(_ *parser.RelationDefDirectAssignmentContext) {
-	partialRewrite := &openfgav1.Userset{Userset: &openfgav1.Userset_This{}}
+	partialRewrite := &openfgav1.Userset{
+		Userset: &openfgav1.Userset_This{This: &openfgav1.DirectUserset{}},
+	}
 
 	l.currentRelation.Rewrites = append(l.currentRelation.Rewrites, partialRewrite)
 }

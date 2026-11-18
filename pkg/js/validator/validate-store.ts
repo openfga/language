@@ -181,17 +181,22 @@ function parseUserString(user: string): {
 } {
   const result = user.split(":");
   const type = result[0];
+  const identifier = result[1];
 
-  if (result[1] === "*") {
+  if (identifier === undefined) {
+    return { type, id: undefined, relation: undefined, wildcard: false };
+  }
+
+  if (identifier === "*") {
     return { type, id: undefined, relation: undefined, wildcard: true };
   }
 
-  if (result[1].includes("#")) {
-    const [id, relation] = result[1].split("#");
+  if (identifier.includes("#")) {
+    const [id, relation] = identifier.split("#");
     return { type, id, relation, wildcard: false };
   }
 
-  return { type, id: result[1], relation: undefined, wildcard: false };
+  return { type, id: identifier, relation: undefined, wildcard: false };
 }
 
 // Validation for Types
@@ -292,7 +297,7 @@ function validateTypeRestrictions(
   const mappedTuple = mapTuple(tuple);
   const type = parseObjectString(tuple.object).type;
   const foundType = typeDefs.filter((t) => t.type === type)[0];
-  const userTypes = foundType?.metadata?.relations?.[tuple.relation].directly_related_user_types;
+  const userTypes = foundType?.metadata?.relations?.[tuple.relation]?.directly_related_user_types;
 
   if (
     !userTypes?.filter(

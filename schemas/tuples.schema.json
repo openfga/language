@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/openfga/language/main/schemas/tuples.schema.json",
+  "title": "OpenFGA tuples file",
+  "description": "A list of relationship tuples, as read by `fga tuple write --file` and the `tuples` and `tuple_file` fields of a store file.",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/tuple"
+  },
+  "definitions": {
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "relation",
+        "object"
+      ],
+      "properties": {
+        "user": {
+          "type": "string",
+          "pattern": "^(?:[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*#[^:#@\\*\\s]{1,50}|(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*|[^:#@\\*\\s]{1,254}:\\*)$",
+          "description": "the user, e.g. user:anne, group:eng#member or user:*"
+        },
+        "relation": {
+          "type": "string",
+          "pattern": "^[^:#@\\*\\s]{1,50}$",
+          "description": "the relation"
+        },
+        "object": {
+          "type": "string",
+          "pattern": "^(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*$",
+          "description": "the object, e.g. document:roadmap"
+        },
+        "condition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[^\\*\\s]{1,50}$",
+              "description": "the condition name"
+            },
+            "context": {
+              "type": "object",
+              "description": "the context used to evaluate conditions"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/openfga/language/main/schemas/store.schema.json",
+  "title": "OpenFGA store file",
+  "description": "A store file (.fga.yaml) as used by `fga model test` and `fga store import`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tests"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "the store name"
+    },
+    "model": {
+      "type": "string",
+      "description": "the authorization model (takes precedence over model_file)"
+    },
+    "model_file": {
+      "type": "string",
+      "description": "the authorization model file path"
+    },
+    "tuple_file": {
+      "type": "string",
+      "description": "the tuple file path"
+    },
+    "tuple_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "several tuple file paths"
+    },
+    "tuples": {
+      "$ref": "tuples.schema.json",
+      "description": "the tuples (takes precedence over tuple_file)"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "the test name"
+          },
+          "description": {
+            "type": "string",
+            "description": "the test description"
+          },
+          "tuple_file": {
+            "type": "string",
+            "description": "the tuple file with additional tuples for this test"
+          },
+          "tuples": {
+            "$ref": "tuples.schema.json",
+            "description": "additional tuples for this test"
+          },
+          "check": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "assertions"
+              ],
+              "allOf": [
+                {
+                  "oneOf": [
+                    {
+                      "required": [
+                        "user"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "users"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "oneOf": [
+                    {
+                      "required": [
+                        "object"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "objects"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "properties": {
+                "user": {
+                  "type": "string",
+                  "pattern": "^(?:[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*#[^:#@\\*\\s]{1,50}|(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*|[^:#@\\*\\s]{1,254}:\\*)$",
+                  "description": "the user"
+                },
+                "users": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?:[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*#[^:#@\\*\\s]{1,50}|(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*|[^:#@\\*\\s]{1,254}:\\*)$"
+                  },
+                  "description": "several users to run the same assertions for"
+                },
+                "object": {
+                  "type": "string",
+                  "pattern": "^(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*$",
+                  "description": "the object"
+                },
+                "objects": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*$"
+                  },
+                  "description": "several objects to run the same assertions for"
+                },
+                "context": {
+                  "type": "object",
+                  "description": "the context used to evaluate conditions"
+                },
+                "assertions": {
+                  "type": "object",
+                  "description": "the expected result for each relation",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "list_objects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "user",
+                "type",
+                "assertions"
+              ],
+              "properties": {
+                "user": {
+                  "type": "string",
+                  "pattern": "^(?:[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*#[^:#@\\*\\s]{1,50}|(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*|[^:#@\\*\\s]{1,254}:\\*)$",
+                  "description": "the user"
+                },
+                "relation": {
+                  "type": "string",
+                  "pattern": "^[^:#@\\*\\s]{1,50}$"
+                },
+                "type": {
+                  "type": "string",
+                  "pattern": "^[^:#@\\*\\s]{1,254}$",
+                  "description": "the object type"
+                },
+                "context": {
+                  "type": "object",
+                  "description": "the context used to evaluate conditions"
+                },
+                "assertions": {
+                  "type": "object",
+                  "description": "the expected objects for each relation",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "list_users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "object",
+                "user_filter",
+                "assertions"
+              ],
+              "properties": {
+                "object": {
+                  "type": "string",
+                  "pattern": "^(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*$",
+                  "description": "the object"
+                },
+                "user_filter": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      },
+                      "relation": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "context": {
+                  "type": "object",
+                  "description": "the context used to evaluate conditions"
+                },
+                "assertions": {
+                  "type": "object",
+                  "description": "the expected users for each relation",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "users": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^(?:[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*#[^:#@\\*\\s]{1,50}|(?=\\S{2,256}$)[^:#@\\*\\s]{1,254}:[^#:\\s*][a-zA-Z0-9_|*@.+/\\-]*|[^:#@\\*\\s]{1,254}:\\*)$"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

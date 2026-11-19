@@ -1,5 +1,0 @@
-module dup
-
-extend	type	document
-  relations
-    define	owner: [user]

@@ -39,6 +39,20 @@ OpenFGA model validation ensures that authorization models are syntactically cor
 | `different-nested-condition-name` | Condition | Condition name mismatch in nested structure | [different-nested-condition-name.md](./different-nested-condition-name.md) |
 | `multiple-modules-in-file` | Multi-file | Multiple modules detected in single file | [multiple-modules-in-file.md](./multiple-modules-in-file.md) |
 
+### Go graph validation
+
+The Go package's graph-based entry points, `ValidateDSLWithGraph` and
+`ValidateJSONWithGraph`, resolve entry-point reachability from the weighted
+authorization-model graph and can report two codes of their own. The JavaScript
+and Java validators have no graph path and never emit them. The expected
+findings are recorded in `tests/data/dsl-graph-validation-cases.yaml`, which an
+implementation adopts when it grows a graph path.
+
+| Error Code | Error Type | Summary | Documentation |
+|------------|------------|---------|---------------|
+| `cyclic-relation` | Semantic | Relation sits in a cycle the resolver cannot work through | [cyclic-relation.md](./cyclic-relation.md) |
+| `graph-model-unbuildable` | Semantic | Graph refusal not attributable to specific relations | [graph-model-unbuildable.md](./graph-model-unbuildable.md) |
+
 ## Usage
 
 Each error documentation includes:

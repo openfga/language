@@ -227,3 +227,82 @@
       column:
         start: 4
         end: 34
+- name: empty file
+  modFile: ""
+  expected_errors:
+    - msg: missing schema field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+    - msg: missing contents field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+- name: comment only
+  modFile: |
+    # todo
+  expected_errors:
+    - msg: missing schema field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+    - msg: missing contents field
+      line:
+        start: 0
+        end: 0
+      column:
+        start: 0
+        end: 0
+- name: unknown nested field before schema and contents
+  modFile: |
+    extra:
+      note: hi
+    schema: "1.2"
+    contents:
+      - a.fga
+  json: |
+    {
+      "schema": {
+        "value": "1.2",
+        "line": {
+          "start": 2,
+          "end": 2
+        },
+        "column": {
+          "start": 8,
+          "end": 13
+        }
+      },
+      "contents": {
+        "value": [
+          {
+            "value": "a.fga",
+            "line": {
+              "start": 4,
+              "end": 4
+            },
+            "column": {
+              "start": 4,
+              "end": 9
+            }
+          }
+        ],
+        "line": {
+          "start": 4,
+          "end": 5
+        },
+        "column": {
+          "start": 2,
+          "end": 0
+        }
+      }
+    }

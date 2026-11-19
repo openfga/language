@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.joining;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import dev.openfga.language.errors.ConditionParameterMissingGenericTypeException;
 import dev.openfga.language.errors.UnsupportedDSLNestingException;
 import dev.openfga.sdk.api.model.*;
 import java.util.*;
@@ -333,7 +334,7 @@ public class JsonToDslTransformer {
             throw new IllegalArgumentException("conditionName must match condition.getName()");
         }
 
-        var formattedParameters = formatConditionParameters(conditionDef.getParameters());
+        var formattedParameters = formatConditionParameters(conditionName, conditionDef.getParameters());
         return new StringBuilder("condition ")
                 .append(conditionDef.getName())
                 .append('(')
@@ -347,7 +348,8 @@ public class JsonToDslTransformer {
                 .append(EOL);
     }
 
-    private CharSequence formatConditionParameters(Map<String, ConditionParamTypeRef> parameters) {
+    private CharSequence formatConditionParameters(
+            String conditionName, Map<String, ConditionParamTypeRef> parameters) {
         if (parameters == null || parameters.isEmpty()) {
             return "";
         }
@@ -363,8 +365,12 @@ public class JsonToDslTransformer {
                                     .replace("TYPE_NAME_", "")
                                     .toLowerCase();
                             if (formattedParameterType.equals("list") || formattedParameterType.equals("map")) {
-                                var genericTypeString = parameterType
-                                        .getGenericTypes()
+                                var genericTypes = parameterType.getGenericTypes();
+                                if (genericTypes == null || genericTypes.isEmpty()) {
+                                    throw new ConditionParameterMissingGenericTypeException(
+                                            conditionName, parameterName);
+                                }
+                                var genericTypeString = genericTypes
                                         .get(0)
                                         .getTypeName()
                                         .getValue()

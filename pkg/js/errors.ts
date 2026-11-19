@@ -182,6 +182,15 @@ export class ConditionNameDoesntMatchError extends Error {
   }
 }
 
+export class ConditionParameterMissingGenericTypeError extends Error {
+  constructor(
+    public conditionName: string,
+    public parameterName: string,
+  ) {
+    super(`the '${parameterName}' parameter of the '${conditionName}' condition has no generic type`);
+  }
+}
+
 export class UnsupportedModularModules extends Error {
   constructor(public schemaVersion: string) {
     super(`model schema version ${schemaVersion} does not support modules`);

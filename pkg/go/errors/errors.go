@@ -22,3 +22,11 @@ func ConditionNameDoesntMatchError(conditionName string, conditionNestedName str
 		conditionNestedName,
 	)
 }
+
+func ConditionParameterMissingGenericTypeError(conditionName string, parameterName string) error {
+	return fmt.Errorf( //nolint:goerr113
+		"the '%s' parameter of the '%s' condition has no generic type",
+		parameterName,
+		conditionName,
+	)
+}

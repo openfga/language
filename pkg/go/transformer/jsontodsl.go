@@ -382,7 +382,10 @@ func parseType(typeDefinition *openfgav1.TypeDefinition, isModularModel, include
 	return parsedTypeString, nil
 }
 
-func parseConditionParams(parameterMap map[string]*openfgav1.ConditionParamTypeRef) string {
+func parseConditionParams(
+	conditionName string,
+	parameterMap map[string]*openfgav1.ConditionParamTypeRef,
+) (string, error) {
 	parametersStringArray := []string{}
 
 	parameterNames := []string{}
@@ -396,12 +399,21 @@ func parseConditionParams(parameterMap map[string]*openfgav1.ConditionParamTypeR
 
 	for _, parameterName := range parameterNames {
 		parameterType := parameterMap[parameterName]
+		if parameterType.GetTypeName() == openfgav1.ConditionParamTypeRef_TYPE_NAME_UNSPECIFIED {
+			return "", errors.ConditionParameterMissingTypeError(conditionName, parameterName)
+		}
+
 		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.GetTypeName().String(), "TYPE_NAME_", ""))
 
 		if parameterTypeString == "list" || parameterTypeString == "map" {
+			genericTypes := parameterType.GetGenericTypes()
+			if len(genericTypes) == 0 ||
+				genericTypes[0].GetTypeName() == openfgav1.ConditionParamTypeRef_TYPE_NAME_UNSPECIFIED {
+				return "", errors.ConditionParameterMissingGenericTypeError(conditionName, parameterName)
+			}
+
 			genericTypeString := strings.ToLower(
-				strings.ReplaceAll(
-					parameterType.GetGenericTypes()[0].GetTypeName().String(), "TYPE_NAME_", ""),
+				strings.ReplaceAll(genericTypes[0].GetTypeName().String(), "TYPE_NAME_", ""),
 			)
 			parameterTypeString = fmt.Sprintf("%s<%s>", parameterTypeString, genericTypeString)
 		}
@@ -409,7 +421,7 @@ func parseConditionParams(parameterMap map[string]*openfgav1.ConditionParamTypeR
 		parametersStringArray = append(parametersStringArray, fmt.Sprintf("%s: %s", parameterName, parameterTypeString))
 	}
 
-	return strings.Join(parametersStringArray, ", ")
+	return strings.Join(parametersStringArray, ", "), nil
 }
 
 func parseCondition(conditionName string, conditionDef *openfgav1.Condition, includeSourceInformation bool) (string, error) {
@@ -417,7 +429,11 @@ func parseCondition(conditionName string, conditionDef *openfgav1.Condition, inc
 		return "", errors.ConditionNameDoesntMatchError(conditionName, conditionDef.GetName())
 	}
 
-	paramsString := parseConditionParams(conditionDef.GetParameters())
+	paramsString, err := parseConditionParams(conditionName, conditionDef.GetParameters())
+	if err != nil {
+		return "", err
+	}
+
 	sourceString := constructSourceComment(
 		conditionDef.GetMetadata().GetModule(),
 		conditionDef.GetMetadata().GetSourceInfo().GetFile(),

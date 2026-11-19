@@ -386,3 +386,125 @@
       ]
     }
   valid: true
+
+- name: list condition parameter without generic types
+  json: >2-
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user"
+        }
+      ],
+      "conditions": {
+        "active": {
+          "name": "active",
+          "expression": "true",
+          "parameters": {
+            "items": {
+              "type_name": "TYPE_NAME_LIST"
+            }
+          }
+        }
+      }
+    }
+  valid: false
+  error_message: the 'items' parameter of the 'active' condition has no generic type
+
+- name: map condition parameter with empty generic types
+  json: >2-
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user"
+        }
+      ],
+      "conditions": {
+        "active": {
+          "name": "active",
+          "expression": "true",
+          "parameters": {
+            "entries": {
+              "type_name": "TYPE_NAME_MAP",
+              "generic_types": []
+            }
+          }
+        }
+      }
+    }
+  valid: false
+  error_message: the 'entries' parameter of the 'active' condition has no generic type
+
+- name: condition parameter without type name
+  json: >2-
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user"
+        }
+      ],
+      "conditions": {
+        "active": {
+          "name": "active",
+          "expression": "true",
+          "parameters": {
+            "items": {}
+          }
+        }
+      }
+    }
+  valid: false
+  error_message: the 'items' parameter of the 'active' condition has no type
+
+- name: condition parameter with unspecified type name
+  json: >2-
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user"
+        }
+      ],
+      "conditions": {
+        "active": {
+          "name": "active",
+          "expression": "true",
+          "parameters": {
+            "items": {
+              "type_name": "TYPE_NAME_UNSPECIFIED"
+            }
+          }
+        }
+      }
+    }
+  valid: false
+  error_message: the 'items' parameter of the 'active' condition has no type
+
+- name: list condition parameter with a generic type without type name
+  json: >2-
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        {
+          "type": "user"
+        }
+      ],
+      "conditions": {
+        "active": {
+          "name": "active",
+          "expression": "true",
+          "parameters": {
+            "items": {
+              "type_name": "TYPE_NAME_LIST",
+              "generic_types": [
+                {}
+              ]
+            }
+          }
+        }
+      }
+    }
+  valid: false
+  error_message: the 'items' parameter of the 'active' condition has no generic type

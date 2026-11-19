@@ -9,7 +9,14 @@ import type {
   TypeDefinition,
   Userset,
 } from "@openfga/sdk";
-import { ConditionNameDoesntMatchError, UnsupportedDSLNestingError, UnsupportedModularModules } from "../errors";
+import { TypeName } from "@openfga/sdk";
+import {
+  ConditionNameDoesntMatchError,
+  ConditionParameterMissingGenericTypeError,
+  ConditionParameterMissingTypeError,
+  UnsupportedDSLNestingError,
+  UnsupportedModularModules,
+} from "../errors";
 
 class DirectAssignmentValidator {
   occured: number = 0;
@@ -264,16 +271,26 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
   return parsedTypeString;
 };
 
-const parseConditionParams = (parameterMap: Record<string, ConditionParamTypeRef>): string => {
+const hasTypeName = (parameterType?: ConditionParamTypeRef): parameterType is ConditionParamTypeRef =>
+  !!parameterType?.type_name && parameterType.type_name !== TypeName.Unspecified;
+
+const parseConditionParams = (conditionName: string, parameterMap: Record<string, ConditionParamTypeRef>): string => {
   const parametersStringArray: string[] = [];
 
   Object.keys(parameterMap)
     .sort()
     .forEach((parameterName) => {
       const parameterType = parameterMap[parameterName];
+      if (!hasTypeName(parameterType)) {
+        throw new ConditionParameterMissingTypeError(conditionName, parameterName);
+      }
       let parameterTypeString = parameterType.type_name.replace("TYPE_NAME_", "").toLowerCase();
       if (parameterTypeString === "list" || parameterTypeString === "map") {
-        const genericTypeString = parameterType.generic_types?.[0].type_name.replace("TYPE_NAME_", "").toLowerCase();
+        const genericType = parameterType.generic_types?.[0];
+        if (!hasTypeName(genericType)) {
+          throw new ConditionParameterMissingGenericTypeError(conditionName, parameterName);
+        }
+        const genericTypeString = genericType.type_name.replace("TYPE_NAME_", "").toLowerCase();
         parameterTypeString = `${parameterTypeString}<${genericTypeString}>`;
       }
       parametersStringArray.push(`${parameterName}: ${parameterTypeString}`);
@@ -287,7 +304,7 @@ const parseCondition = (conditionName: string, conditionDef: Condition, includeS
     throw new ConditionNameDoesntMatchError(conditionName, conditionDef.name);
   }
 
-  const paramsString = parseConditionParams(conditionDef.parameters || {});
+  const paramsString = parseConditionParams(conditionName, conditionDef.parameters || {});
   const sourceString = constructSourceComment(conditionDef.metadata, "", includeSourceInformation);
 
   return `condition ${conditionName}(${paramsString}) {\n  ${conditionDef.expression}\n}${sourceString}\n`;

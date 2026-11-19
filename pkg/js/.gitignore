@@ -4,7 +4,7 @@ typings
 dist
 .DS_Store
 VERSION.txt
-coverage
+tests/coverage
 .idea/
 .vscode/
 .dccache

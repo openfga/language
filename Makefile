@@ -146,6 +146,11 @@ format-tests:
 	cd pkg/js; \
 	npx prettier --write ${PWD}/tests/**/{*.json,*.yaml}
 
+.PHONY: generate-equivalent-checks-json
+generate-equivalent-checks-json:
+	cd pkg/go; \
+	go test ./transformer -run '^TestEquivalentChecksCases$$' -count=1 -update
+
 #### Util ####
 
 .PHONY: build-antlr-container

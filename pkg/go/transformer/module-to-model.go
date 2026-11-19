@@ -3,6 +3,7 @@ package transformer
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -75,6 +76,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 	rawTypeDefs := []*openfgav1.TypeDefinition{}
 	types := []string{}
 	extendedTypeDefs := map[string][]*openfgav1.TypeDefinition{}
+	extendedFiles := []string{}
 	conditions := map[string]*openfgav1.Condition{}
 	moduleFiles := map[string][]string{}
 
@@ -113,6 +115,7 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			if extension {
 				if extendedTypeDefs[module.Name] == nil {
 					extendedTypeDefs[module.Name] = []*openfgav1.TypeDefinition{}
+					extendedFiles = append(extendedFiles, module.Name)
 				}
 
 				extendedTypeDefs[module.Name] = append(extendedTypeDefs[module.Name], typeDef)
@@ -134,7 +137,9 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			rawTypeDefs = append(rawTypeDefs, typeDef)
 		}
 
-		for name, condition := range mdl.GetConditions() {
+		mdlConditions := mdl.GetConditions()
+		for _, name := range slices.Sorted(maps.Keys(mdlConditions)) {
+			condition := mdlConditions[name]
 			if _, ok := conditions[name]; ok {
 				lineIndex := utils.GetConditionLineNumber(name, lines)
 				line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)
@@ -155,10 +160,11 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 		}
 	}
 
-	for filename, typeDefs := range extendedTypeDefs {
+	// Merge extensions in input file order so that errors are attributed to the same file on every run.
+	for _, filename := range extendedFiles {
 		lines := moduleFiles[filename]
 
-		for _, typeDef := range typeDefs {
+		for _, typeDef := range extendedTypeDefs[filename] {
 			originalIndex := slices.IndexFunc(rawTypeDefs, func(t *openfgav1.TypeDefinition) bool {
 				return t.GetType() == typeDef.GetType()
 			})
@@ -205,7 +211,8 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 				existingRelationNames = append(existingRelationNames, name)
 			}
 
-			for name, relation := range typeDef.GetRelations() {
+			for _, name := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
+				relation := typeDef.GetRelations()[name]
 				if slices.Contains(existingRelationNames, name) {
 					lineIndex := utils.GetRelationLineNumber(name, lines)
 					line, col := utils.ConstructLineAndColumnData(lines, lineIndex, name)

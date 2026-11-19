@@ -38,7 +38,26 @@ export const transformModuleFilesToModel = (
   for (const { name, contents } of files) {
     try {
       const lines = contents.split("\n");
-      const { authorizationModel, typeDefExtensions } = transformModularDSLToJSONObject(contents);
+      const { authorizationModel, typeDefExtensions, isModularModel } = transformModularDSLToJSONObject(contents);
+
+      // A file with no module header is a plain model, not a module. Skip the
+      // whole file with one error rather than letting its types leak into the
+      // combined model or a later step act on a file that was never a module.
+      if (!isModularModel) {
+        errors.push(
+          new ModuleTransformationSingleError({
+            msg: "file is not a module",
+            line: { start: 0, end: 0 },
+            column: { start: 0, end: 0 },
+            file: name,
+          }),
+        );
+        continue;
+      }
+
+      // A condition-only module has no type_definitions; default it so the
+      // loop below iterates rather than throwing.
+      authorizationModel.type_definitions = authorizationModel.type_definitions || [];
 
       for (const typeDef of authorizationModel.type_definitions) {
         // If this is an extension mark it to be merged later
@@ -47,17 +66,6 @@ export const transformModuleFilesToModel = (
             extendedTypeDefs[name] = [];
           }
           extendedTypeDefs[name].push(typeDef);
-          continue;
-        }
-        if (!typeDef.metadata) {
-          errors.push(
-            new ModuleTransformationSingleError({
-              msg: "file is not a module",
-              line: { start: 0, end: 0 },
-              column: { start: 0, end: 0 },
-              file: "nomodule.fga",
-            }),
-          );
           continue;
         }
         typeDef.metadata!.source_info = {

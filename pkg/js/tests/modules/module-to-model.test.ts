@@ -21,6 +21,9 @@ describe("transformModuleFilesToModel - module test cases", () => {
       if (!testCase.expected_errors) {
         expect(transformModuleFilesToModel(testCase.modules, "1.2")).toEqual(JSON.parse(testCase.json));
       } else {
+        // Force an assertion so a case that is expected to error but does not throw
+        // fails here, rather than passing silently because the catch never runs.
+        expect.hasAssertions();
         try {
           transformModuleFilesToModel(testCase.modules, "1.2");
         } catch (error) {
@@ -127,5 +130,33 @@ describe("transformModuleFilesToModel - module test cases", () => {
     );
 
     expect(model.schema_version).toEqual("1.1");
+  });
+
+  it("transforms a module whose condition lives in a file with no types", () => {
+    const model = transformModuleFilesToModel(
+      [
+        {
+          name: "core.fga",
+          contents: `module core
+
+type user
+
+type org
+  relations
+    define member: [user with a_check]`,
+        },
+        {
+          name: "conditions.fga",
+          contents: `module conditions
+
+condition a_check(val: int) {
+  val <= 10
+}`,
+        },
+      ],
+      "1.2",
+    );
+
+    expect(model.conditions).toHaveProperty("a_check");
   });
 });

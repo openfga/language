@@ -602,11 +602,22 @@ func MustTransformDSLToJSON(data string) string {
 // TransformModularDSLToProto - Converts a part of a modular model in DSL syntax to the json syntax accepted by
 // OpenFGA API and also returns the type definitions that are extended in the DSL if any are.
 func TransformModularDSLToProto(data string) (*openfgav1.AuthorizationModel, map[string]*openfgav1.TypeDefinition, error) {
+	model, typeDefExtensions, _, err := transformModularDSLToProto(data)
+
+	return model, typeDefExtensions, err
+}
+
+// transformModularDSLToProto parses a module file and also reports whether it
+// declared a module header, which TransformModuleFilesToModel uses to tell a
+// module apart from a plain model.
+func transformModularDSLToProto(
+	data string,
+) (*openfgav1.AuthorizationModel, map[string]*openfgav1.TypeDefinition, bool, error) {
 	listener, errorListener := ParseDSL(data)
 
 	if errorListener.Errors != nil {
-		return nil, nil, errorListener.Errors
+		return nil, nil, false, errorListener.Errors
 	}
 
-	return &listener.authorizationModel, listener.typeDefExtensions, nil
+	return &listener.authorizationModel, listener.typeDefExtensions, listener.isModularModel, nil
 }

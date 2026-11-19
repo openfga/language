@@ -1,0 +1,14 @@
+[
+  {
+    "msg": "duplicate condition less",
+    "file": "dup.fga",
+    "line": {
+      "start": 10,
+      "end": 10
+    },
+    "column": {
+      "start": 10,
+      "end": 14
+    }
+  }
+]

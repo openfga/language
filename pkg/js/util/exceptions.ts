@@ -384,6 +384,18 @@ export const createSchemaVersionRequiredError = (props: BaseProps) => {
   );
 };
 
+export const createSchemaVersionUnsupportedError = (props: BaseProps) => {
+  const { errors, lines, lineIndex, symbol } = props;
+  errors.push(
+    constructValidationError({
+      message: "schema version no longer supported",
+      lines,
+      lineIndex,
+      metadata: { symbol, errorType: ValidationError.SchemaVersionUnsupported },
+    }),
+  );
+};
+
 export const createMaximumOneDirectRelationship = (props: BaseProps) => {
   const { errors, lines, lineIndex, symbol } = props;
   errors.push(
@@ -675,6 +687,10 @@ export class ExceptionCollector {
 
   raiseSchemaVersionRequired(symbol: string, lineIndex?: number) {
     createSchemaVersionRequiredError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
+  }
+
+  raiseSchemaVersionUnsupported(symbol: string, lineIndex?: number) {
+    createSchemaVersionUnsupportedError({ errors: this.errors, lines: this.lines, lineIndex, symbol });
   }
 
   raiseMaximumOneDirectRelationship(symbol: string, lineIndex?: number) {

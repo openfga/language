@@ -399,11 +399,16 @@ func parseConditionParams(
 
 	for _, parameterName := range parameterNames {
 		parameterType := parameterMap[parameterName]
+		if parameterType.GetTypeName() == openfgav1.ConditionParamTypeRef_TYPE_NAME_UNSPECIFIED {
+			return "", errors.ConditionParameterMissingTypeError(conditionName, parameterName)
+		}
+
 		parameterTypeString := strings.ToLower(strings.ReplaceAll(parameterType.GetTypeName().String(), "TYPE_NAME_", ""))
 
 		if parameterTypeString == "list" || parameterTypeString == "map" {
 			genericTypes := parameterType.GetGenericTypes()
-			if len(genericTypes) == 0 {
+			if len(genericTypes) == 0 ||
+				genericTypes[0].GetTypeName() == openfgav1.ConditionParamTypeRef_TYPE_NAME_UNSPECIFIED {
 				return "", errors.ConditionParameterMissingGenericTypeError(conditionName, parameterName)
 			}
 

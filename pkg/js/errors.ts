@@ -182,6 +182,15 @@ export class ConditionNameDoesntMatchError extends Error {
   }
 }
 
+export class ConditionParameterMissingTypeError extends Error {
+  constructor(
+    public conditionName: string,
+    public parameterName: string,
+  ) {
+    super(`the '${parameterName}' parameter of the '${conditionName}' condition has no type`);
+  }
+}
+
 export class ConditionParameterMissingGenericTypeError extends Error {
   constructor(
     public conditionName: string,

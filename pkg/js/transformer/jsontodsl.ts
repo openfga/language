@@ -9,9 +9,11 @@ import type {
   TypeDefinition,
   Userset,
 } from "@openfga/sdk";
+import { TypeName } from "@openfga/sdk";
 import {
   ConditionNameDoesntMatchError,
   ConditionParameterMissingGenericTypeError,
+  ConditionParameterMissingTypeError,
   UnsupportedDSLNestingError,
   UnsupportedModularModules,
 } from "../errors";
@@ -269,6 +271,9 @@ const parseType = (typeDef: TypeDefinition, isModularModel: boolean, includeSour
   return parsedTypeString;
 };
 
+const hasTypeName = (parameterType?: ConditionParamTypeRef): parameterType is ConditionParamTypeRef =>
+  !!parameterType?.type_name && parameterType.type_name !== TypeName.Unspecified;
+
 const parseConditionParams = (conditionName: string, parameterMap: Record<string, ConditionParamTypeRef>): string => {
   const parametersStringArray: string[] = [];
 
@@ -276,10 +281,13 @@ const parseConditionParams = (conditionName: string, parameterMap: Record<string
     .sort()
     .forEach((parameterName) => {
       const parameterType = parameterMap[parameterName];
+      if (!hasTypeName(parameterType)) {
+        throw new ConditionParameterMissingTypeError(conditionName, parameterName);
+      }
       let parameterTypeString = parameterType.type_name.replace("TYPE_NAME_", "").toLowerCase();
       if (parameterTypeString === "list" || parameterTypeString === "map") {
         const genericType = parameterType.generic_types?.[0];
-        if (!genericType) {
+        if (!hasTypeName(genericType)) {
           throw new ConditionParameterMissingGenericTypeError(conditionName, parameterName);
         }
         const genericTypeString = genericType.type_name.replace("TYPE_NAME_", "").toLowerCase();

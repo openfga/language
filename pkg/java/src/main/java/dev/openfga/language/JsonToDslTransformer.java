@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.joining;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.openfga.language.errors.ConditionParameterMissingGenericTypeException;
+import dev.openfga.language.errors.ConditionParameterMissingTypeException;
 import dev.openfga.language.errors.UnsupportedDSLNestingException;
 import dev.openfga.sdk.api.model.*;
 import java.util.*;
@@ -359,6 +360,9 @@ public class JsonToDslTransformer {
                         .map(entry -> {
                             var parameterName = entry.getKey();
                             var parameterType = entry.getValue();
+                            if (!hasTypeName(parameterType)) {
+                                throw new ConditionParameterMissingTypeException(conditionName, parameterName);
+                            }
                             var formattedParameterType = parameterType
                                     .getTypeName()
                                     .getValue()
@@ -366,7 +370,9 @@ public class JsonToDslTransformer {
                                     .toLowerCase();
                             if (formattedParameterType.equals("list") || formattedParameterType.equals("map")) {
                                 var genericTypes = parameterType.getGenericTypes();
-                                if (genericTypes == null || genericTypes.isEmpty()) {
+                                if (genericTypes == null
+                                        || genericTypes.isEmpty()
+                                        || !hasTypeName(genericTypes.get(0))) {
                                     throw new ConditionParameterMissingGenericTypeException(
                                             conditionName, parameterName);
                                 }
@@ -381,6 +387,12 @@ public class JsonToDslTransformer {
                             return new StringBuilder(parameterName).append(": ").append(formattedParameterType);
                         })
                         .collect(joining(", "));
+    }
+
+    private static boolean hasTypeName(ConditionParamTypeRef parameterType) {
+        return parameterType != null
+                && parameterType.getTypeName() != null
+                && parameterType.getTypeName() != TypeName.UNSPECIFIED;
     }
 
     private interface RelationFormatter {

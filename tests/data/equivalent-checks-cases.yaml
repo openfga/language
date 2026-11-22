@@ -8,7 +8,8 @@
 #   `contextual_tuples` (each tuple has `user`, `relation`, `object` and an optional `condition` with `name`
 #   and optional `context`).
 # - `expected_sent`: the checks to send, in order. `for` lists the input checks each one stands for.
-#   A sent check uses the context and contextual tuples of the first check in `for`.
+#   Each one has the `context` and `contextual_tuples` of the first check in `for`, exactly as written,
+#   and leaves them out when that check does.
 #
 # equivalent-checks-cases.json has the same cases with every model as JSON (in `model`), for SDKs without a
 # DSL parser. Don't edit it: after editing this file, run `make generate-equivalent-checks-json`.
@@ -1149,6 +1150,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
       for: [a, b]
 
 - name: merges context with keys in a different order
@@ -1179,6 +1181,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", x: 1.5 }
       for: [a, b]
 
 - name: merges 1 and 1.0
@@ -1209,6 +1212,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: 1 }
       for: [a, b]
 
 - name: merges integers that are the same double
@@ -1239,6 +1243,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: 9007199254740993 }
       for: [a, b]
 
 - name: does not merge 0 and -0.0
@@ -1269,11 +1274,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: 0 }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: -0.0 }
       for: [b]
 
 - name: does not merge true and 1
@@ -1304,11 +1311,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: true }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: 1 }
       for: [b]
 
 - name: does not merge the string "1" and the number 1
@@ -1339,11 +1348,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: "1" }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { x: 1 }
       for: [b]
 
 - name: does not merge when a field is missing
@@ -1374,11 +1385,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", x: 1 }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
       for: [b]
 
 - name: does not merge null and a missing field
@@ -1409,11 +1422,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", x: null }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
       for: [b]
 
 - name: does not merge no context and an empty context
@@ -1448,6 +1463,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: {}
       for: [b]
 
 - name: does not merge strings that differ by a trailing space
@@ -1478,11 +1494,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu " }
       for: [b]
 
 - name: does not merge strings that differ only in Unicode form
@@ -1513,11 +1531,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { city: "caf\u00e9" }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { city: "cafe\u0301" }
       for: [b]
 
 - name: does not merge lists in a different order
@@ -1548,11 +1568,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { tags: ["a", "b"] }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { tags: ["b", "a"] }
       for: [b]
 
 - name: does not merge lists with a repeated item
@@ -1583,11 +1605,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { tags: ["a"] }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { tags: ["a", "a"] }
       for: [b]
 
 - name: merges nested values that match at every level
@@ -1622,6 +1646,9 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context:
+        region: "eu"
+        meta: { level: 1, items: [1, { k: "v", count: 2 }] }
       for: [a, b]
 
 - name: does not merge nested values that differ
@@ -1657,16 +1684,19 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", meta: { items: [0] } }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", meta: { items: [-0.0] } }
       for: [b]
     - id: c
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu", meta: { items: [false] } }
       for: [c]
 
 # Contextual tuples
@@ -1711,6 +1741,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: member
+          object: "team:eng"
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
       for: [a, b]
 
 - name: merges contextual tuples in a different order
@@ -1753,6 +1790,13 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: member
+          object: "team:eng"
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
       for: [a, b]
 
 - name: does not merge different contextual tuples
@@ -1786,11 +1830,19 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:2"
       for: [b]
 
 - name: does not merge no contextual tuples and some
@@ -1825,6 +1877,10 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [b]
 
 - name: does not merge no contextual tuples and an empty list
@@ -1856,6 +1912,7 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples: []
       for: [b]
 
 - name: sends as is a check whose contextual tuples repeat a tuple
@@ -1903,16 +1960,34 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [a]
     - id: b
       user: "user:anne"
       relation: can_view
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [b]
     - id: c
       user: "user:anne"
       relation: can_view
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [c]
 
 - name: does not merge a contextual tuple with and without a condition
@@ -1950,11 +2025,20 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
       for: [b]
 
 - name: does not merge contextual tuples with different condition names
@@ -1996,11 +2080,21 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_eu, context: { region: "eu" } }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_us, context: { region: "eu" } }
       for: [b]
 
 - name: does not merge contextual tuples with different condition context
@@ -2039,11 +2133,21 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
       for: [b]
 
 - name: does not merge a contextual tuple condition with no context and an empty context
@@ -2084,11 +2188,23 @@
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      context: { region: "eu" }
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: {} }
       for: [b]
 
 - name: merges contextual tuple condition context that matches at every level
@@ -2112,7 +2228,12 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1 } }
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              x: 1
+              meta: { level: 1, items: [1, { k: "v", count: 2 }] }
     - id: b
       user: "user:anne"
       relation: viewer
@@ -2121,13 +2242,223 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { x: 1.0, region: "eu" } }
+          condition:
+            name: in_region
+            context:
+              meta: { items: [1.0, { count: 2.0, k: "v" }], level: 1.0 }
+              x: 1.0
+              region: "eu"
   expected_sent:
     - id: merged-1
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              x: 1
+              meta: { level: 1, items: [1, { k: "v", count: 2 }] }
       for: [a, b]
+
+- name: does not merge contextual tuple condition context that differs at a nested level
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with in_region]
+        define can_view: viewer
+    condition in_region(region: string, x: double) {
+      region == "eu" && x > 0.0
+    }
+  checks:
+    - id: a
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [0] } } }
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [-0.0] } } }
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [false] } } }
+  expected_sent:
+    - id: a
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [0] } } }
+      for: [a]
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [-0.0] } } }
+      for: [b]
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [false] } } }
+      for: [c]
+
+- name: sends as is checks whose contextual tuples repeat a user, relation and object with the same condition
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with in_region]
+        define can_view: viewer
+    condition in_region(region: string) {
+      region == "eu"
+    }
+  checks:
+    - id: a
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+    - id: c
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+    - id: d
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+  expected_sent:
+    - id: a
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+      for: [a]
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+      for: [b]
+    - id: c
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "us" } }
+      for: [c]
+    - id: d
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_region, context: { region: "eu" } }
+      for: [d]
 
 - name: sends as is checks whose contextual tuples repeat a user, relation and object with different conditions
   dsl: |
@@ -2189,16 +2520,43 @@
       user: "user:anne"
       relation: can_view
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_eu, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_us, context: { region: "eu" } }
       for: [a]
     - id: b
       user: "user:anne"
       relation: viewer
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_us, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_eu, context: { region: "eu" } }
       for: [b]
     - id: c
       user: "user:anne"
       relation: can_view
       object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_eu, context: { region: "eu" } }
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+          condition: { name: in_us, context: { region: "eu" } }
       for: [c]
 
 # Correlation IDs

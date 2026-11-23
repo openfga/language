@@ -2216,8 +2216,8 @@
       relations
         define viewer: [user with in_region]
         define can_view: viewer
-    condition in_region(region: string, x: double) {
-      region == "eu" && x > 0.0
+    condition in_region(region: string, limits: map<double>, tags: list<string>) {
+      region == "eu"
     }
   checks:
     - id: a
@@ -2232,8 +2232,8 @@
             name: in_region
             context:
               region: "eu"
-              x: 1
-              meta: { level: 1, items: [1, { k: "v", count: 2 }] }
+              limits: { read: 1, write: 2 }
+              tags: ["x", "y"]
     - id: b
       user: "user:anne"
       relation: viewer
@@ -2245,8 +2245,8 @@
           condition:
             name: in_region
             context:
-              meta: { items: [1.0, { count: 2.0, k: "v" }], level: 1.0 }
-              x: 1.0
+              tags: ["x", "y"]
+              limits: { write: 2.0, read: 1.0 }
               region: "eu"
   expected_sent:
     - id: merged-1
@@ -2261,8 +2261,8 @@
             name: in_region
             context:
               region: "eu"
-              x: 1
-              meta: { level: 1, items: [1, { k: "v", count: 2 }] }
+              limits: { read: 1, write: 2 }
+              tags: ["x", "y"]
       for: [a, b]
 
 - name: does not merge contextual tuple condition context that differs at a nested level
@@ -2274,8 +2274,8 @@
       relations
         define viewer: [user with in_region]
         define can_view: viewer
-    condition in_region(region: string, x: double) {
-      region == "eu" && x > 0.0
+    condition in_region(region: string, limits: map<double>, tags: list<string>) {
+      region == "eu"
     }
   checks:
     - id: a
@@ -2286,7 +2286,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [0] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["x"] } }
     - id: b
       user: "user:anne"
       relation: viewer
@@ -2295,7 +2295,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [-0.0] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] } }
     - id: c
       user: "user:anne"
       relation: viewer
@@ -2304,7 +2304,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [false] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["y"] } }
   expected_sent:
     - id: a
       user: "user:anne"
@@ -2314,7 +2314,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [0] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["x"] } }
       for: [a]
     - id: b
       user: "user:anne"
@@ -2324,7 +2324,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [-0.0] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] } }
       for: [b]
     - id: c
       user: "user:anne"
@@ -2334,7 +2334,7 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", x: 1, meta: { items: [false] } } }
+          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["y"] } }
       for: [c]
 
 - name: sends as is checks whose contextual tuples repeat a user, relation and object with the same condition

@@ -25,7 +25,8 @@ public class ModulesToModelTransformer {
     private final List<ModuleFile> moduleFiles;
     private final String schemaVersion;
 
-    public ModulesToModelTransformer(List<ModuleFile> moduleFiles, String schemaVersion) {
+    // Instances are single-use: each static entry point creates one, so errors never carry over between calls.
+    private ModulesToModelTransformer(List<ModuleFile> moduleFiles, String schemaVersion) {
         this.moduleFiles = moduleFiles;
         this.schemaVersion = schemaVersion;
     }
@@ -37,10 +38,10 @@ public class ModulesToModelTransformer {
 
     public static AuthorizationModel transformToModel(List<ModuleFile> moduleFiles, String schemaVersion)
             throws ModuleTransformationError {
-        return new ModulesToModelTransformer(moduleFiles, schemaVersion).transform();
+        return new ModulesToModelTransformer(moduleFiles, schemaVersion).merge();
     }
 
-    public AuthorizationModel transform() throws ModuleTransformationError {
+    private AuthorizationModel merge() throws ModuleTransformationError {
         var transformer = new DslToJsonTransformer();
 
         var typeDefs = new ArrayList<TypeDefinition>();

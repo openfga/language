@@ -15,19 +15,16 @@ public class JsonToDslTransformer {
 
     private static final String EOL = System.lineSeparator();
 
-    private boolean includeSourceInformation = false;
-
     public String transform(String json) throws JsonProcessingException {
         return transform(json, false);
     }
 
     public String transform(String json, boolean includeSourceInformation) throws JsonProcessingException {
-        this.includeSourceInformation = includeSourceInformation;
         var model = JSON.parse(json, AuthorizationModel.class);
-        return transformJSONToDSL(model);
+        return transformJSONToDSL(model, includeSourceInformation);
     }
 
-    private String transformJSONToDSL(AuthorizationModel model) {
+    private String transformJSONToDSL(AuthorizationModel model, boolean includeSourceInformation) {
         var schemaVersion = "1.1";
         if (model != null && model.getSchemaVersion() != null) {
             schemaVersion = model.getSchemaVersion();
@@ -49,23 +46,23 @@ public class JsonToDslTransformer {
             }
             for (var typeDefinition : typeDefinitions) {
                 formattedTypeDefinitions
-                        .append(formatType(typeDefinition, modular))
+                        .append(formatType(typeDefinition, modular, includeSourceInformation))
                         .append(EOL);
             }
         }
 
-        var fomattedConditions = formatConditions(model, modular);
+        var fomattedConditions = formatConditions(model, modular, includeSourceInformation);
 
         return "model" + EOL + "  schema " + schemaVersion + EOL + formattedTypeDefinitions + fomattedConditions;
     }
 
-    private String formatType(TypeDefinition typeDef, boolean modular) {
+    private String formatType(TypeDefinition typeDef, boolean modular, boolean includeSourceInformation) {
         var typeName = typeDef.getType();
         var metadata = typeDef.getMetadata();
         var formatedTypeBuilder = new StringBuilder(EOL)
                 .append("type ")
                 .append(typeName)
-                .append(constructSourceComment(module(metadata), file(metadata), ""));
+                .append(constructSourceComment(module(metadata), file(metadata), "", includeSourceInformation));
 
         var relations = requireNonNullElseGet(typeDef.getRelations(), HashMap<String, Userset>::new);
         var emptyMetadataRelation = new HashMap<String, RelationMetadata>();
@@ -84,7 +81,11 @@ public class JsonToDslTransformer {
             }
             for (var relationName : relationNames) {
                 var formattedRelationString = formatRelation(
-                        typeName, relationName, relations.get(relationName), metadataRelations.get(relationName));
+                        typeName,
+                        relationName,
+                        relations.get(relationName),
+                        metadataRelations.get(relationName),
+                        includeSourceInformation);
                 formatedTypeBuilder.append(EOL).append(formattedRelationString);
             }
         }
@@ -93,7 +94,11 @@ public class JsonToDslTransformer {
     }
 
     private String formatRelation(
-            String typeName, String relationName, Userset relationDefinition, RelationMetadata relationMetadata) {
+            String typeName,
+            String relationName,
+            Userset relationDefinition,
+            RelationMetadata relationMetadata,
+            boolean includeSourceInformation) {
         var validator = new DirectAssignmentValidator();
 
         var typeRestrictions = requireNonNullElseGet(
@@ -113,8 +118,8 @@ public class JsonToDslTransformer {
                 formatter.format(typeName, relationName, relationDefinition, typeRestrictions, validator);
         if (validator.occurences() == 0
                 || (validator.occurences() == 1 && validator.isFirstPosition(relationDefinition))) {
-            var sourceComment =
-                    constructSourceComment(module(relationMetadata), file(relationMetadata), " extended by:");
+            var sourceComment = constructSourceComment(
+                    module(relationMetadata), file(relationMetadata), " extended by:", includeSourceInformation);
             return "    define " + relationName + ": " + formattedRelation + sourceComment;
         }
 
@@ -336,7 +341,7 @@ public class JsonToDslTransformer {
         return new StringBuilder(computedUserset).append(" from ").append(tupleset);
     }
 
-    private CharSequence formatConditions(AuthorizationModel model, boolean modular) {
+    private CharSequence formatConditions(AuthorizationModel model, boolean modular, boolean includeSourceInformation) {
         var conditions = model.getConditions();
         if (conditions == null || conditions.isEmpty()) {
             return "";
@@ -357,13 +362,16 @@ public class JsonToDslTransformer {
 
         var formattedConditions = new StringBuilder();
         for (var conditionName : conditionNames) {
-            formattedConditions.append(EOL).append(formatCondition(conditionName, conditions.get(conditionName)));
+            formattedConditions
+                    .append(EOL)
+                    .append(formatCondition(conditionName, conditions.get(conditionName), includeSourceInformation));
         }
 
         return formattedConditions;
     }
 
-    private CharSequence formatCondition(String conditionName, Condition conditionDef) {
+    private CharSequence formatCondition(
+            String conditionName, Condition conditionDef, boolean includeSourceInformation) {
         if (!conditionName.equals(conditionDef.getName())) {
             throw new IllegalArgumentException("conditionName must match condition.getName()");
         }
@@ -380,7 +388,10 @@ public class JsonToDslTransformer {
                 .append(EOL)
                 .append('}')
                 .append(constructSourceComment(
-                        module(conditionDef.getMetadata()), file(conditionDef.getMetadata()), ""))
+                        module(conditionDef.getMetadata()),
+                        file(conditionDef.getMetadata()),
+                        "",
+                        includeSourceInformation))
                 .append(EOL);
     }
 
@@ -423,7 +434,8 @@ public class JsonToDslTransformer {
                 DirectAssignmentValidator validator);
     }
 
-    private CharSequence constructSourceComment(String module, String file, String leadingString) {
+    private static CharSequence constructSourceComment(
+            String module, String file, String leadingString, boolean includeSourceInformation) {
         if (!includeSourceInformation || (isBlank(module) && isBlank(file))) {
             return "";
         }

@@ -191,3 +191,96 @@
       metadata:
         symbol: "core.fga"
         errorType: multiple-modules-in-file
+
+- name: only the file with several modules is reported, even when a type name is invalid
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "self", "metadata": { "module": "core", "source_info": { "file": "shared.fga" } } },
+        { "type": "document", "metadata": { "module": "docs", "source_info": { "file": "shared.fga" } } },
+        { "type": "user", "metadata": { "module": "users", "source_info": { "file": "users.fga" } } }
+      ]
+    }
+  expected_errors:
+    - msg: "a type cannot be named 'self' or 'this'."
+      metadata:
+        symbol: "self"
+        errorType: reserved-type-keywords
+    - msg: "file shared.fga would contain multiple module definitions (core, docs) when transforming to DSL. Only one module can be defined per file."
+      metadata:
+        symbol: "shared.fga"
+        errorType: multiple-modules-in-file
+
+# Duplicate checks look only at a relation's top-level operands, so repeats nested deeper are not reported.
+- name: duplicate members in a nested union are not reported
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": {
+            "editor": { "this": {} },
+            "viewer": {
+              "union": {
+                "child": [
+                  { "this": {} },
+                  {
+                    "union": {
+                      "child": [
+                        { "computedUserset": { "relation": "editor" } },
+                        { "computedUserset": { "relation": "editor" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "editor": { "directly_related_user_types": [{ "type": "user" }] },
+              "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors: []
+
+- name: a nested difference subtracting an operand from itself is not reported
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": {
+            "editor": { "this": {} },
+            "viewer": {
+              "union": {
+                "child": [
+                  { "this": {} },
+                  {
+                    "difference": {
+                      "base": { "computedUserset": { "relation": "editor" } },
+                      "subtract": { "computedUserset": { "relation": "editor" } }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "editor": { "directly_related_user_types": [{ "type": "user" }] },
+              "viewer": { "directly_related_user_types": [{ "type": "user" }] }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors: []

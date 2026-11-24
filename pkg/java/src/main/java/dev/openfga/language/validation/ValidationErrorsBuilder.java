@@ -57,6 +57,12 @@ class ValidationErrorsBuilder {
         errors.add(new ModelValidationSingleError(errorProperties, metadata));
     }
 
+    public void raiseSchemaVersionUnsupported(int lineIndex, String symbol) {
+        var errorProperties = buildErrorProperties("schema version no longer supported", lineIndex, symbol);
+        var metadata = new ValidationMetadata(symbol, ValidationError.SchemaVersionUnsupported);
+        errors.add(new ModelValidationSingleError(errorProperties, metadata));
+    }
+
     public void raiseReservedTypeName(int lineIndex, String symbol) {
         var errorProperties = buildErrorProperties(
                 "a type cannot be named '" + Keyword.SELF + "' or '" + Keyword.THIS + "'.", lineIndex, symbol);

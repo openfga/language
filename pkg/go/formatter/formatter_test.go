@@ -150,6 +150,16 @@ func TestFormatConditionBodyEdgeCases(t *testing.T) {
 			expected: header + "condition c(x: string) {\n  x == \"\\\"}\"\n}\n",
 		},
 		{
+			name:     "closing quote of a raw string",
+			dsl:      header + "condition c(x: string) { x == r\"\\\"}\n",
+			expected: header + "condition c(x: string) {\n  x == r\"\\\"\n}\n",
+		},
+		{
+			name:     "escaped triple quote in a string",
+			dsl:      header + "condition c(x: string) {\n  x == \"\"\"a\\\"\"\"}b\"\"\"\n}\n",
+			expected: header + "condition c(x: string) {\n  x == \"\"\"a\\\"\"\"}b\"\"\"\n}\n",
+		},
+		{
 			name:     "brace in a hash comment",
 			dsl:      header + "condition c(x: int) {\n  x > 0 # } explanation\n}\n",
 			expected: header + "condition c(x: int) {\n  x > 0 # } explanation\n}\n",
@@ -185,4 +195,18 @@ func TestFormatCRLFInMultilineLiteral(t *testing.T) {
 	// They are part of a multiline string literal, which must not be changed silently.
 	_, err = formatter.Format(header + "condition c(x: string) {\r\n  x == \"\"\"a\r\nb\"\"\"\r\n}\r\n")
 	require.ErrorIs(t, err, formatter.ErrModelChanged)
+}
+
+func TestFormatCRLFOutsideMultilineLiteral(t *testing.T) {
+	t.Parallel()
+
+	const header = "model\r\n  schema 1.1\r\n\r\ntype user\r\n\r\n"
+
+	// A triple quoted literal without line endings doesn't stop the rest of the file from being normalized.
+	formatted, err := formatter.Format(header +
+		"condition c(x: string) {\r\n  x == \"\"\"abc\"\"\" &&\r\n  x != \"\"\r\n}\r\n")
+	require.NoError(t, err)
+	require.Equal(t,
+		"model\n  schema 1.1\n\ntype user\n\ncondition c(x: string) {\n  x == \"\"\"abc\"\"\" &&\n  x != \"\"\n}\n",
+		formatted)
 }

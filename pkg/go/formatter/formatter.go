@@ -96,15 +96,57 @@ func normalizeModel(model *openfgav1.AuthorizationModel) *openfgav1.Authorizatio
 	return clone
 }
 
-// normalizeConditionExpression trims an expression and, unless it has a multiline string literal whose
-// line endings are part of its value, treats CRLF and LF line endings as the same.
+// normalizeConditionExpression trims an expression and treats CRLF and LF line endings as the same,
+// except inside string literals, where the line endings are part of the value.
 func normalizeConditionExpression(expression string) string {
 	expression = strings.TrimSpace(expression)
-	if strings.Contains(expression, `"""`) || strings.Contains(expression, `'''`) {
+	if !strings.Contains(expression, "\r\n") {
 		return expression
 	}
 
-	return strings.ReplaceAll(expression, "\r\n", "\n")
+	var (
+		builder   strings.Builder
+		lit       literal
+		inComment bool
+	)
+
+	for i := 0; i < len(expression); i++ {
+		char := expression[i]
+		crlf := strings.HasPrefix(expression[i:], "\r\n")
+
+		if char == '\n' || crlf {
+			inComment = false
+
+			if len(lit.delim) == 1 {
+				lit = literal{}
+			}
+		}
+
+		if lit.open() {
+			end := lit.consume(expression, i)
+			builder.WriteString(expression[i : end+1])
+			i = end
+
+			continue
+		}
+
+		if end, ok := lit.start(expression, i); ok && !inComment {
+			builder.WriteString(expression[i : end+1])
+			i = end
+
+			continue
+		}
+
+		if char == '#' || strings.HasPrefix(expression[i:], "//") {
+			inComment = true
+		}
+
+		if !crlf {
+			builder.WriteByte(char)
+		}
+	}
+
+	return builder.String()
 }
 
 // sameExtensions reports whether two sets of extended type definitions are equal.
@@ -272,12 +314,12 @@ func (p *printer) condition(lines []string, start int) int {
 	bodyLines := []string{}
 	closingComment := ""
 	braces := 1
-	quote := ""
+	var lit literal
 	current := body
 	line := end
 
 	for {
-		if idx := closingBrace(current, &braces, &quote); idx >= 0 {
+		if idx := closingBrace(current, &braces, &lit); idx >= 0 {
 			bodyLines = append(bodyLines, current[:idx])
 			closingComment = closingLineComment(current[idx+1:])
 
@@ -495,29 +537,91 @@ func normalizeConditionHeader(header string) string {
 	return "condition " + strings.TrimSpace(name) + "(" + strings.Join(normalized, ", ") + ")"
 }
 
+// literal is the string literal a scan is currently inside of, if any.
+type literal struct {
+	// delim is the closing delimiter: a single or a triple quote. It is empty outside a literal.
+	delim string
+	// raw is true for r"..." literals, where a backslash is an ordinary character.
+	raw bool
+}
+
+func (l *literal) open() bool {
+	return l.delim != ""
+}
+
+// start opens a literal if one begins at s[i], and returns the index of its last opening quote.
+func (l *literal) start(s string, i int) (int, bool) {
+	if s[i] != '"' && s[i] != '\'' {
+		return i, false
+	}
+
+	l.delim = string(s[i])
+	if strings.HasPrefix(s[i:], strings.Repeat(l.delim, 3)) {
+		l.delim = strings.Repeat(l.delim, 3)
+	}
+
+	l.raw = hasRawPrefix(s[:i])
+
+	return i + len(l.delim) - 1, true
+}
+
+// consume handles the byte at s[i] inside a literal and returns the index of the last byte it used.
+func (l *literal) consume(s string, i int) int {
+	switch {
+	case s[i] == '\\' && !l.raw:
+		if i+1 < len(s) {
+			return i + 1
+		}
+	case strings.HasPrefix(s[i:], l.delim):
+		end := i + len(l.delim) - 1
+		*l = literal{}
+
+		return end
+	}
+
+	return i
+}
+
+// hasRawPrefix reports whether the literal that starts right after before has an r or R prefix,
+// optionally combined with the bytes prefix b or B.
+func hasRawPrefix(before string) bool {
+	start := len(before)
+
+	for start > 0 {
+		c := before[start-1]
+		if c != '_' && (c < '0' || c > '9') && (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') {
+			break
+		}
+
+		start--
+	}
+
+	switch strings.ToLower(before[start:]) {
+	case "r", "rb", "br":
+		return true
+	}
+
+	return false
+}
+
 // closingBrace returns the index of the brace that closes the condition body in line, or -1.
-// Braces inside string literals and comments are ignored. quote carries an open string literal
+// Braces inside string literals and comments are ignored. lit carries an open string literal
 // over to the next line, which is how multiline literals are handled.
-func closingBrace(line string, braces *int, quote *string) int {
+func closingBrace(line string, braces *int, lit *literal) int {
 	for i := 0; i < len(line); i++ {
-		if *quote != "" {
-			switch {
-			case line[i] == '\\' && len(*quote) == 1:
-				i++
-			case strings.HasPrefix(line[i:], *quote):
-				i += len(*quote) - 1
-				*quote = ""
-			}
+		if lit.open() {
+			i = lit.consume(line, i)
+
+			continue
+		}
+
+		if end, ok := lit.start(line, i); ok {
+			i = end
 
 			continue
 		}
 
 		switch {
-		case strings.HasPrefix(line[i:], `"""`), strings.HasPrefix(line[i:], `'''`):
-			*quote = line[i : i+3]
-			i += 2
-		case line[i] == '"' || line[i] == '\'':
-			*quote = string(line[i])
 		case line[i] == '#' || strings.HasPrefix(line[i:], "//"):
 			return -1
 		case line[i] == '{':
@@ -531,8 +635,8 @@ func closingBrace(line string, braces *int, quote *string) int {
 	}
 
 	// A single quoted literal can't continue on the next line.
-	if len(*quote) == 1 {
-		*quote = ""
+	if len(lit.delim) == 1 {
+		*lit = literal{}
 	}
 
 	return -1

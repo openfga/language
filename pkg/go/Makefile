@@ -37,6 +37,9 @@ clean: ## Clean project files
 test: ## Run Go tests
 	go test ./... -count=1 -race
 
+generate-equivalent-checks-json: ## Regenerate tests/data/equivalent-checks-cases.json from the YAML
+	go test ./transformer -run '^TestEquivalentChecksCases$$' -count=1 -update
+
 lint: $(GO_BIN)/golangci-lint ## Lint Go source files
 	@echo "==> Linting Go source files"
 	@golangci-lint run -v --fix -c .golangci.yaml ./...

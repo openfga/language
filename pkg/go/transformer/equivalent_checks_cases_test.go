@@ -30,7 +30,7 @@ var updateEquivalentChecksCases = flag.Bool(
 
 const (
 	equivalentChecksCasesNote = "Generated from equivalent-checks-cases.yaml, with every model as JSON. " +
-		"Don't edit this file: edit the YAML file and run `make generate-equivalent-checks-json`."
+		"Don't edit this file: edit the YAML file and run `make -C pkg/go generate-equivalent-checks-json`."
 	jsonPrintWidth = 80
 )
 
@@ -75,7 +75,7 @@ func TestEquivalentChecksCases(t *testing.T) {
 		t,
 		decodeKeepingNumbers(t, generated),
 		decodeKeepingNumbers(t, committed),
-		"equivalent-checks-cases.json is out of date: run `make generate-equivalent-checks-json`",
+		"equivalent-checks-cases.json is out of date: run `make -C pkg/go generate-equivalent-checks-json`",
 	)
 }
 

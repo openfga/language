@@ -7,11 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// entryOf runs the entry-point traversal for a single relation from a fresh
-// visited set.
+// entryOf answers the entry-point question for a single relation.
 func entryOf(idx *index, typeName, relationName string) entryPointResult {
-	return hasEntryPointOrLoop(idx, typeName, relationName,
-		idx.userset(typeName, relationName), map[string]map[string]bool{})
+	return resolveEntryPoints(idx).of(typeName, relationName)
 }
 
 func TestValidateEntryPoints(t *testing.T) {

@@ -39,6 +39,11 @@ const (
 	ConditionNotUsed                             Kind = "condition-not-used"
 	DifferentNestedConditionName                 Kind = "different-nested-condition-name"
 	MultipleModulesInFile                        Kind = "multiple-modules-in-file"
+
+	// Reported only by the graph-based validation; pkg/js and pkg/java have no
+	// graph path and no counterpart codes.
+	CyclicRelation        Kind = "cyclic-relation"
+	GraphModelUnbuildable Kind = "graph-model-unbuildable"
 )
 
 // Range is a start and end position in the source text, used for both the line

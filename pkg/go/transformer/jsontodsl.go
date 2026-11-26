@@ -3,6 +3,7 @@ package transformer
 import (
 	"cmp"
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -584,6 +585,45 @@ func TransformJSONStringToDSL(modelString string, opts ...TransformOption) (*str
 	}
 
 	return &dsl, nil
+}
+
+// GetModulesFromJSON - Returns the names of the modules that make up a modular authorization model,
+// sorted alphabetically. Modules are collected from the metadata of the type definitions, their relations
+// and the conditions. An error is returned if the schema version of the model does not support modules.
+func GetModulesFromJSON(model *openfgav1.AuthorizationModel) ([]string, error) {
+	schemaVersion := model.GetSchemaVersion()
+	if schemaVersion == "" {
+		schemaVersion = "1.1"
+	}
+
+	if schemaVersion != "1.2" {
+		return nil, errors.UnsupportedModularModulesError(schemaVersion)
+	}
+
+	modules := map[string]struct{}{}
+
+	for _, typeDef := range model.GetTypeDefinitions() {
+		if module := typeDef.GetMetadata().GetModule(); module != "" {
+			modules[module] = struct{}{}
+		}
+
+		for _, relationMetadata := range typeDef.GetMetadata().GetRelations() {
+			if module := relationMetadata.GetModule(); module != "" {
+				modules[module] = struct{}{}
+			}
+		}
+	}
+
+	for _, condition := range model.GetConditions() {
+		if module := condition.GetMetadata().GetModule(); module != "" {
+			modules[module] = struct{}{}
+		}
+	}
+
+	moduleNames := slices.AppendSeq(make([]string, 0, len(modules)), maps.Keys(modules))
+	slices.Sort(moduleNames)
+
+	return moduleNames, nil
 }
 
 func sortByModule(aName, bName, aModule, bModule, aFile, bFile string) int {

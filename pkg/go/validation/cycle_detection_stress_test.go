@@ -9,8 +9,8 @@ import (
 )
 
 // buildDeepChainDSL builds one type with a long linear chain of computed-userset
-// relations r0 -> r1 -> ... -> base -> [user], the worst case for the
-// non-branching recursion path in hasEntryPointOrLoop.
+// relations r0 -> r1 -> ... -> base -> [user], each relation depending on the
+// one before it.
 func buildDeepChainDSL(depth int) string {
 	var b strings.Builder
 	b.WriteString("model\n  schema 1.1\ntype user\n")
@@ -94,7 +94,7 @@ func TestCycleDetection_WideUnionTerminatesWithEntry(t *testing.T) {
 
 // TestCycleDetection_SelfReferentialChainIsLoop verifies a relation that
 // computes itself through a chain (a->b->c->a) is still detected as a loop with
-// no entry point — the shared visited map must accumulate to see the back-edge.
+// no entry point.
 func TestCycleDetection_SelfReferentialChainIsLoop(t *testing.T) {
 	findings := entryPointsFor(t, `model
   schema 1.1
@@ -136,10 +136,9 @@ type doc
 }
 
 // TestCycleDetection_IntersectionSiblingIsolation checks that one intersection
-// operand's walk does not hide a relation from the next: `a` and `b` both reach
-// `x` through a type restriction, and `b` must still find the entry point there
-// after `a` has visited it. This holds only if copyVisited copies the inner
-// per-type maps as well as the outer one.
+// operand does not hide a relation from the next: `a` and `b` both reach `x`
+// through a type restriction, and `b` must still find the entry point there
+// after `a` has.
 func TestCycleDetection_IntersectionSiblingIsolation(t *testing.T) {
 	findings := entryPointsFor(t, `model
   schema 1.1
@@ -153,5 +152,71 @@ type doc
 
 	for _, finding := range findings {
 		t.Errorf("unexpected finding: %s", finding.Message)
+	}
+}
+
+// ladderDepth is the number of levels buildLadderDSL stacks on a0 and b0, and
+// so the number of times walking every path through a ladder doubles.
+const ladderDepth = 40
+
+// buildLadderDSL builds one type with relations a0 and b0, then for each level
+// i up to ladderDepth a relation ai and a relation bi that both combine a(i-1)
+// and b(i-1) with operator. Every relation above the first level shares both of
+// the relations below it.
+func buildLadderDSL(operator, a0, b0 string) string {
+	var b strings.Builder
+	b.WriteString("model\n  schema 1.1\ntype user\n")
+	b.WriteString("type doc\n  relations\n")
+	fmt.Fprintf(&b, "    define a0: %s\n    define b0: %s\n", a0, b0)
+	for i := 1; i <= ladderDepth; i++ {
+		fmt.Fprintf(&b, "    define a%d: a%d %s b%d\n", i, i-1, operator, i-1)
+		fmt.Fprintf(&b, "    define b%d: a%d %s b%d\n", i, i-1, operator, i-1)
+	}
+	return b.String()
+}
+
+// TestCycleDetection_SharedDependencies checks models whose relations share
+// dependencies, which walking every path through them would take exponential
+// time to resolve: each level of these ladders doubles the number of paths.
+func TestCycleDetection_SharedDependencies(t *testing.T) {
+	tests := []struct {
+		name     string
+		dsl      string
+		findings int
+	}{
+		{
+			name: "intersections",
+			dsl:  buildLadderDSL("and", "[user]", "[user]"),
+		},
+		{
+			name: "differences",
+			dsl:  buildLadderDSL("but not", "[user]", "[user]"),
+		},
+		{
+			name:     "unions over a loop",
+			dsl:      buildLadderDSL("or", "b0", "a0"),
+			findings: 2*ladderDepth + 2,
+		},
+		{
+			name:     "unions around a cycle",
+			dsl:      buildLadderDSL("or", fmt.Sprintf("a%d", ladderDepth), "a0"),
+			findings: 2*ladderDepth + 2,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			findings := entryPointsFor(t, test.dsl)
+
+			if len(findings) != test.findings {
+				t.Fatalf("expected %d findings, got %d: %v", test.findings, len(findings), findings)
+			}
+
+			for _, finding := range findings {
+				if !strings.HasSuffix(finding.Message, "(potential loop).") {
+					t.Errorf("expected a potential loop, got: %s", finding.Message)
+				}
+			}
+		})
 	}
 }

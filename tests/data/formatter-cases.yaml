@@ -1,0 +1,154 @@
+- name: normalizes indentation and spacing
+  dsl: |
+    model
+    schema 1.1
+    type user
+    type document
+       relations
+      define viewer :  [ user,user:* ]   or  editor
+      define editor: [user]
+  expected: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define viewer: [user, user:*] or editor
+        define editor: [user]
+- name: keeps comments with the line they describe
+  dsl: |
+    # my model
+    model
+      schema 1.1
+    # users
+    type user
+    type document
+      relations
+          # who can view
+        define viewer: [user]   # trailing note
+  expected: |
+    # my model
+    model
+      schema 1.1
+
+    # users
+    type user
+
+    type document
+      relations
+        # who can view
+        define viewer: [user] # trailing note
+- name: collapses blank lines and keeps groups of definitions
+  dsl: |
+    model
+      schema 1.1
+
+
+
+    type user
+
+
+    type document
+      relations
+
+        define a: [user]
+
+
+        define b: [user]
+  expected: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define a: [user]
+
+        define b: [user]
+- name: joins type restrictions split over several lines
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [
+          user,
+          group#member
+        ]
+  expected: |
+    model
+      schema 1.1
+
+    type user
+
+    type group
+      relations
+        define member: [user, group#member]
+- name: normalizes condition headers and single line bodies
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user with less_than]
+    condition less_than(x:int,  y: map<string>)   {
+          x < 10 && y["a"] == "b"
+    }
+  expected: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define viewer: [user with less_than]
+
+    condition less_than(x: int, y: map<string>) {
+      x < 10 && y["a"] == "b"
+    }
+- name: keeps multi-line condition bodies as written
+  dsl: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define viewer: [user with in_window]
+    condition in_window(x: int) {
+      x > 1 &&
+        x < 10
+    }
+  expected: |
+    model
+      schema 1.1
+
+    type user
+
+    type document
+      relations
+        define viewer: [user with in_window]
+
+    condition in_window(x: int) {
+      x > 1 &&
+        x < 10
+    }
+- name: formats module files
+  dsl: |
+    module   board
+    extend   type user
+      relations
+        define another_thing: [user]
+  expected: |
+    module board
+
+    extend type user
+      relations
+        define another_thing: [user]

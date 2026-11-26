@@ -102,7 +102,7 @@ func (f *Finding) atFromClause(src source, line int) *Finding {
 	}
 
 	if col := fromClauseIndex(src.lines[line], f.Metadata.Symbol); col >= 0 {
-		f.Column = &Range{Start: col, End: col + len(f.Metadata.Symbol)}
+		*f.Column = Range{Start: col, End: col + len(f.Metadata.Symbol)}
 	}
 
 	return f
@@ -124,7 +124,7 @@ func (f *Finding) atRestriction(src source, line int) *Finding {
 	rawLine := src.lines[line]
 	if colon := strings.Index(rawLine, ":"); colon >= 0 {
 		col := colon + 1 + wordIndex(rawLine[colon+1:], f.Metadata.Symbol)
-		f.Column = &Range{Start: col, End: col + len(f.Metadata.Symbol)}
+		*f.Column = Range{Start: col, End: col + len(f.Metadata.Symbol)}
 	}
 
 	return f
@@ -137,8 +137,8 @@ func (f *Finding) atRestriction(src source, line int) *Finding {
 // spans them as written. A symbol not found that way is located by wordIndex.
 func symbolColumn(rawLine, symbol string) (start, width int) {
 	if words := strings.Fields(symbol); len(words) > 1 {
-		if start, end, ok := wordsSpan(rawLine, words); ok {
-			return start, end - start
+		if from, to, ok := wordsSpan(rawLine, words); ok {
+			return from, to - from
 		}
 	}
 
@@ -147,48 +147,54 @@ func symbolColumn(rawLine, symbol string) (start, width int) {
 
 // wordsSpan finds words on rawLine in order, each separated from the next by
 // at least one space, tab or form feed, and returns where the first starts and
-// the last ends. As in wordIndex, the match has to start and end on a word
-// boundary where the first word starts, or the last word ends, with a word
-// character.
-func wordsSpan(rawLine string, words []string) (start, end int, ok bool) {
-	first, last := words[0], words[len(words)-1]
-
+// the last ends, or false when they are not on the line. As in wordIndex, the
+// match has to start and end on a word boundary where the first word starts,
+// or the last word ends, with a word character.
+func wordsSpan(rawLine string, words []string) (int, int, bool) {
 	for off := 0; ; {
-		idx := strings.Index(rawLine[off:], first)
+		idx := strings.Index(rawLine[off:], words[0])
 		if idx < 0 {
 			return 0, 0, false
 		}
 
-		start = off + idx
+		start := off + idx
+		if end, ok := wordsEnd(rawLine, start, words); ok {
+			return start, end, true
+		}
+
 		off = start + 1
-
-		if isWordChar(first[0]) && start > 0 && isWordChar(rawLine[start-1]) {
-			continue
-		}
-
-		end, ok = start+len(first), true
-
-		for _, word := range words[1:] {
-			gap := end
-			for gap < len(rawLine) && isInlineSpace(rawLine[gap]) {
-				gap++
-			}
-
-			if gap == end || !strings.HasPrefix(rawLine[gap:], word) {
-				ok = false
-
-				break
-			}
-
-			end = gap + len(word)
-		}
-
-		if !ok || (isWordChar(last[len(last)-1]) && end < len(rawLine) && isWordChar(rawLine[end])) {
-			continue
-		}
-
-		return start, end, true
 	}
+}
+
+// wordsEnd returns where words end on rawLine when they start at start, or
+// false when they do not match there.
+func wordsEnd(rawLine string, start int, words []string) (int, bool) {
+	first, last := words[0], words[len(words)-1]
+
+	if isWordChar(first[0]) && start > 0 && isWordChar(rawLine[start-1]) {
+		return 0, false
+	}
+
+	end := start + len(first)
+
+	for _, word := range words[1:] {
+		gap := end
+		for gap < len(rawLine) && isInlineSpace(rawLine[gap]) {
+			gap++
+		}
+
+		if gap == end || !strings.HasPrefix(rawLine[gap:], word) {
+			return 0, false
+		}
+
+		end = gap + len(word)
+	}
+
+	if isWordChar(last[len(last)-1]) && end < len(rawLine) && isWordChar(rawLine[end]) {
+		return 0, false
+	}
+
+	return end, true
 }
 
 // fromClauseIndex returns where symbol sits as the operand of a `from` clause

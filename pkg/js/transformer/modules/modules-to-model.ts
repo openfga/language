@@ -11,7 +11,7 @@ import {
   ValidationError,
 } from "../../errors";
 import { getTypeLineNumber, getConditionLineNumber, getRelationLineNumber } from "../../util/line-numbers";
-import { constructTransformationError, fromClauseOperandIndex, matchWords } from "../../util/exceptions";
+import { constructTransformationError, fromClauseOperandIndex, symbolColumn } from "../../util/exceptions";
 
 export interface ModuleFile {
   name: string;
@@ -302,34 +302,21 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
 }
 
 function resolveColumn(e: ModelValidationSingleError, line: string): { start: number; end: number } {
-  const { metadata } = e;
-  const symbol = metadata?.symbol || "";
-  const re = new RegExp("\\b" + symbol + "\\b");
+  const symbol = e.metadata?.symbol || "";
 
-  let wordIdx;
-  let width = symbol.length;
-  switch (metadata?.errorType) {
+  let wordIdx: number;
+  switch (e.metadata?.errorType) {
     case ValidationError.InvalidType:
       // Split line at definition as InvalidType should mark the value, not the key
       const splitLine = line.split(":");
-      wordIdx = splitLine[0].length + splitLine[1].search(re) + 1;
+      wordIdx = splitLine[0].length + splitLine[1].search(new RegExp("\\b" + symbol + "\\b")) + 1;
       break;
     case ValidationError.TuplesetNotDirect:
-      wordIdx = fromClauseOperandIndex(line, symbol) ?? line?.search(re);
+      wordIdx = fromClauseOperandIndex(line, symbol) ?? symbolColumn(line, symbol).start;
       break;
     default:
-      const words = matchWords(line, symbol);
-      if (words) {
-        wordIdx = words.index;
-        width = words[0].length;
-      } else {
-        wordIdx = line?.search(re);
-      }
+      return symbolColumn(line, symbol);
   }
 
-  if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === -1) {
-    wordIdx = 0;
-  }
-
-  return { start: wordIdx, end: wordIdx + width };
+  return { start: wordIdx, end: wordIdx + symbol.length };
 }

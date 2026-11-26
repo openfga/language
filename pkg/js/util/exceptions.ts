@@ -434,14 +434,14 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\
 // line or a space, tab or form feed, so a `from` inside an identifier such as `from_parent` is not taken for it,
 // and the operand is the whole identifier after it.
 export const fromClauseOperandIndex = (rawLine: string, symbol: string): number | undefined => {
-  const match = new RegExp(`(?:^|[ \\t\\f])from[ \\t\\f]+(${escapeRegExp(symbol)})(?![A-Za-z0-9_-])`).exec(rawLine);
-  return match ? match.index + match[0].length - match[1].length : undefined;
+  const match = new RegExp(`((?:^|[ \\t\\f])from[ \\t\\f]+)${escapeRegExp(symbol)}(?![A-Za-z0-9_-])`).exec(rawLine);
+  return match ? match.index + match[1].length : undefined;
 };
 
 // Finds a symbol of several words, such as `owner from parent`. It is written with single spaces, but its words
 // may be separated by any run of spaces, tabs or form feeds in the source, so they are matched across such runs and
 // the match spans them as written.
-export const matchWords = (rawLine: string, symbol: string): RegExpExecArray | null => {
+const matchWords = (rawLine: string, symbol: string): RegExpExecArray | null => {
   const words = symbol.split(" ").filter((word) => word);
   if (words.length < 2) {
     return null;
@@ -450,6 +450,18 @@ export const matchWords = (rawLine: string, symbol: string): RegExpExecArray | n
   const start = /^\w/.test(symbol) ? "\\b" : "";
   const end = /\w$/.test(symbol) ? "\\b" : "";
   return new RegExp(start + words.map(escapeRegExp).join("[ \\t\\f]+") + end).exec(rawLine);
+};
+
+// Locates symbol on rawLine. A symbol of several words spans them as written; any other sits where it is found as a
+// whole word, as `\bsymbol\b`. A symbol not on the line is placed at 0.
+export const symbolColumn = (rawLine: string, symbol: string): { start: number; end: number } => {
+  const words = matchWords(rawLine, symbol);
+  if (words) {
+    return { start: words.index, end: words.index + words[0].length };
+  }
+
+  const start = Math.max(rawLine.search(new RegExp("\\b" + symbol + "\\b")), 0);
+  return { start, end: start + symbol.length };
 };
 
 function constructValidationError(props: ValidationErrorProps): ModelValidationSingleError {
@@ -471,30 +483,17 @@ function constructValidationError(props: ValidationErrorProps): ModelValidationS
 
   if (lines?.length && lineIndex != undefined && lineIndex >= 0) {
     const rawLine = lines[lineIndex];
+    const symbol = metadata.symbol || "";
 
-    let wordIdx: number;
-    let width = metadata.symbol?.length || 0;
-
-    const words = rawLine === undefined ? null : matchWords(rawLine, metadata.symbol || "");
-    if (words) {
-      wordIdx = words.index;
-      width = words[0].length;
-    } else {
-      const re = new RegExp("\\b" + metadata.symbol + "\\b");
-      wordIdx = rawLine?.search(re);
-    }
-
-    if (isNaN(wordIdx) || wordIdx === -1) {
-      wordIdx = 0;
-    }
+    let column = symbolColumn(rawLine ?? "", symbol);
 
     if (typeof customResolver === "function") {
-      wordIdx = customResolver(wordIdx, rawLine, metadata.symbol);
-      width = metadata.symbol?.length || 0;
+      const start = customResolver(column.start, rawLine, symbol);
+      column = { start, end: start + symbol.length };
     }
 
     errorProps.line = { start: lineIndex, end: lineIndex };
-    errorProps.column = { start: wordIdx, end: wordIdx + width };
+    errorProps.column = column;
   }
 
   return new ModelValidationSingleError(errorProps, errorMetadata);

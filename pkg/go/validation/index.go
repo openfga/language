@@ -4,28 +4,25 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 )
 
-// index is the model indexed for lookup: types and relations by name. It is
-// built once per validation run and shared by every phase that resolves
-// references, so each phase does not rebuild its own maps.
+// index is the model indexed for lookup: types by name, and through them their
+// relations. It is built once per validation run and shared by every phase
+// that resolves references, so each phase does not rebuild its own map.
 //
-// When a type is declared more than once the maps are built last-wins, matching
+// When a type is declared more than once the map is built last-wins, matching
 // pkg/js's typeMap; the duplicate itself is reported by the duplicates phase.
 type index struct {
-	model     *openfgav1.AuthorizationModel
-	types     map[string]*openfgav1.TypeDefinition
-	relations map[string]map[string]*openfgav1.Userset
+	model *openfgav1.AuthorizationModel
+	types map[string]*openfgav1.TypeDefinition
 }
 
 func newIndex(model *openfgav1.AuthorizationModel) *index {
 	idx := &index{
-		model:     model,
-		types:     make(map[string]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions())),
-		relations: make(map[string]map[string]*openfgav1.Userset, len(model.GetTypeDefinitions())),
+		model: model,
+		types: make(map[string]*openfgav1.TypeDefinition, len(model.GetTypeDefinitions())),
 	}
 
 	for _, typeDef := range model.GetTypeDefinitions() {
 		idx.types[typeDef.GetType()] = typeDef
-		idx.relations[typeDef.GetType()] = typeDef.GetRelations()
 	}
 
 	return idx
@@ -37,8 +34,10 @@ func (idx *index) typeDefined(typeName string) bool {
 	return ok
 }
 
+// relationDefined reports whether typeName defines relationName. An unknown
+// type has no relations: the proto getters accept a nil type definition.
 func (idx *index) relationDefined(typeName, relationName string) bool {
-	_, ok := idx.relations[typeName][relationName]
+	_, ok := idx.types[typeName].GetRelations()[relationName]
 
 	return ok
 }
@@ -48,7 +47,7 @@ func (idx *index) typeDef(typeName string) *openfgav1.TypeDefinition {
 }
 
 func (idx *index) userset(typeName, relationName string) *openfgav1.Userset {
-	return idx.relations[typeName][relationName]
+	return idx.types[typeName].GetRelations()[relationName]
 }
 
 // directTypeRestrictions returns the directly-related user types declared for a

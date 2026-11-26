@@ -2,6 +2,8 @@ package validation
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -25,9 +27,11 @@ type moduleFixtureError struct {
 	} `json:"metadata"`
 }
 
-// TestValidateModuleFixtures validates the shared module fixtures whose expected
-// errors all come from validating the combined model, which pkg/js does when it
-// combines the modules, and checks each finding's code, file and message.
+// TestValidateModuleFixtures validates the shared module fixtures and checks
+// each finding's code, file and message against the fixture's expected errors.
+// A fixture without any has to validate clean. One whose errors come from
+// combining the modules is left out: pkg/js reports those before it has a
+// model to validate.
 func TestValidateModuleFixtures(t *testing.T) {
 	t.Parallel()
 
@@ -37,18 +41,26 @@ func TestValidateModuleFixtures(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, fixture := range fixtures {
+		if !fixture.IsDir() {
+			continue
+		}
+
 		dir := filepath.Join(fixturesDir, fixture.Name())
 
-		data, err := os.ReadFile(filepath.Join(dir, "expected_errors.json"))
-		if err != nil {
+		// A fixture without modules exercises the other direction, from a model
+		// to modules.
+		if _, err := os.Stat(filepath.Join(dir, "module")); errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
 
 		var expected []moduleFixtureError
-		require.NoError(t, json.Unmarshal(data, &expected))
 
-		// An error without a code comes from combining the modules, which then
-		// leaves no model to validate.
+		data, err := os.ReadFile(filepath.Join(dir, "expected_errors.json"))
+		if !errors.Is(err, fs.ErrNotExist) {
+			require.NoError(t, err)
+			require.NoError(t, json.Unmarshal(data, &expected))
+		}
+
 		if slices.ContainsFunc(expected, func(e moduleFixtureError) bool { return e.Metadata.ErrorType == "" }) {
 			continue
 		}
@@ -63,7 +75,7 @@ func TestValidateModuleFixtures(t *testing.T) {
 			model, err := transformer.TransformModuleFilesToModel(readModuleFiles(t, filepath.Join(dir, "module")), "1.2")
 			require.NoError(t, err)
 
-			got := []moduleFixtureError{}
+			var got []moduleFixtureError
 			for _, finding := range ExtractAllAs[*Finding](ValidateJSON(model)) {
 				found := moduleFixtureError{Message: finding.Message, File: finding.File}
 				found.Metadata.ErrorType = finding.Metadata.Kind

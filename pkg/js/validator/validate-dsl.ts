@@ -712,27 +712,24 @@ function modelValidation(
       }
       typeSet.add(typeDef.type);
 
-      for (const relationDefKey in typeDef.metadata?.relations) {
-        // check for duplicate type names in the relation
-        checkForDuplicatesTypeNamesInRelation(
-          collector,
-          typeDef.metadata?.relations[relationDefKey],
-          relationDefKey,
-          typeName,
-          file,
-          module,
-          lines,
-        );
-        // check for duplicate relations
-        checkForDuplicatesInRelation(collector, typeDef, relationDefKey, lines);
-      }
-
-      // Only a directly assignable relation needs a metadata entry, so a relation without one still has its
-      // operands checked.
+      // Only a directly assignable relation needs a metadata entry, so the relations are walked and a relation's
+      // type restrictions are checked when it has one.
       for (const relationName in typeDef.relations) {
-        if (!Object.prototype.hasOwnProperty.call(typeDef.metadata?.relations || {}, relationName)) {
-          checkForDuplicatesInRelation(collector, typeDef, relationName, lines);
+        const relationMetadata = typeDef.metadata?.relations?.[relationName];
+        if (relationMetadata) {
+          // check for duplicate type names in the relation
+          checkForDuplicatesTypeNamesInRelation(
+            collector,
+            relationMetadata,
+            relationName,
+            typeName,
+            file,
+            module,
+            lines,
+          );
         }
+        // check for duplicate relations
+        checkForDuplicatesInRelation(collector, typeDef, relationName, lines);
       }
     });
   }

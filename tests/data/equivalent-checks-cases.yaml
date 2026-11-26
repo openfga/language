@@ -1710,11 +1710,14 @@
     type user
     type team
       relations
-        define member: [user]
+        define member: [user, user with in_region]
     type document
       relations
-        define viewer: [user, team#member]
+        define viewer: [user, user:* with in_region, team#member]
         define can_view: viewer
+    condition in_region(region: string, limits: map<double>, tags: list<string>) {
+      region == "eu"
+    }
   checks:
     - id: a
       user: "user:anne"
@@ -1727,7 +1730,74 @@
         - user: "team:eng#member"
           relation: viewer
           object: "document:1"
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              limits: { read: 1, write: 2 }
+              tags: ["x", "y"]
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { region: "us", limits: { read: 0.5 }, tags: [] }
     - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              tags: ["x", "y"]
+              limits: { write: 2.0, read: 1.0 }
+              region: "eu"
+        - user: "user:anne"
+          relation: member
+          object: "team:eng"
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { tags: [], region: "us", limits: { read: 0.5 } }
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
+    - id: c
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { limits: { read: 0.5 }, tags: [], region: "us" }
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              limits: { write: 2, read: 1 }
+              region: "eu"
+              tags: ["x", "y"]
+        - user: "user:anne"
+          relation: member
+          object: "team:eng"
+    - id: d
       user: "user:anne"
       relation: viewer
       object: "document:1"
@@ -1738,6 +1808,21 @@
         - user: "team:eng#member"
           relation: viewer
           object: "document:1"
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              limits: { read: 1, write: 2 }
+              tags: ["y", "x"]
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { region: "us", limits: { read: 0.5 }, tags: [] }
   expected_sent:
     - id: merged-1
       user: "user:anne"
@@ -1750,7 +1835,49 @@
         - user: "team:eng#member"
           relation: viewer
           object: "document:1"
-      for: [a, b]
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              limits: { read: 1, write: 2 }
+              tags: ["x", "y"]
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { region: "us", limits: { read: 0.5 }, tags: [] }
+      for: [a, b, c]
+    - id: d
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: member
+          object: "team:eng"
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+          condition:
+            name: in_region
+            context:
+              region: "eu"
+              limits: { read: 1, write: 2 }
+              tags: ["y", "x"]
+        - user: "user:bob"
+          relation: member
+          object: "team:eng"
+          condition:
+            name: in_region
+            context: { region: "us", limits: { read: 0.5 }, tags: [] }
+      for: [d]
 
 - name: merges contextual tuples in a different order
   dsl: |
@@ -1801,7 +1928,7 @@
           object: "document:1"
       for: [a, b]
 
-- name: does not merge different contextual tuples
+- name: does not merge contextual tuples with a different object, user or relation
   dsl: |
     model
       schema 1.1
@@ -1809,6 +1936,7 @@
     type document
       relations
         define viewer: [user]
+        define editor: [user]
         define can_view: viewer
   checks:
     - id: a
@@ -1827,6 +1955,22 @@
         - user: "user:anne"
           relation: viewer
           object: "document:2"
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:bob"
+          relation: viewer
+          object: "document:1"
+    - id: d
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: editor
+          object: "document:1"
   expected_sent:
     - id: a
       user: "user:anne"
@@ -1846,6 +1990,108 @@
           relation: viewer
           object: "document:2"
       for: [b]
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:bob"
+          relation: viewer
+          object: "document:1"
+      for: [c]
+    - id: d
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: editor
+          object: "document:1"
+      for: [d]
+
+- name: does not merge contextual tuples with a different userset or wildcard user
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type team
+      relations
+        define member: [user]
+        define admin: [user]
+    type document
+      relations
+        define viewer: [user, user:*, team#member, team#admin]
+        define can_view: viewer
+  checks:
+    - id: a
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "team:eng#admin"
+          relation: viewer
+          object: "document:1"
+    - id: c
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+    - id: d
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+  expected_sent:
+    - id: a
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "team:eng#member"
+          relation: viewer
+          object: "document:1"
+      for: [a]
+    - id: b
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "team:eng#admin"
+          relation: viewer
+          object: "document:1"
+      for: [b]
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:*"
+          relation: viewer
+          object: "document:1"
+      for: [c]
+    - id: d
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      contextual_tuples:
+        - user: "user:anne"
+          relation: viewer
+          object: "document:1"
+      for: [d]
 
 - name: does not merge no contextual tuples and some
   dsl: |
@@ -2288,7 +2534,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["x"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: 0 }, tags: ["x"] }
     - id: b
       user: "user:anne"
       relation: viewer
@@ -2297,7 +2545,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] }
     - id: c
       user: "user:anne"
       relation: viewer
@@ -2306,7 +2556,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["y"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: 0 }, tags: ["y"] }
   expected_sent:
     - id: a
       user: "user:anne"
@@ -2316,7 +2568,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["x"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: 0 }, tags: ["x"] }
       for: [a]
     - id: b
       user: "user:anne"
@@ -2326,7 +2580,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: -0.0 }, tags: ["x"] }
       for: [b]
     - id: c
       user: "user:anne"
@@ -2336,7 +2592,9 @@
         - user: "user:anne"
           relation: viewer
           object: "document:1"
-          condition: { name: in_region, context: { region: "eu", limits: { read: 0 }, tags: ["y"] } }
+          condition:
+            name: in_region
+            context: { region: "eu", limits: { read: 0 }, tags: ["y"] }
       for: [c]
 
 - name: sends as is checks whose contextual tuples repeat a user, relation and object with the same condition

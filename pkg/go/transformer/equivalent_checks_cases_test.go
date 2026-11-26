@@ -30,6 +30,7 @@ var updateEquivalentChecksCases = flag.Bool(
 
 const (
 	equivalentChecksCasesNote = "Generated from equivalent-checks-cases.yaml, with every model as JSON. " +
+		"It's committed because SDKs without a DSL parser download it from GitHub at a pinned commit. " +
 		"Don't edit this file: edit the YAML file and run `make -C pkg/go generate-equivalent-checks-json`."
 	jsonPrintWidth = 80
 )

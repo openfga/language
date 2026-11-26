@@ -12,7 +12,9 @@
 #   and leaves them out when that check does.
 #
 # equivalent-checks-cases.json has the same cases with every model as JSON (in `model`), for SDKs without a
-# DSL parser. Don't edit it: after editing this file, run `make -C pkg/go generate-equivalent-checks-json`.
+# DSL parser. It's committed because those SDKs download it from GitHub at a pinned commit, and a Go test fails
+# if it's out of date. Don't edit it: after editing this file, run
+# `make -C pkg/go generate-equivalent-checks-json` and commit both files.
 
 # Aliases and groups
 

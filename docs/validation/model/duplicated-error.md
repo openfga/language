@@ -6,36 +6,22 @@
 
 ## Summary
 
-Duplicate definitions of types or relations within the same scope are not allowed as they create ambiguity in the authorization model.
+A model declares a type twice, repeats a type restriction in a relation, or repeats an operand in a relation's rewrite.
 
 ## Description
 
-OpenFGA requires unique names within their respective scopes:
-- **Type names** must be unique across the entire model
-- **Relation names** must be unique within each type
-- **Type restrictions** within a relation must not be duplicated
+The validator reports `duplicated-error` for:
+- **Type names** declared more than once
+- **Type restrictions** repeated in one relation, such as `[user, user]`
+- **Rewrite operands** repeated at the top level of a union or intersection, such as `editor or editor`, or a difference that subtracts an operand from itself, such as `editor but not editor`
 
-Duplicate definitions create ambiguity about which definition should be used and can lead to inconsistent authorization behavior.
+A relation defined twice in one type is a syntax error, not this error (see [Duplicate relation names](#duplicate-relation-names)).
+
+Duplicates are checked only when the earlier checks find no errors. A model with a duplicate and an undefined type reports `invalid-type`, and reports the duplicate only after that is fixed.
 
 ## Example
 
-The following models would trigger this error:
-
-### Duplicate type names:
-```
-model
-  schema 1.1
-
-type user
-  relations
-    define viewer: [organization#member]
-
-type user  # Error: Duplicate type name
-  relations
-    define admin: [organization#member]
-```
-
-### Duplicate relation names:
+### Duplicate type names
 
 ```
 model
@@ -43,17 +29,17 @@ model
 
 type user
 
-type document
+type organization
   relations
-    define viewer: [user]
-    define editor: [user]
-    define viewer: [organization#member]  # Error: Duplicate relation name
+    define member: [user]
+
+type organization  # Error: Duplicate type name
+  relations
+    define admin: [user]
 ```
 
-> [!NOTE]
-> This only occurs in DSL validation, not in JSON - as in JSON the relations are represented as a map, which inherently prevents duplicates.
+### Duplicate type restrictions
 
-### Duplicate type restrictions:
 ```
 model
   schema 1.1
@@ -68,27 +54,8 @@ type document
     define viewer: [user, organization#member, user]  # Error: Duplicate 'user' restriction
 ```
 
-**Error Message:** `Duplicate definition found: type 'user'` or `Duplicate relation 'viewer' in type 'document'`
+### Duplicate rewrite operands
 
-## Resolution
-
-Remove or rename the duplicate definitions:
-
-### Fix duplicate types:
-```
-model
-  schema 1.1
-
-type user
-  relations
-    define viewer: [organization#member]
-
-type admin_user  # Rename to make unique
-  relations
-    define admin: [organization#member]
-```
-
-### Fix duplicate relations:
 ```
 model
   schema 1.1
@@ -97,11 +64,58 @@ type user
 
 type document
   relations
-    define viewer: [user, organization#member]  # Combine into single definition
     define editor: [user]
+    define viewer: editor or editor  # Error: Duplicate 'editor' operand
 ```
 
-### Fix duplicate type restrictions:
+**Error Messages:** (one per example above)
+- `` the type `organization` is a duplicate. ``
+- `` the type restriction `user` is a duplicate in the relation `viewer`. ``
+- `` the partial relation definition `editor` is a duplicate in the relation `viewer`. ``
+
+### Duplicate relation names
+
+Defining the same relation twice in one type is a syntax error:
+
+```
+model
+  schema 1.1
+
+type user
+type organization
+  relations
+    define member: [user]
+
+type document
+  relations
+    define viewer: [user]
+    define editor: [user]
+    define viewer: [organization#member]  # Syntax error: 'viewer' is already defined in 'document'
+```
+
+> [!NOTE]
+> In JSON, relations are a map, so a relation name cannot repeat within a type.
+
+## Resolution
+
+Remove or merge the duplicates.
+
+### Fix duplicate types
+
+```
+model
+  schema 1.1
+
+type user
+
+type organization  # Merged into a single declaration
+  relations
+    define member: [user]
+    define admin: [user]
+```
+
+### Fix duplicate type restrictions
+
 ```
 model
   schema 1.1
@@ -116,43 +130,28 @@ type document
     define viewer: [user, organization#member]  # Remove duplicate 'user'
 ```
 
-### Steps to fix:
+### Fix duplicate rewrite operands
 
-1. **Identify the duplicate:**
-   - Check error message for specific duplicate name and location
-   - Locate both definitions in your model
+```
+model
+  schema 1.1
 
-2. **Determine intended behavior:**
-   - Decide if definitions should be merged or renamed
-   - Consider if this was a copy-paste error
+type user
 
-3. **Choose resolution approach:**
-   - **Merge**: Combine definitions if they serve the same purpose
-   - **Rename**: Give unique names if they serve different purposes
-   - **Remove**: Delete if one is unnecessary
+type document
+  relations
+    define editor: [user]
+    define viewer: editor  # Repeated operand removed
+```
 
-4. **Update references:**
-   - If renaming, update all references to use the new name
-   - Verify no broken references remain
-
-## Common Causes
-
-- **Copy-paste errors:** Duplicating code blocks without renaming
-- **Refactoring mistakes:** Moving definitions without removing originals
-- **Merge conflicts:** Git merges creating duplicate definitions
-- **Template usage:** Using templates without customizing names
+For a relation defined twice, merge the two definitions into one, for example `define viewer: [user, organization#member]`.
 
 ## Related Errors
 
-- [`invalid-name`](./invalid-name.md) - When names don't follow proper format
-- [`reserved-type-keywords`](./reserved-type-keywords.md) - When using reserved words
-- [`missing-definition`](./missing-definition.md) - Broken references after renaming
+- [`invalid-type`](./invalid-type.md) - Reported instead of this error when a restriction also names an undefined type
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/duplicate_detection.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java duplicate detection package
-
-The validation builds maps of all defined names and checks for conflicts during the parsing phase.
+- Go: `pkg/go/validation/duplicate_detection.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

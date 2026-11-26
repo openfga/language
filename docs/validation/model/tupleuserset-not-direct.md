@@ -6,20 +6,17 @@
 
 ## Summary
 
-A tuple-to-userset operation requires the tupleset relation to have direct assignment capability, but the referenced relation does not allow direct assignment.
+The tupleset relation of a tuple-to-userset is not a plain direct assignment of types.
 
 ## Description
 
-Tuple-to-userset operations (e.g., `member from owner`) work by:
-1. Finding tuples for the tupleset relation (`owner`) where the object is the current object being evaluated
-2. Taking the user from those tuples
-3. Finding tuples where each of those users are objects and the relation is the userset relation (`member`)
-
-For this to work correctly, the tupleset relation must support direct assignment (have an entry point that is `[type]` assignments), because the operation needs to retrieve actual user objects from the tupleset.
+A tuple-to-userset such as `member from owner` reads the objects assigned to `owner`, then checks `member` on each of them. So `owner` must be a direct assignment of types only, such as `define owner: [folder, organization]`. The validator rejects a tupleset relation that:
+- has a rewrite, such as `[organization] or admin`
+- is an alias of another relation, such as `define parent: owner`
+- allows a wildcard, such as `[organization:*]`
+- allows a userset, such as `[organization#member]`
 
 ## Example
-
-The following model would trigger this error:
 
 ```
 model
@@ -33,35 +30,41 @@ type organization
 
 type folder
   relations
-    define owner: [organization] or admin  # Error: 'owner' has computed relation and is used in tuple-to-userset
-    define reader: member from owner  # Error: 'owner' has computed relation and is used in tuple-to-userset
-    
+    define admin: [user]
+    define owner: [organization] or admin  # Not a plain direct assignment: has a rewrite
+    define reader: member from owner  # Error: 'owner' is used in tuple-to-userset
+
 type photo
   relations
-    define owner: [organization#member]  # Error: 'owner' has computed relation and is used in tuple-to-userset
-    define reader: member from owner  # Error: 'owner' has computed relation and is used in tuple-to-userset
+    define owner: [organization#member]  # Not a plain direct assignment: allows a userset
+    define reader: member from owner  # Error: 'owner' is used in tuple-to-userset
 
 type resource
   relations
-    define owner: [organization:*]  # Error: 'owner' has computed relation and is used in tuple-to-userset
-    define reader: member from owner  # Error: 'owner' has computed relation and is used in tuple-to-userset
+    define owner: [organization:*]  # Not a plain direct assignment: allows a wildcard
+    define reader: member from owner  # Error: 'owner' is used in tuple-to-userset
 
 type document
   relations
     define owner: [organization]
-    define admin: owner
-    define reader: member from admin  # Error: 'owner' has computed relation and is used in tuple-to-userset
+    define admin: owner  # Not a plain direct assignment: an alias of 'owner'
+    define reader: member from admin  # Error: 'admin' is used in tuple-to-userset
 ```
 
-**Error Location:** Line 11, `member from owner` where `owner` lacks direct assignment.
+**Error Location:** The relation after `from` in each `reader` definition.
 
-**Error Message:** `Tuple-to-userset operation requires tupleset relation 'owner' to have direct assignment capability`
+**Error Message:** `` `owner` relation used inside from allows only direct relation. ``
+
+The `folder`, `photo` and `resource` types each report this message. The `document` type reports it for `admin`.
 
 ## Resolution
 
-Add direct assignment capability to the tupleset relation:
+Make the tupleset relation a direct assignment of types:
+- Replace a wildcard (`[organization:*]`) or userset (`[organization#member]`) with the type (`[organization]`)
+- Move a rewrite (`or`, `and`, `but not`) out of the tupleset relation and into the relation that uses it
+- Replace an alias with the relation it points to, for example `member from owner` instead of `member from admin` when `define admin: owner`
 
-### Option 1: Add direct assignment to the base relation and remove any indirections
+### Option 1: Use a direct assignment of types
 
 ```
 model
@@ -78,34 +81,32 @@ type document
     define reader: member from owner  # Now valid
 ```
 
-### Steps to fix:
+### Option 2: Move the extra logic out of the tupleset relation
 
-1. **Identify the problematic tupleset:**
-   - Check which relation is used as the tupleset in the tuple-to-userset operation
-   - Verify if that relation has direct assignment capability
+```
+model
+  schema 1.1
 
-2. **Analyze the intended behavior:**
-   - Understand what types of objects should be directly assigned to the tupleset
-   - Consider the authorization flow you want to achieve
+type user
 
-3. **Choose resolution approach:**
-   - Add direct assignment to the existing tupleset relation
+type organization
+  relations
+    define member: [user]
 
-4. **Validate the authorization logic:**
-   - Ensure the changes maintain your intended authorization behavior
-   - Test that the tuple-to-userset operation works as expected
+type folder
+  relations
+    define admin: [user]
+    define owner: [organization]
+    define reader: member from owner or admin  # 'or admin' moved out of 'owner'
+```
 
 ## Related Errors
 
-- [`relation-no-entry-point`](./relation-no-entry-point.md) - When relations lack entry points
-- [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - Invalid tupleset relation usage
-- [`invalid-relation-type`](./invalid-relation-type.md) - When tupleset relation doesn't exist
+- [`invalid-relation-type`](./invalid-relation-type.md) - The tupleset relation after `from` is not defined
+- [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - The relation before `from` is missing on the tupleset's types
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/semantic_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java tuple-to-userset validation package
-
-The validation analyzes the tupleset relation to ensure it has at least one direct assignment path that can produce concrete user objects.
+- Go: `pkg/go/validation/semantic_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

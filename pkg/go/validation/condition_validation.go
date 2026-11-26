@@ -105,7 +105,7 @@ func undefinedConditions(model *openfgav1.AuthorizationModel, src source,
 			var file, module string
 			for _, typeDef := range model.GetTypeDefinitions() {
 				if typeDef.GetType() == use.typeName {
-					file, module = typeMeta(typeDef)
+					file, module = relationMeta(typeDef, use.relationName)
 
 					break
 				}

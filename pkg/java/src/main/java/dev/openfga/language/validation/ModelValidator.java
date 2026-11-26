@@ -180,6 +180,15 @@ public class ModelValidator {
                         checkForDuplicatesInRelation(typeDef, relationDefKey);
                     }
                 }
+
+                // Only a directly assignable relation needs a metadata entry, so a relation without one still has
+                // its operands checked.
+                var relationsMetadata = getNullSafe(typeDef.getMetadata(), Metadata::getRelations);
+                for (var relationName : typeDef.getRelations().keySet()) {
+                    if (relationsMetadata == null || !relationsMetadata.containsKey(relationName)) {
+                        checkForDuplicatesInRelation(typeDef, relationName);
+                    }
+                }
             });
         }
 

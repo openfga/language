@@ -798,6 +798,29 @@
       metadata:
         symbol: "user"
         errorType: duplicated-error
+- name: a type declared again without relations drops the relations declared before
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type group
+      relations
+        define member: [user]
+    type group
+    type document
+      relations
+        define viewer: [group#member]
+  expected_errors:
+    - msg: "`member` is not a valid relation for `group`."
+      line:
+        start: 9
+        end: 9
+      column:
+        start: 20
+        end: 32
+      metadata:
+        symbol: "group#member"
+        errorType: invalid-relation-type
 - name: duplicate type in relations
   dsl: |
     model
@@ -2595,3 +2618,66 @@
       metadata:
         symbol: "ghost"
         errorType: invalid-type
+- name: a from inside a relation name is not taken for the from keyword
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define parent: [document] or member
+        define member: [user]
+        define from_parent: member from parent
+  expected_errors:
+    - msg: "`parent` relation used inside from allows only direct relation."
+      line:
+        start: 7
+        end: 7
+      column:
+        start: 36
+        end: 42
+      metadata:
+        symbol: "parent"
+        errorType: tupleuserset-not-direct
+# The case below uses literal tab separators in owner\tfrom\tparent. Keep the
+# tabs when editing.
+- name: a from clause separated by tabs is located with its operands
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define owner: [user]
+        define viewer: owner	from	parent
+  expected_errors:
+    - msg: "`parent` is not a valid relation for `document`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 19
+        end: 36
+      metadata:
+        symbol: "owner from parent"
+        errorType: invalid-relation-type
+- name: a from clause separated by several spaces spans them
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define owner: [user]
+        define viewer: owner  from   parent
+  expected_errors:
+    - msg: "`parent` is not a valid relation for `document`."
+      line:
+        start: 6
+        end: 6
+      column:
+        start: 19
+        end: 39
+      metadata:
+        symbol: "owner from parent"
+        errorType: invalid-relation-type

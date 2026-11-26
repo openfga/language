@@ -39,6 +39,14 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 				relationName, typeDef, typeLine))
 			errs = append(errs, duplicateOperandsIn(src, typeDef, relationName, typeLine))
 		}
+
+		// Only a directly assignable relation needs a metadata entry, so a
+		// relation without one still has its operands checked.
+		for _, relationName := range slices.Sorted(maps.Keys(typeDef.GetRelations())) {
+			if _, ok := relationsMetadata[relationName]; !ok {
+				errs = append(errs, duplicateOperandsIn(src, typeDef, relationName, typeLine))
+			}
+		}
 	}
 
 	return errors.Join(errs...)
@@ -56,7 +64,7 @@ func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMet
 	var fs []*Finding
 
 	typeName := typeDef.GetType()
-	file, module := typeMeta(typeDef)
+	file, module := relationMeta(typeDef, relationName)
 	seen := make(map[string]bool)
 
 	for _, restriction := range relationMetadata.GetDirectlyRelatedUserTypes() {

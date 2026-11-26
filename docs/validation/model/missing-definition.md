@@ -6,35 +6,22 @@
 
 ## Summary
 
-A reference to a type, relation, or other construct exists in the model but the corresponding definition is missing, creating a broken reference.
+A relation's rewrite refers to a relation that is not defined on the same type.
 
 ## Description
 
-This error is a general category for missing definitions that can occur in various contexts:
-- Type references without corresponding type definitions
-- Relation references without corresponding relation definitions
-- Condition references without corresponding condition definitions
-- Cross-module references to undefined constructs
+This error is reported when a computed userset names a relation the type does not have, on its own (`define editor: owner`) or as an operand of `or`, `and` or `but not`.
 
-Missing definitions prevent the authorization model from functioning correctly because the system cannot resolve references to undefined constructs during evaluation.
+Other undefined references have their own codes:
+- An undefined type in a type restriction, such as `[organization]` with no `type organization`, is [`invalid-type`](./invalid-type.md).
+- An undefined condition, such as `[user with missing_condition]`, is [`condition-not-defined`](./condition-not-defined.md).
+- An undefined relation in a `type#relation` restriction, or an undefined tupleset relation after `from`, is [`invalid-relation-type`](./invalid-relation-type.md).
+- A relation before `from` that is missing on every type the tupleset relation allows is [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md).
 
 ## Example
 
-The following models would trigger this error:
+### Missing relation definition
 
-### Missing type definition:
-```
-model
-  schema 1.1
-
-type user
-
-type document
-  relations
-    define viewer: [user, organization#member]  # Error: 'organization' not defined
-```
-
-### Missing relation definition:
 ```
 model
   schema 1.1
@@ -44,10 +31,13 @@ type user
 type document
   relations
     define viewer: [user]
-    define editor: [user] or nonexistent  # Error: relation 'nonexistent' not defined
+    define editor: [user] or owner  # Error: relation 'owner' not defined
 ```
 
-### Missing condition definition:
+### Using `this` for direct assignment
+
+In schema 1.1, `this` is not direct assignment. It is read as a relation named `this`:
+
 ```
 model
   schema 1.1
@@ -56,16 +46,18 @@ type user
 
 type document
   relations
-    define viewer: [user with missing_condition]  # Error: condition not defined
+    define viewer: this  # Error: relation 'this' not defined
 ```
 
-**Error Message:** `The relation 'nonexistent' does not exist` or `Type 'organization' is not defined`
+**Error Messages:**
+- `` the relation `owner` does not exist. ``
+- `` the relation `this` does not exist. ``
 
 ## Resolution
 
-Define the missing construct or correct the reference:
+Define the relation, or correct the reference. For direct assignment, use a type restriction such as `[user]`.
 
-### Option 1: Define the missing construct
+### Option 1: Define the missing relation
 
 ```
 model
@@ -73,19 +65,11 @@ model
 
 type user
 
-type organization  # Define the missing type
-  relations
-    define member: [user]
-
-condition missing_condition(user: User) {  # Define the missing condition
-  user.active == true
-}
-
 type document
   relations
-    define viewer: [user, organization#member]
-    define editor: [user] or viewer  # Reference existing relation
-    define admin: [user with missing_condition]
+    define owner: [user]  # Define the missing relation
+    define viewer: [user]
+    define editor: [user] or owner
 ```
 
 ### Option 2: Correct or remove the reference
@@ -98,64 +82,19 @@ type user
 
 type document
   relations
-    define viewer: [user]              # Remove invalid reference
+    define viewer: [user]              # Direct assignment instead of 'this'
     define editor: [user] or viewer    # Reference existing relation
-    define admin: [user]               # Remove condition reference
-```
-
-### Steps to fix:
-
-1. **Identify the missing definition:**
-   - Check the error message for the specific missing construct
-   - Note the type of definition needed (type, relation, condition)
-
-2. **Determine intended behavior:**
-   - Verify if the construct should exist or if it's a typo
-   - Review your authorization model design
-
-3. **Choose resolution approach:**
-   - Define the missing construct if it should exist
-   - Correct the reference if it's a typo
-   - Remove the reference if it's unnecessary
-
-4. **Test the fix:**
-   - Validate the model after making changes
-   - Ensure the authorization logic still works as expected
-
-## Common Patterns
-
-### ✅ Valid references:
-```
-type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define viewer: [user, organization#member]  # Both constructs defined
-```
-
-### ❌ Invalid references:
-```
-type user
-
-type document
-  relations
-    define viewer: [user, undefined_type#member]  # Type not defined
-    define editor: undefined_relation             # Relation not defined
 ```
 
 ## Related Errors
 
-- [`invalid-type`](./invalid-type.md) - Specifically for missing type definitions
-- [`condition-not-defined`](./condition-not-defined.md) - Specifically for missing condition definitions
+- [`invalid-type`](./invalid-type.md) - An undefined type in a type restriction
+- [`condition-not-defined`](./condition-not-defined.md) - An undefined condition
+- [`invalid-relation-type`](./invalid-relation-type.md) - An undefined relation in a `type#relation` restriction, or an undefined tupleset relation
+- [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - An undefined relation before `from`
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/semantic_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java semantic validation package
-
-The validation performs comprehensive reference checking across all constructs in the authorization model to identify broken references.
+- Go: `pkg/go/validation/semantic_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

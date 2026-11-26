@@ -1,177 +1,60 @@
 # OpenFGA Validation Error Troubleshooting Guide
 
-This guide provides quick solutions to common OpenFGA validation errors. For detailed documentation on each error, see the individual error documents linked below.
+Quick fixes for each validation error. Each row links to the error's page.
 
 ## Quick Reference
 
-### Most Common Errors
-
 | Error | Quick Fix | Link |
 |-------|-----------|------|
-| `schema-version-required` | Add `schema 1.1` after `model` | [Details](./schema-version-required.md) |
-| `missing-definition` | Define the missing relation or fix typo | [Details](./missing-definition.md) |
-| `invalid-type` | Define the missing type or fix typo | [Details](./invalid-type.md) |
-| `invalid-name` | Use lowercase with underscores only | [Details](./invalid-name.md) |
-| `duplicated-error` | Remove or rename duplicate definitions | [Details](./duplicated-error.md) |
-
-### Schema and Structure Issues
-
-| Error | Quick Fix                                    | Link |
-|-------|----------------------------------------------|------|
-| `invalid-schema` | Declare a recognized version (`1.1` or `1.2`) | [Details](./invalid-schema.md) |
-| `schema-version-unsupported` | Use supported version (`1.1` or `1.2`)           | [Details](./schema-version-unsupported.md) |
-
-### Relationship and Reference Errors
-
-| Error | Quick Fix | Link |
-|-------|-----------|------|
-| `relation-no-entry-point` | Add `[user]` or direct assignment | [Details](./relation-no-entry-point.md) |
-| `invalid-relation-type` | Fix `type#relation` syntax | [Details](./invalid-relation-type.md) |
-| `tupleuserset-not-direct` | Add direct assignment to tupleset relation | [Details](./tupleuserset-not-direct.md) |
-
-### Naming and Keyword Issues
-
-| Error | Quick Fix | Link |
-|-------|-----------|------|
-| `reserved-type-keywords` | Use different type names | [Details](./reserved-type-keywords.md) |
-| `reserved-relation-keywords` | Use different relation names | [Details](./reserved-relation-keywords.md) |
-
-### Wildcard and Advanced Features
-
-| Error | Quick Fix | Link |
-|-------|-----------|------|
-| `type-wildcard-relation` | Don't mix wildcard with relation | [Details](./type-wildcard-relation.md) |
-
-### 🎯 Condition Errors
-
-| Error | Quick Fix | Link |
-|-------|-----------|------|
-| `condition-not-defined` | Define the missing condition | [Details](./condition-not-defined.md) |
-| `condition-not-used` | Remove unused condition or use it | [Details](./condition-not-used.md) |
-| `different-nested-condition-name` | Fix condition name consistency | [Details](./different-nested-condition-name.md) |
-
-### Multi-file and Module Errors
-
-| Error | Quick Fix | Link |
-|-------|-----------|------|
-| `multiple-modules-in-file` | Split into separate files | [Details](./multiple-modules-in-file.md) |
-
-## 🛠️ Step-by-Step Troubleshooting
-
-### 1. **Start with Schema Issues**
-```bash
-# Check for these first - they prevent other validation
-- Missing or invalid schema version
-- Incorrect model structure
-- Basic syntax errors
-```
-
-### 2. **Fix Naming Problems**
-```bash
-# Common naming issues to check
-- Type/relation names with uppercase, spaces, or special characters
-- Use of reserved keywords like 'self', 'this', 'model'
-- Names starting with numbers
-```
-
-### 3. **Resolve Reference Issues**
-```bash
-# Check all references exist
-- Types referenced in relations exist
-- Relations referenced in computed usersets exist
-- Conditions referenced in relations exist
-```
-
-### 4. **Address Structural Problems**
-```bash
-# Check authorization model structure
-- Relations have entry points (direct assignments)
-- No circular dependencies
-- Proper tuple-to-userset structure
-```
-
-## Emergency Fixes
-
-### **Model Won't Parse at All**
-```
-1. Check schema declaration: `model` followed by `schema 1.1`
-2. Verify indentation (2 spaces per level)
-3. Check for typos in keywords: `type`, `relations`, `define`
-```
-
-### **Multiple Undefined Errors**
-```
-1. Look for typos in type/relation names
-2. Check case sensitivity (use lowercase)
-3. Verify all referenced types are defined
-```
-
-### **Authorization Not Working**
-```
-1. Check for `relation-no-entry-point` errors
-2. Verify direct assignments exist: `[user]`
-3. Look for circular dependencies
-```
+| `schema-version-required` | Add `"schema_version": "1.1"` to the JSON model | [Details](./schema-version-required.md) |
+| `schema-version-unsupported` | Use version `1.1` or `1.2` | [Details](./schema-version-unsupported.md) |
+| `invalid-schema` | Use version `1.1` or `1.2` | [Details](./invalid-schema.md) |
+| `reserved-type-keywords` | Rename the type | [Details](./reserved-type-keywords.md) |
+| `reserved-relation-keywords` | Rename the relation | [Details](./reserved-relation-keywords.md) |
+| `invalid-name` | Shorten the name or remove `:`, `#`, `@`, `*` and whitespace | [Details](./invalid-name.md) |
+| `duplicated-error` | Remove or merge the duplicates | [Details](./duplicated-error.md) |
+| `missing-definition` | Define the relation, or fix the reference | [Details](./missing-definition.md) |
+| `invalid-relation-type` | Reference a relation that exists on that type | [Details](./invalid-relation-type.md) |
+| `invalid-type` | Define the type, or fix the reference | [Details](./invalid-type.md) |
+| `relation-no-entry-point` | Add a direct assignment, such as `[user]` | [Details](./relation-no-entry-point.md) |
+| `invalid-relation-on-tupleset` | Define the relation on the tupleset's type, or use one that exists | [Details](./invalid-relation-on-tupleset.md) |
+| `tupleuserset-not-direct` | Make the tupleset relation a plain list of types, such as `[folder]` | [Details](./tupleuserset-not-direct.md) |
+| `assignable-relation-must-have-type` | List the relation's types in `directly_related_user_types` | [Details](./assignable-relation-must-have-type.md) |
+| `type-wildcard-relation` | Use a wildcard or a relation, not both | [Details](./type-wildcard-relation.md) |
+| `condition-not-defined` | Define the condition, or fix the reference | [Details](./condition-not-defined.md) |
+| `condition-not-used` | Use the condition, or remove it | [Details](./condition-not-used.md) |
+| `different-nested-condition-name` | Make the condition's `name` equal its key | [Details](./different-nested-condition-name.md) |
+| `multiple-modules-in-file` | Use one module per file in the model's metadata | [Details](./multiple-modules-in-file.md) |
 
 ## Validation Checklist
 
-Before deploying your authorization model, verify:
+Before deploying a model, check that:
 
-- [ ] Schema version is specified (`schema 1.1`)
-- [ ] All type names use lowercase and underscores
-- [ ] All relation names use lowercase and underscores
-- [ ] No reserved keywords used as names
+- [ ] The schema version is specified (`schema 1.1`, or `1.2` for modules)
+- [ ] Type names are at most 254 characters, with no `:`, `#`, `@`, `*` or whitespace
+- [ ] Relation names are at most 50 characters, with no `:`, `#`, `@`, `*` or whitespace
+- [ ] No type or relation is named `self` or `this`
 - [ ] All referenced types exist
 - [ ] All referenced relations exist
 - [ ] Every relation has an entry point
-- [ ] No circular dependencies
-- [ ] Conditions are defined if used
-- [ ] Multi-file modules are properly organized
+- [ ] Every condition that is used is defined, and every defined condition is used
+- [ ] Each module file declares one module
 
-## Best Practices
+## Using the FGA CLI
 
-### **Naming Conventions**
-- Use descriptive, business-oriented names
-- Stick to lowercase with underscores
-- Avoid technical jargon in favor of domain terms
+Get the CLI from https://github.com/openfga/cli.
 
-### **Model Structure**
-- Start simple, add complexity gradually
-- Use clear hierarchical relationships
-- Document complex permission logic
-
-### **Testing Strategy**
-- Validate model after each change
-- Test with sample authorization data
-- Use YAML test cases for regression testing
-
-## Advanced Debugging
-
-### **Use The FGA CLI**
-
-You can get the FGA CLI from: https://github.com/openfga/cli
-
-1. [Quick model validation](https://github.com/openfga/cli/#validate-an-authorization-model)
+1. [Validate a model](https://github.com/openfga/cli/#validate-an-authorization-model):
     ```bash
-    fga model validate your-model.fga
+    fga model validate --file model.fga
     ```
 
-2. [Proper validation with tests and expectations](https://github.com/openfga/cli/#run-tests-on-an-authorization-model) 
+2. [Run tests against a model](https://github.com/openfga/cli/#run-tests-on-an-authorization-model):
     ```bash
-    fga model test your-model.fga --test-file tests.yaml
+    fga model test --tests model.fga.yaml
     ```
-
-### **Common Pattern Issues**
-- Overly complex nested relationships
-- Missing direct assignments in hierarchies
-- Inconsistent permission patterns
 
 ## Getting Help
 
-- **Documentation**: See individual error documents for detailed explanations
-- **Examples**: Check the validation test cases for working examples as well as the OpenFGA [sample stores](https://github.com/openfga/sample-stores).
-- **Community**: [OpenFGA community](https://openfga.dev/community) for advanced use cases
-
----
-
-*This troubleshooting guide covers the most common validation scenarios. For detailed information about any specific error, click the links to view the comprehensive error documentation.*
+- **Examples**: the [validation test cases](../../../tests/data) in this repository, and the OpenFGA [sample stores](https://github.com/openfga/sample-stores)
+- **Community**: [OpenFGA community](https://openfga.dev/community)

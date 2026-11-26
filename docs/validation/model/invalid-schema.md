@@ -6,15 +6,13 @@
 
 ## Summary
 
-The model declares an unsupported or unrecognized schema version.
+The model declares a schema version other than `1.0`, `1.1` or `1.2`.
 
 ## Description
 
-`1.1` and `1.2` are the supported versions. A version that parses but is neither of those is reported as `invalid-schema`, with the version itself as the symbol.
+`1.1` and `1.2` are the supported versions. Version `1.0` reports [`schema-version-unsupported`](./schema-version-unsupported.md), a missing version reports [`schema-version-required`](./schema-version-required.md), and any other version reports `invalid-schema`.
 
-Two neighboring conditions have codes of their own. Version `1.0` is recognized and retired, so it reports [`schema-version-unsupported`](./schema-version-unsupported.md), and a model carrying no version at all reports [`schema-version-required`](./schema-version-required.md).
-
-A malformed `schema` line never reaches validation. `schema v1.1`, `schema 1.1.0`, `schema` with no version, and a file with no `model` declaration all fail during DSL transformation with a syntax error and no error code attached.
+In the DSL, a malformed version such as `schema v1.1` or `schema 1.1.0` is a syntax error.
 
 ## Example
 
@@ -27,9 +25,9 @@ model
 type user
 ```
 
-**Error Message:** `invalid schema 0.9`
+**Error Location:** The version, `0.9`.
 
-The position covers the version itself. Counting from zero, that is line 1, columns 9 to 12.
+**Error Message:** `invalid schema 0.9`
 
 ### JSON
 
@@ -61,11 +59,10 @@ Use `1.2` if the model is split across files with `module` declarations, `1.1` o
 ## Related Errors
 
 - [`schema-version-required`](./schema-version-required.md) - No schema version is declared
-- [`schema-version-unsupported`](./schema-version-unsupported.md) - Version `1.0`, recognized but retired
+- [`schema-version-unsupported`](./schema-version-unsupported.md) - The model declares version `1.0`
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/schema_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java schema validation package
+- Go: `pkg/go/validation/schema_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

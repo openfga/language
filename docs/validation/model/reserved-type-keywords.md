@@ -6,24 +6,21 @@
 
 ## Summary
 
-Type names cannot use the reserved keywords `self` or `this`, which have special meaning in OpenFGA's authorization language.
+A type is named `self` or `this`, which are reserved.
 
 ## Description
 
-OpenFGA reserves `self` and `this` because they carry special meaning in relation definitions. Using either as a type name causes this error:
+`self` and `this` are the only reserved names. In JSON, `this` marks a direct assignment (`{ "this": {} }`), and the schema 1.0 DSL used `self` for the same purpose.
 
-- **`this`**: refers to a relation's directly-assigned users.
-- **`self`**: reserved alongside `this`.
-
-These are the only reserved type names. Other identifiers that look like language constructs (`model`, `schema`, `type`, `define`, `relation`, etc.) are handled by the grammar and are not reported through this error.
+Other keywords are not reported with this code. `model`, `schema`, `type`, `relation`, `module` and `extend` are valid type names, and names such as `define`, `relations`, `condition`, `and`, `or`, `from` and `with` are syntax errors.
 
 ## Example
-
-The following model would trigger this error:
 
 ```
 model
   schema 1.1
+
+type user
 
 type self  # Error: a type cannot be named 'self' or 'this'
   relations
@@ -34,7 +31,7 @@ type self  # Error: a type cannot be named 'self' or 'this'
 
 ## Resolution
 
-Rename the type to anything other than `self` or `this`:
+Rename the type, and update the type restrictions that use it:
 
 ```
 model
@@ -47,29 +44,13 @@ type document
     define viewer: [user]
 ```
 
-### Steps to fix:
-
-1. **Locate the offending type:**
-   - The error symbol is the reserved name (`self` or `this`).
-
-2. **Rename it:**
-   - Choose a descriptive name that reflects the type's purpose.
-
-3. **Update all references:**
-   - Update any type restrictions or relations that referenced the renamed type.
-
-4. **Re-validate the model.**
-
 ## Related Errors
 
-- [`reserved-relation-keywords`](./reserved-relation-keywords.md) - Reserved keywords for relation names
-- [`invalid-name`](./invalid-name.md) - General invalid naming issues
+- [`reserved-relation-keywords`](./reserved-relation-keywords.md) - A relation is named `self` or `this`
+- [`invalid-name`](./invalid-name.md) - A name does not match the naming rule
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/name_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java naming validation package
-
-The validation checks each type name against the reserved set (`self`, `this`) during the name-validation phase.
+- Go: `pkg/go/validation/name_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

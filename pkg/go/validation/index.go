@@ -25,10 +25,7 @@ func newIndex(model *openfgav1.AuthorizationModel) *index {
 
 	for _, typeDef := range model.GetTypeDefinitions() {
 		idx.types[typeDef.GetType()] = typeDef
-
-		if relations := typeDef.GetRelations(); len(relations) > 0 {
-			idx.relations[typeDef.GetType()] = relations
-		}
+		idx.relations[typeDef.GetType()] = typeDef.GetRelations()
 	}
 
 	return idx

@@ -60,14 +60,10 @@ func validateTypeRestrictions(idx *index, src source, typeDef *openfgav1.TypeDef
 	var fs []*Finding
 
 	typeName := typeDef.GetType()
-	file := relationMetadata.GetSourceInfo().GetFile()
-	module := relationMetadata.GetModule()
+	file, module := relationMeta(typeDef, relationName)
 
 	for _, restriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
 		restrictedType := restriction.GetType()
-		if restrictedType == "" {
-			continue
-		}
 
 		// A directly-related type that doesn't exist: `X` is not a valid type.
 		if !idx.typeDefined(restrictedType) {
@@ -106,7 +102,7 @@ func validateUsersetReferences(idx *index, src source, typeDef *openfgav1.TypeDe
 	var errs []error
 
 	typeName := typeDef.GetType()
-	file, module := typeMeta(typeDef)
+	file, module := relationMeta(typeDef, relationName)
 
 	if computed := userset.GetComputedUserset(); computed != nil {
 		// `define a: b` where b is not a relation on this type.
@@ -159,7 +155,7 @@ func validateTupleToUsersetReferences(idx *index, src source, typeDef *openfgav1
 	}
 
 	typeName := typeDef.GetType()
-	file, module := typeMeta(typeDef)
+	file, module := relationMeta(typeDef, relationName)
 	line := src.relationLine(relationName, typeLine)
 	symbol := targetRelation + " from " + fromRelation
 

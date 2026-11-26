@@ -726,6 +726,14 @@ function modelValidation(
         // check for duplicate relations
         checkForDuplicatesInRelation(collector, typeDef, relationDefKey, lines);
       }
+
+      // Only a directly assignable relation needs a metadata entry, so a relation without one still has its
+      // operands checked.
+      for (const relationName in typeDef.relations) {
+        if (!Object.prototype.hasOwnProperty.call(typeDef.metadata?.relations || {}, relationName)) {
+          checkForDuplicatesInRelation(collector, typeDef, relationName, lines);
+        }
+      }
     });
   }
 

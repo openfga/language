@@ -11,7 +11,7 @@ import {
   ValidationError,
 } from "../../errors";
 import { getTypeLineNumber, getConditionLineNumber, getRelationLineNumber } from "../../util/line-numbers";
-import { constructTransformationError } from "../../util/exceptions";
+import { constructTransformationError, fromClauseOperandIndex, matchWords } from "../../util/exceptions";
 
 export interface ModuleFile {
   name: string;
@@ -224,11 +224,8 @@ export const transformModuleFilesToModel = (
           continue;
         }
 
-        const line = lines[lineIndex];
-        const wordIndex = resolveWordIndex(e, line);
-
         e.line = { start: lineIndex, end: lineIndex };
-        e.column = { start: wordIndex, end: wordIndex + (e.metadata.symbol?.length || 0) };
+        e.column = resolveColumn(e, lines[lineIndex]);
         errors.push(e);
       }
     }
@@ -304,33 +301,35 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
   return lineIndex;
 }
 
-function resolveWordIndex(e: ModelValidationSingleError, line: string): number {
+function resolveColumn(e: ModelValidationSingleError, line: string): { start: number; end: number } {
   const { metadata } = e;
-
-  if (!metadata) {
-    return -1;
-  }
-
-  const re = new RegExp("\\b" + metadata.symbol + "\\b");
+  const symbol = metadata?.symbol || "";
+  const re = new RegExp("\\b" + symbol + "\\b");
 
   let wordIdx;
-  switch (metadata.errorType) {
+  let width = symbol.length;
+  switch (metadata?.errorType) {
     case ValidationError.InvalidType:
       // Split line at definition as InvalidType should mark the value, not the key
       const splitLine = line.split(":");
       wordIdx = splitLine[0].length + splitLine[1].search(re) + 1;
       break;
     case ValidationError.TuplesetNotDirect:
-      const clauseStartsAt = line.indexOf("from") + "from".length;
-      wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol);
+      wordIdx = fromClauseOperandIndex(line, symbol) ?? line?.search(re);
       break;
     default:
-      wordIdx = line?.search(re);
+      const words = matchWords(line, symbol);
+      if (words) {
+        wordIdx = words.index;
+        width = words[0].length;
+      } else {
+        wordIdx = line?.search(re);
+      }
   }
 
   if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === -1) {
     wordIdx = 0;
   }
 
-  return wordIdx;
+  return { start: wordIdx, end: wordIdx + width };
 }

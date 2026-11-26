@@ -2,12 +2,17 @@ package dev.openfga.language.validation;
 
 import dev.openfga.language.errors.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 class ValidationErrorsBuilder {
+
+    private static final Pattern WORD_CHAR = Pattern.compile("\\w");
 
     private final String[] lines;
     private final List<ModelValidationSingleError> errors = new ArrayList<>();
@@ -27,22 +32,63 @@ class ValidationErrorsBuilder {
 
         if (lines != null && lineIndex >= 0 && lineIndex < lines.length) {
             var rawLine = lines[lineIndex];
-            var regex = Pattern.compile("\\b" + symbol + "\\b");
             var wordIdx = 0;
-            var matcher = regex.matcher(rawLine);
-            if (matcher.find()) {
-                wordIdx = matcher.start();
+            var width = symbol.length();
+
+            var words = matchWords(rawLine, symbol);
+            if (words != null) {
+                wordIdx = words.start();
+                width = words.end() - words.start();
+            } else {
+                var matcher = Pattern.compile("\\b" + symbol + "\\b").matcher(rawLine);
+                if (matcher.find()) {
+                    wordIdx = matcher.start();
+                }
             }
 
             if (wordResolver != null) {
                 wordIdx = wordResolver.resolve(wordIdx, rawLine, symbol);
+                width = symbol.length();
             }
 
             properties.setLine(new StartEnd(lineIndex, lineIndex));
-            properties.setColumn(new StartEnd(wordIdx, wordIdx + symbol.length()));
+            properties.setColumn(new StartEnd(wordIdx, wordIdx + width));
         }
 
         return properties;
+    }
+
+    /**
+     * Finds a symbol of several words, such as {@code owner from parent}. It is written with single spaces, but its
+     * words may be separated by any run of spaces, tabs or form feeds in the source, so they are matched across such
+     * runs and the match spans them as written. Returns null for a single word or no match.
+     */
+    private static MatchResult matchWords(String rawLine, String symbol) {
+        var words = Arrays.stream(symbol.split(" "))
+                .filter(word -> !word.isEmpty())
+                .map(Pattern::quote)
+                .collect(Collectors.toList());
+        if (words.size() < 2) {
+            return null;
+        }
+
+        var start = WORD_CHAR.matcher(symbol.substring(0, 1)).matches() ? "\\b" : "";
+        var end = WORD_CHAR.matcher(symbol.substring(symbol.length() - 1)).matches() ? "\\b" : "";
+        var matcher =
+                Pattern.compile(start + String.join("[ \\t\\f]+", words) + end).matcher(rawLine);
+        return matcher.find() ? matcher.toMatchResult() : null;
+    }
+
+    /**
+     * Finds symbol as the operand of a {@code from} clause. The {@code from} keyword stands on its own, after the
+     * start of the line or a space, tab or form feed, so a {@code from} inside an identifier such as
+     * {@code from_parent} is not taken for it, and the operand is the whole identifier after it. Returns -1 when no
+     * clause has it.
+     */
+    private static int fromClauseOperandIndex(String rawLine, String symbol) {
+        var matcher = Pattern.compile("(?:^|[ \\t\\f])from[ \\t\\f]+(" + Pattern.quote(symbol) + ")(?![A-Za-z0-9_-])")
+                .matcher(rawLine);
+        return matcher.find() ? matcher.start(1) : -1;
     }
 
     public void raiseSchemaVersionRequired(int lineIndex, String symbol) {
@@ -172,9 +218,8 @@ class ValidationErrorsBuilder {
     public void raiseTupleUsersetRequiresDirect(int lineIndex, String symbol) {
         var message = "`" + symbol + "` relation used inside from allows only direct relation.";
         var errorProperties = buildErrorProperties(message, lineIndex, symbol, (wordIndex, rawLine, value) -> {
-            var clauseStartsAt = rawLine.indexOf("from") + "from".length();
-            wordIndex = clauseStartsAt + rawLine.substring(clauseStartsAt).indexOf(value);
-            return wordIndex;
+            var operand = fromClauseOperandIndex(rawLine, value);
+            return operand >= 0 ? operand : wordIndex;
         });
         var metadata = new ValidationMetadata(symbol, ValidationError.TuplesetNotDirect);
         errors.add(new ModelValidationSingleError(errorProperties, metadata));

@@ -100,3 +100,34 @@ func TestSchemaVersion(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "1.1", actual.GetSchemaVersion())
 }
+
+func TestConditionInFileWithoutTypes(t *testing.T) {
+	t.Parallel()
+
+	// One file in the module declares only a condition, with no type definitions.
+	// The condition is used by a relation in another file, so the combined model
+	// is valid and must transform without error.
+	actual, err := transformer.TransformModuleFilesToModel([]transformer.ModuleFile{
+		{
+			Name: "core.fga",
+			Contents: `module core
+
+type user
+
+type org
+  relations
+    define member: [user with a_check]`,
+		},
+		{
+			Name: "conditions.fga",
+			Contents: `module conditions
+
+condition a_check(val: int) {
+  val <= 10
+}`,
+		},
+	}, "1.2")
+
+	require.NoError(t, err)
+	assert.Contains(t, actual.GetConditions(), "a_check")
+}

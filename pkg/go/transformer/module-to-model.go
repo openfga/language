@@ -84,12 +84,24 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 		lines := strings.Split(module.Contents, "\n")
 		moduleFiles[module.Name] = lines
 
-		mdl, typeDefExtensions, err := TransformModularDSLToProto(module.Contents)
+		mdl, typeDefExtensions, isModule, err := transformModularDSLToProto(module.Contents)
 		if err != nil {
 			var syntaxError *OpenFgaDslSyntaxMultipleError
 			if errors.As(err, &syntaxError) {
 				transformErrors.Errors = append(transformErrors.Errors, syntaxError.Errors...)
 			}
+
+			continue
+		}
+
+		// A file with no module header is a plain model, not a module. Skip the
+		// whole file with one error rather than letting its types leak into the
+		// combined model or a later step act on a file that was never a module.
+		if !isModule {
+			transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
+				Msg:  "file is not a module",
+				File: module.Name,
+			})
 
 			continue
 		}
@@ -121,15 +133,8 @@ func TransformModuleFilesToModel( //nolint:funlen,gocognit,cyclop
 			}
 
 			types = append(types, typeDef.GetType())
-			if typeDef.GetMetadata() != nil {
-				typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
-					File: module.Name,
-				}
-			} else {
-				transformErrors.Errors = append(transformErrors.Errors, &ModuleTransformationSingleError{
-					Msg: "file is not a module",
-				})
-				continue
+			typeDef.Metadata.SourceInfo = &openfgav1.SourceInfo{
+				File: module.Name,
 			}
 			rawTypeDefs = append(rawTypeDefs, typeDef)
 		}

@@ -1,0 +1,6 @@
+model
+  schema 1.1
+
+condition something(x: int) {
+  x > 0
+}

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -36,8 +37,18 @@ const (
 )
 
 var (
-	jsonNumberRegex      = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`)
+	jsonNumberRegex = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$`)
+	// YAML 1.1 parsers read an exponent as a number only after a dot and with a sign.
+	portableNumberRegex  = regexp.MustCompile(`^-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-][0-9]+)?)?$`)
 	yamlBooleanWordRegex = regexp.MustCompile(`^(y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$`)
+	yamlBase60Regex      = regexp.MustCompile(`^[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+(\.[0-9_]*)?$`)
+)
+
+var (
+	checkKeys     = []string{"id", "user", "relation", "object", "context", "contextual_tuples"}
+	sentCheckKeys = append(slices.Clone(checkKeys), "for")
+	tupleKeys     = []string{"user", "relation", "object", "condition"}
+	conditionKeys = []string{"name", "context"}
 )
 
 var errInvalidEquivalentChecksCases = errors.New("invalid equivalent checks cases")
@@ -97,9 +108,35 @@ func TestEquivalentChecksCasesRejectsInvalidSource(t *testing.T) {
 	}{
 		{"a model followed by more JSON", strings.Replace(validCase, "'{}'", "'{} {}'", 1), "expected one JSON value"},
 		{"a second YAML document", validCase + "---\n" + validCase, "expected one YAML document"},
+		{"a repeated case name", validCase + validCase, `a case needs a unique name, got "a"`},
+		{"both dsl and json", validCase + "  dsl: \"model\\n  schema 1.1\\n\"\n", "needs exactly one of dsl or json"},
+		{"neither dsl nor json", strings.Replace(validCase, "  json: '{}'\n", "", 1), "needs exactly one of dsl or json"},
 		{"a model field", validCase + "  model: {}\n", "use dsl or json, not model"},
+		{"an unknown case key", validCase + "  check: []\n", `case "a": unknown key "check"`},
+		{
+			"an unknown check key",
+			strings.Replace(validCase, "checks: []", "checks: [{id: x, contextual_tuple: []}]", 1),
+			`case "a": checks[0] has an unknown key "contextual_tuple"`,
+		},
+		{
+			"an unknown condition key",
+			strings.Replace(
+				validCase,
+				"expected_sent: []",
+				"expected_sent: [{contextual_tuples: [{condition: {name: c, contexts: {}}}]}]",
+				1,
+			),
+			`case "a": expected_sent[0].contextual_tuples[0].condition has an unknown key "contexts"`,
+		},
 		{"a repeated key", validCase + "  checks: []\n", `repeated key "checks"`},
 		{"an unquoted boolean word", strings.Replace(validCase, "checks: []", "checks: [yes]", 1), `quote "yes"`},
+		{"a number that isn't JSON", strings.Replace(validCase, "checks: []", "checks: [0x1F]", 1), `"0x1F" isn't a JSON number`},
+		{
+			"an exponent without a dot",
+			strings.Replace(validCase, "checks: []", "checks: [1e5]", 1),
+			`some YAML parsers read "1e5" as a string`,
+		},
+		{"an unquoted base 60 number", strings.Replace(validCase, "checks: []", "checks: [1:20]", 1), `quote "1:20"`},
 	}
 
 	for _, test := range tests {
@@ -214,8 +251,10 @@ func equivalentChecksCase(node *yaml.Node, names map[string]bool) (jsonObject, e
 			result = append(result, jsonField{"model", model})
 		case "model":
 			return nil, fmt.Errorf("%w: case %q: use dsl or json, not model", errInvalidEquivalentChecksCases, name)
-		default:
+		case "name", "checks", "expected_sent":
 			result = append(result, field)
+		default:
+			return nil, fmt.Errorf("%w: case %q: unknown key %q", errInvalidEquivalentChecksCases, name, field.key)
 		}
 	}
 
@@ -223,7 +262,85 @@ func equivalentChecksCase(node *yaml.Node, names map[string]bool) (jsonObject, e
 		return nil, fmt.Errorf("%w: case %q needs exactly one of dsl or json", errInvalidEquivalentChecksCases, name)
 	}
 
+	if err := checkKnownKeys(name, result); err != nil {
+		return nil, err
+	}
+
 	return result, nil
+}
+
+// checkKnownKeys fails on keys the cases don't use, so a typo like contextual_tuple fails
+// instead of leaving the contextual tuples out.
+func checkKnownKeys(name string, testCase jsonObject) error {
+	for _, list := range []struct {
+		key     string
+		allowed []string
+	}{{"checks", checkKeys}, {"expected_sent", sentCheckKeys}} {
+		checks, err := listAt(fmt.Sprintf("case %q: %s", name, list.key), testCase.get(list.key))
+		if err != nil {
+			return err
+		}
+
+		for i, value := range checks {
+			where := fmt.Sprintf("case %q: %s[%d]", name, list.key, i)
+
+			check, err := objectWithKeys(where, value, list.allowed)
+			if err != nil {
+				return err
+			}
+
+			tuples := check.get("contextual_tuples")
+			if tuples == nil {
+				continue
+			}
+
+			tupleList, err := listAt(where+".contextual_tuples", tuples)
+			if err != nil {
+				return err
+			}
+
+			for j, value := range tupleList {
+				tupleWhere := fmt.Sprintf("%s.contextual_tuples[%d]", where, j)
+
+				tuple, err := objectWithKeys(tupleWhere, value, tupleKeys)
+				if err != nil {
+					return err
+				}
+
+				if condition := tuple.get("condition"); condition != nil {
+					if _, err := objectWithKeys(tupleWhere+".condition", condition, conditionKeys); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func listAt(where string, value any) ([]any, error) {
+	list, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("%w: %s must be a list", errInvalidEquivalentChecksCases, where)
+	}
+
+	return list, nil
+}
+
+func objectWithKeys(where string, value any, allowed []string) (jsonObject, error) {
+	object, ok := value.(jsonObject)
+	if !ok {
+		return nil, fmt.Errorf("%w: %s must be a mapping", errInvalidEquivalentChecksCases, where)
+	}
+
+	for _, field := range object {
+		if !slices.Contains(allowed, field.key) {
+			return nil, fmt.Errorf("%w: %s has an unknown key %q", errInvalidEquivalentChecksCases, where, field.key)
+		}
+	}
+
+	return object, nil
 }
 
 func modelAsJSON(kind string, value any) (any, error) {
@@ -329,6 +446,15 @@ func fromYAML(node *yaml.Node) (any, error) {
 				)
 			}
 
+			if !portableNumberRegex.MatchString(node.Value) {
+				return nil, fmt.Errorf(
+					"%w: line %d: some YAML parsers read %q as a string: write exponents with a dot and a sign, like 1.0e+5",
+					errInvalidEquivalentChecksCases,
+					node.Line,
+					node.Value,
+				)
+			}
+
 			return json.Number(node.Value), nil
 		}
 	}
@@ -336,20 +462,31 @@ func fromYAML(node *yaml.Node) (any, error) {
 	return nil, fmt.Errorf("%w: line %d: unsupported YAML value", errInvalidEquivalentChecksCases, node.Line)
 }
 
-// checkPortable rejects unquoted words that YAML parsers disagree on, like True, yes or n,
+// checkPortable rejects unquoted values that YAML parsers disagree on, like True, yes, n or 1:20,
 // so every SDK reading the YAML gets the same values as the JSON copy.
 func checkPortable(node *yaml.Node) error {
 	quoted := node.Style&(yaml.DoubleQuotedStyle|yaml.SingleQuotedStyle|yaml.LiteralStyle|yaml.FoldedStyle) != 0
-	if quoted || node.Value == "true" || node.Value == "false" || !yamlBooleanWordRegex.MatchString(node.Value) {
+
+	switch {
+	case quoted || node.Value == "true" || node.Value == "false":
+		return nil
+	case yamlBooleanWordRegex.MatchString(node.Value):
+		return fmt.Errorf(
+			"%w: line %d: write booleans as true or false, and quote %q if it's a string",
+			errInvalidEquivalentChecksCases,
+			node.Line,
+			node.Value,
+		)
+	case yamlBase60Regex.MatchString(node.Value):
+		return fmt.Errorf(
+			"%w: line %d: quote %q, since some YAML parsers read it as a base 60 number",
+			errInvalidEquivalentChecksCases,
+			node.Line,
+			node.Value,
+		)
+	default:
 		return nil
 	}
-
-	return fmt.Errorf(
-		"%w: line %d: write booleans as true or false, and quote %q if it's a string",
-		errInvalidEquivalentChecksCases,
-		node.Line,
-		node.Value,
-	)
 }
 
 func sortedKeys(value any) any {

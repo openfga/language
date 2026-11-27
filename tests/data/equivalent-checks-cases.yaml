@@ -8,13 +8,13 @@
 #   `contextual_tuples` (each tuple has `user`, `relation`, `object` and an optional `condition` with `name`
 #   and optional `context`).
 # - `expected_sent`: the checks to send, in order. `for` lists the input checks each one stands for.
-#   Each one has the `context` and `contextual_tuples` of the first check in `for`, exactly as written,
-#   and leaves them out when that check does.
+#   Each one has the `context` and `contextual_tuples` of the first check in `for`, exactly as written.
+#   If that check has no `context` or `contextual_tuples`, the sent check doesn't either (not even an empty one).
 #
-# equivalent-checks-cases.json has the same cases with every model as JSON (in `model`), for SDKs without a
-# DSL parser. It's committed because those SDKs download it from GitHub at a pinned commit, and a Go test fails
-# if it's out of date. Don't edit it: after editing this file, run
-# `make -C pkg/go generate-equivalent-checks-json` and commit both files.
+# equivalent-checks-cases.json has the same cases, but each model is stored as a JSON object in `model`
+# (instead of `dsl` or `json`). SDKs that can't parse the DSL should use that file. It's committed because
+# those SDKs download it from GitHub at a pinned commit, and a Go test fails if it's out of date. Don't edit
+# it: after editing this file, run `make -C pkg/go generate-equivalent-checks-json` and commit both files.
 
 # Aliases and groups
 
@@ -316,7 +316,54 @@
       object: "document:1"
       for: [e]
 
-# What isn't an alias: the chain stops at any relation that isn't exactly one other relation
+- name: keeps a check sent as is in its place between merged groups
+  dsl: |
+    model
+      schema 1.1
+    type user
+    type document
+      relations
+        define viewer: [user]
+        define can_view: viewer
+  checks:
+    - id: a
+      user: "user:anne"
+      relation: can_view
+      object: "document:1"
+    - id: b
+      user: "user:anne"
+      relation: can_veiw
+      object: "document:1"
+    - id: c
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+    - id: d
+      user: "user:bob"
+      relation: can_view
+      object: "document:1"
+    - id: e
+      user: "user:bob"
+      relation: viewer
+      object: "document:1"
+  expected_sent:
+    - id: merged-1
+      user: "user:anne"
+      relation: viewer
+      object: "document:1"
+      for: [a, c]
+    - id: b
+      user: "user:anne"
+      relation: can_veiw
+      object: "document:1"
+      for: [b]
+    - id: merged-2
+      user: "user:bob"
+      relation: viewer
+      object: "document:1"
+      for: [d, e]
+
+# What isn't an alias: the chain only follows relations written as `define a: b`, and stops at anything else
 
 - name: stops the chain at a union
   dsl: |

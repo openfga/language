@@ -20,6 +20,10 @@ test: test-go test-js test-java
 .PHONY: lint
 lint: lint-go lint-js lint-java lint-tests
 
+.PHONY: generate-schemas
+generate-schemas: ## Regenerate schemas/authorization-model.schema.json from the API definitions
+	cd pkg/go && go run ./internal/cmd/schemagen
+
 #### Go #####
 
 .PHONY: antlr-gen-go

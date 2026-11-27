@@ -1,2 +1,5 @@
 pkg/go/gen/* linguist-generated=true
 pkg/js/gen/* linguist-generated=true
+# Generated from equivalent-checks-cases.yaml by `make -C pkg/go generate-equivalent-checks-json`. It's committed
+# because SDKs without a DSL parser download it from GitHub at a pinned commit, so don't delete or ignore it.
+tests/data/equivalent-checks-cases.json linguist-generated=true

@@ -284,3 +284,68 @@
       ]
     }
   expected_errors: []
+
+- name: an empty type name does not match the naming rule
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [{ "type": "" }]
+    }
+  expected_errors:
+    - msg: >-
+        type '' does not match naming rule: '^[^:#@\*\s]{1,254}$'.
+      metadata:
+        symbol: ""
+        errorType: invalid-name
+
+- name: a type restriction with an empty type is not a valid type
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": { "viewer": { "this": {} } },
+          "metadata": { "relations": { "viewer": { "directly_related_user_types": [{ "type": "" }] } } }
+        }
+      ]
+    }
+  expected_errors:
+    - msg: "`` is not a valid type."
+      metadata:
+        symbol: ""
+        errorType: invalid-type
+
+- name: repeated operands are reported for a relation with no metadata entry
+  json: |
+    {
+      "schema_version": "1.1",
+      "type_definitions": [
+        { "type": "user" },
+        {
+          "type": "doc",
+          "relations": {
+            "editor": { "this": {} },
+            "viewer": {
+              "union": {
+                "child": [
+                  { "computedUserset": { "relation": "editor" } },
+                  { "computedUserset": { "relation": "editor" } }
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "relations": {
+              "editor": { "directly_related_user_types": [{ "type": "user" }] }
+            }
+          }
+        }
+      ]
+    }
+  expected_errors:
+    - msg: "the partial relation definition `editor` is a duplicate in the relation `viewer`."
+      metadata:
+        symbol: "editor"
+        errorType: duplicated-error

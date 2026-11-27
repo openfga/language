@@ -6,22 +6,16 @@
 
 ## Summary
 
-A tuple-to-userset operation references an invalid or non-existent relation on the tupleset, preventing proper authorization evaluation.
+In a tuple-to-userset such as `member from owner`, the relation `member` does not exist on any type that `owner` allows.
 
 ## Description
 
-Tuple-to-userset operations (e.g., `member from owner`) work by:
-1. Finding tuples for the tupleset relation (`owner`)
-2. Taking the user/object from those tuples  
-3. Applying the computed userset relation (`member`) to that user/object
+`member from owner` reads the objects assigned to `owner`, then checks `member` on each of them. So `member` must exist on at least one type that `owner` allows. When it exists on none, the error is reported once for each allowed type.
 
-This error occurs when the relation specified in the tuple-to-userset operation doesn't exist on the expected type, or when the relation reference is malformed or invalid.
+A tupleset relation that is not defined on the type, as in `member from nope`, is [`invalid-relation-type`](./invalid-relation-type.md).
 
 ## Example
 
-The following models would trigger this error:
-
-### Non-existent relation on tupleset:
 ```
 model
   schema 1.1
@@ -38,28 +32,11 @@ type document
     define reader: admin from owner  # Error: 'admin' doesn't exist on organization
 ```
 
-### Malformed relation reference:
-```
-model
-  schema 1.1
-
-type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define owner: [organization]
-    define reader: member. from owner     # Error: malformed relation reference
-    define viewer: .member from owner     # Error: invalid syntax
-```
-
-**Error Message:** `Invalid relation 'admin' on tupleset type 'organization' in tuple-to-userset operation`
+**Error Message:** `` the `admin` relation definition on type `document` is not valid: `admin` does not exist on `owner`, which is of type `organization`. ``
 
 ## Resolution
 
-Ensure the relation exists on the tupleset type and is properly referenced:
+Define the relation on the tupleset's type, or use one that exists.
 
 ### Option 1: Define the missing relation
 
@@ -96,47 +73,18 @@ type document
     define reader: member from owner  # Use existing relation
 ```
 
-### Option 3: Fix malformed syntax
+## More Examples
+
+### Valid
+
+`member from parent` is valid because `member` exists on `organization`, even though `folder` does not have it:
 
 ```
 model
   schema 1.1
 
 type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define owner: [organization]
-    define reader: member from owner  # Clean, correct syntax
-```
-
-### Steps to fix:
-
-1. **Identify the problematic relation reference:**
-   - Check the error message for the specific relation and tupleset type
-   - Locate the tuple-to-userset operation in your model
-
-2. **Verify the tupleset type:**
-   - Check if the relation exists on the tupleset type
-   - Review the type definition to see available relations
-
-3. **Choose resolution approach:**
-   - Define the missing relation if it should exist
-   - Use an existing relation if there was a typo
-   - Fix syntax issues in the relation reference
-
-4. **Test the authorization logic:**
-   - Ensure the tuple-to-userset operation works as intended
-   - Verify the authorization flow makes sense
-
-## Valid Tuple-to-Userset Patterns
-
-### ✅ Correct usage:
-```
-type user
+type folder
 type organization
   relations
     define member: [user]
@@ -145,12 +93,20 @@ type organization
 type document
   relations
     define owner: [organization]
+    define parent: [folder, organization]
     define reader: member from owner     # Valid: 'member' exists on organization
     define editor: admin from owner      # Valid: 'admin' exists on organization
+    define viewer: member from parent    # Valid: 'member' exists on organization, though not on folder
 ```
 
-### ❌ Invalid usage:
+### Invalid
+
 ```
+model
+  schema 1.1
+
+type user
+type folder
 type organization
   relations
     define member: [user]
@@ -159,22 +115,19 @@ type organization
 type document
   relations
     define owner: [organization]
-    define reader: admin from owner      # Error: 'admin' doesn't exist
-    define editor: member. from owner    # Error: malformed syntax
-    define viewer: from owner            # Error: missing relation
+    define parent: [folder, organization]
+    define reader: admin from owner      # Error: 'admin' doesn't exist on organization
+    define viewer: admin from parent     # Error: 'admin' exists on neither folder nor organization
 ```
 
 ## Related Errors
 
-- [`tupleuserset-not-direct`](./tupleuserset-not-direct.md) - When tupleset lacks direct assignment
-- [`missing-definition`](./missing-definition.md) - When relations don't exist
-- [`invalid-relation-type`](./invalid-relation-type.md) - When relation syntax is invalid
+- [`tupleuserset-not-direct`](./tupleuserset-not-direct.md) - The tupleset relation is not a plain direct assignment
+- [`invalid-relation-type`](./invalid-relation-type.md) - The tupleset relation after `from` is not defined
+- [`missing-definition`](./missing-definition.md) - A computed userset names an undefined relation
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/semantic_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java tuple-to-userset validation package
-
-The validation checks that all relations referenced in tuple-to-userset operations exist on their respective types and follow proper syntax rules.
+- Go: `pkg/go/validation/semantic_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

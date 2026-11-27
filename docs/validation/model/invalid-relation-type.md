@@ -6,23 +6,23 @@
 
 ## Summary
 
-A relation reference specifies an invalid or incorrectly formatted relation type, preventing proper authorization evaluation.
+A relation reference names a relation that does not exist on the type it points to.
 
 ## Description
 
-This error occurs when relation definitions reference relations in an invalid format or context. Common issues include:
-- Malformed relation references in type restrictions
-- Invalid syntax in computed userset operations
-- Incorrect relation specification in tuple-to-userset operations
-- Missing or improperly formatted relation qualifiers
+This error is reported for:
+- **`type#relation` restrictions**: in `[organization#member]`, `organization` is defined but has no relation `member`.
+- **Tupleset relations**: in `owner from parent`, `parent` is not defined on the current type.
 
-OpenFGA requires relation references to follow specific syntax rules to ensure proper parsing and evaluation during authorization checks.
+Similar problems have other codes:
+- An undefined type in a restriction, as in `[team]`, is [`invalid-type`](./invalid-type.md). For `[team#member]` with no `type team`, Go reports only `invalid-type`, while JavaScript and Java report `invalid-type` and `invalid-relation-type`.
+- A computed userset that names an undefined relation, as in `define editor: nonexistent`, is [`missing-definition`](./missing-definition.md).
+- A relation before `from` that is missing on every type the tupleset relation allows, as in `admin from owner`, is [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md).
 
 ## Example
 
-The following models would trigger this error:
+### Undefined relation in a type restriction
 
-### Invalid relation reference syntax:
 ```
 model
   schema 1.1
@@ -34,12 +34,11 @@ type organization
 
 type document
   relations
-    define viewer: [organization#]        # Error: empty relation after #
-    define editor: [organization##member] # Error: double ##
-    define admin: [organization#member#]  # Error: trailing #
+    define viewer: [organization#admin]  # Error: 'organization' has no 'admin' relation
 ```
 
-### Invalid relation in computed userset:
+### Undefined tupleset relation
+
 ```
 model
   schema 1.1
@@ -48,72 +47,25 @@ type user
 
 type document
   relations
-    define viewer: [user]
-    define editor: invalid.relation       # Error: invalid relation format
-    define admin: viewer.                 # Error: trailing dot
+    define owner: [user]
+    define viewer: owner from parent  # Error: 'document' has no 'parent' relation
 ```
 
-**Error Message:** `Invalid relation type format in reference: 'organization#'`
+**Error Messages:**
+- `` `admin` is not a valid relation for `organization`. ``
+- `` `parent` is not a valid relation for `document`. ``
 
 ## Resolution
 
-Correct the relation reference syntax:
+Reference a relation that exists, or define it.
 
-### Fix relation reference format:
+### Fix the type#relation reference
+
 ```
 model
   schema 1.1
 
 type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define viewer: [organization#member]  # Correct format: type#relation
-    define editor: [user, organization#member]
-    define admin: [user] or viewer
-```
-
-### Fix computed userset references:
-```
-model
-  schema 1.1
-
-type user
-
-type document
-  relations
-    define viewer: [user]
-    define editor: viewer                 # Correct computed userset
-    define admin: [user] or editor
-```
-
-### Steps to fix:
-
-1. **Identify the invalid relation reference:**
-   - Check the error message for the specific invalid syntax
-   - Locate the problematic relation reference in your model
-
-2. **Understand the correct syntax:**
-   - Type restrictions: `[type#relation]` or `[type]`
-   - Computed usersets: `relation_name`
-   - Tuple-to-userset: `relation from tupleset_relation`
-
-3. **Correct the syntax:**
-   - Remove extra characters (trailing #, dots, etc.)
-   - Ensure proper type#relation format for cross-type references
-   - Use simple relation names for computed usersets
-
-4. **Test the model:**
-   - Validate the corrected model
-   - Ensure authorization logic works as expected
-
-## Valid Relation Reference Patterns
-
-### ✅ Correct syntax:
-```
 type organization
   relations
     define member: [user]
@@ -121,49 +73,33 @@ type organization
 
 type document
   relations
-    # Type restrictions
-    define viewer: [user]                    # Direct type reference
-    define editor: [user, organization#member] # Cross-type relation reference
-    
-    # Computed usersets
-    define collaborator: viewer              # Simple relation reference
-    define manager: editor                   # Another relation reference
-    
-    # Complex operations
-    define contributor: viewer or editor     # Union of relations
-    
-    # Tuple-to-userset
-    define reader: member from owner         # Relation traversal
-    define owner: [organization#admin]       # Owner assignment
+    define viewer: [organization#admin]  # 'admin' is now defined on organization
+    define editor: [user, organization#member]
 ```
 
-### ❌ Incorrect syntax:
+### Fix the tupleset relation
+
 ```
-# Malformed cross-type references
-define viewer: [organization#]          # Missing relation
-define editor: [organization##member]   # Double ##
-define admin: [#member]                 # Missing type
+model
+  schema 1.1
 
-# Invalid computed usersets
-define collaborator: viewer.            # Trailing dot
-define manager: .editor                 # Leading dot
-define contributor: viewer..editor      # Double dots
+type user
 
-# Invalid operations
-define reader: [user]#member           # Wrong placement of #
-define owner: organization#            # Incomplete reference
+type document
+  relations
+    define owner: [user]
+    define parent: [document]
+    define viewer: owner from parent  # 'parent' is now defined on document
 ```
 
 ## Related Errors
 
-- [`invalid-type`](./invalid-type.md) - When type references are invalid
-- [`missing-definition`](./missing-definition.md) - When definitions are missing
+- [`invalid-type`](./invalid-type.md) - The type in a restriction is not defined
+- [`missing-definition`](./missing-definition.md) - A computed userset names an undefined relation
+- [`invalid-relation-on-tupleset`](./invalid-relation-on-tupleset.md) - The relation before `from` is missing on the tupleset's types
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/semantic_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java semantic validation package
-
-The validation uses parsing rules to check relation reference syntax and ensures all references follow OpenFGA's specification.
+- Go: `pkg/go/validation/semantic_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

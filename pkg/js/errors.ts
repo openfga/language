@@ -14,7 +14,11 @@ export enum ValidationError {
   RelationNoEntrypoint = "relation-no-entry-point",
   TuplesetNotDirect = "tupleuserset-not-direct",
   DuplicatedError = "duplicated-error",
+  /** @deprecated Not reported: schema 1.0 models are rejected with SchemaVersionUnsupported. */
+  RequireSchema1_0 = "allowed-type-schema-10",
   AssignableRelationsMustHaveType = "assignable-relation-must-have-type",
+  /** @deprecated Not reported: schema 1.0 models are rejected with SchemaVersionUnsupported. */
+  AllowedTypesNotValidOnSchema1_0 = "allowed-type-not-valid-on-schema-1_0",
   InvalidSchema = "invalid-schema",
   InvalidSyntax = "invalid-syntax",
   TypeRestrictionCannotHaveWildcardAndRelation = "type-wildcard-relation",

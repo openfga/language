@@ -33,11 +33,18 @@ func validateDuplicates(model *openfgav1.AuthorizationModel, src source) error {
 
 		seenTypes[typeName] = true
 
+		// Only a directly assignable relation needs a metadata entry, so the
+		// relations are walked and a relation's restrictions are checked when it
+		// has one.
+		relations := typeDef.GetRelations()
 		relationsMetadata := typeDef.GetMetadata().GetRelations()
-		for _, relationName := range slices.Sorted(maps.Keys(relationsMetadata)) {
-			errs = append(errs, duplicateRestrictionsIn(src, relationsMetadata[relationName],
-				relationName, typeDef, typeLine))
-			errs = append(errs, duplicateOperandsIn(src, typeDef, relationName, typeLine))
+
+		for _, relationName := range slices.Sorted(maps.Keys(relations)) {
+			if relationMetadata, ok := relationsMetadata[relationName]; ok {
+				errs = append(errs, duplicateRestrictionsIn(src, relationMetadata, relationName, typeDef, typeLine))
+			}
+
+			errs = append(errs, duplicateOperandsIn(src, relations[relationName], relationName, typeDef, typeLine))
 		}
 	}
 
@@ -56,7 +63,7 @@ func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMet
 	var fs []*Finding
 
 	typeName := typeDef.GetType()
-	file, module := typeMeta(typeDef)
+	file, module := relationMeta(typeDef, relationName)
 	seen := make(map[string]bool)
 
 	for _, restriction := range relationMetadata.GetDirectlyRelatedUserTypes() {
@@ -90,10 +97,9 @@ func duplicateRestrictionsIn(src source, relationMetadata *openfgav1.RelationMet
 
 // duplicateOperandsIn flags a partial relation definition repeated in a union
 // or intersection, and a difference that subtracts an operand from itself.
-func duplicateOperandsIn(src source, typeDef *openfgav1.TypeDefinition,
-	relationName string, typeLine int) error {
-	relation, ok := typeDef.GetRelations()[relationName]
-	if !ok {
+func duplicateOperandsIn(src source, relation *openfgav1.Userset,
+	relationName string, typeDef *openfgav1.TypeDefinition, typeLine int) error {
+	if relation == nil {
 		return nil
 	}
 

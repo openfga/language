@@ -172,13 +172,15 @@ public class ModelValidator {
                 }
                 typeSet.add(typeName);
 
-                if (typeDef.getMetadata() != null) {
-                    for (var relationDefKey :
-                            typeDef.getMetadata().getRelations().keySet()) {
-                        checkForDuplicatesTypeNamesInRelation(
-                                typeDef.getMetadata().getRelations().get(relationDefKey), relationDefKey);
-                        checkForDuplicatesInRelation(typeDef, relationDefKey);
+                // Only a directly assignable relation needs a metadata entry, so the relations are walked and a
+                // relation's type restrictions are checked when it has one.
+                var relationsMetadata = getNullSafe(typeDef.getMetadata(), Metadata::getRelations);
+                for (var relationName : typeDef.getRelations().keySet()) {
+                    var relationMetadata = relationsMetadata == null ? null : relationsMetadata.get(relationName);
+                    if (relationMetadata != null) {
+                        checkForDuplicatesTypeNamesInRelation(relationMetadata, relationName);
                     }
+                    checkForDuplicatesInRelation(typeDef, relationName);
                 }
             });
         }

@@ -81,15 +81,15 @@ func (f *Finding) at(src source, line int) *Finding {
 
 	f.Line = &Range{Start: line, End: line}
 
-	col := wordIndex(src.lines[line], f.Metadata.Symbol)
-	f.Column = &Range{Start: col, End: col + len(f.Metadata.Symbol)}
+	col, width := symbolColumn(src.lines[line], f.Metadata.Symbol)
+	f.Column = &Range{Start: col, End: col + width}
 
 	return f
 }
 
-// atFromClause is at, with the column searched after the `from` keyword so it
-// marks the offending tupleset relation rather than an earlier occurrence of
-// the same name on the line.
+// atFromClause is at, with the column moved to the symbol as the operand of a
+// `from` clause, so it marks the offending tupleset relation rather than an
+// earlier occurrence of the same name on the line.
 func (f *Finding) atFromClause(src source, line int) *Finding {
 	if f == nil {
 		return nil
@@ -101,10 +101,8 @@ func (f *Finding) atFromClause(src source, line int) *Finding {
 		return f
 	}
 
-	rawLine := src.lines[line]
-	if clause := strings.Index(rawLine, "from"); clause >= 0 {
-		col := clause + len("from") + strings.Index(rawLine[clause+len("from"):], f.Metadata.Symbol)
-		f.Column = &Range{Start: col, End: col + len(f.Metadata.Symbol)}
+	if col := fromClauseIndex(src.lines[line], f.Metadata.Symbol); col >= 0 {
+		*f.Column = Range{Start: col, End: col + len(f.Metadata.Symbol)}
 	}
 
 	return f
@@ -126,10 +124,115 @@ func (f *Finding) atRestriction(src source, line int) *Finding {
 	rawLine := src.lines[line]
 	if colon := strings.Index(rawLine, ":"); colon >= 0 {
 		col := colon + 1 + wordIndex(rawLine[colon+1:], f.Metadata.Symbol)
-		f.Column = &Range{Start: col, End: col + len(f.Metadata.Symbol)}
+		*f.Column = Range{Start: col, End: col + len(f.Metadata.Symbol)}
 	}
 
 	return f
+}
+
+// symbolColumn returns where symbol starts on rawLine and how many characters
+// it spans there. A symbol of several words, such as `owner from parent`, is
+// written with single spaces but may be separated by any run of spaces, tabs or
+// form feeds in the source, so its words are matched across such runs and it
+// spans them as written. A symbol not found that way is located by wordIndex.
+func symbolColumn(rawLine, symbol string) (start, width int) {
+	if words := strings.Fields(symbol); len(words) > 1 {
+		if from, to, ok := wordsSpan(rawLine, words); ok {
+			return from, to - from
+		}
+	}
+
+	return wordIndex(rawLine, symbol), len(symbol)
+}
+
+// wordsSpan finds words on rawLine in order, each separated from the next by
+// at least one space, tab or form feed, and returns where the first starts and
+// the last ends, or false when they are not on the line. As in wordIndex, the
+// match has to start and end on a word boundary where the first word starts,
+// or the last word ends, with a word character.
+func wordsSpan(rawLine string, words []string) (int, int, bool) {
+	for off := 0; ; {
+		idx := strings.Index(rawLine[off:], words[0])
+		if idx < 0 {
+			return 0, 0, false
+		}
+
+		start := off + idx
+		if end, ok := wordsEnd(rawLine, start, words); ok {
+			return start, end, true
+		}
+
+		off = start + 1
+	}
+}
+
+// wordsEnd returns where words end on rawLine when they start at start, or
+// false when they do not match there.
+func wordsEnd(rawLine string, start int, words []string) (int, bool) {
+	first, last := words[0], words[len(words)-1]
+
+	if isWordChar(first[0]) && start > 0 && isWordChar(rawLine[start-1]) {
+		return 0, false
+	}
+
+	end := start + len(first)
+
+	for _, word := range words[1:] {
+		gap := end
+		for gap < len(rawLine) && isInlineSpace(rawLine[gap]) {
+			gap++
+		}
+
+		if gap == end || !strings.HasPrefix(rawLine[gap:], word) {
+			return 0, false
+		}
+
+		end = gap + len(word)
+	}
+
+	if isWordChar(last[len(last)-1]) && end < len(rawLine) && isWordChar(rawLine[end]) {
+		return 0, false
+	}
+
+	return end, true
+}
+
+// fromClauseIndex returns where symbol sits as the operand of a `from` clause
+// on rawLine, or -1 when no clause has it. The `from` keyword stands on its
+// own, after the start of the line or a space, tab or form feed, so a `from`
+// inside an identifier such as `from_parent` is not taken for it, and the
+// operand is the whole identifier after it.
+func fromClauseIndex(rawLine, symbol string) int {
+	const keyword = "from"
+
+	for off := 0; ; {
+		idx := strings.Index(rawLine[off:], keyword)
+		if idx < 0 {
+			return -1
+		}
+
+		pos := off + idx
+		off = pos + 1
+
+		if pos > 0 && !isInlineSpace(rawLine[pos-1]) {
+			continue
+		}
+
+		operand := pos + len(keyword)
+		for operand < len(rawLine) && isInlineSpace(rawLine[operand]) {
+			operand++
+		}
+
+		if operand == pos+len(keyword) || !strings.HasPrefix(rawLine[operand:], symbol) {
+			continue
+		}
+
+		if after := operand + len(symbol); after < len(rawLine) && isIdentifierChar(rawLine[after]) {
+			continue
+		}
+
+		return operand
+	}
 }
 
 // wordIndex returns the index of symbol in rawLine, preferring a match on word
@@ -178,4 +281,16 @@ func isWordChar(b byte) bool {
 		(b >= '0' && b <= '9') ||
 		(b >= 'a' && b <= 'z') ||
 		(b >= 'A' && b <= 'Z')
+}
+
+// isIdentifierChar reports whether b can continue a DSL identifier: a word
+// character or a `-`.
+func isIdentifierChar(b byte) bool {
+	return isWordChar(b) || b == '-'
+}
+
+// isInlineSpace reports whether b separates tokens within a DSL line: a space,
+// tab or form feed, as the lexer's WHITESPACE allows.
+func isInlineSpace(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\f'
 }

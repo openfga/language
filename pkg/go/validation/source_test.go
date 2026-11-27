@@ -136,15 +136,86 @@ func TestFindingAt(t *testing.T) {
 func TestFindingAtFromClause(t *testing.T) {
 	t.Parallel()
 
-	// `owner` is both the computed relation and the tupleset after `from`; the
-	// from-clause stamp must mark the occurrence after `from`.
-	src := newSource("    define viewer: owner from owner")
+	tests := []struct {
+		name    string
+		rawLine string
+		symbol  string
+		want    *Range
+	}{
+		{
+			// `owner` is both the computed relation and the tupleset after `from`.
+			name:    "marks the operand after from",
+			rawLine: "    define viewer: owner from owner",
+			symbol:  "owner",
+			want:    &Range{Start: 30, End: 35},
+		},
+		{
+			name:    "skips a from inside the relation name",
+			rawLine: "    define from_parent: member from parent",
+			symbol:  "parent",
+			want:    &Range{Start: 36, End: 42},
+		},
+		{
+			name:    "skips a from clause whose operand only starts with the symbol",
+			rawLine: "    define viewer: member from organization or owner from org",
+			symbol:  "org",
+			want:    &Range{Start: 58, End: 61},
+		},
+		{
+			name:    "follows tabs around from",
+			rawLine: "    define viewer: owner\tfrom\tparent",
+			symbol:  "parent",
+			want:    &Range{Start: 30, End: 36},
+		},
+		{
+			name:    "keeps the symbol's column when no from clause has it",
+			rawLine: "    define viewer: [parent]",
+			symbol:  "parent",
+			want:    &Range{Start: 20, End: 26},
+		},
+	}
 
-	finding := (&Finding{Metadata: Metadata{Symbol: "owner"}}).atFromClause(src, 0)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	require.NotNil(t, finding.Column)
-	assert.Equal(t, 30, finding.Column.Start)
-	assert.Equal(t, 35, finding.Column.End)
+			finding := (&Finding{Metadata: Metadata{Symbol: test.symbol}}).atFromClause(newSource(test.rawLine), 0)
+
+			assert.Equal(t, test.want, finding.Column)
+		})
+	}
+}
+
+func TestSymbolColumn(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		rawLine   string
+		symbol    string
+		wantStart int
+		wantWidth int
+	}{
+		{"one word", "    define viewer: [user]", "viewer", 11, 6},
+		{"words separated by single spaces", "    define viewer: owner from parent", "owner from parent", 19, 17},
+		{"words separated by tabs", "    define viewer: owner\tfrom\tparent", "owner from parent", 19, 17},
+		{"words separated by several spaces span them", "    define viewer: owner  from   parent", "owner from parent", 19, 20},
+		{"a type restriction with a condition", "    define viewer: [user:*  with cond]", "user:* with cond", 20, 17},
+		{"the first word must start a word", "    define viewer: co_owner from parent or owner from parent", "owner from parent", 43, 17},
+		{"the last word must end a word", "    define viewer: owner from parents or owner from parent", "owner from parent", 41, 17},
+		{"words not found fall back to wordIndex", "    define viewer: owner or parent", "owner from parent", 0, 17},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			start, width := symbolColumn(test.rawLine, test.symbol)
+
+			assert.Equal(t, test.wantStart, start)
+			assert.Equal(t, test.wantWidth, width)
+		})
+	}
 }
 
 func TestFindingAtRestriction(t *testing.T) {

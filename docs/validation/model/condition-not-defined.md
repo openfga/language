@@ -6,17 +6,13 @@
 
 ## Summary
 
-A relation references a condition that is not defined in the model, creating a broken reference that would cause runtime errors.
+A type restriction uses a condition that the model does not define.
 
 ## Description
 
-This error occurs when a relation definition includes a condition reference that doesn't exist in the model's condition definitions. OpenFGA requires all condition references to be valid and resolvable at validation time.
-
-Conditions are used to add dynamic evaluation logic to authorization checks, such as time-based access, IP restrictions, or custom business logic. When a condition is referenced but not defined, the authorization system cannot evaluate the conditional logic.
+Every condition named in a type restriction, as in `[user with is_weekday]`, must be defined with a `condition` block.
 
 ## Example
-
-The following model would trigger this error:
 
 ```
 model
@@ -34,13 +30,13 @@ condition is_weekday(current_time: timestamp) {
 }
 ```
 
-**Error Location:** Line 7, `undefined_condition` in the viewer relation definition.
+**Error Location:** `undefined_condition` in the `viewer` relation.
 
-**Error Message:** `Condition 'undefined_condition' is not defined (referenced in relation 'viewer' of type 'document')`
+**Error Message:** `` `undefined_condition` is not a defined condition in the model. ``
 
 ## Resolution
 
-Define the missing condition or correct the reference to an existing condition:
+Define the condition, correct the reference, or remove it.
 
 ### Option 1: Define the missing condition
 
@@ -59,8 +55,8 @@ condition is_weekday(current_time: timestamp) {
   current_time.getDayOfWeek() < 6
 }
 
-condition undefined_condition(user: User) {
-  user.department == "engineering"
+condition undefined_condition(department: string) {
+  department == "engineering"
 }
 ```
 
@@ -100,43 +96,13 @@ condition is_weekday(current_time: timestamp) {
 }
 ```
 
-### Steps to fix:
-
-1. **Identify the undefined condition:**
-   - Check the error message for the exact condition name
-   - Note which relation and type contains the invalid reference
-
-2. **Verify intended behavior:**
-   - Determine if the condition should exist or if it's a typo
-   - Review your conditional authorization requirements
-
-3. **Choose resolution approach:**
-   - Define the missing condition if it should exist
-   - Correct the reference if it's a typo
-   - Remove the reference if conditional logic isn't needed
-
-4. **Test the condition:**
-   - Validate the model after making changes
-   - Test the conditional logic in your application
-
-## Common Causes
-
-- **Typos in condition names:** `is_weekday` vs `is_week_day` vs `is_wekday`
-- **Case sensitivity:** `IsWeekday` instead of `is_weekday`
-- **Missing condition definitions:** Referencing planned but unimplemented conditions
-- **Refactoring errors:** Renaming conditions without updating references
-
 ## Related Errors
 
-- [`condition-not-used`](./condition-not-used.md) - When conditions are defined but never used
-- [`different-nested-condition-name`](./different-nested-condition-name.md) - Condition name mismatches
-- [`missing-definition`](./missing-definition.md) - Similar pattern for relation references
+- [`condition-not-used`](./condition-not-used.md) - A condition is defined but never used
+- [`different-nested-condition-name`](./different-nested-condition-name.md) - A JSON condition's `name` differs from its key
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/condition_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java condition validation package
-
-The validation builds a map of all defined conditions and cross-references them with condition usage in relation definitions.
+- Go: `pkg/go/validation/condition_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

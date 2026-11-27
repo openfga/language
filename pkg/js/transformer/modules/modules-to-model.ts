@@ -11,7 +11,7 @@ import {
   ValidationError,
 } from "../../errors";
 import { getTypeLineNumber, getConditionLineNumber, getRelationLineNumber } from "../../util/line-numbers";
-import { constructTransformationError } from "../../util/exceptions";
+import { constructTransformationError, fromClauseOperandIndex, symbolColumn } from "../../util/exceptions";
 
 export interface ModuleFile {
   name: string;
@@ -224,11 +224,8 @@ export const transformModuleFilesToModel = (
           continue;
         }
 
-        const line = lines[lineIndex];
-        const wordIndex = resolveWordIndex(e, line);
-
         e.line = { start: lineIndex, end: lineIndex };
-        e.column = { start: wordIndex, end: wordIndex + (e.metadata.symbol?.length || 0) };
+        e.column = resolveColumn(e, lines[lineIndex]);
         errors.push(e);
       }
     }
@@ -304,33 +301,22 @@ function resolveLineIndex(e: ModelValidationSingleError, lines?: string[]): numb
   return lineIndex;
 }
 
-function resolveWordIndex(e: ModelValidationSingleError, line: string): number {
-  const { metadata } = e;
+function resolveColumn(e: ModelValidationSingleError, line: string): { start: number; end: number } {
+  const symbol = e.metadata?.symbol || "";
 
-  if (!metadata) {
-    return -1;
-  }
-
-  const re = new RegExp("\\b" + metadata.symbol + "\\b");
-
-  let wordIdx;
-  switch (metadata.errorType) {
+  let wordIdx: number;
+  switch (e.metadata?.errorType) {
     case ValidationError.InvalidType:
       // Split line at definition as InvalidType should mark the value, not the key
       const splitLine = line.split(":");
-      wordIdx = splitLine[0].length + splitLine[1].search(re) + 1;
+      wordIdx = splitLine[0].length + splitLine[1].search(new RegExp("\\b" + symbol + "\\b")) + 1;
       break;
     case ValidationError.TuplesetNotDirect:
-      const clauseStartsAt = line.indexOf("from") + "from".length;
-      wordIdx = clauseStartsAt + line.slice(clauseStartsAt).indexOf(metadata.symbol);
+      wordIdx = fromClauseOperandIndex(line, symbol) ?? symbolColumn(line, symbol).start;
       break;
     default:
-      wordIdx = line?.search(re);
+      return symbolColumn(line, symbol);
   }
 
-  if (wordIdx == undefined || isNaN(wordIdx) || wordIdx === -1) {
-    wordIdx = 0;
-  }
-
-  return wordIdx;
+  return { start: wordIdx, end: wordIdx + symbol.length };
 }

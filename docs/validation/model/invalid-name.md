@@ -6,40 +6,39 @@
 
 ## Summary
 
-Type or relation names do not follow OpenFGA's naming conventions and format requirements, preventing proper parsing and evaluation.
+A type, relation or condition name does not match its naming rule.
 
 ## Description
 
-OpenFGA enforces specific naming conventions for types and relations to ensure:
-- Consistent parsing across different language implementations
-- Predictable behavior in authorization evaluation
-- Compatibility with OpenFGA's internal processing
-- Clear, readable authorization models
+| Name | Rule | Meaning |
+|------|------|---------|
+| Type | `^[^:#@\*\s]{1,254}$` | 1 to 254 characters, none of them `:`, `#`, `@`, `*` or whitespace |
+| Relation | `^[^:#@\*\s]{1,50}$` | 1 to 50 characters, none of them `:`, `#`, `@`, `*` or whitespace |
+| Condition (Go only) | `^[^\*\s]{1,50}$` | 1 to 50 characters, none of them `*` or whitespace |
 
-Valid names must follow these rules:
-- Start with a lowercase letter
-- Contain only lowercase letters, numbers, and underscores
-- Not contain spaces or special characters
-- Be between 1 and 254 characters in length
-- Not be empty or contain only whitespace
+Uppercase letters, digits, hyphens and underscores are allowed. `self` and `this` are reported as [`reserved-type-keywords`](./reserved-type-keywords.md) or [`reserved-relation-keywords`](./reserved-relation-keywords.md) instead.
+
+The DSL grammar is stricter. A DSL type or relation name uses only ASCII letters, digits, `_`, `-`, `.` and `/`, starts with a letter or `_`, and has each `.` or `/` between two letters, digits or `_` (as in `org.team`). Other names are syntax errors, so in the DSL this error is reported only for length: a type name over 254 characters, or a relation or condition name over 50. In JSON, it is also reported for disallowed characters.
 
 ## Example
 
-The following models would trigger this error:
+### Invalid type names
 
-### Invalid type names:
+Type names with whitespace or `@`, in a JSON model:
+
+```json
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    { "type": "user" },
+    { "type": "team member" },
+    { "type": "user@domain" }
+  ]
+}
 ```
-model
-  schema 1.1
 
-type User          # Error: starts with uppercase
-type my-type       # Error: contains hyphen
-type 123type       # Error: starts with number
-type user type     # Error: contains space
-type ""            # Error: empty name
-```
+### Invalid relation names
 
-### Invalid relation names:
 ```
 model
   schema 1.1
@@ -48,31 +47,41 @@ type user
 
 type document
   relations
-    define Viewer: [user]       # Error: starts with uppercase
-    define can-view: [user]     # Error: contains hyphen
-    define 1viewer: [user]      # Error: starts with number
-    define my viewer: [user]    # Error: contains space
+    define can_view_documents_shared_with_the_entire_organization: [user]  # Error: 54 characters, the limit is 50
 ```
 
-**Error Message:** `Invalid name format: 'User'. Names must start with lowercase letter and contain only lowercase letters, numbers, and underscores`
+In JSON, a relation key such as `can view` or `owner@company` is reported the same way.
+
+**Error Messages:**
+- `type 'team member' does not match naming rule: '^[^:#@\*\s]{1,254}$'.`
+- `type 'user@domain' does not match naming rule: '^[^:#@\*\s]{1,254}$'.`
+- `relation 'can_view_documents_shared_with_the_entire_organization' of type 'document' does not match naming rule: '^[^:#@\*\s]{1,50}$'.`
+
+### Names the DSL rejects as syntax errors
+
+- `type 123type` and `define 1viewer: [user]` (start with a digit)
+- `define my viewer: [user]` (contains a space)
+- `type user@domain` and `define owner@company: [user]` (contain `@`)
 
 ## Resolution
 
-Correct the names to follow OpenFGA naming conventions:
+Rename to a name that matches the rule.
 
-### Fix invalid type names:
+### Fix invalid type names
+
+```json
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    { "type": "user" },
+    { "type": "team-member" },
+    { "type": "user_domain" }
+  ]
+}
 ```
-model
-  schema 1.1
 
-type user          # Corrected from 'User'
-type my_type       # Corrected from 'my-type'
-type type_123      # Corrected from '123type'
-type user_profile  # Corrected from 'user type'
-type valid_name    # Corrected from empty name
-```
+### Fix invalid relation names
 
-### Fix invalid relation names:
 ```
 model
   schema 1.1
@@ -81,78 +90,53 @@ type user
 
 type document
   relations
-    define viewer: [user]       # Corrected from 'Viewer'
-    define can_view: [user]     # Corrected from 'can-view'
-    define viewer_1: [user]     # Corrected from '1viewer'
-    define my_viewer: [user]    # Corrected from 'my viewer'
+    define can_view_shared_documents: [user]  # Shortened to 25 characters
 ```
 
-### Steps to fix:
+## More Examples
 
-1. **Identify the invalid name:**
-   - Check the error message for the specific invalid name
-   - Note whether it's a type or relation name
+### Valid names
 
-2. **Apply naming conventions:**
-   - Convert to lowercase
-   - Replace spaces and special characters with underscores
-   - Ensure the name starts with a letter
-   - Keep length under 254 characters
-
-3. **Update all references:**
-   - Change the definition
-   - Update any references to the renamed construct
-   - Verify no broken references remain
-
-4. **Test the model:**
-   - Validate the updated model
-   - Ensure authorization logic still works correctly
-
-## Naming Convention Examples
-
-### ✅ Valid names:
 ```
+model
+  schema 1.1
+
 type user
+type User
 type user_profile
-type organization_member
+type user-profile
 type document_123
-type api_key
 
 type document
   relations
-    define viewer
-    define can_edit
-    define owner_admin
-    define level_1_access
+    define viewer: [user]
+    define can_edit: [user]
+    define can-edit: [user]
+    define Owner: [user]
+    define level_1_access: [user]
 ```
 
-### ❌ Invalid names:
-```
-type User              # Uppercase
-type user-profile      # Hyphen
-type organization member # Space
-type 123document       # Starts with number
-type user@domain       # Special character
+### Invalid names
 
-type document
-  relations
-    define Viewer           # Uppercase
-    define can-edit         # Hyphen
-    define owner admin      # Space
-    define 1st_level        # Starts with number
-    define owner@company    # Special character
-```
+| Name | Problem | Reported as |
+|------|---------|-------------|
+| `team member` | Contains whitespace | `invalid-name` in JSON, syntax error in the DSL |
+| `user@domain` | Contains `@` | `invalid-name` in JSON, syntax error in the DSL |
+| `org:acme`, `doc#1`, `all*` | Contain `:`, `#` or `*` | `invalid-name` in JSON, syntax error in the DSL |
+| A type name of 255 characters | Too long | `invalid-name` |
+| A relation name of 51 characters | Too long | `invalid-name` |
+| `123document` | Starts with a digit | Syntax error in the DSL, valid in JSON |
+| `self`, `this` | Reserved | `reserved-type-keywords` or `reserved-relation-keywords` |
 
 ## Related Errors
 
-- [`reserved-type-keywords`](./reserved-type-keywords.md) - When names use reserved keywords
-- [`reserved-relation-keywords`](./reserved-relation-keywords.md) - When relation names use reserved keywords
+- [`reserved-type-keywords`](./reserved-type-keywords.md) - A type is named `self` or `this`
+- [`reserved-relation-keywords`](./reserved-relation-keywords.md) - A relation is named `self` or `this`
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/name_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java naming validation package
+- Go: `pkg/go/validation/name_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`
 
-The validation uses regular expressions to check name format and applies consistent rules across all language implementations.
+Go, JavaScript and Java apply the same type and relation rules. Only Go checks condition names.

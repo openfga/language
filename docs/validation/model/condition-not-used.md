@@ -6,21 +6,13 @@
 
 ## Summary
 
-A condition is defined in the model but is never referenced or used in any relation, creating unnecessary code that should be removed or utilized.
+A condition is defined, but no type restriction uses it.
 
 ## Description
 
-This error occurs when a condition is defined but never referenced in any relation definitions. Unused conditions:
-- Add unnecessary complexity to the model
-- Can indicate incomplete implementation or refactoring artifacts
-- May confuse developers about the model's intended behavior
-- Consume resources during model processing
-
-OpenFGA validates that all defined conditions serve a purpose in the authorization model to maintain clean, efficient authorization logic.
+Every condition defined in the model must be used by at least one type restriction, as in `[user with is_weekday]`.
 
 ## Example
-
-The following model would trigger this error:
 
 ```
 model
@@ -37,18 +29,18 @@ condition is_weekday(current_time: timestamp) {
   current_time.getDayOfWeek() < 6
 }
 
-condition unused_condition(user: User) {  # Error: Never used
-  user.department == "engineering"
+condition unused_condition(department: string) {  # Error: Never used
+  department == "engineering"
 }
 ```
 
-**Error Location:** The `unused_condition` definition that is never referenced.
+**Error Location:** The `unused_condition` definition.
 
-**Error Message:** `Condition 'unused_condition' is defined but not used in any relation`
+**Error Message:** `` `unused_condition` condition is not used in the model. ``
 
 ## Resolution
 
-Either use the condition in a relation or remove it from the model:
+Use the condition in a type restriction, or remove it.
 
 ### Option 1: Use the condition in a relation
 
@@ -62,14 +54,14 @@ type document
   relations
     define viewer: [user with is_weekday]
     define editor: [user with unused_condition]  # Now used
-    define admin: [user with unused_condition and is_weekday]  # Combined usage
+    define admin: viewer and editor  # Requires both conditions
 
 condition is_weekday(current_time: timestamp) {
   current_time.getDayOfWeek() < 6
 }
 
-condition unused_condition(user: User) {
-  user.department == "engineering"
+condition unused_condition(department: string) {
+  department == "engineering"
 }
 ```
 
@@ -93,43 +85,13 @@ condition is_weekday(current_time: timestamp) {
 # unused_condition removed
 ```
 
-### Steps to fix:
-
-1. **Identify the unused condition:**
-   - Check the error message for the specific condition name
-   - Locate the condition definition in your model
-
-2. **Determine intended usage:**
-   - Review if the condition was meant to be used somewhere
-   - Check if this is leftover from refactoring or incomplete implementation
-
-3. **Choose resolution approach:**
-   - Use the condition in appropriate relations if it serves a purpose
-   - Remove the condition if it's no longer needed
-   - Document why the condition exists if it's for future use
-
-4. **Test the authorization logic:**
-   - Ensure removing/using the condition doesn't break intended behavior
-   - Verify conditional authorization works as expected
-
-## Common Causes
-
-- **Refactoring artifacts:** Conditions left over after removing relations
-- **Copy-paste errors:** Copying conditions from other models without usage
-- **Incomplete implementation:** Conditions defined but relations not yet updated
-- **Development process:** Conditions created during development but never utilized
-
 ## Related Errors
 
-- [`condition-not-defined`](./condition-not-defined.md) - When conditions are referenced but not defined
-- [`different-nested-condition-name`](./different-nested-condition-name.md) - Condition name mismatches
-- [`missing-definition`](./missing-definition.md) - General missing definition patterns
+- [`condition-not-defined`](./condition-not-defined.md) - A type restriction uses a condition that is not defined
+- [`different-nested-condition-name`](./different-nested-condition-name.md) - A JSON condition's `name` differs from its key
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/condition_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java condition validation package
-
-The validation builds maps of defined conditions and used conditions, then identifies any conditions that exist in the defined set but not in the used set.
+- Go: `pkg/go/validation/condition_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

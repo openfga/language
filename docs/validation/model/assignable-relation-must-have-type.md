@@ -2,154 +2,83 @@
 
 **Error Code:** `assignable-relation-must-have-type`
 
-**Category:** Wildcard Validation
+**Category:** Structural Validation
 
 ## Summary
 
-An assignable relation in a type restriction must specify a type, as wildcard-only references without type context are invalid.
+A relation in a JSON model is a direct assignment, but lists no types that can be assigned to it.
 
 ## Description
 
-This error occurs when relation references in type restrictions lack the required type specification. OpenFGA requires clear type context for all assignable relations to ensure:
-- Proper authorization evaluation and user resolution
-- Clear semantic meaning in permission checks
-- Consistent behavior across different implementations
-- Predictable relation traversal during authorization
+In JSON, a direct assignment is written as `{ "this": {} }`, and the types that can be assigned are listed in `metadata.relations.<relation>.directly_related_user_types`. When that list is empty or missing, JavaScript and Java report `assignable-relation-must-have-type`.
 
-When a relation reference lacks type context, the authorization system cannot determine which type's relation should be evaluated, leading to ambiguous authorization behavior.
+A DSL model cannot have this error: a direct assignment in the DSL lists its types, as in `[user]`, and `[]` is a syntax error.
+
+Go does not report this code. For the model below, Go reports [`relation-no-entry-point`](./relation-no-entry-point.md) instead: `` `viewer` is an impossible relation for `document` (no entrypoint). ``
 
 ## Example
 
-The following models would trigger this error:
+This JSON model lists no types for the `viewer` relation:
 
-### Missing type in relation reference:
-```
-model
-  schema 1.1
-
-type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define viewer: [#member]        # Error: missing type before #member
-    define editor: [user, #admin]   # Error: missing type for #admin reference
+```json
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    { "type": "user" },
+    {
+      "type": "document",
+      "relations": { "viewer": { "this": {} } },
+      "metadata": { "relations": { "viewer": { "directly_related_user_types": [] } } }
+    }
+  ]
+}
 ```
 
-### Incomplete type restriction:
-```
-model
-  schema 1.1
+**Error Message:** `assignable relation '' must have types`
 
-type user
-
-type document
-  relations
-    define viewer: [user, :*]       # Error: missing type before wildcard
-    define editor: [#]              # Error: incomplete type#relation reference
-```
-
-**Error Message:** `Assignable relation '#member' must specify a type`
+The same error is reported when `viewer` has no entry in `metadata.relations`.
 
 ## Resolution
 
-Add the required type specification to relation references:
+List the types that can be assigned to the relation. Each entry is a type (`{ "type": "user" }`), a wildcard (`{ "type": "user", "wildcard": {} }`) or a userset (`{ "type": "organization", "relation": "member" }`).
 
-### Option 1: Add missing type to relation references
+### Option 1: Add the types to the relation metadata
+
+```json
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    { "type": "user" },
+    {
+      "type": "document",
+      "relations": { "viewer": { "this": {} } },
+      "metadata": { "relations": { "viewer": { "directly_related_user_types": [ { "type": "user" } ] } } }
+    }
+  ]
+}
+```
+
+### Option 2: Write the model in the DSL
+
+This DSL model is the same as the JSON in Option 1:
 
 ```
 model
   schema 1.1
 
 type user
-type organization
-  relations
-    define member: [user]
-    define admin: [user]
 
 type document
   relations
-    define viewer: [organization#member]     # Added 'organization' type
-    define editor: [user, organization#admin] # Added 'organization' type
-```
-
-### Option 2: Use direct type assignments instead
-
-```
-model
-  schema 1.1
-
-type user
-type organization
-  relations
-    define member: [user]
-
-type document
-  relations
-    define viewer: [user, organization#member] # Clear type specifications
-    define editor: [user]                      # Simple direct assignment
-```
-
-### Steps to fix:
-
-1. **Identify incomplete relation references:**
-   - Check the error message for specific relation references missing types
-   - Locate all `#relation` references without type prefixes
-
-2. **Determine the intended type:**
-   - Review your authorization model to understand which type should be referenced
-   - Consider the business logic and permission flow
-
-3. **Add type specifications:**
-   - Add the appropriate type prefix: `type#relation`
-   - Ensure the referenced type and relation exist in your model
-
-4. **Validate the authorization logic:**
-   - Ensure the type#relation combination makes sense for your use case
-   - Test that the authorization behavior matches expectations
-
-## Valid Type and Relation Patterns
-
-### ✅ Correct type#relation usage:
-```
-type user
-type organization
-  relations
-    define member: [user]
-    define admin: [user]
-
-type group
-  relations
-    define member: [user]
-
-type document
-  relations
-    define viewer: [user, organization#member]          # Clear type#relation
-    define editor: [organization#admin, group#member]   # Multiple clear references
-    define owner: [user]                                # Direct type reference
-```
-
-### ❌ Invalid incomplete references:
-```
-type document
-  relations
-    define viewer: [#member]                # Missing type
-    define editor: [user, #admin]           # Missing type
-    define admin: [organization#]           # Missing relation
-    define owner: [#]                       # Missing both type and relation
+    define viewer: [user]
 ```
 
 ## Related Errors
 
-- [`type-wildcard-relation`](./type-wildcard-relation.md) - Conflicting wildcard and relation usage
-- [`invalid-type`](./invalid-type.md) - When referenced types don't exist
+- [`relation-no-entry-point`](./relation-no-entry-point.md) - What Go reports for the same model
 
 ## Implementation Notes
 
-This validation is enforced by:
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java wildcard validation package
-
-The validation parses type restrictions and ensures all relation references include proper type specifications.
+- Go: not reported
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

@@ -6,21 +6,15 @@
 
 ## Summary
 
-A relation definition has no entry point, meaning there's no way to directly assign users to this relation, making it unreachable and non-functional.
+No user can ever have the relation, because it does not lead to a direct assignment.
 
 ## Description
 
-Every relation in an OpenFGA model must have at least one "entry point" - a way for users to be assigned to that relation. Entry points can be:
+A relation has an entry point when it leads to a direct assignment such as `[user]`. A computed userset, a tuple-to-userset or a `type#relation` restriction leads to one when the relation it refers to has one. An `or` needs one operand with an entry point, an `and` needs every operand to have one, and a `but not` needs both sides to have one.
 
-1. **Direct assignment:** `[user]` or `[user, organization#member]`
-2. **This keyword:** Allowing direct assignment through `this`
-3. **Computed usersets with entry points:** Relations that eventually resolve to direct assignments
-
-A relation without entry points creates a "dead end" in your authorization model where no users can ever satisfy the relation, regardless of the authorization data.
+In schema 1.1, direct assignment is written as a type restriction such as `[user]`. `define admin: this` is not direct assignment: it is read as a relation named `this` and reports [`missing-definition`](./missing-definition.md).
 
 ## Example
-
-The following model would trigger this error:
 
 ```
 model
@@ -35,13 +29,13 @@ type document
     define admin: viewer  # Circular reference with no entry point
 ```
 
-**Error Location:** All three relations (`viewer`, `editor`, `admin`) form a cycle with no entry point.
+**Error Message:** `` `viewer` is an impossible relation for `document` (potential loop). ``
 
-**Error Message:** `Relation 'viewer' on type 'document' has no entry point`
+`editor` and `admin` report the same error. The message ends in `(potential loop).` when the check finds a cycle, and in `(no entrypoint).` otherwise.
 
 ## Resolution
 
-Add a direct assignment entry point to break the cycle and make relations reachable:
+Make at least one relation in the chain a direct assignment.
 
 ### Option 1: Add direct assignment
 
@@ -58,7 +52,7 @@ type document
     define admin: [user] or viewer  # Add direct assignment entry point
 ```
 
-### Option 2: Use 'this' for direct assignment
+### Option 2: Remove the cycle
 
 ```
 model
@@ -69,67 +63,16 @@ type user
 type document
   relations
     define viewer: [user] or editor
-    define editor: admin  
-    define admin: this  # Allow direct assignment
-```
-
-### Steps to fix:
-
-1. **Identify the problematic relation:**
-   - Check which relation is reported as having no entry point
-   - Trace the relation dependencies to understand the issue
-
-2. **Analyze relation dependencies:**
-   - Map out how relations reference each other
-   - Look for circular dependencies or dead ends
-
-3. **Add appropriate entry points:**
-   - Add `[user]` or other type restrictions for direct assignment
-   - Use `this` if the relation should allow direct assignment
-   - Ensure at least one relation in any chain has an entry point
-
-4. **Verify authorization logic:**
-   - Ensure the entry points match your intended authorization model
-   - Test that users can be properly assigned and checked
-
-## Common Patterns
-
-### Valid patterns with entry points:
-
-```
-# Direct assignment
-define viewer: [user]
-
-# Computed with entry point
-define editor: [user] or viewer
-
-# Tuple-to-userset with entry point
-define reader: [user] or member from owner
-```
-
-### Invalid patterns (no entry points):
-
-```
-# Circular reference
-define viewer: editor
-define editor: viewer
-
-# Chain with no entry
-define viewer: editor  
-define editor: admin
-define admin: super_admin
-define super_admin: viewer
+    define editor: [user] or admin
+    define admin: [user]  # The chain now ends in a direct assignment
 ```
 
 ## Related Errors
 
-- [`missing-definition`](./missing-definition.md) - When referenced relations don't exist
+- [`missing-definition`](./missing-definition.md) - A computed userset names an undefined relation, including `this`
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/cycle_detection.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts` 
-- Java implementation: Java semantic validation package
-
-The validation uses depth-first search to detect cycles and analyze reachability from direct assignment entry points.
+- Go: `pkg/go/validation/cycle_detection.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`

@@ -73,10 +73,6 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 
 	for _, typeDef := range model.GetTypeDefinitions() {
 		typeName := typeDef.GetType()
-		if typeName == "" {
-			continue
-		}
-
 		file, module := typeMeta(typeDef)
 
 		typeLine := src.typeLine(typeName)
@@ -96,7 +92,7 @@ func validateNames(model *openfgav1.AuthorizationModel, src source) error {
 			var finding *Finding
 			if errors.As(validateRelationName(relationName, typeName), &finding) {
 				finding.at(src, relationLine)
-				finding.File, finding.Metadata.Module = file, module
+				finding.File, finding.Metadata.Module = relationMeta(typeDef, relationName)
 				fs = append(fs, finding)
 			}
 		}

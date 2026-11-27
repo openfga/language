@@ -6,130 +6,117 @@
 
 ## Summary
 
-A single file contains definitions for multiple modules, violating OpenFGA's module organization requirements where each file should contain only one module.
+A model's metadata assigns more than one module to the same file. A file can hold only one module, so the model cannot be written back as modular DSL.
 
 ## Description
 
-OpenFGA's module system requires clean separation between modules to maintain:
-- Clear module boundaries and dependencies
-- Predictable import/export behavior
-- Maintainable code organization
-- Consistent module resolution
+In a modular model, each `.fga` file starts with one `module <name>` line, and an `fga.mod` file sets the schema version and lists the files. When the files are combined, each type and condition records its module and file in `metadata` (`module` and `source_info.file`), and relations added with `extend type` record their own.
 
-When multiple modules are defined within a single file, it creates ambiguity about module ownership, makes dependency tracking difficult, and can lead to unexpected behavior during module resolution.
+The validator groups this metadata by file and reports each file that has more than one module. In a DSL module file, a second `module` line is a syntax error, not this error.
 
 ## Example
 
-The following file structure would trigger this error:
+Both types point to `single-file.fga`, but belong to different modules:
 
-**single-file.fga:**
+```json
+{
+  "schema_version": "1.2",
+  "type_definitions": [
+    {
+      "type": "user",
+      "metadata": { "module": "user_management", "source_info": { "file": "single-file.fga" } }
+    },
+    {
+      "type": "document",
+      "relations": { "owner": { "this": {} } },
+      "metadata": {
+        "module": "document_management",
+        "source_info": { "file": "single-file.fga" },
+        "relations": { "owner": { "directly_related_user_types": [ { "type": "user" } ] } }
+      }
+    }
+  ]
+}
 ```
-module user_management
-  schema 1.1
 
-type user
-  relations
-    define profile_owner: [user]
-
-module document_management  # Error: Second module in same file
-  schema 1.1
-
-type document
-  relations
-    define owner: [user_management.user]
-```
-
-**Error Message:** `Multiple modules detected in file 'single-file.fga': user_management, document_management`
+**Error Message:** `file single-file.fga would contain multiple module definitions (user_management, document_management) when transforming to DSL. Only one module can be defined per file.`
 
 ## Resolution
 
-Split the modules into separate files:
+Give each module its own file, or use one module for the file.
 
 ### Option 1: Create separate files for each module
+
+```json
+{
+  "schema_version": "1.2",
+  "type_definitions": [
+    {
+      "type": "user",
+      "metadata": { "module": "user_management", "source_info": { "file": "user-management.fga" } }
+    },
+    {
+      "type": "document",
+      "relations": { "owner": { "this": {} } },
+      "metadata": {
+        "module": "document_management",
+        "source_info": { "file": "document-management.fga" },
+        "relations": { "owner": { "directly_related_user_types": [ { "type": "user" } ] } }
+      }
+    }
+  ]
+}
+```
+
+As modular DSL, this is two module files and an `fga.mod` that lists them:
+
+**fga.mod:**
+```yaml
+schema: '1.2'
+contents:
+  - user-management.fga
+  - document-management.fga
+```
 
 **user-management.fga:**
 ```
 module user_management
-  schema 1.1
 
 type user
-  relations
-    define profile_owner: [user]
 ```
 
 **document-management.fga:**
 ```
 module document_management
-  schema 1.1
-
-import user_management
-
-type document
-  relations
-    define owner: [user_management.user]
-```
-
-### Option 2: Combine into single module (if appropriate)
-
-**combined.fga:**
-```
-module application
-  schema 1.1
-
-type user
-  relations
-    define profile_owner: [user]
 
 type document
   relations
     define owner: [user]
 ```
 
-### Steps to fix:
+Module files have no `schema` line; the version comes from `fga.mod`. A type from another module, such as `user`, is referenced by its name.
 
-1. **Identify all modules in the file:**
-   - Review the error message for list of modules
-   - Locate all `module` declarations in the file
+### Option 2: Use one module for the file
 
-2. **Plan module organization:**
-   - Decide if modules should remain separate or be combined
-   - Consider module dependencies and relationships
+Use the same `module` name, for example `application`, for everything in the file. As modular DSL, the file is:
 
-3. **Create separate files:**
-   - Create one file per module with descriptive names
-   - Move each module's content to its own file
-   - Update any cross-module references
+**single-file.fga:**
+```
+module application
 
-4. **Update imports:**
-   - Add necessary import statements for cross-module references
-   - Verify all module dependencies are properly declared
+type user
 
-## TODO: Module Organization Best Practices
-
-<!-- TODO: Add guidance for:
-- Best practices for module naming and organization
-- How to handle complex module dependencies
-- Strategies for refactoring large single-file models into modules
-- Performance implications of module structure
-- Module versioning and compatibility considerations
--->
-
-## Common Causes
-
-- **Copy-paste errors:** Copying entire modules without creating separate files
-- **Refactoring mistakes:** Merging files without removing module declarations
-- **Template usage:** Using module templates without proper file separation
-- **Migration issues:** Converting single-module models to multi-module incorrectly
+type document
+  relations
+    define owner: [user]
+```
 
 ## Related Errors
 
-- [`duplicated-error`](./duplicated-error.md) - Duplicate definitions across module files
+- [`schema-version-required`](./schema-version-required.md) - Reported when a single module file is validated on its own
 
 ## Implementation Notes
 
-This validation is enforced consistently across:
-- Go implementation: `pkg/go/validation/multi_file_validation.go`
-- JavaScript implementation: `pkg/js/validator/validate-dsl.ts`
-- Java implementation: Java multi-file validation package
-
-The validation tracks module declarations across all files and reports conflicts when multiple modules are found in a single file.
+- Go: `pkg/go/validation/multi_file_validation.go`
+- JavaScript: `pkg/js/validator/validate-dsl.ts`
+- Java: `pkg/java/src/main/java/dev/openfga/language/validation/ModelValidator.java`
